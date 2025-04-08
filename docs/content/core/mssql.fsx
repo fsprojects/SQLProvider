@@ -19,7 +19,7 @@ let [<Literal>] dbVendor = Common.DatabaseProviderTypes.MSSQLSERVER
 (**
 ### ConnectionString
 
-Basic connection string used to connect to MSSQL instance; typical
+A basic connection string used to connect to MSSQL instance; typical
 connection strings for the driver apply here. See
 [MSSQL Connecting Strings Documentation](https://www.connectionstrings.com/sql-server/)
 for a complete list of connection string options.
@@ -78,6 +78,6 @@ from the NuGet package to local resolutionPath (e.g. Microsoft.Data.SqlClient.dl
 
 ## Using SQLProvider with SSDT
 
-You can user [SQLProvider with SSDT](mssqlssdt.html).
+You can use [SQLProvider with SSDT](mssqlssdt.html).
 
 *)

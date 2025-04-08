@@ -1,4 +1,15 @@
-﻿(**
+(*** hide ***)
+#I @"../../../bin/lib/netstandard2.0"
+#r "FSharp.Data.SqlProvider.dll"
+open System
+open FSharp.Data.Sql
+[<Literal>]
+let connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"/../../../tests/SqlProvider.Tests/scripts/northwindEF.db;Version=3;foreign keys=true"
+[<Literal>]
+let resolutionPath = __SOURCE_DIRECTORY__ + @"/../../../tests/SqlProvider.Tests/libs"
+type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, SQLiteLibrary = Common.SQLiteLibrary.SystemDataSQLite, ConnectionString = connectionString, ResolutionPath = resolutionPath,CaseSensitivityChange = Common.CaseSensitivityChange.ORIGINAL>
+
+(**
 
 ## Version control instructions
 
@@ -16,29 +27,29 @@ Even though our test run will run modifications to the test databases, don't che
 
 ### Solution structure
 
-We use Fake and Paket. You have to run `build.cmd` on Windows (or `sh ./build.sh` on Mac/Linux) before opening the solutions.
+We use Fake and Paket. Before opening the solutions, you have to run `build.cmd` on Windows (or `sh ./build.sh` on Mac/Linux).
 
 The main source solution is `SQLProvider.sln`.
-The unit tests are located in another one, `SQLProvider.Tests.sln`, and when you open the solution, it will lock the `bin\net472\FSharp.Data.SqlProvider.dll`, and after that you can't build the main solution.
+The unit tests are located in another one, `SQLProvider.Tests.sln`, and when you open the solution, it will lock the `bin\net48\FSharp.Data.SqlProvider.dll`, and after that you can't build the main solution.
 
- - To debug design-time features you "Attach to process" the main solution debugger to another instance of Visual Studio running the tests solution.
- - To debug runtime you attach it to e.g. fsi.exe and run the code in interactive.
+ - To debug design-time features, you "Attach to process" the main solution debugger to another instance of Visual Studio running the test solution.
+ - To debug runtime, attach it to e.g. fsi.exe and run the code in the interactive.
 
 #### Workarounds for "file in use" (issue #172)
 
- - Debugging execution: Have all the test-files closed in your test-project when you open it with VS. Then you can run tests from the tests from Tests Explorer window (and even debug them if you open the files to that instance of VS from src\SqlProvider).
+ - Debugging execution: Have all the test-files closed in your test-project when you open it with VS. Then you can run tests from the Tests Explorer window (and even debug them if you open the files to that instance of VS from src\SqlProvider).
  - Or you can open tests with some other editor than Visual Studio 2015
 
 ### Referenced Files
 
- - Documentation is located at [SQLProvider/docs/content/core](https://github.com/fsprojects/SQLProvider/tree/master/docs/content/core) and it's converted directly to `*.html` help files by the build-script.
- - `src/ProvidedTypes.fsi`, `src/ProvidedTypes.fs` and `src/Code/ExpressionOptimizer.fs` are coming from other repositoried restored by first build. Location is at [packet.dependencies](https://github.com/fsprojects/SQLProvider/blob/master/paket.dependencies). Don't edit them manually.
+ - Documentation is located at [SQLProvider/docs/content/core](https://github.com/fsprojects/SQLProvider/tree/master/docs/content/core), and it's converted directly to `*.html` help files by the build-script.
+ - `src/ProvidedTypes.fsi`, `src/ProvidedTypes.fs` and `src/Code/ExpressionOptimizer.fs` are coming from other repositories restored by the first build. The location is at [packet.dependencies](https://github.com/fsprojects/SQLProvider/blob/master/paket.dependencies). Don't edit them manually.
 
 ### Test cases
 
-There are database specific test files as scripts in the test solution, [/tests/SqlProvider.Tests/scripts/](https://github.com/fsprojects/SQLProvider/tree/master/tests/SqlProvider.Tests/scripts), but also one generic [/tests/SqlProvider.Tests/QueryTests.fs](https://github.com/fsprojects/SQLProvider/blob/master/tests/SqlProvider.Tests/QueryTests.fs) which is running all the SQLite tests in the build script.
+There are database-specific test files as scripts in the test solution, [/tests/SqlProvider.Tests/scripts/](https://github.com/fsprojects/SQLProvider/tree/master/tests/SqlProvider.Tests/scripts), but also one generic [/tests/SqlProvider.Tests/QueryTests.fs](https://github.com/fsprojects/SQLProvider/blob/master/tests/SqlProvider.Tests/QueryTests.fs) which is running all the SQLite tests in the build script.
 
-## High level description of the provider
+## High-level description of the provider
 
 
 ### Context and design time
@@ -47,8 +58,10 @@ You have a source code like:
 
 *)
 
-type sql = SqlDataProvider<...params...>
+// type sql = SqlDataProvider<...params...>
+
 let dc = sql.GetDataContext()
+
 
 (**
 
@@ -58,15 +71,15 @@ What will first happen in the design-time, is that this will call `createTypes` 
 
 ### Querying
 
-The entity-items themselves are rows in the database data and they are modelled as dynamic sub-classes of `SqlEntity`, base-class in file [SqlRuntime.Common.fs](https://github.com/fsprojects/SQLProvider/blob/master/src/SQLProvider/SqlRuntime.Common.fs) which can be basically think of as wrapper for `Dictionary<string,obj>` (a column name, and the value). SqlEntity is used for all-kind of result-data actually, so the data columns may not correspond to the actual data values. Mostly the results of the data are shaped as `SqlQueryable<SqlEntity>`, or `SqlQueryable<'T>` which is a SQLProvider's class for `IQueryable<'T>` items.
+The entity-items themselves are rows in the database data, and they are modelled as dynamic sub-classes of `SqlEntity`, base-class in file [SqlRuntime.Common.fs](https://github.com/fsprojects/SQLProvider/blob/master/src/SQLProvider/SqlRuntime.Common.fs) which can be thought of as a wrapper for `Dictionary<string,obj>` (a column name, and the value). SqlEntity is actually used for all kinds of result data, so the data columns may not correspond to the actual data values. Mostly the results of the data are shaped as `SqlQueryable<SqlEntity>` or `SqlQueryable<'T>`, which is SQLProvider's class for `IQueryable<'T>` items.
 
 *)
-
-query {
-    for cust in dbc.Main.Customers do
+let qry = 
+ query {
+    for cust in dc.Main.Customers do
     where ("ALFKI" = cust.CustomerId)
     select cust
-} |> Seq.toArray
+ } |> Seq.toArray
 
 (**
 
@@ -74,9 +87,9 @@ This query is translated to a LINQ-expression-tree through Microsoft.FSharp.Linq
 
 ### Parsing the LINQ-expression-tree
 
-`CreateQuery` will hit our `SqlQueryable<...>`'s Provider (IQueryProvider) property. LINQ-expression-trees can be kind of recursive type structures, so we it will call CreateQuery for each linq-method. We get the expression-tree as parameter, and parse that with (multi-layer-) active patterns.
+`CreateQuery` will hit our `SqlQueryable<...>`'s Provider (IQueryProvider) property. LINQ-expression-trees can be recursive type structures, so we will call CreateQuery for each linq-method. We get the expression-tree as a parameter and parse that with (multi-layer-) active patterns.
 
-Our example the LINQ-expression tree is:
+Our example of the LINQ-expression tree is:
 
 ```csharp
 .Call System.Linq.Queryable.Where(
@@ -94,13 +107,15 @@ so it would hit this in [SqlRuntime.Linq.fs](https://github.com/fsprojects/SQLPr
 ```
 
 because the LINQ-expression-tree has `ExpressionType.Call` named "Where" with source of IWithSqlService (which is the SqlQueryable<SqlEntity>).
-What happens then is parsing of the Where-query. Where-queries are nested structures having known conditions (modelled with pattern `Condition`). If the conditions are having `SqlColumnGet`s, a pattern that says that it's `SqlEntity` with method `GetColumn`, we know that it has to be part of SQL-clause. 
+What happens then is the parsing of the Where-query. Where-queries are nested structures having known conditions (modelled with pattern `Condition`). If the conditions have `SqlColumnGet`s, a pattern that says that it's `SqlEntity` with method `GetColumn`, we know that it has to be part of SQL-clause. 
 
-We collect all the known patterns to `IWithSqlService`s field SqlExpression, being a type `SqlExp`, our non-complete known recursive model-tree of SQL clauses.
+We collect all the known patterns in `IWithSqlService`s field SqlExpression, being a type `SqlExp`, our non-complete known recursive model-tree of SQL clauses.
+  
+![Operations that can be done on .NET side vs. Operations translated to SQL](https://raw.githubusercontent.com/fsprojects/SQLProvider/master/docs/files/linq-ast.png "Operations that can be done on .NET side vs. Operations translated to SQL")
 
 ### Execution of the query
 
-Eventually there also comes the call `executeQuery` (or `executeQueryScalar` for SQL-queries that will return a single value like count), either by enumeration of our IQueryable or at the end of LINQ-expression-tree. That will call `QueryExpressionTransformer.convertExpression`. What happens there (in 
+Eventually, there also comes the call `executeQuery` (or `executeQueryScalar` for SQL-queries that will return a single value like count), either by enumeration of our IQueryable or at the end of LINQ-expression-tree. That will call `QueryExpressionTransformer.convertExpression`. What happens there (in 
 [SqlRuntime.Linq.fs](https://github.com/fsprojects/SQLProvider/blob/master/src/SQLProvider/SqlRuntime.Linq.fs)):
 
  - We create a projection-lambda. This is described in detail below.
@@ -108,8 +123,8 @@ Eventually there also comes the call `executeQuery` (or `executeQueryScalar` for
  - We gather the results as `IEnumerable<SqlEntity>` (or a single return value like count).
  - We execute the projection-lambda to the results.
 
-In our example the whole cust object was selected.
-For security reasons we don't do `SELECT *` but we actually list the columns that are there at compile time.
+In our example, the whole cust object was selected.
+For security reasons, we don't do `SELECT *`, but we actually list the columns at compile time.
 
 The `TupleIndex` of IWithSqlService is a way to collect joined tables to match the sql-aliasses, here the `[cust]`.
 
@@ -133,18 +148,18 @@ WHERE (([cust].[CustomerID]= @param1))
 
 ### Projection-lambda
  
-Now, if the select-clause would have been complex:
+Now, if the select-clause had been complex:
 
 *)
-
-query {
+let qry2 = 
+ query {
     for emp in dc.Main.Employees do
     select (emp.BirthDate.DayOfYear + 3)
-} |> Seq.toArray
+ } |> Seq.toArray
 
 (**
 
-We don't know the function of DayOfYear for each different SQL-providers (Oracle/MSSQL/Odbc/...), but we still want tihs code to work. The LINQ-expression-tree for this query is:
+We don't know the function of DayOfYear for each different SQL-providers (Oracle/MSSQL/Odbc/...), but we still want this code to work. The LINQ-expression-tree for this query is:
 
 ```csharp
 .Call System.Linq.Queryable.Select(
@@ -155,19 +170,40 @@ We don't know the function of DayOfYear for each different SQL-providers (Oracle
 }
 ```
 
-What happens now, is that in [SqlRuntime.QueryExpression.fs](https://github.com/fsprojects/SQLProvider/blob/master/src/SQLProvider/SqlRuntime.QueryExpression.fs) we parse the whole LINQ-expression-tree, and find the parts that we do know to belong to SQL:
+What happens now is that in [SqlRuntime.QueryExpression.fs](https://github.com/fsprojects/SQLProvider/blob/master/src/SQLProvider/SqlRuntime.QueryExpression.fs), we parse the whole LINQ-expression-tree, and find the parts that we do know to belong to SQL:
 the SqlEntity's `emp.GetColumn("BirthDate")`, and create a lambda-expression where this is replaced with a parameter:
 
 ```fsharp
 fun empBirthDate -> empBirthDate.DayOfYear + 3
 ```
 
-Now when we get the empBirthDate from the SQL result, we can execute this lambda for the parameter, in .NET-side, not SQL, and then we get the correct result. This is done with `for e in results -> projector.DynamicInvoke(e)` in [SqlRuntime.Linq.fs](https://github.com/fsprojects/SQLProvider/blob/master/src/SQLProvider/SqlRuntime.Linq.fs).
+Now when we get the empBirthDate from the SQL result, we can execute this lambda for the parameter in the .NET-side, not SQL, and then we get the correct result. This is done with `for e in results -> projector.DynamicInvoke(e)` in [SqlRuntime.Linq.fs](https://github.com/fsprojects/SQLProvider/blob/master/src/SQLProvider/SqlRuntime.Linq.fs).
+
+### How to debug SQLProvider in your own solution, not the test-project
+
+The runtime debugging can be done just like any other:
+
+1. Build your own project
+2. Then just build SQLProvider.sln and go to bin-folder, select your framework, and copy FSharp.Data.SqlProvider.dll and FSharp.Data.SqlProvider.pdb
+2. Replace your own project's bin-folder copies of these two files, run your software without rebuilding.
+
+Debugging the design-time VS2022 is doable but a bit more complex.
+This will mess up your SQLProvider Nuget cache, so after done, delete the SQLProvider cache-folder and restore the package again.
+
+1. Open SQLProvider.sln (with Visual Studio 2022) and build it (in debug mode). Keep this open for now.
+2. Open Explorer, it has made under bin-folder some folders, e.g. \lib and \typeproviders (and under them per framework like \net48 \net6.0 \netstandard2.0 \netstandard2.1)
+3. Open another explorer, go to your location of Nuget cache, the version you are using e.g. `C:\Users\me\.nuget\packages\sqlprovider\1.4.8`
+4. Replace the Nuget cache \typeproviders folder with your fresh bin typeproviders folder.
+5. Replace the Nuget cache \lib folder with your fresh bin lib folder.
+6. Open another instance of VS2022 to the start-screen, but don't open any project yet.
+7. Go back to your first instance of VS2022 with SQLProvider.sln. Add some breakpoints. Select from the top menu: Debug - Attach to Process...
+8. Select devenv.exe, which is another VS2022 instance.
+9. Switch to this new instance and load your own project that uses SQLProvider, and it'll stop at the breakpoints.
 
 ### Other things to know
 
  - SQLProvider also runs ExpressionOptimizer functions to simplify the LINQ-expression-trees
- - If you do IN-query (LINQ-Contains) to IEnumerable, it's as normal IN-query, but if the source collection is SqlQueryable<SqlEntity>, then the query is serialized as a nested query, where we have to check that the parameter names won't collide (i.e. param1 can be used only once).
+ - If you do IN-query (LINQ-Contains) to IEnumerable, it's as normal IN-query. Still, if the source collection is SqlQueryable<SqlEntity>, then the query is serialized as a nested query, where we have to check that the parameter names won't collide (i.e. param1 can be used only once).
 
  This documentation was written on 2017-04-11.
 

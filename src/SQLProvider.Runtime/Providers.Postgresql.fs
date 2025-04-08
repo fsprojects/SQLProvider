@@ -34,20 +34,32 @@ module PostgreSQL =
                     | [] -> "" 
                     | x -> Environment.NewLine + "Details: " + Environment.NewLine + String.Join(Environment.NewLine, x)
                 let assemblyNames = String.Join(", ", assemblyNames |> List.toArray)
-                let resolutionPaths = String.Join(Environment.NewLine, paths |> Seq.filter(fun p -> not(String.IsNullOrEmpty p)))
+                let resolutionPaths = String.Join(Environment.NewLine, paths |> Seq.filter(String.IsNullOrEmpty >> not))
                 failwithf "Unable to resolve assemblies. One of %s must exist in the paths: %s %s %s" 
                     assemblyNames Environment.NewLine resolutionPaths details
 
-    let isLegacyVersion = lazy (assembly.Value.GetName().Version.Major < 3)
+    let isLegacyVersion = lazy (
+            let av = assembly.Value.GetName().Version.Major
+            av < 3, av < 4
+        )
     let findType name = 
-        let types = 
-            try assembly.Value.GetTypes() 
+        let types, err = 
+            try assembly.Value.GetTypes(), None
             with | :? System.Reflection.ReflectionTypeLoadException as e ->
                 let msgs = e.LoaderExceptions |> Seq.map(fun e -> e.GetBaseException().Message) |> Seq.distinct
                 let details = "Details: " + Environment.NewLine + String.Join(Environment.NewLine, msgs)
-                let platform = Reflection.getPlatform(System.Reflection.Assembly.GetExecutingAssembly())
-                failwith (e.Message + Environment.NewLine + details + (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else ""))
-        types |> Array.tryFind (fun t -> t.Name = name)
+                let platform = Reflection.getPlatform(Reflection.execAssembly.Force())
+                let errmsg = (e.Message + Environment.NewLine + details + (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else ""))
+                if e.Types.Length = 0 then
+                    failwith errmsg
+                else e.Types, Some errmsg
+        match types |> Array.tryFind(fun t -> (not (isNull t)) && t.Name = name) with
+        | Some t -> Some t
+        | None ->
+            match err with
+            | Some msg -> failwith msg
+            | None -> None
+
     let getType = findType >> Option.get
 
     let connectionType = lazy (getType "NpgsqlConnection")
@@ -72,18 +84,18 @@ module PostgreSQL =
     let tryReadValueProperty instance =
         let typ = instance.GetType()
         let prop = typ.GetProperty("Value")
-        if prop <> null
+        if not (isNull prop)
         then prop.GetGetMethod().Invoke(instance, [||]) |> Some
         else None
 
     let isOptionValue value =
-        if value = null then false else
+        if isNull value then false else
         let typ = value.GetType()
         typ.IsGenericType && typ.GetGenericTypeDefinition() = typedefof<Option<_>>
 
     let createCommandParameter (param:QueryParameter) value =
         let normalizedValue =
-            if not (isOptionValue value) then (if value = null || value.GetType() = typeof<DBNull> then box DBNull.Value else value) else
+            if not (isOptionValue value) then (if isNull value || (Type.(=) (value.GetType(), typeof<DBNull>)) then box DBNull.Value else value) else
             match tryReadValueProperty value with Some(v) -> v | None -> box DBNull.Value
         let p = Activator.CreateInstance(parameterType.Value, [||]) :?> IDbDataParameter
         p.ParameterName <- 
@@ -124,7 +136,7 @@ module PostgreSQL =
         let mappings =
             [ "abstime"                     , typemap<DateTime>                   ["Abstime"]
               "bigint"                      , typemap<int64>                      ["Bigint"]
-              "bit",                    (if isLegacyVersion.Value
+              "bit",                    (if fst isLegacyVersion.Value
                                          then typemap<bool>                       ["Bit"]
                                          else typemap<BitArray>                   ["Bit"])
               "bit varying"                 , typemap<BitArray>                   ["Varbit"]
@@ -141,7 +153,7 @@ module PostgreSQL =
               "date"                        , typemap<DateTime>                   ["Date"]
               "double precision"            , typemap<double>                     ["Double"]
               "geometry"                    , namemap "IGeometry"                 ["Geometry"]
-              "hstore",                 (if isLegacyVersion.Value
+              "hstore",                 (if fst isLegacyVersion.Value
                                          then typemap<string>                     ["Hstore"]
                                          else typemap<IDictionary<string,string>> ["Hstore"])
               "inet"                        , typemap<IPAddress>                  ["Inet"]
@@ -158,7 +170,7 @@ module PostgreSQL =
               "name"                        , typemap<string>                     ["Name"]
               "numeric"                     , typemap<decimal>                    ["Numeric"]
               "oid"                         , typemap<uint32>                     ["Oid"]
-            //"oidvector",              (if isLegacyVersion.Value
+            //"oidvector",              (if fst isLegacyVersion.Value
             //                           then typemap<string>                     ["Oidvector"]
             //                           else typemap<uint32[]>                   ["Oidvector"])
               "path"                        , namemap "NpgsqlPath"                ["Path"]
@@ -174,11 +186,15 @@ module PostgreSQL =
               "text"                        , typemap<string>                     ["Text"]
               "tid"                         , namemap "NpgsqlTid"                 ["Tid"]
               "time without time zone"      , typemap<TimeSpan>                   ["Time"]
-              "time with time zone",    (if isLegacyVersion.Value
+              "time with time zone",    (if fst isLegacyVersion.Value
                                          then namemap "NpgsqlTimeTZ"              ["TimeTZ"]
-                                         else typemap<DateTimeOffset>             ["TimeTZ"])
+                                         elif snd isLegacyVersion.Value
+                                         then typemap<DateTimeOffset>             ["TimeTZ"]
+                                         else typemap<DateTimeOffset>             ["TimeTz"])
               "timestamp without time zone" , typemap<DateTime>                   ["Timestamp"]
-              "timestamp with time zone"    , typemap<DateTime>                   ["TimestampTZ"]
+              "timestamp with time zone", (if snd isLegacyVersion.Value
+                                           then typemap<DateTime>                 ["TimestampTZ"]
+                                           else typemap<DateTime>                 ["TimestampTz"]) //Couldn't be DateTimeOffset, see https://github.com/fsprojects/SQLProvider/issues/838#issuecomment-2643659936
               "tsquery"                     , namemap "NpgsqlTsQuery"             ["TsQuery"]
               "tsvector"                    , namemap "NpgsqlTsVector"            ["TsVector"]
             //"txid_snapshot"               , typemap<???>                        ["???"]
@@ -225,21 +241,30 @@ module PostgreSQL =
         | :? System.Reflection.ReflectionTypeLoadException as ex ->
             let errorfiles = ex.LoaderExceptions |> Array.map(fun e -> e.GetBaseException().Message) |> Seq.distinct |> Seq.toArray
             let msg = ex.Message + "\r\n" + String.Join("\r\n", errorfiles)
-            raise(new System.Reflection.TargetInvocationException(msg, ex))
-        | :? System.Reflection.TargetInvocationException as ex when (ex.InnerException <> null && ex.InnerException :? DllNotFoundException) ->
-            let platform = Reflection.getPlatform(System.Reflection.Assembly.GetExecutingAssembly())
-            let msg = ex.GetBaseException().Message + " , Path: " + (System.IO.Path.GetFullPath resolutionPath) +
+            raise(System.Reflection.TargetInvocationException(msg, ex))
+        | :? System.Reflection.TargetInvocationException as ex when ((not(isNull ex.InnerException)) && ex.InnerException :? DllNotFoundException) ->
+            let platform = Reflection.getPlatform(Reflection.execAssembly.Force())
+            let msg = ex.GetBaseException().Message + " , Path: " + (Reflection.listResolutionFullPaths resolutionPath) +
                         (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else "")
-            raise(new System.Reflection.TargetInvocationException(msg, ex))
-        | :? System.Reflection.TargetInvocationException as e when (e.InnerException <> null) ->
-            failwithf "Could not create the connection, most likely this means that the connectionString is wrong. See error from Npgsql to troubleshoot: %s" e.InnerException.Message
+            raise(System.Reflection.TargetInvocationException(msg, ex))
+        | :? System.Reflection.TargetInvocationException as e when not(isNull e.InnerException) ->
+            match e.GetBaseException() with
+            | :? System.Reflection.ReflectionTypeLoadException as rex ->
+                let errorfiles = rex.LoaderExceptions |> Array.map(fun e -> e.GetBaseException().Message) |> Seq.distinct |> Seq.toArray
+                let msg = rex.Message + "\r\n" + String.Join("\r\n", errorfiles)
+                raise(System.Reflection.TargetInvocationException(msg, e))
+            | be ->
+                let platform = Reflection.getPlatform(Reflection.execAssembly.Force())
+                let msg = be.Message + ", Path: " + (Reflection.listResolutionFullPaths resolutionPath) +
+                            (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else "")
+                failwithf "Could not create the connection, most likely this means that the connectionString is wrong. See error from Npgsql to troubleshoot: %s %s" msg e.InnerException.Message
         | :? System.TypeInitializationException as te when (te.InnerException :? System.Reflection.TargetInvocationException) ->
             let ex = te.InnerException :?> System.Reflection.TargetInvocationException
-            let platform = Reflection.getPlatform(System.Reflection.Assembly.GetExecutingAssembly())
-            let msg = ex.GetBaseException().Message + ", Path: " + (System.IO.Path.GetFullPath resolutionPath) +
+            let platform = Reflection.getPlatform(Reflection.execAssembly.Force())
+            let msg = ex.GetBaseException().Message + ", Path: " + (Reflection.listResolutionFullPaths resolutionPath) +
                         (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else "")
-            raise(new System.Reflection.TargetInvocationException(msg, ex.InnerException)) 
-        | :? System.TypeInitializationException as te when (te.InnerException <> null) -> raise (te.GetBaseException())
+            raise(System.Reflection.TargetInvocationException(msg, ex.InnerException)) 
+        | :? System.TypeInitializationException as te when not(isNull te.InnerException) -> raise (te.GetBaseException())
 
     let createCommand commandText connection =
         try
@@ -296,7 +321,7 @@ module PostgreSQL =
                         use reader = com.ExecuteReader()
                         SingleResultSet(col.Name, Sql.dataReaderToArray reader)
                     | ValueSome "refcursor" ->
-                        if not isLegacyVersion.Value then
+                        if not (fst isLegacyVersion.Value) then
                             let cursorName = com.ExecuteScalar() |> unbox
                             com.CommandText <- sprintf @"FETCH ALL IN ""%s""" cursorName
                             com.CommandType <- CommandType.Text
@@ -355,7 +380,7 @@ module PostgreSQL =
                         }
                     | ValueSome "refcursor" ->
                         task {
-                            if not isLegacyVersion.Value then
+                            if not (fst isLegacyVersion.Value) then
                                 let! cur = com.ExecuteScalarAsync()
                                 let cursorName = cur |> unbox
                                 com.CommandText <- sprintf @"FETCH ALL IN ""%s""" cursorName
@@ -498,9 +523,10 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
         let (~~) (t:string) = sb.Append t |> ignore
         let cmd = PostgreSQL.createCommand "" con
         cmd.Connection <- con
-        let haspk = schemaCache.PrimaryKeys.ContainsKey(entity.Table.FullName)
-        let pk = if haspk then schemaCache.PrimaryKeys.[entity.Table.FullName] else []
-
+        let haspk, pk =
+            match schemaCache.PrimaryKeys.TryGetValue entity.Table.FullName with
+            | true, pk -> true, pk
+            | false, _ -> false, []
         let columnNamesWithValues = 
             (([],0), entity.ColumnValuesWithDefinition)
             ||> Seq.fold(fun (out, i) (k,v,c) ->
@@ -528,8 +554,8 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
         | Throw -> ()
         | Update ->
           ~~(sprintf " ON CONFLICT (%s) DO UPDATE SET %s "                
-                (String.Join(",", pk |> List.map (sprintf "\"%s\"")))
-                (String.Join(",", columnNamesWithValues |> List.map(fun (c,p) -> sprintf "\"%s\" = %s" c p.ParameterName ) )))
+                (String.concat "," (pk |> List.map (sprintf "\"%s\"")))
+                (String.concat "," (columnNamesWithValues |> List.map(fun (c,p) -> sprintf "\"%s\" = %s" c p.ParameterName ) )))
         | DoNothing ->
           ~~(sprintf " ON CONFLICT DO NOTHING ")
 
@@ -545,8 +571,10 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
         let (~~) (t:string) = sb.Append t |> ignore
         let cmd = PostgreSQL.createCommand "" con
         cmd.Connection <- con
-        let haspk = schemaCache.PrimaryKeys.ContainsKey(entity.Table.FullName)
-        let pk = if haspk then schemaCache.PrimaryKeys.[entity.Table.FullName] else []
+        let pk =
+            match schemaCache.PrimaryKeys.TryGetValue entity.Table.FullName with
+            | true, pk -> pk
+            | false, _ -> []
         sb.Clear() |> ignore
 
         match pk with
@@ -579,8 +607,8 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
         | ks -> 
             ~~(sprintf "UPDATE \"%s\".\"%s\" SET %s WHERE "
                 entity.Table.Schema entity.Table.Name
-                (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "\"%s\" = %s" c p.ParameterName ) )))
-            ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "\"%s\" = @pk%i" k i))) + ";")
+                (String.concat "," (data |> Array.map(fun (c,p) -> sprintf "\"%s\" = %s" c p.ParameterName ) )))
+            ~~(String.concat " AND " (ks |> List.mapi(fun i k -> (sprintf "\"%s\" = @pk%i" k i))) + ";")
 
         data |> Array.map snd |> Array.iter (cmd.Parameters.Add >> ignore)
         pkValues |> List.iteri(fun i pkValue ->
@@ -594,8 +622,10 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
         let cmd = PostgreSQL.createCommand "" con
         cmd.Connection <- con
         sb.Clear() |> ignore
-        let haspk = schemaCache.PrimaryKeys.ContainsKey(entity.Table.FullName)
-        let pk = if haspk then schemaCache.PrimaryKeys.[entity.Table.FullName] else []
+        let pk =
+            match schemaCache.PrimaryKeys.TryGetValue entity.Table.FullName with
+            | true, pk -> pk
+            | false, _ -> []
         sb.Clear() |> ignore
         let pkValues =
             match entity.GetPkColumnOption<obj> pk with
@@ -610,7 +640,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
         | [] -> ()
         | ks -> 
             ~~(sprintf "DELETE FROM \"%s\".\"%s\" WHERE " entity.Table.Schema entity.Table.Name)
-            ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "%s = @id%i" k i))))
+            ~~(String.concat " AND " (ks |> List.mapi(fun i k -> (sprintf "\"%s\" = @id%i" k i))))
 
         cmd.CommandText <- sb.ToString()
         cmd
@@ -625,6 +655,9 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
               |> Array.filter (not << String.IsNullOrWhiteSpace)              
 
     interface ISqlProvider with
+        member __.CloseConnectionAfterQuery = true
+        member __.DesignConnection = true
+        member __.StoredProcedures = true
         member __.GetLockObject() = myLock
         member __.GetTableDescription(con,tableName) = 
             Sql.connect con (fun _ ->
@@ -636,13 +669,13 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                                 """ tableName) con
                 if reader.Read() then
                     let comment = Sql.dbUnbox<string> reader.["description"]
-                    if comment <> null then comment else ""
+                    if isNull comment then "" else comment
                 else
                 "")
         member __.GetColumnDescription(con,tableName,columnName) = 
             Sql.connect con (fun _ ->
-                let sn = tableName.Substring(0,tableName.LastIndexOf(".")) 
-                let tn = tableName.Substring(tableName.LastIndexOf(".")+1) 
+                let sn = tableName.Substring(0,tableName.LastIndexOf('.')) 
+                let tn = tableName.Substring(tableName.LastIndexOf('.')+1) 
                 use reader = 
                     Sql.executeSql PostgreSQL.createCommand (
                         sprintf """SELECT description
@@ -656,7 +689,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                                 """ tableName sn tn columnName) con
                 if reader.Read() then
                     let comment = Sql.dbUnbox<string> reader.["description"]
-                    if comment <> null then comment else ""
+                    if isNull comment then "" else comment
                 else
                 "")
         member __.CreateConnection(connectionString) = PostgreSQL.createConnection connectionString
@@ -681,7 +714,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                               Type = (Sql.dbUnbox<string> reader.["table_type"]).ToLower() }
                 
                 yield schemaCache.Tables.GetOrAdd(table.FullName, table)
-                ]
+                ] |> List.toArray
 
         member __.GetPrimaryKey(table) =
             match schemaCache.PrimaryKeys.TryGetValue table.FullName with
@@ -705,6 +738,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                             ,coalesce(pg_index.indisprimary, false)                        AS is_primary_key
                             ,coalesce(pg_class.relkind = 'S', false)                       AS is_sequence
                             ,pg_attribute.atthasdef                                        AS has_default
+                            ,coalesce(pg_attribute.attgenerated = 's', false)              AS is_generated
                         FROM pg_attribute 
                         LEFT JOIN pg_index
                             ON pg_attribute.attrelid = pg_index.indrelid
@@ -728,7 +762,10 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                         let columns =
                             [ while reader.Read() do
                             
-                                let dimensions = Sql.dbUnbox<int> reader.["array_dimensions"]  
+                                let dimensions =
+                                    let dims = reader.["array_dimensions"]
+                                    try Sql.dbUnbox<int> dims
+                                    with :? InvalidCastException -> Sql.dbUnbox<int16> dims |> int
                                 let baseTypeName = Sql.dbUnbox<string> reader.["base_data_type"]
                                 let fullTypeName = Sql.dbUnbox<string> reader.["data_type_with_sizes"]
                                 let baseDataType = PostgreSQL.findDbType baseTypeName
@@ -772,7 +809,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                                           IsNullable = Sql.dbUnbox<bool> reader.["is_nullable"]
                                           IsPrimaryKey = isPk
                                           IsAutonumber = isPk
-                                          IsComputed = false
+                                          IsComputed = Sql.dbUnbox<bool> reader.["is_generated"]
                                           HasDefault = Sql.dbUnbox<bool> reader.["has_default"]
                                           TypeInfo = ValueSome fullTypeName
                                         }
@@ -828,7 +865,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                     PostgreSQL.createCommandParameter (QueryParameter.Create("@table", 0)) table.Name |> command.Parameters.Add |> ignore
                     use reader = command.ExecuteReader()
 
-                    let children : Relationship list =
+                    let children : Relationship array =
                         [ while reader.Read() do
                             yield {
                                     Name = reader.GetString(0);
@@ -836,14 +873,14 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                                     PrimaryKey=reader.GetString(6)
                                     ForeignTable=Table.CreateFullName(reader.GetString(8), reader.GetString(1));
                                     ForeignKey=reader.GetString(2)
-                                  } ]
+                                  } ] |> List.toArray
                     reader.Dispose()
 
                     use command = PostgreSQL.createCommand (sprintf "%s WHERE KCU1.TABLE_NAME = @table" baseQuery) con
                     PostgreSQL.createCommandParameter (QueryParameter.Create("@table", 0)) table.Name |> command.Parameters.Add |> ignore
                     use reader = command.ExecuteReader()
 
-                    let parents : Relationship list =
+                    let parents : Relationship array =
                         [ while reader.Read() do
                             yield {
                                     Name = reader.GetString(0);
@@ -851,7 +888,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                                     PrimaryKey = reader.GetString(6)
                                     ForeignTable = Table.CreateFullName(reader.GetString(8), reader.GetString(1));
                                     ForeignKey = reader.GetString(2)
-                                  } ]
+                                  } ] |> List.toArray
                     schemaCache.Relationships.[table.FullName] <- (children,parents)
                     con.Close()
                     (children,parents)
@@ -862,7 +899,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
         member __.GetIndividualsQueryText(table,amount) = sprintf "SELECT * FROM \"%s\".\"%s\" LIMIT %i;" table.Schema table.Name amount
         member __.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM \"%s\".\"%s\" WHERE \"%s\".\"%s\".\"%s\" = @id" table.Schema table.Name table.Schema table.Name  column
 
-        member __.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript, _) =
+        member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript, con) =
             // NOTE: presently this is identical to the SQLite code (except the whitespace qualifiers),
             // however it is duplicated intentionally so that any Postgre specific
             // optimisations can be applied here.
@@ -873,12 +910,15 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                 incr param
                 sprintf "@param%i" !param
 
-            let createParam (value:obj) =
+            let createParam (columnDataType:DbType voption) (value:obj) =
                 let paramName = nextParam()
-                PostgreSQL.createCommandParameter (QueryParameter.Create(paramName, !param)) value
-
+                let p =PostgreSQL.createCommandParameter (QueryParameter.Create(paramName, !param)) value
+                match columnDataType with
+                | ValueNone -> ()
+                | ValueSome colType -> p.DbType <- colType
+                p
             let fieldParam (value:obj) =
-                let p = createParam value
+                let p = createParam ValueNone value
                 parameters.Add p
                 p.ParameterName
 
@@ -913,6 +953,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                     | IndexOf(SqlConstant search) -> sprintf "STRPOS(%s,%s)" (fieldParam search) column
                     | IndexOf(SqlCol(al2, col2)) -> sprintf "STRPOS(%s,%s)" (fieldNotation al2 col2) column
                     | CastVarchar -> sprintf "(%s::varchar)" column
+                    | CastInt -> sprintf "(%s::int)" column
                     // Date functions
                     | Date -> sprintf "DATE_TRUNC('day', %s)" column
                     | Year -> sprintf "DATE_PART('year', %s)" column
@@ -952,6 +993,8 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                     | CaseSql(f, SqlCol(al2, col2)) -> sprintf "CASE WHEN %s THEN %s ELSE %s END " (buildf f) column (fieldNotation al2 col2)
                     | CaseSql(f, SqlConstant itm) -> sprintf "CASE WHEN %s THEN %s ELSE %s END " (buildf f) column (fieldParam itm)
                     | CaseNotSql(f, SqlConstant itm) -> sprintf "CASE WHEN %s THEN %s ELSE %s END " (buildf f) (fieldParam itm) column
+                    | CaseSqlPlain(Condition.ConstantTrue, itm, _) -> sprintf " %s " (fieldParam itm)
+                    | CaseSqlPlain(Condition.ConstantFalse, _, itm2) -> sprintf " %s " (fieldParam itm2)
                     | CaseSqlPlain(f, itm, itm2) -> sprintf "CASE WHEN %s THEN %s ELSE %s END " (buildf f) (fieldParam itm) (fieldParam itm2)
                     | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
                 | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
@@ -965,16 +1008,17 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                         let build op preds (rest:Condition list option) =
                             ~~ "("
                             preds |> List.iteri( fun i (alias,col,operator,data) ->
+                                    let columnDataType = CommonTasks.searchDataTypeFromCache (this:>ISqlProvider) con sqlQuery baseAlias baseTable alias col
                                     let column = fieldNotation alias col
                                     let extractData data =
                                             match data with
                                             | Some(x) when (box x :? System.Linq.IQueryable) -> [||]
                                             | Some(x) when box x :? obj array || operator = FSharp.Data.Sql.In || operator = FSharp.Data.Sql.NotIn ->
                                                 // in and not in operators pass an array
-                                                (box x :?> obj []) |> Array.map createParam
+                                                (box x :?> obj []) |> Array.map (createParam columnDataType)
                                             | Some(x) ->
-                                                [|createParam (box x)|]
-                                            | None ->    [|createParam DBNull.Value|]
+                                                [|createParam columnDataType (box x)|]
+                                            | None ->    [|createParam columnDataType DBNull.Value|]
 
                                     let prefix = if i>0 then (sprintf " %s " op) else ""
                                     let paras = extractData data
@@ -1019,10 +1063,10 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                             ))
                             // there's probably a nicer way to do this
                             let rec aux = function
-                                | x::[] when preds.Length > 0 ->
+                                | [x] when preds.Length > 0 ->
                                     ~~ (sprintf " %s " op)
                                     filterBuilder' [x]
-                                | x::[] -> filterBuilder' [x]
+                                | [x] -> filterBuilder' [x]
                                 | x::xs when preds.Length > 0 ->
                                     ~~ (sprintf " %s " op)
                                     filterBuilder' [x]
@@ -1063,7 +1107,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
             // build the select statment, this is easy ...
             let selectcolumns =
                 if projectionColumns |> Seq.isEmpty then "1" else
-                String.Join(",",
+                (String.concat ","
                     [|for KeyValue(k,v) in projectionColumns do
                         let cols = (getTable k).FullName
                         let k = if k <> "" then k elif baseAlias <> "" then baseAlias else baseTable.Name
@@ -1089,13 +1133,13 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                     match sqlQuery.Grouping with
                     | [] -> FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation PostgreSQL.fieldNotationAlias sqlQuery.AggregateOp
                     | g  -> 
-                        let keys = g |> List.map(fst) |> List.concat |> List.map(fun (a,c) ->
+                        let keys = g |> List.collect fst |> List.map(fun (a,c) ->
                             let fn = fieldNotation a c
                             if not (tmpGrpParams.ContainsKey (a,c)) then
                                 tmpGrpParams.Add((a,c), fn)
                             if sqlQuery.Aliases.Count < 2 then fn
-                            else sprintf "%s as \"%s\"" fn fn)
-                        let aggs = g |> List.map(snd) |> List.concat
+                            else sprintf "%s as \"%s\"" fn (fn.Replace("\"", "")))
+                        let aggs = g |> List.collect snd
                         let res2 = FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation PostgreSQL.fieldNotationAlias aggs |> List.toSeq
                         [String.Join(", ", keys) + (if List.isEmpty aggs || List.isEmpty keys then ""  else ", ") + String.Join(", ", res2)] 
                 match extracolumns with
@@ -1110,7 +1154,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                     let destTable = getTable destAlias
                     ~~  (sprintf "%s \"%s\".\"%s\" as \"%s\" on "
                             joinType destTable.Schema destTable.Name destAlias)
-                    ~~  (String.Join(" AND ", (List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
+                    ~~  (String.concat " AND " ((List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
                         sprintf "%s = %s "
                             (fieldNotation (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias) foreignKey)
                             (fieldNotation (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias) primaryKey)
@@ -1120,8 +1164,9 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                 groupkeys
                 |> List.iteri(fun i (alias,column) ->
                     let cname =
-                        if tmpGrpParams.ContainsKey(alias,column) then tmpGrpParams.[alias,column]
-                        else fieldNotation alias column
+                        match tmpGrpParams.TryGetValue((alias,column)) with
+                        | true, x -> x
+                        | false, _ -> fieldNotation alias column
                     if i > 0 then ~~ ", "
                     ~~ cname)
 
@@ -1137,7 +1182,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                 // SELECT
                 if sqlQuery.Distinct && sqlQuery.Count then
                     let colsAggrs = columns.Split([|" as "|], StringSplitOptions.None)
-                    let distColumns = colsAggrs.[0] + (if colsAggrs.Length = 2 then "" else " || ',' || " + String.Join(" || ',' || ", colsAggrs |> Seq.filter(fun c -> c.Contains ",") |> Seq.map(fun c -> c.Substring(c.IndexOf(",")+1))))
+                    let distColumns = colsAggrs.[0] + (if colsAggrs.Length = 2 then "" else " || ',' || " + String.Join(" || ',' || ", colsAggrs |> Seq.filter(fun c -> c.Contains ",") |> Seq.map(fun c -> c.Substring(c.IndexOf(',')+1))))
                     ~~(sprintf "SELECT COUNT(DISTINCT %s) " distColumns)
                 elif sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columns)
                 elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
@@ -1159,13 +1204,13 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
 
             // GROUP BY
             if sqlQuery.Grouping.Length > 0 then
-                let groupkeys = sqlQuery.Grouping |> List.map(fst) |> List.concat
+                let groupkeys = sqlQuery.Grouping |> List.collect fst
                 if groupkeys.Length > 0 then
                     ~~" GROUP BY "
                     groupByBuilder groupkeys
 
             if sqlQuery.HavingFilters.Length > 0 then
-                let keys = sqlQuery.Grouping |> List.map(fst) |> List.concat
+                let keys = sqlQuery.Grouping |> List.collect fst
 
                 let f = [And([],Some (sqlQuery.HavingFilters |> CommonTasks.parseHaving fieldNotation keys))]
                 ~~" HAVING "
@@ -1192,10 +1237,10 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
             | None -> ()
 
             match sqlQuery.Take, sqlQuery.Skip with
-            | Some take, Some skip ->  ~~(sprintf " LIMIT %i OFFSET %i;" take skip)
-            | Some take, None ->  ~~(sprintf " LIMIT %i;" take)
-            | None, Some skip -> ~~(sprintf " LIMIT ALL OFFSET %i;" skip)
-            | None, None -> ()
+            | ValueSome take, ValueSome skip ->  ~~(sprintf " LIMIT %i OFFSET %i;" take skip)
+            | ValueSome take, ValueNone ->  ~~(sprintf " LIMIT %i;" take)
+            | ValueNone, ValueSome skip -> ~~(sprintf " LIMIT ALL OFFSET %i;" skip)
+            | ValueNone, ValueNone -> ()
 
             let sql = sb.ToString()
             (sql,parameters)
@@ -1215,7 +1260,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                 if con.State = ConnectionState.Open then con.Close()
                 con.Open()
                 // initially supporting update/create/delete of single entities, no hierarchies yet
-                entities.Keys
+                CommonTasks.sortEntities entities
                 |> Seq.iter(fun e ->
                     match e._State with
                     | Created ->
@@ -1242,8 +1287,8 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                         // remove the pk to prevent this attempting to be used again
                         e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
                         e._State <- Deleted
-                    | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
-                if scope<>null then scope.Complete()
+                    | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e)
+                if not(isNull scope) then scope.Complete()
 
             finally
                 con.Close()
@@ -1298,10 +1343,10 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                                 e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
                                 e._State <- Deleted
                             }
-                        | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
+                        | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e
 
-                    do! Utilities.executeOneByOne handleEntity (entities.Keys|>Seq.toList)
-                    if scope<>null then scope.Complete()
+                    let! _ = Sql.evaluateOneByOne handleEntity (CommonTasks.sortEntities entities |> Seq.toList)
+                    if not(isNull scope) then scope.Complete()
 
                 finally
                     con.Close()

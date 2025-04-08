@@ -35,7 +35,7 @@ type internal MSAccessProvider(contextSchemaPath) =
         let dt = con.GetSchema("DataTypes")
 
         let getDbType(providerType:int) =
-            let p = new OleDbParameter()
+            let p = OleDbParameter()
             p.OleDbType <- (Enum.ToObject(typeof<OleDbType>, providerType) :?> OleDbType)
             p.DbType
 
@@ -93,8 +93,8 @@ type internal MSAccessProvider(contextSchemaPath) =
         sb.Clear() |> ignore
         ~~(sprintf "INSERT INTO [%s] (%s) VALUES (%s)"//; SELECT @@IDENTITY;"
             entity.Table.Name
-            (String.Join(",", columnNames))
-            (String.Join(",", values |> Array.map(fun p -> p.ParameterName))))
+            (String.concat "," columnNames)
+            (String.concat "," (values |> Array.map(fun p -> p.ParameterName))))
         cmd.Parameters.AddRange(values)
         cmd.CommandText <- sb.ToString()
         cmd
@@ -104,9 +104,10 @@ type internal MSAccessProvider(contextSchemaPath) =
         let cmd = new OleDbCommand()
         cmd.Connection <- con :?> OleDbConnection
         let pk =
-            if not(schemaCache.PrimaryKeys.ContainsKey entity.Table.FullName) then
+            match schemaCache.PrimaryKeys.TryGetValue entity.Table.FullName with
+            | false, _ ->
                 failwith("Can't update entity: Table doesn't have a primary key: " + entity.Table.FullName)
-            schemaCache.PrimaryKeys.[entity.Table.FullName]
+            | true, pkv -> pkv
         sb.Clear() |> ignore
 
         match pk with
@@ -137,8 +138,8 @@ type internal MSAccessProvider(contextSchemaPath) =
         | ks -> 
             ~~(sprintf "UPDATE [%s] SET %s WHERE "
                 (entity.Table.Name.Replace("\"", ""))
-                (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "%s = %s" c p.ParameterName ) )))
-            ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "%s = @pk%i" k i))))
+                ((String.concat "," (data |> Array.map(fun (c,p) -> sprintf "%s = %s" c p.ParameterName )) )))
+            ~~(String.concat " AND " (ks |> List.mapi(fun i k -> (sprintf "%s = @pk%i" k i))))
 
         cmd.Parameters.AddRange(data |> Array.map snd)
         pkValues |> List.iteri(fun i pkValue ->
@@ -168,15 +169,18 @@ type internal MSAccessProvider(contextSchemaPath) =
         | [] -> ()
         | ks -> 
             ~~(sprintf "DELETE FROM [%s] WHERE " (entity.Table.Name.Replace("\"", "")))
-            ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "%s = @id%i" k i))))
+            ~~(String.concat " AND " (ks |> List.mapi(fun i k -> (sprintf "%s = @id%i" k i))))
 
         cmd.CommandText <- sb.ToString()
         cmd
 
     interface ISqlProvider with
+        member __.CloseConnectionAfterQuery = false
+        member __.DesignConnection = true
+        member __.StoredProcedures = true
         member __.GetLockObject() = myLock
         member __.GetTableDescription(con,tableName) = 
-            let t = tableName.Substring(tableName.LastIndexOf(".")+1) 
+            let t = tableName.Substring(tableName.LastIndexOf('.')+1) 
             let desc = 
                 (con:?>OleDbConnection).GetSchema("Tables",[|null;null;t.Replace("\"", "")|]).AsEnumerable() 
                 |> Seq.map(fun row ->row.["DESCRIPTION"].ToString()) |> Seq.toList
@@ -185,7 +189,7 @@ type internal MSAccessProvider(contextSchemaPath) =
             | _ -> ""
 
         member __.GetColumnDescription(con,tableName,columnName) = 
-            let t = tableName.Substring(tableName.LastIndexOf(".")+1) 
+            let t = tableName.Substring(tableName.LastIndexOf('.')+1) 
             let desc = 
                 (con:?>OleDbConnection).GetSchema("Columns",[|null;null;t.Replace("\"", "");columnName|]).AsEnumerable() 
                 |> Seq.map(fun row ->row.["DESCRIPTION"].ToString())
@@ -222,7 +226,7 @@ type internal MSAccessProvider(contextSchemaPath) =
                 |> Seq.map (fun row -> let table ={ Schema = Path.GetFileNameWithoutExtension(con.DataSource); Name = row.["TABLE_NAME"].ToString() ; Type=row.["TABLE_TYPE"].ToString() }
                                        schemaCache.Tables.GetOrAdd(table.FullName,table)
                                        )
-                |> List.ofSeq
+                |> Array.ofSeq
             tables
 
         member __.GetPrimaryKey(table) =
@@ -287,20 +291,20 @@ type internal MSAccessProvider(contextSchemaPath) =
                                                         let fktableName = sprintf "[%s].[%s]" table.Schema  (r.["FK_TABLE_NAME"].ToString())
                                                         let name = sprintf "FK_%s_%s" (r.["FK_TABLE_NAME"].ToString()) (r.["PK_TABLE_NAME"].ToString())
                                                         {Name=name;PrimaryTable = pktableName;PrimaryKey=r.["PK_COLUMN_NAME"].ToString();ForeignTable=fktableName;ForeignKey=r.["FK_COLUMN_NAME"].ToString()})
-                                |> List.ofSeq
+                                |> Array.ofSeq
             let parents  = rels |> Seq.filter (fun r -> r.["FK_TABLE_NAME"].ToString() = table.Name)
                                 |> Seq.map    (fun r -> let pktableName = sprintf "[%s].[%s]" table.Schema  (r.["PK_TABLE_NAME"].ToString())
                                                         let fktableName = table.FullName
                                                         let name = sprintf "FK_%s_%s" (r.["FK_TABLE_NAME"].ToString()) (r.["PK_TABLE_NAME"].ToString())
                                                         {Name=name;PrimaryTable = pktableName;PrimaryKey=r.["PK_COLUMN_NAME"].ToString();ForeignTable=fktableName;ForeignKey=r.["FK_COLUMN_NAME"].ToString()})
-                                |> List.ofSeq
+                                |> Array.ofSeq
             (children,parents))
 
         member __.GetSprocs(_) = []
         member __.GetIndividualsQueryText(table,amount) = sprintf "SELECT TOP %i * FROM [%s]" amount table.Name
         member __.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM [%s] WHERE [%s] = @id" table.Name column
 
-        member __.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript, _) =
+        member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript, con) =
             let parameters = ResizeArray<_>()
             // make this nicer later.. just try and get the damn thing to work properly (well, at all) for now :D
             // NOTE: really need to assign the parameters their correct SQL types
@@ -309,15 +313,19 @@ type internal MSAccessProvider(contextSchemaPath) =
                 incr param
                 sprintf "@param%i" !param
 
-            let createParam (value:obj) =
+            let createParam (columnDataType:DbType voption) (value:obj) =
                 let paramName = nextParam()
                 let valu = match value with
                             | :? DateTime as dt -> dt.ToOADate() |> box
                             | _           -> value
-                OleDbParameter(paramName,valu):> IDbDataParameter
+                let p = OleDbParameter(paramName,valu):> IDbDataParameter
+                match columnDataType with
+                | ValueNone -> ()
+                | ValueSome colType -> p.DbType <- colType
+                p
 
             let fieldParam (value:obj) =
-                let p = createParam value
+                let p = createParam ValueNone value
                 parameters.Add p
                 p.ParameterName
 
@@ -358,6 +366,7 @@ type internal MSAccessProvider(contextSchemaPath) =
                     | ToUpper -> sprintf "UCase(%s)" column
                     | ToLower -> sprintf "LCase(%s)" column
                     | CastVarchar -> sprintf "CStr(%s)" column
+                    | CastInt -> sprintf "Val(%s)" column
                     // Date functions
                     | Date -> sprintf "DateValue(Format(%s, \"yyyy-mm-dd\"))" column
                     | Year -> sprintf "Year(%s)" column
@@ -401,6 +410,8 @@ type internal MSAccessProvider(contextSchemaPath) =
                     | CaseSql(f, SqlCol(al2, col2)) -> sprintf "iif(%s, %s, %s)" (buildf f) column (fieldNotation al2 col2)
                     | CaseSql(f, SqlConstant itm) -> sprintf "iif(%s, %s, %s)" (buildf f) column (fieldParam itm)
                     | CaseNotSql(f, SqlConstant itm) -> sprintf "iif(%s, %s, %s)" (buildf f) (fieldParam itm) column
+                    | CaseSqlPlain(Condition.ConstantTrue, itm, _) -> sprintf " %s " (fieldParam itm)
+                    | CaseSqlPlain(Condition.ConstantFalse, _, itm2) -> sprintf " %s " (fieldParam itm2)
                     | CaseSqlPlain(f, itm, itm2) -> sprintf "iif(%s,%s,%s)" (buildf f) (fieldParam itm) (fieldParam itm2)
                     | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
                 | GroupColumn (StdDevOp key, KeyColumn _) -> sprintf "STDEV(%s)" (colSprint key)
@@ -417,6 +428,7 @@ type internal MSAccessProvider(contextSchemaPath) =
                         let build op preds (rest:Condition list option) =
                             ~~ "("
                             preds |> List.iteri( fun i (alias,col,operator,data) ->
+                                    let columnDataType = CommonTasks.searchDataTypeFromCache (this:>ISqlProvider) con sqlQuery baseAlias baseTable alias col
                                     let column = fieldNotation alias col
                                     let extractData data =
                                             match data with
@@ -424,9 +436,9 @@ type internal MSAccessProvider(contextSchemaPath) =
                                             | Some(x) when (box x :? obj array) ->
                                                 // in and not in operators pass an array
                                                 let strings = box x :?> obj array
-                                                strings |> Array.map createParam
-                                            | Some(x) -> [|createParam (box x)|]
-                                            | None ->    [|createParam DBNull.Value|]
+                                                strings |> Array.map (createParam columnDataType)
+                                            | Some(x) -> [|createParam columnDataType (box x)|]
+                                            | None ->    [|createParam columnDataType DBNull.Value|]
 
                                     let prefix = if i>0 then (sprintf " %s " op) else ""
                                     let paras = extractData data
@@ -471,10 +483,10 @@ type internal MSAccessProvider(contextSchemaPath) =
                             ))
                             // there's probably a nicer way to do this
                             let rec aux = function
-                                | x::[] when preds.Length > 0 ->
+                                | [x] when preds.Length > 0 ->
                                     ~~ (sprintf " %s " op)
                                     filterBuilder' [x]
-                                | x::[] -> filterBuilder' [x]
+                                | [x] -> filterBuilder' [x]
                                 | x::xs when preds.Length > 0 ->
                                     ~~ (sprintf " %s " op)
                                     filterBuilder' [x]
@@ -511,7 +523,7 @@ type internal MSAccessProvider(contextSchemaPath) =
             // build the select statement, this is easy ...
             let selectcolumns =
                 if projectionColumns |> Seq.isEmpty then "1" else
-                String.Join(",",
+                (String.concat ","
                     [|for KeyValue(k,v) in projectionColumns do
                         let cols = (getTable k).FullName
                         let k = if k <> "" then k elif baseAlias <> "" then baseAlias else baseTable.Name
@@ -537,13 +549,13 @@ type internal MSAccessProvider(contextSchemaPath) =
                     match sqlQuery.Grouping with
                     | [] -> FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias sqlQuery.AggregateOp
                     | g  -> 
-                        let keys = g |> List.map(fst) |> List.concat |> List.map(fun (a,c) ->
+                        let keys = g |> List.collect fst |> List.map(fun (a,c) ->
                             let fn = fieldNotation a c
                             if not (tmpGrpParams.ContainsKey (a,c)) then
                                 tmpGrpParams.Add((a,c), fn)
                             if sqlQuery.Aliases.Count < 2 then fn
                             else sprintf "%s as [%s]" fn fn)
-                        let aggs = g |> List.map(snd) |> List.concat
+                        let aggs = g |> List.collect snd
                         let res2 = FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias aggs |> List.toSeq
                         [String.Join(", ", keys) + (if List.isEmpty aggs || List.isEmpty keys then ""  else ", ") + String.Join(", ", res2)] 
                 match extracolumns with
@@ -559,7 +571,7 @@ type internal MSAccessProvider(contextSchemaPath) =
                     let destTable = getTable destAlias
                     ~~  (sprintf "%s [%s] as [%s] on "
                             joinType destTable.Name destAlias)
-                    ~~  (String.Join(" AND ", (List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
+                    ~~  (String.concat " AND " ((List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
                         sprintf "%s = %s"
                             (fieldNotation (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias) foreignKey)
                             (fieldNotation (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias) primaryKey)
@@ -570,8 +582,9 @@ type internal MSAccessProvider(contextSchemaPath) =
                 groupkeys
                 |> List.iteri(fun i (alias,column) ->
                     let cname =
-                        if tmpGrpParams.ContainsKey(alias,column) then tmpGrpParams.[alias,column]
-                        else fieldNotation alias column
+                        match tmpGrpParams.TryGetValue((alias,column)) with
+                        | true, x -> x
+                        | false, _ -> fieldNotation alias column
                     if i > 0 then ~~ ", "
                     ~~ cname)
 
@@ -584,12 +597,12 @@ type internal MSAccessProvider(contextSchemaPath) =
             //add in 'numLinks' open parens, after FROM, closing each after each JOIN statement
             let numLinks = sqlQuery.Links.Length
             if isDeleteScript then
-                ~~(sprintf "DELETE FROM %s[%s] " (new String('(',numLinks)) (baseTable.Name.Replace("\"","")))
+                ~~(sprintf "DELETE FROM %s[%s] " (String('(',numLinks)) (baseTable.Name.Replace("\"","")))
             else 
                 // SELECT
                 if sqlQuery.Distinct && sqlQuery.Count then
                     let colsAggrs = columns.Split([|" as "|], StringSplitOptions.None)
-                    let distColumns = colsAggrs.[0] + (if colsAggrs.Length = 2 then "" else " & ',' & " + String.Join(" & ',' & ", colsAggrs |> Seq.filter(fun c -> c.Contains ",") |> Seq.map(fun c -> c.Substring(c.IndexOf(",")+1))))
+                    let distColumns = colsAggrs.[0] + (if colsAggrs.Length = 2 then "" else " & ',' & " + String.Join(" & ',' & ", colsAggrs |> Seq.filter(fun c -> c.Contains ",") |> Seq.map(fun c -> c.Substring(c.IndexOf(',')+1))))
                     ~~(sprintf "SELECT COUNT(DISTINCT %s) " distColumns)
                 elif sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s%s " (if sqlQuery.Take.IsSome then sprintf "TOP %i " sqlQuery.Take.Value else "")   columns)
                 elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
@@ -597,7 +610,7 @@ type internal MSAccessProvider(contextSchemaPath) =
                 // FROM
 
                 let bal = if baseAlias = "" then baseTable.Name else baseAlias
-                ~~(sprintf "FROM %s[%s] as [%s] " (new String('(',numLinks)) (baseTable.Name.Replace("\"","")) bal)
+                ~~(sprintf "FROM %s[%s] as [%s] " (String('(',numLinks)) (baseTable.Name.Replace("\"","")) bal)
                 sqlQuery.CrossJoins |> Seq.iter(fun (a,t) -> ~~(sprintf ", [%s] as [%s] " (t.Name.Replace("\"","")) a))
 
             fromBuilder(numLinks)
@@ -612,13 +625,13 @@ type internal MSAccessProvider(contextSchemaPath) =
 
             // GROUP BY
             if sqlQuery.Grouping.Length > 0 then
-                let groupkeys = sqlQuery.Grouping |> List.map(fst) |> List.concat
+                let groupkeys = sqlQuery.Grouping |> List.collect fst
                 if groupkeys.Length > 0 then
                     ~~" GROUP BY "
                     groupByBuilder groupkeys
 
             if sqlQuery.HavingFilters.Length > 0 then
-                let keys = sqlQuery.Grouping |> List.map(fst) |> List.concat
+                let keys = sqlQuery.Grouping |> List.collect fst
 
                 let f = [And([],Some (sqlQuery.HavingFilters |> CommonTasks.parseHaving fieldNotation keys))]
                 ~~" HAVING "
@@ -666,7 +679,7 @@ type internal MSAccessProvider(contextSchemaPath) =
                 use trnsx = con.BeginTransaction()
                 try
                     // initially supporting update/create/delete of single entities, no hierarchies yet
-                    entities.Keys
+                    (CommonTasks.sortEntities entities |> Seq.toList)
                     |> Seq.iter(fun e ->
                         match e._State with
                         | Created ->
@@ -696,7 +709,7 @@ type internal MSAccessProvider(contextSchemaPath) =
                             // remove the pk to prevent this attempting to be used again
                             e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
                             e._State <- Deleted
-                        | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
+                        | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e)
                     trnsx.Commit()
 
                 with _ ->
@@ -760,9 +773,9 @@ type internal MSAccessProvider(contextSchemaPath) =
                                     e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
                                     e._State <- Deleted
                                 }
-                            | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
+                            | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e
 
-                        do! Utilities.executeOneByOne handleEntity (entities.Keys|>Seq.toList)
+                        let! _ = Sql.evaluateOneByOne handleEntity (CommonTasks.sortEntities entities |> Seq.toList)
                         trnsx.Commit()
 
                     with _ ->

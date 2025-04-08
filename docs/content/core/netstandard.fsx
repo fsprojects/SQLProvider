@@ -1,4 +1,4 @@
-﻿(**
+(**
 
 # .NET Standard / .NET Core support
 
@@ -8,7 +8,7 @@ Install e.g. with: `dotnet add package SQLProvider --version 1.1.18`
 
 
 
-You will need some configuration to your project files, see the examples. 
+You will need some configuration for your project files; see the examples. 
  - You need a path to fsc.
  - You need your database driver and dependency dlls to resolutionPath-folder. 
 
@@ -43,50 +43,50 @@ dotnet run
 
 You need your database connection driver to also support .NET Core.
 If your database connection driver has external dependencies, they have to be also present
-(e.g. a project prebuild-task to move them to resolution path).
+(e.g. a project prebuild-task to move them to the resolution path).
 
-Connection string can be passed as hard-coded static parameter (development) or `GetDataContext(connectionstring)` parameter on runtime, but fetching it automatically from the application configuration is not supported.
+The connection string can be passed as a hard-coded static parameter (development) or `GetDataContext(connectionstring)` parameter on runtime, but fetching it automatically from the application configuration is not supported.
 
 The target frameworks are defined in the project file: `<TargetFrameworks>net461;netcoreapp2.0;netstandard2.0</TargetFrameworks>`
-Corresponding files goes to root bin paths, e.g.: \bin\netstandard2.0
+Corresponding files go to root bin paths, e.g.: \bin\lib\netstandard2.0
 
 #### Microsoft Sql Server
 
-If you plan to run Microsoft SQL Server, you need a dependency to System.Data.SqlClient and a post-build task to
-copy correct dll from under `System.Data.SqlClient\runtimes\...\` to your execution folder.
+If you plan to run Microsoft SQL Server, you need a dependency on System.Data.SqlClient and a post-build task to
+copy the correct dll under `System.Data.SqlClient\runtimes\...\` to your execution folder.
 
 #### MySql
 
 MySQL is using MySQLConnector.
-Alternative is to use provided custom build of MySQL.Data.dll (6.10-rc) compiled from sources to .Net Standard 2.0.
+The alternative is to use the provided custom build of MySQL.Data.dll (6.10-rc) compiled from sources to .Net Standard 2.0.
 As the official MySQL.Data.dll does not support .NET Standard 2.0. See: https://bugs.mysql.com/bug.php?id=88016
 
 #### SQLite
 
-SQLite is using Microsoft.Data.Sqlite library which has dependency to non-managed e_sqlite3.dll.
-Ensure that the correct platform specific file is found either from referencePath or PATH environment variable.
+SQLite is using Microsoft.Data.Sqlite library, which has a dependency on non-managed e_sqlite3.dll.
+Ensure that the correct platform-specific file is found in referencePath or the PATH environment variable.
 
-Due to lack of Mono-support in Microsoft.Data.SQLite and Core-support in System.Data.SQLite, there is no
+Due to the lack of Mono-support in Microsoft.Data.SQLite and Core-support in System.Data.SQLite, there is no
 common driver that could work on both environments. That's why build is not possible with Mac/Ubuntu.
-Microsoft.Data.Sqlite.Core.Backport could maybe work, not tested.
+Microsoft.Data.Sqlite.Core.Backport could work, but it has not been tested.
 
 #### Non-Windows environment (Mac / Ubuntu / Linux / ...)
 
-On Windows you can reference .NET Standard 2.0 dlls in FSharp interactive but in Osx or Linux you cannot as Mono is not .NET Standard 2.0 compatible. 
+On Windows, you can reference .NET Standard 2.0 dlls in FSharp interactive, but in Osx or Linux, you cannot, as Mono is not .NET Standard 2.0 compatible. 
 
 Non-Windows typeprovider will call Mono on compile-time. Mono will use .Net 4.5.1 libraries. 
-Typeprovider handles that on compilation, and after compile your assembly will ve .NET Core compatible.
-But your compilation resolutionPath reference assemblies have to be .Net 4.5.1 version and your build folder
-have to have core references, e.g. via PackageReferences.
+Typeprovider handles that on compilation, and after compiling, your assembly will be .NET Core compatible.
+However, your compilation resolutionPath reference assemblies have to be in the .Net 4.5.1 version, and your build folder
+has to have core references, e.g., via PackageReferences.
 
-On Ubuntu you probably have to use sudo for both dotnet restore and dotnet build.
-If you forgot the sudo, try to remove bin and obj folders and then run restore again.
+On Ubuntu, you probably have to use sudo for both dotnet restore and dotnet build.
+If you forgot the sudo, try to remove the bin and obj folders and then rerun the restore.
 
 ## Some Technical Details
 
 .NET Standard solution is located at `/src/SQLProvider.Standard/SQLProvider.Standard.fsproj`
 
-The following files is needed to the NuGet package, from the .NET Standard SDK:
+The following files are needed to the NuGet package, from the .NET Standard SDK:
 netstandard.dll, System.Console.dll, System.IO.dll, System.Reflection.dll, System.Runtime.dll
 
 You can find net461 versions of them by default from (e.g. 2.0.0, can be also something else like 2.0.2):

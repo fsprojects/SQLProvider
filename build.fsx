@@ -1,12 +1,51 @@
-#r "paket: groupref build //"
+printfn "Building..."
 //#load "docs/CLI.fs"
 
+#if FAKE
+#r "paket: groupref build //"
 #r "./packages/build/System.Data.SqlClient/lib/netstandard2.0/System.Data.SqlClient.dll"
+open System.Data.SqlClient
+#endif
+
 
 #if !FAKE
-#load "./.fake/build.fsx/intellisense.fsx"
-#r "netstandard" // Temp fix for https://github.com/fsharp/FAKE/issues/1985
+//#load "./.fake/build.fsx/intellisense.fsx"
+//Versions should be compatible with paket.lock Build group:
+#r "nuget: Microsoft.SourceLink.GitHub, 8.0"
+//#r "./paket-files/build/fsharp/FAKE/modules/Octokit/Octokit.fsx"
+#r "nuget: FSharp.Formatting, 21.0.0-beta-003"
+#r "nuget: Nuget.CommandLine"
+#r "nuget: RazorEngine"
+#r "nuget: Fake.IO.FileSystem"
+#r "nuget: Fake.Core.Target"
+#r "nuget: Fake.Core.ReleaseNotes"
+#r "nuget: FAKE.Core.Environment"
+#r "nuget: Fake.DotNet.Cli"
+#r "nuget: Fake.Core.Process"
+#r "nuget: Fake.DotNet.AssemblyInfoFile"
+#r "nuget: Fake.Tools.Git"
+#r "nuget: Fake.DotNet.Paket"
+#r "nuget: Fake.Api.GitHub"
+#r "nuget: Fake.BuildServer.AppVeyor"
+#r "nuget: Fake.BuildServer.Travis"
+#r "nuget: Fake.DotNet.MSBuild"
+#r "nuget: Fake.DotNet.FSFormatting"
+#r "nuget: Fake.DotNet.Testing.NUnit"
+#r "nuget: FSharp.Compiler.Service"
+#r "nuget: Microsoft.Data.SqlClient"
+#r "nuget: MSBuild.StructuredLogger, 2.2.337"
+// Boilerplate
+System.Environment.GetCommandLineArgs()
+|> Array.skip 2 // skip fsi.exe; build.fsx
+|> Array.toList
+|> Fake.Core.Context.FakeExecutionContext.Create false __SOURCE_FILE__
+|> Fake.Core.Context.RuntimeContext.Fake
+|> Fake.Core.Context.setExecutionContext
+
+open Microsoft.Data.SqlClient
 #endif
+
+
 
 open Fake
 open Fake.SystemHelper
@@ -108,11 +147,15 @@ Target.create "AssemblyInfo" (fun _ ->
 // Clean build results
 
 Target.create "Clean" (fun _ ->
+    !! "bin/" |> Shell.cleanDirs
     !! "**/**/bin/" |> Shell.cleanDirs
     !! "**/**/temp/" |> Shell.cleanDirs
     !! "**/**/obj/" |> Shell.cleanDirs
     !! "**/**/test*/**/obj/" |> Shell.cleanDirs
-    
+    !! "**/**/test*/SqlProvider.Core.Tests/MsSqlSsdt/MsSqlSsdt.Tests/AdventureWorks_SSDT/obj/" |> Shell.cleanDirs
+    !! "**/**/test*/SqlProvider.Core.Tests/MsSqlSsdt/MsSqlSsdt.Tests/obj/" |> Shell.cleanDirs
+    "tests/SqlProvider.Core.Tests/MsSqlSsdt/MsSqlSsdt.Tests/AdventureWorks_SSDT/AdventureWorks_SSDT.dacpac" |> Shell.rm
+ 
     Shell.cleanDirs ["bin"; "temp"]
 )
 
@@ -124,7 +167,13 @@ Target.create "CleanDocs" (fun _ ->
 // Build library & test project
 
 Target.create "Build" (fun _ ->
-    Fake.DotNet.DotNet.build (fun p -> {p with Configuration = DotNet.BuildConfiguration.Release}) "SQLProvider.sln"
+    Fake.DotNet.DotNet.build (fun p -> 
+      {
+        p with 
+          Configuration = DotNet.BuildConfiguration.Release
+          MSBuildParams = { MSBuild.CliArguments.Create() with DisableInternalBinLog = true }
+    
+    }) "SQLProvider.sln"
 )
 
 Target.create "BuildTests" (fun _ ->
@@ -187,7 +236,7 @@ Target.create "SetupPostgreSQL" (fun _ ->
 
 let setupMssql url saPassword = 
   
-    let connBuilder = System.Data.SqlClient.SqlConnectionStringBuilder()    
+    let connBuilder = SqlConnectionStringBuilder()    
     connBuilder.InitialCatalog <- "master"
     connBuilder.UserID <- "sa"
     connBuilder.DataSource <- url
@@ -197,9 +246,9 @@ let setupMssql url saPassword =
       // We wait up to 30 seconds for MSSQL to be initialized
       let rec runCmd' attempt = 
         try
-          use conn = new Data.SqlClient.SqlConnection(connBuilder.ConnectionString)
+          use conn = new SqlConnection(connBuilder.ConnectionString)
           conn.Open()
-          use cmd = new Data.SqlClient.SqlCommand(query, conn)
+          use cmd = new SqlCommand(query, conn)
           cmd.ExecuteNonQuery() |> ignore 
         with e -> 
           printfn "Connection attempt %i: %A" attempt e
@@ -258,6 +307,7 @@ Target.create "RunTests" (fun _ ->
             Common =
                 p.Common
                 |> Fake.DotNet.DotNet.Options.withAdditionalArgs [||]
+            MSBuildParams = { MSBuild.CliArguments.Create() with DisableInternalBinLog = true }
             }) "SQLProvider.Tests.sln"
 
 (*
@@ -412,7 +462,7 @@ Target.create "BuildDocs" ignore
 #else
   //=?> ("SourceLink", Pdbstr.tryFind().IsSome )
 #endif
-  =?> ("NuGet", not(Fake.Core.Environment.hasBuildParam "onlydocs"))
+  =?> ("NuGet", not(Fake.Core.Environment.hasEnvironVar "onlydocs"))
   ==> "ReleaseDocs"
   ==> "Release"
 

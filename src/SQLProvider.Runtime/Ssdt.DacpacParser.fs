@@ -4,24 +4,7 @@ open System
 open System.Xml
 open System.IO.Compression
 
-type SsdtSchema = {
-    Tables: SsdtTable list
-    TryGetTableByName: string -> SsdtTable voption
-    StoredProcs: SsdtStoredProc list
-    Relationships: SsdtRelationship list
-    Descriptions: SsdtDescriptionItem list
-    UserDefinedDataTypes: SsdtUserDefinedDataType
-    Functions: SsdtStoredProc list
-}
-and SsdtTable = {
-    FullName: string
-    Schema: string
-    Name: string
-    Columns: SsdtColumn list
-    PrimaryKey: PrimaryKeyConstraint voption
-    IsView: bool
-}
-and SsdtColumn = {
+type [<Struct>] SsdtColumn = {
     FullName: string
     Name: string
     Description: string
@@ -31,66 +14,87 @@ and SsdtColumn = {
     HasDefault: bool
     ComputedColumn: bool
 }
-and SsdtView = {
-    FullName: string
-    Schema: string
-    Name: string
-    Columns: SsdtViewColumn list
-    DynamicColumns: SsdtViewColumn list
-    Annotations: CommentAnnotation list
-}
-and SsdtViewColumn = {
+type [<Struct>] SsdtViewColumn = {
     FullName: string
     ColumnRefPath: string voption
 }
-and CommentAnnotation = {
+type [<Struct>] CommentAnnotation = {
     Column: string
     DataType: string
     Nullability: string voption
 }
-and SsdtRelationship = {
+type SsdtView = {
+    FullName: string
+    Schema: string
+    Name: string
+    Columns: SsdtViewColumn array
+    DynamicColumns: SsdtViewColumn array
+    Annotations: CommentAnnotation array
+}
+type [<Struct>] ConstraintColumn = {
+    FullName: string
+    Name: string
+}
+type RefTable = {
+    FullName: string
+    Schema: string
+    Name: string
+    Columns: ConstraintColumn array
+}
+
+type SsdtRelationship = {
     Name: string
     DefiningTable: RefTable
     ForeignTable: RefTable
 }
-and RefTable = {
-    FullName: string
-    Schema: string
-    Name: string
-    Columns: ConstraintColumn list
-}
 
-and PrimaryKeyConstraint = {
+type PrimaryKeyConstraint = {
     Name: string
-    Columns: ConstraintColumn list
+    Columns: ConstraintColumn array
 }
-and ConstraintColumn = {
-    FullName: string
-    Name: string
-}
-and SsdtStoredProc = {
-    FullName: string
-    Schema: string
-    Name: string
-    Parameters: SsdtStoredProcParam list
-}
-and SsdtStoredProcParam = {
+type [<Struct>] SsdtStoredProcParam = {
     FullName: string
     Name: string
     DataType: string
     Length: int voption
     IsOutput: bool
 }
-and SsdtDescriptionItem = {
+type SsdtStoredProc = {
+    FullName: string
+    Schema: string
+    Name: string
+    Parameters: SsdtStoredProcParam array
+    ReturnValueDataType: string voption
+}
+type [<Struct>] SsdtDescriptionItem = {
     DecriptionType: string
     Schema: string
     TableName: string
     ColumnName: string voption
     Description: string
 }
-and SsdtUserDefinedDataType = Map<UDDTName, UDDTInheritedType>
-and UDDTName = UDDTName of string
-and UDDTInheritedType = UDDTInheritedType of string
+type [<Struct>] UDDTName = UDDTName of string
+type [<Struct>] UDDTInheritedType = UDDTInheritedType of string
+type SsdtUserDefinedDataType = Map<UDDTName, UDDTInheritedType>
+
+type SsdtTable = {
+    FullName: string
+    Schema: string
+    Name: string
+    Columns: SsdtColumn array
+    PrimaryKey: PrimaryKeyConstraint voption
+    IsView: bool
+}
+
+type SsdtSchema = {
+    Tables: SsdtTable array
+    TryGetTableByName: string -> SsdtTable voption
+    StoredProcs: SsdtStoredProc array
+    Relationships: SsdtRelationship array
+    Descriptions: SsdtDescriptionItem array
+    UserDefinedDataTypes: SsdtUserDefinedDataType
+    Functions: SsdtStoredProc array
+}
 
 module RegexParsers =
     open System.Text.RegularExpressions
@@ -116,10 +120,10 @@ module RegexParsers =
     let parseTableColumnAnnotation colName colExpression =
         let m = colPattern.Match colExpression
         if m.Success then
-            Some { Column = colName
-                   DataType = m.Groups.["DataType"].Captures.[0].Value
-                   Nullability = m.Groups.["Nullability"].Captures |> Seq.cast<Capture> |> Seq.toList |> List.tryHead |> (function Some x -> ValueSome x | None -> ValueNone) |> ValueOption.map (fun c -> c.Value) }
-        else None
+            ValueSome { Column = colName
+                        DataType = m.Groups.["DataType"].Captures.[0].Value
+                        Nullability = m.Groups.["Nullability"].Captures |> Seq.cast<Capture> |> Seq.tryHead |> (function Some x -> ValueSome x | None -> ValueNone) |> ValueOption.map (fun c -> c.Value) }
+        else ValueNone
 
     /// Tries to find in-line commented type annotations in a view declaration.
     let parseViewAnnotations sql =
@@ -128,9 +132,9 @@ module RegexParsers =
         |> Seq.map (fun m ->
             { Column = m.Groups.["Column"].Captures.[0].Value
               DataType = m.Groups.["DataType"].Captures.[0].Value
-              Nullability = m.Groups.["Nullability"].Captures |> Seq.cast<Capture> |> Seq.toList |> List.tryHead |> (function Some x -> ValueSome x | None -> ValueNone) |> ValueOption.map (fun c -> c.Value) }
+              Nullability = m.Groups.["Nullability"].Captures |> Seq.cast<Capture> |> Seq.tryHead |> (function Some x -> ValueSome x | None -> ValueNone) |> ValueOption.map (fun c -> c.Value) }
         )
-        |> Seq.toList
+        |> Seq.toArray
     
 /// Extracts model.xml from the given .dacpac file path.
 let extractModelXml (dacPacPath: string) = 
@@ -143,7 +147,7 @@ let extractModelXml (dacPacPath: string) =
 
 /// Returns a doc and node/nodes ns helper fns
 let toXmlNamespaceDoc ns xml =
-    let doc = new XmlDocument()
+    let doc = XmlDocument()
     let nsMgr = XmlNamespaceManager(doc.NameTable)
     nsMgr.AddNamespace("x", ns)
     doc.LoadXml(xml)
@@ -178,9 +182,11 @@ let parseXml(xml: string) =
         let columns =
             relationship
             |> nodes "x:Entry"
-            |> Seq.map (node "x:Element/x:Relationship/x:Entry/x:References" >> att "Name")
-            |> Seq.map (fun fnm -> { ConstraintColumn.FullName = fnm; Name = fnm |> RegexParsers.splitFullName |> Array.last })
-            |> Seq.toList
+            |> Seq.map (
+                node "x:Element/x:Relationship/x:Entry/x:References"
+                    >> att "Name" 
+                    >> fun fnm -> { ConstraintColumn.FullName = fnm; Name = fnm |> RegexParsers.splitFullName |> Array.last })
+            |> Seq.toArray
         { PrimaryKeyConstraint.Name = name
           PrimaryKeyConstraint.Columns = columns }
 
@@ -189,8 +195,8 @@ let parseXml(xml: string) =
         |> nodes "x:Element"
         |> Seq.filter (fun e -> e |> att "Type" = "SqlPrimaryKeyConstraint")
         |> Seq.map parsePrimaryKeyConstraint
-        |> Seq.collect (fun pk -> pk.Columns |> List.map (fun col -> col, pk))
-        |> Seq.toList
+        |> Seq.collect (fun pk -> pk.Columns |> Array.map (fun col -> col, pk))
+        |> Seq.toArray
 
     let parseFkRelationship (fkElement: XmlNode) =
         let name = fkElement |> att "Name"
@@ -207,7 +213,7 @@ let parseXml(xml: string) =
               RefTable.Columns = 
                 localColumns
                 |> Seq.map (fun fnm -> { ConstraintColumn.FullName = fnm; Name = fnm |> RegexParsers.splitFullName |> Array.last })
-                |> Seq.toList }
+                |> Seq.toArray }
           SsdtRelationship.ForeignTable =
             let parts = foreignTable |> RegexParsers.splitFullName
             { RefTable.FullName = foreignTable
@@ -216,7 +222,7 @@ let parseXml(xml: string) =
               RefTable.Columns =
                 foreignColumns
                 |> Seq.map (fun fnm -> { ConstraintColumn.FullName = fnm; Name = fnm |> RegexParsers.splitFullName |> Array.last })
-                |> Seq.toList }
+                |> Seq.toArray }
         }
 
     let relationships =
@@ -224,7 +230,7 @@ let parseXml(xml: string) =
         |> nodes "x:Element"
         |> Seq.filter (fun e -> e |> att "Type" = "SqlForeignKeyConstraint")
         |> Seq.map parseFkRelationship
-        |> Seq.toList
+        |> Seq.toArray
         
     let parseTableColumn (colEntry: XmlNode) =
         let el = colEntry |> node "x:Element"
@@ -250,13 +256,13 @@ let parseXml(xml: string) =
             let annotation = RegexParsers.parseTableColumnAnnotation colName colExpr
             let dataType =
                 annotation
-                |> Option.map (fun a -> a.DataType.ToUpper()) // Ucase to match typeMappings
-                |> Option.defaultValue "SQL_VARIANT"
+                |> ValueOption.map (fun a -> a.DataType.ToUpper()) // Ucase to match typeMappings
+                |> ValueOption.defaultValue "SQL_VARIANT"
             let allowNulls =
                 match annotation with
-                | Some { Nullability = ValueSome nlb } -> nlb.ToUpper() = "NULL"
-                | Some { Nullability = ValueNone } -> true // Sql Server column declarations allow nulls by default
-                | None -> false // Default to "SQL_VARIANT" (obj) with no nulls if annotation is not found
+                | ValueSome { Nullability = ValueSome nlb } -> nlb.ToUpper() = "NULL"
+                | ValueSome { Nullability = ValueNone } -> true // Sql Server column declarations allow nulls by default
+                | ValueNone -> false // Default to "SQL_VARIANT" (obj) with no nulls if annotation is not found
             
             Some
                 { SsdtColumn.Name = colName
@@ -277,12 +283,12 @@ let parseXml(xml: string) =
     let parseTable (tblElement: XmlNode) =
         let fullName = tblElement |> att "Name"
         let relationship = tblElement |> nodes "x:Relationship" |> Seq.find (fun r -> r |> att "Name" = "Columns")
-        let columns = relationship |> nodes "x:Entry" |> Seq.choose parseTableColumn |> Seq.toList
+        let columns = relationship |> nodes "x:Entry" |> Seq.choose parseTableColumn |> Seq.toArray
         let nameParts = fullName |> RegexParsers.splitFullName
         let primaryKey =
             columns
-            |> List.choose(fun c -> pkConstraintsByColumn |> List.tryFind(fun (colRef, pk) -> colRef.FullName = c.FullName))
-            |> List.tryHead
+            |> Array.choose(fun c -> pkConstraintsByColumn |> Array.tryFind(fun (colRef, pk) -> colRef.FullName = c.FullName))
+            |> Array.tryHead
             |> (function Some x -> ValueSome x | None -> ValueNone)
             |> ValueOption.map snd
         { Schema = match nameParts with | [|schema;name|] -> schema | _ -> failwithf "Unable to parse table '%s' schema." fullName
@@ -301,16 +307,16 @@ let parseXml(xml: string) =
 
     /// Recursively collections view column refs from any nested 'DynamicObjects' (ex: CTEs).
     let collectDynamicColumnRefs (viewElement: XmlNode) =
-        let rec recurse (columns: SsdtViewColumn list) (el: XmlNode)  =
+        let rec recurse (columns: SsdtViewColumn array) (el: XmlNode)  =
             let relationshipColumns = el |> nodes "x:Relationship" |> Seq.tryFind (fun r -> r |> att "Name" = "Columns")
             let relationshipDynamicObjects = el |> nodes "x:Relationship" |> Seq.tryFind (fun r -> r |> att "Name" = "DynamicObjects")
-            let cols = relationshipColumns |> Option.map (nodes "x:Entry" >> Seq.map parseViewColumn) |> Option.defaultValue Seq.empty |> Seq.toList
-            let accumulatedColumns = columns @ cols
+            let cols = relationshipColumns |> Option.map (nodes "x:Entry" >> Seq.map parseViewColumn) |> Option.defaultValue Seq.empty |> Seq.toArray
+            let accumulatedColumns = Array.concat [|columns; cols|]
             match relationshipDynamicObjects with
-            | Some rel -> rel |> nodes "x:Entry" |> Seq.map (node "x:Element") |> Seq.collect (recurse accumulatedColumns) |> Seq.toList
+            | Some rel -> rel |> nodes "x:Entry" |> Seq.map (node "x:Element") |> Seq.collect (recurse accumulatedColumns) |> Seq.toArray
             | None -> accumulatedColumns
 
-        recurse [] viewElement
+        recurse [||] viewElement
 
     let parseView (viewElement: XmlNode) =
         let fullName = viewElement |> att "Name"
@@ -324,7 +330,7 @@ let parseXml(xml: string) =
         { FullName = fullName
           Schema = match nameParts with | [|schema;name|] -> schema | _ -> failwithf "Unable to parse view '%s' schema." fullName
           Name = match nameParts with | [|schema;name|] -> name | _ -> failwithf "Unable to parse view '%s' name." fullName
-          Columns = columns |> Seq.toList
+          Columns = columns |> Seq.toArray
           DynamicColumns = dynamicColumns
           Annotations = annotations } : SsdtView
 
@@ -371,12 +377,20 @@ let parseXml(xml: string) =
                       IsOutput = isOutput }
                 )
             | None -> Seq.empty
+        let returnDataType =
+            match spElement |> nodes "x:Relationship" |> Seq.tryFind (fun r -> r |> att "Name" = "Type") with
+            | None -> ValueNone
+            | Some datatypeinfo ->
+                let dataType = datatypeinfo |> node "x:Entry/x:Element/x:Relationship/x:Entry/x:References" |> att "Name"
+                if String.IsNullOrEmpty dataType then ValueNone
+                else ValueSome (dataType |> removeBrackets)
 
         let parts = fullName |> RegexParsers.splitFullName
         { FullName = fullName
           Schema = parts.[0]
           Name = parts.[1]
-          Parameters = parameters |> Seq.toList }
+          Parameters = parameters |> Seq.toArray
+          ReturnValueDataType = returnDataType }
 
     let parseDescription (extElement: XmlNode) =
         let fullName = extElement |> att "Name"
@@ -393,7 +407,7 @@ let parseXml(xml: string) =
 
     let parseUserDefinedDataType (uddts: XmlNode) =
         let name = uddts |> att "Name"
-        let name = name |> RegexParsers.splitFullName |> fun parsed -> String.Join(".", parsed) |> fun n -> n.ToUpper() |> UDDTName
+        let name = name |> RegexParsers.splitFullName |> fun parsed -> (String.concat "." parsed).ToUpper() |> UDDTName
         let inheritedType =
             uddts
             |> nodes "x:Relationship"
@@ -401,7 +415,7 @@ let parseXml(xml: string) =
             |> node "x:Entry/x:References"
             |> att "Name"
             |> RegexParsers.splitFullName
-            |> fun parsed -> String.Join(".", parsed)
+            |> fun parsed -> String.concat "." parsed
             |> fun t -> t.ToUpper()
             |> UDDTInheritedType
         (name, inheritedType)
@@ -421,38 +435,38 @@ let parseXml(xml: string) =
         |> nodes "x:Element"
         |> Seq.filter filterPredicate
         |> Seq.map parseStoredProc
-        |> Seq.toList
+        |> Seq.toArray
 
     let storedProcs =
         model
         |> nodes "x:Element"
         |> Seq.filter (fun e -> e |> att "Type" = "SqlProcedure")
         |> Seq.map parseStoredProc
-        |> Seq.toList
+        |> Seq.toArray
 
     let tables = 
         model
         |> nodes "x:Element"
         |> Seq.filter (fun e -> e |> att "Type" = "SqlTable")
         |> Seq.map parseTable
-        |> Seq.toList
+        |> Seq.toArray
 
     let views =
         model
         |> nodes "x:Element"
         |> Seq.filter (fun e -> e |> att "Type" = "SqlView")
         |> Seq.map parseView
-        |> Seq.toList
+        |> Seq.toArray
 
     let descriptions =
         model
         |> nodes "x:Element"
         |> Seq.filter (fun e -> e |> att "Type" = "SqlExtendedProperty" && (e |> att "Name").EndsWith(".[MS_Description]"))
         |> Seq.map parseDescription
-        |> Seq.toList
+        |> Seq.toArray
 
-    let tableColumnsByPath = tables |> List.collect (fun t -> t.Columns) |> List.map (fun c -> c.FullName, c) |> Map.ofList
-    let viewColumnsByPath = views |> List.collect (fun v -> v.Columns @ v.DynamicColumns) |> List.map (fun c -> c.FullName, c) |> Map.ofList
+    let tableColumnsByPath = tables |> Array.collect (fun t -> t.Columns) |> Array.map (fun c -> c.FullName, c) |> Map.ofArray
+    let viewColumnsByPath = views |> Array.collect (fun v -> Array.concat [| v.Columns ; v.DynamicColumns |]) |> Array.map (fun c -> c.FullName, c) |> Map.ofArray
     let resolveColumnRefPath = resolveColumnRefPath tableColumnsByPath viewColumnsByPath
 
     let viewToTable (view: SsdtView) =
@@ -463,9 +477,9 @@ let parseXml(xml: string) =
           PrimaryKey = ValueNone
           Columns =
             view.Columns
-            |> List.map (fun vc ->
+            |> Array.map (fun vc ->
                 let colName = vc.FullName |> RegexParsers.splitFullName |> Array.last
-                let annotation = view.Annotations |> List.tryFind (fun a -> a.Column = colName)
+                let annotation = view.Annotations |> Array.tryFind (fun a -> a.Column = colName)
                 match resolveColumnRefPath vc with
                 | Some tc when annotation.IsNone -> tc
                 | tcOpt ->
@@ -496,11 +510,11 @@ let parseXml(xml: string) =
             )
         } : SsdtTable
 
-    let tablesAndViews = tables @ (views |> List.map viewToTable)
+    let tablesAndViews = Array.concat [| tables ; (views |> Array.map viewToTable) |]
 
     { Tables = tablesAndViews
       StoredProcs = storedProcs
-      TryGetTableByName = fun nm -> tablesAndViews |> (List.tryFind (fun t -> t.Name = nm) >> function Some x -> ValueSome x | None -> ValueNone)
+      TryGetTableByName = fun nm -> tablesAndViews |> (Array.tryFind (fun t -> t.Name = nm) >> function Some x -> ValueSome x | None -> ValueNone)
       Relationships = relationships
       Descriptions = descriptions
       UserDefinedDataTypes = userDefinedDataTypes

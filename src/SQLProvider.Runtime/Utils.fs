@@ -13,7 +13,7 @@ module StandardExtensions =
             }
 #endif
 
-module internal Utilities = 
+module Utilities = 
     
     open System.IO
     open System.Collections.Concurrent
@@ -35,11 +35,15 @@ module internal Utilities =
         new TempFile(filename)
 #endif
 
-    let resolveTuplePropertyName (name:string) (tupleIndex:string ResizeArray) =
+    let inline internal resolveTuplePropertyName (name:string) (tupleIndex:string ResizeArray) =
         // eg "Item1" -> tupleIndex.[0]
         let itemid = 
             if name.Length > 4 then
-                match Int32.TryParse (name.Remove(0, 4)) with
+#if NETSTANDARD21
+                match Int32.TryParse (name.AsSpan 4) with
+#else
+                match Int32.TryParse (name.Substring 4) with
+#endif
                 | (true, n) when name.StartsWith("Item", StringComparison.InvariantCultureIgnoreCase) -> n
                 | _ -> Int32.MaxValue
             else Int32.MaxValue
@@ -48,27 +52,16 @@ module internal Utilities =
         else tupleIndex.[itemid - 1]
 
 
-    let quoteWhiteSpace (str:String) = 
+    let inline quoteWhiteSpace (str:String) = 
         (if str.Contains(" ") then sprintf "\"%s\"" str else str)
 
     let uniqueName()= 
-        let dict = new ConcurrentDictionary<string, int>()
+        let dict = ConcurrentDictionary<string, int>()
         (fun name -> 
             match dict.AddOrUpdate(name,(fun n -> 0),(fun n v -> v + 1)) with
             | 0 -> name
             | count -> name + "_" + (string count)
         )
-
-    /// DB-connections are not usually supporting parallel SQL-query execution, so even when
-    /// async thread is available, it can't be used to execute another SQL at the same time.
-    let rec executeOneByOne asyncFunc entityList =
-        match entityList with
-        | h::t -> 
-            task {
-                do! asyncFunc h
-                return! executeOneByOne asyncFunc t
-            }
-        | [] -> task { () }
 
     let parseAggregates fieldNotat fieldNotationAlias query =
         let rec parseAggregates' fieldNotation fieldNotationAlias query (selectColumns:string list) =
@@ -80,9 +73,9 @@ module internal Utilities =
                 parseAggregates' fieldNotation fieldNotationAlias tail parsed
         parseAggregates' fieldNotat fieldNotationAlias query []
 
-    let rec convertTypes (itm:obj) (returnType:Type) =
+    let rec internal convertTypes (itm:obj) (returnType:Type) =
         if (returnType.Name.StartsWith("Option") || returnType.Name.StartsWith("FSharpOption")) && returnType.GenericTypeArguments.Length = 1 then
-            if itm = null then None |> box
+            if isNull itm then None |> box
             else
             match convertTypes itm (returnType.GenericTypeArguments.[0]) with
             | :? String as t -> Option.Some t |> box
@@ -104,7 +97,7 @@ module internal Utilities =
             | :? TimeSpan as t -> Option.Some t |> box
             | t -> Option.Some t |> box
         elif (returnType.Name.StartsWith("ValueOption") || returnType.Name.StartsWith("FSharpValueOption")) && returnType.GenericTypeArguments.Length = 1 then
-            if itm = null then ValueNone |> box
+            if isNull itm then ValueNone |> box
             else
             match convertTypes itm (returnType.GenericTypeArguments.[0]) with
             | :? String as t -> ValueOption.Some t |> box
@@ -126,43 +119,43 @@ module internal Utilities =
             | :? TimeSpan as t -> ValueOption.Some t |> box
             | t -> ValueOption.Some t |> box
         elif returnType.Name.StartsWith("Nullable") && returnType.GenericTypeArguments.Length = 1 then
-            if itm = null then null |> box
+            if isNull itm then null |> box
             else convertTypes itm (returnType.GenericTypeArguments.[0])
         else
         match itm, returnType with
-        | :? string as s, t when t = typeof<String> -> s |> box
-        | :? string as s, t when t = typeof<Int32> && Int32.TryParse s |> fst -> Int32.Parse s |> box
-        | :? string as s, t when t = typeof<Decimal> && Decimal.TryParse s |> fst -> Decimal.Parse s |> box
-        | :? string as s, t when t = typeof<Int64> && Int64.TryParse s |> fst -> Int64.Parse s |> box
-        | :? string as s, t when t = typeof<Single> && Single.TryParse s |> fst -> Single.Parse s |> box
-        | :? string as s, t when t = typeof<UInt32> && UInt32.TryParse s |> fst -> UInt32.Parse s |> box
-        | :? string as s, t when t = typeof<Double> && Double.TryParse s |> fst -> Double.Parse s |> box
-        | :? string as s, t when t = typeof<UInt64> && UInt64.TryParse s |> fst -> UInt64.Parse s |> box
-        | :? string as s, t when t = typeof<Int16> && Int16.TryParse s |> fst -> Int16.Parse s |> box
-        | :? string as s, t when t = typeof<UInt16> && UInt16.TryParse s |> fst -> UInt16.Parse s |> box
-        | :? string as s, t when t = typeof<DateTime> && DateTime.TryParse s |> fst -> DateTime.Parse s |> box
-        | :? string as s, t when t = typeof<Boolean> && Boolean.TryParse s |> fst -> Boolean.Parse s |> box
-        | :? string as s, t when t = typeof<Byte> && Byte.TryParse s |> fst -> Byte.Parse s |> box
-        | :? string as s, t when t = typeof<SByte> && SByte.TryParse s |> fst -> SByte.Parse s |> box
-        | :? string as s, t when t = typeof<Char> && Char.TryParse s |> fst -> Char.Parse s |> box
-        | :? string as s, t when t = typeof<DateTimeOffset> && DateTimeOffset.TryParse s |> fst -> DateTimeOffset.Parse s |> box
-        | :? string as s, t when t = typeof<TimeSpan> && TimeSpan.TryParse s |> fst -> TimeSpan.Parse s |> box
+        | :? string as s, t when Type.(=) (t, typeof<String>) -> s |> box
+        | :? string as s, t when Type.(=) (t, typeof<Int32>) && Int32.TryParse s |> fst -> Int32.Parse s |> box
+        | :? string as s, t when Type.(=) (t, typeof<Decimal>) && Decimal.TryParse s |> fst -> Decimal.Parse s |> box
+        | :? string as s, t when Type.(=) (t, typeof<Int64>) && Int64.TryParse s |> fst -> Int64.Parse s |> box
+        | :? string as s, t when Type.(=) (t, typeof<Single>) && Single.TryParse s |> fst -> Single.Parse s |> box
+        | :? string as s, t when Type.(=) (t, typeof<UInt32>) && UInt32.TryParse s |> fst -> UInt32.Parse s |> box
+        | :? string as s, t when Type.(=) (t, typeof<Double>) && Double.TryParse s |> fst -> Double.Parse s |> box
+        | :? string as s, t when Type.(=) (t, typeof<UInt64>) && UInt64.TryParse s |> fst -> UInt64.Parse s |> box
+        | :? string as s, t when Type.(=) (t, typeof<Int16>) && Int16.TryParse s |> fst -> Int16.Parse s |> box
+        | :? string as s, t when Type.(=) (t, typeof<UInt16>) && UInt16.TryParse s |> fst -> UInt16.Parse s |> box
+        | :? string as s, t when Type.(=) (t, typeof<DateTime>) && DateTime.TryParse s |> fst -> DateTime.Parse s |> box
+        | :? string as s, t when Type.(=) (t, typeof<Boolean>) && Boolean.TryParse s |> fst -> Boolean.Parse s |> box
+        | :? string as s, t when Type.(=) (t, typeof<Byte>) && Byte.TryParse s |> fst -> Byte.Parse s |> box
+        | :? string as s, t when Type.(=) (t, typeof<SByte>) && SByte.TryParse s |> fst -> SByte.Parse s |> box
+        | :? string as s, t when Type.(=) (t, typeof<Char>) && Char.TryParse s |> fst -> Char.Parse s |> box
+        | :? string as s, t when Type.(=) (t, typeof<DateTimeOffset>) && DateTimeOffset.TryParse s |> fst -> DateTimeOffset.Parse s |> box
+        | :? string as s, t when Type.(=) (t, typeof<TimeSpan>) && TimeSpan.TryParse s |> fst -> TimeSpan.Parse s |> box
         | _ -> 
-            if returnType = typeof<String> then Convert.ToString itm |> box
-            elif returnType = typeof<Int32> then Convert.ToInt32 itm |> box
-            elif returnType = typeof<Decimal> then Convert.ToDecimal itm |> box
-            elif returnType = typeof<Int64> then Convert.ToInt64 itm |> box
-            elif returnType = typeof<Single> then Convert.ToSingle itm |> box
-            elif returnType = typeof<UInt32> then Convert.ToUInt32 itm |> box
-            elif returnType = typeof<Double> then Convert.ToDouble itm |> box
-            elif returnType = typeof<UInt64> then Convert.ToUInt64 itm |> box
-            elif returnType = typeof<Int16> then Convert.ToInt16 itm |> box
-            elif returnType = typeof<UInt16> then Convert.ToUInt16 itm |> box
-            elif returnType = typeof<DateTime> then Convert.ToDateTime itm |> box
-            elif returnType = typeof<Boolean> then Convert.ToBoolean itm |> box
-            elif returnType = typeof<Byte> then Convert.ToByte itm |> box
-            elif returnType = typeof<SByte> then Convert.ToSByte itm |> box
-            elif returnType = typeof<Char> then Convert.ToChar itm |> box
+            if Type.(=) (returnType, typeof<String>) then Convert.ToString itm |> box
+            elif Type.(=) (returnType, typeof<Int32>) then Convert.ToInt32 itm |> box
+            elif Type.(=) (returnType, typeof<Decimal>) then Convert.ToDecimal itm |> box
+            elif Type.(=) (returnType, typeof<Int64>) then Convert.ToInt64 itm |> box
+            elif Type.(=) (returnType, typeof<Single>) then Convert.ToSingle itm |> box
+            elif Type.(=) (returnType, typeof<UInt32>) then Convert.ToUInt32 itm |> box
+            elif Type.(=) (returnType, typeof<Double>) then Convert.ToDouble itm |> box
+            elif Type.(=) (returnType, typeof<UInt64>) then Convert.ToUInt64 itm |> box
+            elif Type.(=) (returnType, typeof<Int16>) then Convert.ToInt16 itm |> box
+            elif Type.(=) (returnType, typeof<UInt16>) then Convert.ToUInt16 itm |> box
+            elif Type.(=) (returnType, typeof<DateTime>) then Convert.ToDateTime itm |> box
+            elif Type.(=) (returnType, typeof<Boolean>) then Convert.ToBoolean itm |> box
+            elif Type.(=) (returnType, typeof<Byte>) then Convert.ToByte itm |> box
+            elif Type.(=) (returnType, typeof<SByte>) then Convert.ToSByte itm |> box
+            elif Type.(=) (returnType, typeof<Char>) then Convert.ToChar itm |> box
             else itm |> box
 
     /// Standard SQL. Provider spesific overloads can be done before this.
@@ -194,11 +187,13 @@ module internal Utilities =
         | GroupColumn (MinOp key, KeyColumn _) -> sprintf "MIN(%s)" (colSprint key)
         | GroupColumn (MaxOp key, KeyColumn _) -> sprintf "MAX(%s)" (colSprint key)
         | GroupColumn (SumOp key, KeyColumn _) -> sprintf "SUM(%s)" (colSprint key)
+        | GroupColumn (CountDistOp key, KeyColumn _) -> sprintf "COUNT(DISTINCT %s)" (colSprint key)
         | GroupColumn (StdDevOp key, KeyColumn _) -> sprintf "STDDEV(%s)" (colSprint key)
         | GroupColumn (VarianceOp key, KeyColumn _) -> sprintf "VAR(%s)" (colSprint key)
         | GroupColumn (KeyOp key,_) -> colSprint key
         | GroupColumn (CountOp _,_) -> sprintf "COUNT(1)"
         // Nested aggregate operators, e.g. select(x*y) |> Seq.sum
+        | GroupColumn (CountDistOp _,x) -> sprintf "COUNT(DISTINCT %s)" (recursionBase x)
         | GroupColumn (AvgOp _,x) -> sprintf "AVG(%s)" (recursionBase x)
         | GroupColumn (MinOp _,x) -> sprintf "MIN(%s)" (recursionBase x)
         | GroupColumn (MaxOp _,x) -> sprintf "MAX(%s)" (recursionBase x)
@@ -213,6 +208,7 @@ module internal Utilities =
             aliasSprint (sprintf "%s_%O" (op.ToString().Replace(" ", "_")) subItm)
         | GroupColumn (KeyOp key,_) -> aliasSprint key
         | GroupColumn (CountOp key,_) -> aliasSprint (sprintf "COUNT_%s" key)
+        | GroupColumn (CountDistOp key,_) -> aliasSprint (sprintf "COUNTD_%s" key)
         | GroupColumn (AvgOp key,_) -> aliasSprint (sprintf "AVG_%s" key)
         | GroupColumn (MinOp key,_) -> aliasSprint (sprintf "MIN_%s" key)
         | GroupColumn (MaxOp key,_) -> aliasSprint (sprintf "MAX_%s" key)
@@ -233,6 +229,54 @@ module internal Utilities =
         | :? DateTime
         | :? String -> sprintf "'%s'" (value.ToString().Replace("'", ""))
         | _ -> value.ToString()
+
+       
+    let inline internal replaceFirst (text:string) (oldValue:string) (newValue:string) =
+        let position = text.IndexOf oldValue
+        if position < 0 then
+            text
+        else
+            //String.Concat(text.AsSpan(0, position), newValue.AsSpan(), text.AsSpan(position + oldValue.Length))
+            // ...would throw error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
+            text.AsSpan(0, position).ToString() + newValue + text.AsSpan(position + oldValue.Length).ToString()
+
+    let internal checkPred alias =
+        let prefix = "[" + alias + "]."
+        let prefix2 = alias + "."
+        let prefix3 = "`" + alias + "`."
+        let prefix4 = alias + "_"
+        let prefix5 = alias.ToUpper() + "_"
+        let prefix6 = "\"" + alias + "\"."
+        (fun (k:string,v) ->
+            if k.StartsWith prefix then
+                let temp = replaceFirst k prefix ""
+                let temp = temp.AsSpan(1,temp.Length-2).ToString()
+                Some(temp,v)
+            // this case is for PostgreSQL and other vendors that use " as whitespace qualifiers
+            elif  k.StartsWith prefix2 then
+                let temp = replaceFirst k prefix2 ""
+                Some(temp,v)
+            // this case is for MySQL and other vendors that use ` as whitespace qualifiers
+            elif  k.StartsWith prefix3 then
+                let temp = replaceFirst k prefix3 ""
+                let temp = temp.AsSpan(1,temp.Length-2).ToString()
+                Some(temp,v)
+            //this case for MSAccess, uses _ as whitespace qualifier
+            elif  k.StartsWith prefix4 then
+                let temp = replaceFirst k prefix4 ""
+                Some(temp,v)
+            //this case for Firebird version<=2.1, all uppercase
+            elif  k.StartsWith prefix5 then 
+                let temp = replaceFirst k prefix5 ""
+                Some(temp,v)
+            //this case is for DuckDb
+            elif k.StartsWith prefix6 then
+                let temp = replaceFirst k prefix6 ""
+                let temp = temp.AsSpan(1,temp.Length-2).ToString()
+                Some(temp,v)
+            elif not(String.IsNullOrEmpty(k)) then // this is for dynamic alias columns: [a].[City] as City
+                Some(k,v)
+            else None)
 
 module ConfigHelpers = 
     
@@ -288,54 +332,73 @@ module ConfigHelpers =
 #endif
             connectionString
 
-module internal SchemaProjections = 
+module SchemaProjections = 
     
+    let inline internal forall predicate (source : ReadOnlySpan<_>) =
+        let mutable state = true
+        let mutable e = source.GetEnumerator()
+        while state && e.MoveNext() do
+            state <- predicate e.Current
+        state
+
     //Creatviely taken from FSharp.Data (https://github.com/fsharp/FSharp.Data/blob/master/src/CommonRuntime/NameUtils.fs)
-    let private tryAt (s:string) i = if i >= s.Length then None else Some s.[i]
-    let private sat f (c:option<char>) = match c with Some c when f c -> Some c | _ -> None
-    let private (|EOF|_|) c = match c with Some _ -> None | _ -> Some ()
-    let private (|LetterDigit|_|) = sat Char.IsLetterOrDigit
-    let private (|Upper|_|) = sat (fun c -> Char.IsUpper c || Char.IsDigit c)
-    let private (|Lower|_|) = sat (fun c -> Char.IsLower c || Char.IsDigit c)
-    
+    [<return: Struct>]
+    let private (|LetterDigit|_|) = fun c -> if Char.IsLetterOrDigit c then ValueSome c else ValueNone
+    [<return: Struct>]
+    let private (|UpperC|_|) = fun c -> if Char.IsUpper c || Char.IsDigit c then ValueSome c else ValueNone
+    [<return: Struct>]
+    let private (|Upper|_|) = function ValueSome c when Char.IsUpper c || Char.IsDigit c -> ValueSome c | _ -> ValueNone
+    [<return: Struct>]
+    let private (|Lower|_|) = function ValueSome c when Char.IsLower c || Char.IsDigit c -> ValueSome c | _ -> ValueNone
+
     // --------------------------------------------------------------------------------------
-    
+
     /// Turns a given non-empty string into a nice 'PascalCase' identifier
-    let nicePascalName (s:string) = 
-      if s.Length = 1 then s.ToUpperInvariant() else
+    let nicePascalName (s:string) =
+      let le = s.Length
+      if le = 1 then Char.ToUpperInvariant(s.[0]).ToString() else
       // Starting to parse a new segment 
-      let rec restart i = seq {
-        match tryAt s i with 
-        | EOF -> ()
-        | LetterDigit _ & Upper _ -> yield! upperStart i (i + 1)
-        | LetterDigit _ -> yield! consume i false (i + 1)
-        | _ -> yield! restart (i + 1) }
-      // Parsed first upper case letter, continue either all lower or all upper
-      and upperStart from i = seq {
-        match tryAt s i with 
-        | Upper _ -> yield! consume from true (i + 1) 
-        | Lower _ -> yield! consume from false (i + 1) 
-        | _ ->
-            yield from, i
-            yield! restart (i + 1) }
-      // Consume are letters of the same kind (either all lower or all upper)
-      and consume from takeUpper i = seq {
-        match tryAt s i with
-        | Lower _ when not takeUpper -> yield! consume from takeUpper (i + 1)
-        | Upper _ when takeUpper -> yield! consume from takeUpper (i + 1)
-        | Lower _ when takeUpper ->
-            yield from, (i - 1)
-            yield! restart (i - 1)
-        | _ -> 
-            yield from, i
-            yield! restart i }
-        
+
+      let rec restart i =
+            if i >= le then Seq.empty
+            else
+            match s.[i] with 
+            | LetterDigit _ & UpperC _ -> upperStart i (i + 1)
+            | LetterDigit _ -> consume i false (i + 1)
+            | _ -> restart (i + 1) 
+          // Parsed first upper case letter, continue either all lower or all upper
+      and upperStart from i = 
+            match if i >= le then ValueNone else ValueSome s.[i] with 
+            | Upper _ -> consume from true (i + 1) 
+            | Lower _ -> consume from false (i + 1) 
+            | _ ->
+                seq {
+                    yield struct(from, i)
+                    yield! restart (i + 1)
+                }
+          // Consume are letters of the same kind (either all lower or all upper)
+      and consume from takeUpper i = 
+            match takeUpper, if i >= le then ValueNone else ValueSome s.[i] with
+            | false, Lower _ -> consume from takeUpper (i + 1)
+            | true, Upper _ -> consume from takeUpper (i + 1)
+            | true, Lower _ ->
+                seq {
+                    yield struct(from, (i - 1))
+                    yield! restart (i - 1)
+                }
+            | _ ->
+                seq {
+                    yield struct(from, i)
+                    yield! restart i
+                }
+
       // Split string into segments and turn them to PascalCase
-      seq { for i1, i2 in restart 0 do 
-              let sub = s.Substring(i1, i2 - i1) 
-              if Array.forall Char.IsLetterOrDigit (sub.ToCharArray()) then
-                yield sub.[0].ToString().ToUpperInvariant() + sub.ToLowerInvariant().Substring(1) }
-      |> String.concat ""
+      let results = restart 0
+      seq { for i1, i2 in results do 
+              let sub = s.AsSpan(i1, i2 - i1)
+              if forall Char.IsLetterOrDigit sub then
+                Char.ToUpperInvariant(sub.[0]).ToString() + sub.Slice(1).ToString().ToLowerInvariant() }
+      |> String.Concat
     
     /// Turns a given non-empty string into a nice 'camelCase' identifier
     let niceCamelName (s:string) = 
@@ -354,7 +417,7 @@ module internal SchemaProjections =
         if(tableName.Contains("."))
         then 
             let tableName = tableName.Replace("[", "").Replace("]", "")
-            let startIndex = tableName.IndexOf(".")
+            let startIndex = tableName.IndexOf('.')
             nicePascalName (tableName.Substring(startIndex))
         else nicePascalName tableName
 
@@ -364,7 +427,7 @@ module internal SchemaProjections =
 
     let buildTableNameWhereFilter columnName (tableNames : string) =
         let trim (s:string) = s.Trim()
-        let names = tableNames.Split([|","|], StringSplitOptions.RemoveEmptyEntries)
+        let names = tableNames.Split([|','|], StringSplitOptions.RemoveEmptyEntries)
                     |> Seq.map trim
                     |> Seq.toArray
         match names with
@@ -374,11 +437,12 @@ module internal SchemaProjections =
                      |> String.concat " or "
                      |> sprintf "and (%s)"
 
-module internal Reflection = 
+module Reflection = 
     
     open System.Reflection
     open System.IO
 
+    let execAssembly = lazy System.Reflection.Assembly.GetExecutingAssembly()
     //let mutable resourceLinkedFiles = Set.empty
 
     let getPlatform (a:Assembly) =
@@ -390,36 +454,59 @@ module internal Reflection =
             | itms when itms.Length > 0 -> (itms |> Seq.head :?> System.Runtime.Versioning.TargetFrameworkAttribute).FrameworkName
             | _ -> ""
 
+    let listResolutionFullPaths (resolutionPathSemicoloned:string) =
+        if resolutionPathSemicoloned.Contains ";" then
+            String.concat ";"
+                (resolutionPathSemicoloned.Split ';'
+                    |> Array.map (fun p -> p.Trim() |> System.IO.Path.GetFullPath))
+        else
+            System.IO.Path.GetFullPath (resolutionPathSemicoloned.Trim())
+
     let tryLoadAssembly path = 
          try 
              if not (File.Exists path) || path.StartsWith "System.Runtime.WindowsRuntime" then None
              else
              let loadedAsm = Assembly.LoadFrom(path) 
-             if loadedAsm <> null
-             then Some(Choice1Of2 loadedAsm)
-             else None
+             if isNull loadedAsm
+             then None
+             else Some(Choice1Of2 loadedAsm)
          with e ->
              Some(Choice2Of2 e)
 
-    let tryLoadAssemblyFrom (resolutionPath:string) (referencedAssemblies:string[]) assemblyNames =
-        let resolutionPath = 
-            let p = resolutionPath.Replace('/', System.IO.Path.DirectorySeparatorChar)
-            if not(File.Exists p) then p else p |> Path.GetDirectoryName
+    let tryLoadAssemblyFrom (resolutionPathSemicoloned:string) (referencedAssemblies:string[]) assemblyNames =
+
+        let resolutionPaths =
+            if resolutionPathSemicoloned.Contains ";" then
+                resolutionPathSemicoloned.Split ';' |> Array.toList |> List.map(fun p -> p.Trim())
+            else [ resolutionPathSemicoloned.Trim() ]
+
+        let resolutionPaths =
+            resolutionPaths
+            |> List.map(fun resolutionPath ->
+                    let p = resolutionPath.Replace('/', System.IO.Path.DirectorySeparatorChar)
+                    if not(File.Exists p) then p else p |> Path.GetDirectoryName
+               )
 
         let referencedPaths = 
             referencedAssemblies 
             |> Array.filter (fun ra -> assemblyNames |> List.exists(fun (a:string) -> ra.Contains(a)))
             |> Array.toList
         
-        let resolutionPaths =
+        let resolutionPathsFiles =
             assemblyNames 
-            |> List.map (fun asm ->
-                if String.IsNullOrEmpty resolutionPath 
-                then asm
-                else Path.Combine(resolutionPath,asm))
+            |> List.collect (fun asm ->
+                if List.isEmpty resolutionPaths then
+                    [ asm ]
+                else
+                    resolutionPaths
+                    |> List.map(fun resolutionPath ->
+                        if String.IsNullOrEmpty resolutionPath 
+                        then asm
+                        else Path.Combine(resolutionPath,asm))
+                    )
 
         let ifNotNull (x:Assembly) =
-            if x = null then ""
+            if isNull x then ""
             elif String.IsNullOrWhiteSpace x.Location then ""
             else x.Location |> Path.GetDirectoryName
 
@@ -434,15 +521,20 @@ module internal Reflection =
             let dirs = 
                 [__SOURCE_DIRECTORY__;
 #if !INTERACITVE
-                   System.Reflection.Assembly.GetExecutingAssembly() |> ifNotNull;
+                   execAssembly.Force() |> ifNotNull;
 #endif
                    Environment.CurrentDirectory;
                    System.Reflection.Assembly.GetEntryAssembly() |> ifNotNull;]
-            let dirs = 
-                if not(System.IO.Path.IsPathRooted resolutionPath) then
-                    dirs @ (dirs |> List.map(fun d -> Path.Combine(d, resolutionPath)))
-                else
+            let dirs =
+                if List.isEmpty resolutionPaths then
                     dirs
+                else
+                    resolutionPaths
+                    |> List.collect(fun resolutionPath ->
+                        if not(System.IO.Path.IsPathRooted resolutionPath) then
+                            dirs @ (dirs |> List.map(fun d -> Path.Combine(d, resolutionPath)))
+                        else
+                            dirs)
 
             dirs |> Seq.distinct |> Seq.filter(fun x -> not(String.IsNullOrEmpty x) && Directory.Exists x) |> Seq.toList
 
@@ -452,7 +544,7 @@ module internal Reflection =
             |> Seq.concat |> Seq.toList
 
         let allPaths =
-            (assemblyNames @ resolutionPaths @ referencedPaths @ currentPaths) 
+            (assemblyNames @ resolutionPathsFiles @ referencedPaths @ currentPaths) 
             |> Seq.distinct |> Seq.toList
 
         let tryLoadFromMemory () =
@@ -467,9 +559,9 @@ module internal Reflection =
 
             assemblyNames
             |> List.tryPick (fun name ->
-                if assemblies.ContainsKey(name)
-                then Some assemblies.[name]
-                else None
+                match assemblies.TryGetValue name with
+                | true, aname -> Some aname
+                | false, _ -> None
             )
 
         let result = 
@@ -494,37 +586,41 @@ module internal Reflection =
                 tryLoad
             with
             | _ ->
-                let extraPathDirs = (resolutionPath :: myPaths)
+                let extraPathDirs = (resolutionPaths @ myPaths)
                 let loaded = 
                     extraPathDirs |> List.tryPick(fun dllPath ->
                         let assemblyPath = Path.Combine(dllPath,fileName)
                         if File.Exists assemblyPath then
                             let tryLoad = loadFunc assemblyPath true
-                            if tryLoad <> null then 
-                                Some(tryLoad) else None
+                            if isNull tryLoad then None else 
+                                Some(tryLoad)
                         else None)
                 match loaded with
                 | Some x -> 
                     x
-                | None when Environment.GetEnvironmentVariable("USERPROFILE") <> null ->
+                | None when not (isNull (Environment.GetEnvironmentVariable "USERPROFILE")) ->
                     // Final try: nuget cache
                     try 
-                        let currentPlatform = getPlatform(Assembly.GetExecutingAssembly())
+                        let currentPlatform = getPlatform(execAssembly.Force()).Split(',').[0]
                         let c = System.IO.Path.Combine [| Environment.GetEnvironmentVariable("USERPROFILE"); ".nuget"; "packages" |]
                         if System.IO.Directory.Exists c then
                             let picked = 
-                                System.IO.Directory.GetFiles(c, fileName, SearchOption.AllDirectories) |> Array.tryPick(fun assemblyPath ->
-                                    let tmpAssembly = Assembly.Load(assemblyPath |> File.ReadAllBytes)
-                                    if tmpAssembly.FullName = args.Name then
-                                        let loadedPlatform = getPlatform(tmpAssembly)
-                                        match currentPlatform, loadedPlatform with
-                                        | x, y when (x = "" || y = "" || x.Split(',').[0] = y.Split(',').[0]) ->
-                                            // Ok...good to go. (Although, we could match better the target frameworks.)
-                                            //let tryLoad = loadFunc assemblyPath true
-                                            Some(tmpAssembly)
-                                        | _ -> None
-                                    else
-                                        None
+                                System.IO.Directory.GetFiles(c, fileName, SearchOption.AllDirectories)
+                                |> Array.sortByDescending(fun f -> f) // "runtime over lib"
+                                |> Array.tryPick(fun assemblyPath ->
+                                    try
+                                        let tmpAssembly = Assembly.Load(assemblyPath |> File.ReadAllBytes)
+                                        if tmpAssembly.FullName = args.Name then
+                                            let loadedPlatform = getPlatform(tmpAssembly)
+                                            match currentPlatform, loadedPlatform with
+                                            | x, y when (x = "" || y = "" || x = y.Split(',').[0]) ->
+                                                // Ok...good to go. (Although, we could match better the target frameworks.)
+                                                //let tryLoad = loadFunc assemblyPath true
+                                                Some(tmpAssembly)
+                                            | _ -> None
+                                        else
+                                            None
+                                    with _ -> None
                                 )
                             match picked with Some x -> x | None -> null
                         else null
@@ -536,7 +632,7 @@ module internal Reflection =
         handler <- // try to avoid StackOverflowException of Assembly.LoadFrom calling handler again
             System.ResolveEventHandler (fun _ args ->
                 let loadfunc (x:string) shouldCatch =
-                    if handler <> null then AppDomain.CurrentDomain.remove_AssemblyResolve handler
+                    if not (isNull handler) then AppDomain.CurrentDomain.remove_AssemblyResolve handler
                     let res = 
                         try
                             if x.StartsWith "System.Runtime.WindowsRuntime" then
@@ -545,7 +641,7 @@ module internal Reflection =
                             else
                             //File.AppendAllText(@"c:\Temp\build.txt", "Binding trial " + args.Name + " to " + x +  " " + DateTime.UtcNow.ToString() + "\r\n")
                             let r = Assembly.LoadFrom x 
-                            //if r <> null then 
+                            //if not (isNull r) then 
                             //    File.AppendAllText(@"c:\Temp\build.txt", "Binding success " + args.Name + " to " + r.FullName + "\r\n")
                             r
                         with e ->
@@ -555,7 +651,7 @@ module internal Reflection =
                                 //if x.EndsWith ".dll" && not (resourceLinkedFiles.Contains x) then
                                 //    resourceLinkedFiles <- resourceLinkedFiles.Add(x)
                                 reraise()
-                    if handler <> null then AppDomain.CurrentDomain.add_AssemblyResolve handler
+                    if not (isNull handler) then AppDomain.CurrentDomain.add_AssemblyResolve handler
                     res
                 loadHandler args loadfunc)
         System.AppDomain.CurrentDomain.add_AssemblyResolve handler
@@ -576,11 +672,16 @@ module internal Reflection =
                 ) |> List.filter Option.isSome
                 |> List.map(fun o -> o.Value.GetBaseException().Message)
                 |> Seq.distinct |> Seq.toList
-            if not(String.IsNullOrEmpty resolutionPath) && not(System.IO.Directory.Exists(resolutionPath)) then
-                let x = "" :: errors
-                Choice2Of2(folders, ("resolutionPath directory doesn't exist:" + resolutionPath::errors))
-            else
+            let paths =
+                resolutionPaths
+                |> List.filter(fun resolutionPath -> not(String.IsNullOrEmpty resolutionPath) && not(System.IO.Directory.Exists resolutionPath))
+
+            if List.isEmpty paths then
                 Choice2Of2(folders, errors)
+            else
+                let x = "" :: errors
+                let resPaths = String.concat ";" paths
+                Choice2Of2(folders, ("resolutionPath directory doesn't exist:" + resPaths::errors))
 
 module Sql =
     
@@ -645,14 +746,14 @@ module Sql =
     let executeSqlAsDataTable createCommand sql con = 
         use r = executeSql createCommand sql con
         let dt = new DataTable()
-        dt.Load(r)
+        dt.Load r
         dt
 
     let executeSqlAsDataTableAsync createCommand sql con = 
         task{
             use! r = executeSqlAsync createCommand sql con
             let dt = new DataTable()
-            dt.Load(r)
+            dt.Load r
             return dt
         }
 
@@ -662,36 +763,19 @@ module Sql =
 
     /// Helper function to run async computation non-parallel style for list of objects.
     /// This is needed if async database opreation is executed for a list of entities.
+    /// DB-connections are not usually supporting parallel SQL-query execution, so even when
+    /// async thread is available, it can't be used to execute another SQL at the same time.
     let evaluateOneByOne asyncFunc entityList =
-        let rec executeOneByOneTask' asyncFunc entityList acc =
-            match entityList with
-            | [] -> task { return acc }
-            | h::t -> 
-                task {
-                    let! res = asyncFunc h
-                    return! executeOneByOneTask' asyncFunc t (res::acc)
-                }
-        let rec executeOneByOneAsync' asyncFunc entityList acc =
-            match entityList with
-            | [] -> async { return acc }
-            | h::t -> 
-                async {
-                    let! res = asyncFunc h
-                    return! executeOneByOneAsync' asyncFunc t (res::acc)
-                }
-
-        if List.length entityList <= 1000 then
-            task {
-                let! res = executeOneByOneTask' asyncFunc entityList []
-                return res |> List.rev
-            }
-            
-        else // Slower but avoid StackOverflowException
-            task {
-                let! res = executeOneByOneAsync' (asyncFunc >> Async.AwaitTask) entityList [] |> Async.StartAsTask
-                return res |> List.rev
-            }
-
+        async {
+            let! arr = 
+                entityList
+                |> Seq.map (fun x -> 
+                    async { // task { } would start as parallel, async { } is not.
+                        return! asyncFunc x |> Async.AwaitTask
+                    })
+                |> Async.Sequential
+            return arr |> Seq.toList
+        } |> Async.StartImmediateAsTask
 
 module Stubs =
     open System.Data
@@ -724,7 +808,7 @@ module Bytes =
     use sha = algo ()
     sha.ComputeHash ms
 
-  let sha1 = hash (fun () -> new SHA1CryptoServiceProvider())
+  let sha1 = hash (fun () -> SHA1.Create())
 
-  let sha256 = hash (fun () -> new SHA256CryptoServiceProvider())
+  let sha256 = hash (fun () -> SHA256.Create())
 

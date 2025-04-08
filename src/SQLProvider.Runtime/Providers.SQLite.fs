@@ -9,7 +9,6 @@ open FSharp.Data.Sql
 open FSharp.Data.Sql.Transactions
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
-open System.Data.SqlClient
 
 type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemblies, runtimeAssembly, sqliteLibrary) as this =
     // note we intentionally do not hang onto a connection object at any time,
@@ -146,14 +145,26 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
 #endif
         match assembly.Value with
         | Choice1Of2(assembly) ->
-            let types =
-                try assembly.GetTypes()
+            let types, err =
+                try assembly.GetTypes(), None
                 with | :? System.Reflection.ReflectionTypeLoadException as e ->
                     let msgs = e.LoaderExceptions |> Seq.map(fun e -> e.GetBaseException().Message) |> Seq.distinct
                     let details = "Details: " + Environment.NewLine + String.Join(Environment.NewLine, msgs)
-                    let platform = Reflection.getPlatform(System.Reflection.Assembly.GetExecutingAssembly())
-                    failwith (e.Message + Environment.NewLine + details + (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else ""))
-            types |> Array.find f
+                    let platform = Reflection.getPlatform(Reflection.execAssembly.Force())
+                    let errmsg = (e.Message + Environment.NewLine + details + (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else ""))
+                    if e.Types.Length = 0 then
+                        failwith errmsg
+                    else e.Types, Some errmsg
+            match types |> Array.filter(isNull >> not) |> Array.tryFind f with
+            | Some t -> t
+            | None ->
+                match err with
+                | Some msg -> failwith msg
+                | None ->
+                    let typeLooked = match f.GetType().BaseType with null -> "" | x when not(isNull x.GenericTypeArguments) && x.GenericTypeArguments.Length > 0 -> x.GenericTypeArguments.[0].ToString() | _ -> ""
+                    failwith ("Assembly " + assembly.FullName + " found, but it didn't contain expected type " + typeLooked +
+                                 Environment.NewLine + "Tired to load a dll: " + assembly.CodeBase)
+
         | Choice2Of2(paths, errors) ->
            let details =
                 match errors with
@@ -163,7 +174,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                 (String.Join(", ", assemblyNames |> List.toArray))
                 example
                 Environment.NewLine
-                (String.Join(Environment.NewLine, paths |> Seq.filter(fun p -> not(String.IsNullOrEmpty p))))
+                (String.Join(Environment.NewLine, paths |> Seq.filter(String.IsNullOrEmpty >> not)))
                 details
                 (if Environment.Is64BitProcess then "(You are running on x64.)" else "(You are NOT running on x64.)")
 
@@ -272,8 +283,10 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
         let (~~) (t:string) = sb.Append t |> ignore
         let cmd = (this :> ISqlProvider).CreateCommand(con,"")
         cmd.Connection <- con
-        let haspk = schemaCache.PrimaryKeys.ContainsKey(entity.Table.FullName)
-        let pk = if haspk then schemaCache.PrimaryKeys.[entity.Table.FullName] else []
+        let pk =
+            match schemaCache.PrimaryKeys.TryGetValue entity.Table.FullName with
+            | true, pk -> pk
+            | false, _ -> []
         sb.Clear() |> ignore
 
         match pk with
@@ -304,8 +317,8 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
         | ks ->
             ~~(sprintf "UPDATE %s SET %s WHERE "
                 entity.Table.FullName
-                (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "[%s] = %s" c p.ParameterName ) )))
-            ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "[%s] = @pk%i" k i))) + ";")
+                (String.concat "," (data |> Array.map(fun (c,p) -> sprintf "[%s] = %s" c p.ParameterName ) )))
+            ~~(String.concat " AND " (ks |> List.mapi(fun i k -> (sprintf "[%s] = @pk%i" k i))) + ";")
 
         data |> Array.map snd |> Array.iter (cmd.Parameters.Add >> ignore)
         pkValues |> List.iteri(fun i pkValue ->
@@ -319,8 +332,10 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
         let cmd = (this :> ISqlProvider).CreateCommand(con,"")
         cmd.Connection <- con
         sb.Clear() |> ignore
-        let haspk = schemaCache.PrimaryKeys.ContainsKey(entity.Table.FullName)
-        let pk = if haspk then schemaCache.PrimaryKeys.[entity.Table.FullName] else []
+        let pk =
+            match schemaCache.PrimaryKeys.TryGetValue entity.Table.FullName with
+            | true, pk -> pk
+            | false, _ -> []
         sb.Clear() |> ignore
         let pkValues =
             match entity.GetPkColumnOption<obj> pk with
@@ -334,7 +349,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
         | [] -> ()
         | ks ->
             ~~(sprintf "DELETE FROM %s WHERE " entity.Table.FullName)
-            ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "[%s] = @id%i" k i))) + ";")
+            ~~(String.concat " AND " (ks |> List.mapi(fun i k -> (sprintf "[%s] = @id%i" k i))) + ";")
         cmd.CommandText <- sb.ToString()
         cmd
     let pragmacheck (values:obj array) =
@@ -348,6 +363,9 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
         | _ -> failwith "Unsupported pragma"
 
     interface ISqlProvider with
+        member __.CloseConnectionAfterQuery = true
+        member __.DesignConnection = true
+        member __.StoredProcedures = false
         member __.GetLockObject() = myLock
         member __.GetTableDescription(con,tableName) = "" // SQLite doesn't support table descriptions/comments
         member __.GetColumnDescription(con,tableName,columnName) = "" // SQLite doesn't support column descriptions/comments
@@ -355,9 +373,13 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
             //Forces relative paths to be relative to the Runtime assembly
             let basePath =
                 if String.IsNullOrEmpty(resolutionPath) || resolutionPath = Path.DirectorySeparatorChar.ToString()
-                then runtimeAssembly
-                else resolutionPath
-                |> Path.GetFullPath
+                then runtimeAssembly |> Path.GetFullPath
+                else (if resolutionPath.Contains ";" then
+                        resolutionPath.Split ';'
+                        |> Array.map (fun p -> p.Trim() |> Path.GetFullPath)
+                        |> Array.filter System.IO.Directory.Exists
+                        |> Array.tryHead |> Option.defaultValue (runtimeAssembly |> Path.GetFullPath)
+                      else resolutionPath.Trim() |> Path.GetFullPath)
 
             let connectionString =
                 connectionString // We don't want to replace /../ and we want to support general unix paths as well as current env paths.
@@ -369,19 +391,19 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
             | :? System.Reflection.ReflectionTypeLoadException as ex ->
                 let errorfiles = ex.LoaderExceptions |> Array.map(fun e -> e.GetBaseException().Message) |> Seq.distinct |> Seq.toArray
                 let msg = ex.Message + "\r\n" + String.Join("\r\n", errorfiles) + (if Environment.Is64BitProcess then " (You are running on x64.)" else " (You are NOT running on x64.)")
-                raise(new System.Reflection.TargetInvocationException(msg, ex))
-            | :? System.Reflection.TargetInvocationException as ex when (ex.InnerException <> null && ex.InnerException :? DllNotFoundException) ->
-                let resp = Path.GetFullPath resolutionPath
+                raise(System.Reflection.TargetInvocationException(msg, ex))
+            | :? System.Reflection.TargetInvocationException as ex when ((not(isNull ex.InnerException)) && ex.InnerException :? DllNotFoundException) ->
+                let resp = Reflection.listResolutionFullPaths resolutionPath
                 let msg = ex.GetBaseException().Message + ", Path: " + resp + (if Environment.Is64BitProcess then " (You are running on x64.)" else " (You are NOT running on x64.)")
-                raise(new System.Reflection.TargetInvocationException(msg, ex))
+                raise(System.Reflection.TargetInvocationException(msg, ex))
             | :? System.TypeInitializationException as te when (te.InnerException :? System.Reflection.TargetInvocationException) ->
                 let ex = te.InnerException :?> System.Reflection.TargetInvocationException
-                let resp = Path.GetFullPath resolutionPath
+                let resp = Reflection.listResolutionFullPaths resolutionPath
                 let msg = ex.GetBaseException().Message + ", Path: " + resp + (if Environment.Is64BitProcess then " (You are running on x64.)" else " (You are NOT running on x64.)")
-                raise(new System.Reflection.TargetInvocationException(msg, ex.InnerException))
-            | :? System.Reflection.TargetInvocationException as ex when ex.InnerException <> null ->
+                raise(System.Reflection.TargetInvocationException(msg, ex.InnerException))
+            | :? System.Reflection.TargetInvocationException as ex when not(isNull ex.InnerException) ->
                 let msg = ex.GetBaseException().Message
-                raise(new System.Reflection.TargetInvocationException("Cannot create connection, db driver raised exception: " + msg, ex.InnerException))
+                raise(System.Reflection.TargetInvocationException("Cannot create connection, db driver raised exception: " + msg, ex.InnerException))
 
         member __.CreateCommand(connection,commandText) = Activator.CreateInstance(commandType.Value,[|box commandText;box connection|]) :?> IDbCommand
 
@@ -447,7 +469,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                             ]
                 getItems tbls.Rows false @ getItems views.Rows true
             con.Close()
-            ret
+            ret |> List.toArray
 
         member __.GetPrimaryKey(table) =
             match schemaCache.PrimaryKeys.TryGetValue table.FullName with
@@ -474,11 +496,11 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                         let colName = reader.GetString(1)
                         let dtv = reader.GetString(2).ToLower()
                         let dtv = if String.IsNullOrWhiteSpace dtv then typeofColumn colName else dtv
-                        let dt = if dtv.Contains("(") then dtv.Substring(0,dtv.IndexOf("(")) else dtv
+                        let dt = if dtv.Contains("(") then dtv.Substring(0,dtv.IndexOf('(')) else dtv
                         let dt = dt.Trim()
                         match findDbType dt with
                         | Some(m) ->
-                            let pkColumn = if reader.GetBoolean(5) then true else false
+                            let pkColumn = reader.GetBoolean(5)
                             let col =
                                 { Column.Name = colName
                                   TypeMapping = m
@@ -527,20 +549,20 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                           Name = string row.["TABLE_NAME"]
                           Type = ""}
 
-                    if not <| schemaCache.Relationships.ContainsKey pTable.FullName then schemaCache.Relationships.[pTable.FullName] <- ([],[])
-                    if not <| schemaCache.Relationships.ContainsKey fTable.FullName then schemaCache.Relationships.[fTable.FullName] <- ([],[])
+                    if not <| schemaCache.Relationships.ContainsKey pTable.FullName then schemaCache.Relationships.[pTable.FullName] <- ([||],[||])
+                    if not <| schemaCache.Relationships.ContainsKey fTable.FullName then schemaCache.Relationships.[fTable.FullName] <- ([||],[||])
 
                     let rel = { Name = string row.["CONSTRAINT_NAME"]; PrimaryTable= pTable.FullName; PrimaryKey=string row.["FKEY_TO_COLUMN"]
                                 ForeignTable=fTable.FullName; ForeignKey=string row.["FKEY_FROM_COLUMN"] }
 
                     let (c,p) = schemaCache.Relationships.[pTable.FullName]
-                    schemaCache.Relationships.[pTable.FullName] <- (rel::c,p)
+                    schemaCache.Relationships.[pTable.FullName] <- (Array.concat [| [|rel|]; c|],p)
                     let (c,p) = schemaCache.Relationships.[fTable.FullName]
-                    schemaCache.Relationships.[fTable.FullName] <- (c,rel::p)
+                    schemaCache.Relationships.[fTable.FullName] <- (c,Array.concat [|[|rel|];p|])
                 con.Close()
                 match schemaCache.Relationships.TryGetValue table.FullName with
                 | true,v -> v
-                | _ -> [],[]
+                | _ -> [||],[||]
           finally
             System.Threading.Monitor.Exit schemaCache.Relationships
 
@@ -563,13 +585,21 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
         member __.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM [%s].[%s] WHERE [%s].[%s].[%s] = @id" table.Schema table.Name table.Schema table.Name column
         member __.GetSchemaCache() = schemaCache
 
-        member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript, _) =
+        member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript, con) =
             let parameters = ResizeArray<_>()
             // NOTE: really need to assign the parameters their correct db types
             let param = ref 0
             let nextParam() =
                 incr param
                 sprintf "@param%i" !param
+
+            let createParamet name columnDataType ordinal value =
+                let p = createParam name ordinal value
+                match columnDataType with
+                | ValueNone -> ()
+                | ValueSome colType -> p.DbType <- colType
+                p
+
             let fieldParam (x:obj)=
                 let p = createParam (nextParam()) !param (box x)
                 parameters.Add p
@@ -605,6 +635,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                     | IndexOf(SqlConstant search) -> sprintf "INSTR(%s,%s)" column (fieldParam search)
                     | IndexOf(SqlCol(al2, col2)) -> sprintf "INSTR(%s,%s)" column (fieldNotation al2 col2)
                     | CastVarchar -> sprintf "CAST(%s AS TEXT)" column
+                    | CastInt -> sprintf "CAST(%s AS INTEGER)" column
                     // Date functions
                     | Date -> sprintf "DATE(%s)" column
                     | Year -> sprintf "CAST(STRFTIME('%%Y', %s) as INTEGER)" column
@@ -641,6 +672,8 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                     | CaseSql(f, SqlCol(al2, col2)) -> sprintf "CASE WHEN %s THEN %s ELSE %s END " (buildf f) column (fieldNotation al2 col2)
                     | CaseSql(f, SqlConstant itm) -> sprintf "CASE WHEN %s THEN %s ELSE %s END " (buildf f) column (fieldParam itm)
                     | CaseNotSql(f, SqlConstant itm) -> sprintf "CASE WHEN %s THEN %s ELSE %s END " (buildf f) (fieldParam itm) column
+                    | CaseSqlPlain(Condition.ConstantTrue, itm, _) -> sprintf " %s " (fieldParam itm)
+                    | CaseSqlPlain(Condition.ConstantFalse, _, itm2) -> sprintf " %s " (fieldParam itm2)
                     | CaseSqlPlain(f, itm, itm2) -> sprintf "CASE WHEN %s THEN %s ELSE %s END " (buildf f) (fieldParam itm) (fieldParam itm2)
                     | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
                 | GroupColumn (StdDevOp key, KeyColumn _) -> sprintf "STDEV(%s)" (colSprint key)
@@ -657,6 +690,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                         let build op preds (rest:Condition list option) =
                             ~~ "("
                             preds |> List.iteri( fun i (alias,col,operator,data) ->
+                                    let columnDataType = CommonTasks.searchDataTypeFromCache (this:>ISqlProvider) con sqlQuery baseAlias baseTable alias col
                                     let column = fieldNotation alias col
                                     let extractData data =
                                             match data with
@@ -665,9 +699,9 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                                                 // in and not in operators pass an array
                                                 let strings = box x :?> obj array
                                                 strings
-                                                |> Array.map (fun x -> createParam (nextParam()) !param x)
-                                            | Some(x) -> [|createParam (nextParam()) !param (box x)|]
-                                            | None ->    [|createParam (nextParam()) !param DBNull.Value|]
+                                                |> Array.map (fun x -> createParamet (nextParam()) columnDataType !param x)
+                                            | Some(x) -> [|createParamet (nextParam()) columnDataType !param (box x)|]
+                                            | None ->    [|createParamet (nextParam()) columnDataType !param DBNull.Value|]
 
                                     let prefix = if i>0 then (sprintf " %s " op) else ""
                                     let paras = extractData data
@@ -712,10 +746,10 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                             ))
                             // there's probably a nicer way to do this
                             let rec aux = function
-                                | x::[] when preds.Length > 0 ->
+                                | [x] when preds.Length > 0 ->
                                     ~~ (sprintf " %s " op)
                                     filterBuilder' [x]
-                                | x::[] -> filterBuilder' [x]
+                                | [x] -> filterBuilder' [x]
                                 | x::xs when preds.Length > 0 ->
                                     ~~ (sprintf " %s " op)
                                     filterBuilder' [x]
@@ -755,7 +789,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
             // build the select statement, this is easy ...
             let selectcolumns =
                 if projectionColumns |> Seq.isEmpty then "1" else
-                String.Join(",",
+                (String.concat ","
                     [|for KeyValue(k,v) in projectionColumns do
                         let cols = (getTable k).FullName
                         let k = if k <> "" then k elif baseAlias <> "" then baseAlias else baseTable.Name
@@ -781,13 +815,13 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                     match sqlQuery.Grouping with
                     | [] -> FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias sqlQuery.AggregateOp
                     | g  ->
-                        let keys = g |> List.map(fst) |> List.concat |> List.map(fun (a,c) ->
+                        let keys = g |> List.collect fst |> List.map(fun (a,c) ->
                             let fn = fieldNotation a c
                             if not (tmpGrpParams.ContainsKey (a,c)) then
                                 tmpGrpParams.Add((a,c), fn)
                             if sqlQuery.Aliases.Count < 2 then fn
                             else sprintf "%s as '%s'" fn fn)
-                        let aggs = g |> List.map(snd) |> List.concat
+                        let aggs = g |> List.collect snd
                         let res2 = FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias aggs |> List.toSeq
                         [String.Join(", ", keys) + (if List.isEmpty aggs || List.isEmpty keys then ""  else ", ") + String.Join(", ", res2)]
                 match extracolumns with
@@ -802,7 +836,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                     let destTable = getTable destAlias
                     ~~  (sprintf "%s [%s].[%s] as [%s] on "
                             joinType destTable.Schema destTable.Name destAlias)
-                    ~~  (String.Join(" AND ", (List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
+                    ~~  (String.concat " AND " ((List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
                         sprintf "%s = %s "
                             (fieldNotation (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias) foreignKey)
                             (fieldNotation (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias) primaryKey)
@@ -812,8 +846,9 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                 groupkeys
                 |> List.iteri(fun i (alias,column) ->
                     let cname =
-                        if tmpGrpParams.ContainsKey(alias,column) then tmpGrpParams.[alias,column]
-                        else fieldNotation alias column
+                        match tmpGrpParams.TryGetValue((alias,column)) with
+                        | true, x -> x
+                        | false, _ -> fieldNotation alias column
                     if i > 0 then ~~ ", "
                     ~~ cname)
 
@@ -829,7 +864,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                 // SELECT
                 if sqlQuery.Distinct && sqlQuery.Count then
                     let colsAggrs = columns.Split([|" as "|], StringSplitOptions.None)
-                    let distColumns = colsAggrs.[0] + (if colsAggrs.Length = 2 then "" else " || ',' || " + String.Join(" || ',' || ", colsAggrs |> Seq.filter(fun c -> c.Contains ",") |> Seq.map(fun c -> c.Substring(c.IndexOf(",")+1))))
+                    let distColumns = colsAggrs.[0] + (if colsAggrs.Length = 2 then "" else " || ',' || " + String.Join(" || ',' || ", colsAggrs |> Seq.filter(fun c -> c.Contains ",") |> Seq.map(fun c -> c.Substring(c.IndexOf(',')+1))))
                     ~~(sprintf "SELECT COUNT(DISTINCT %s) " distColumns)
                 elif sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columns)
                 elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
@@ -850,13 +885,13 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
 
             // GROUP BY
             if sqlQuery.Grouping.Length > 0 then
-                let groupkeys = sqlQuery.Grouping |> List.map(fst) |> List.concat
+                let groupkeys = sqlQuery.Grouping |> List.collect fst
                 if groupkeys.Length > 0 then
                     ~~" GROUP BY "
                     groupByBuilder groupkeys
 
             if sqlQuery.HavingFilters.Length > 0 then
-                let keys = sqlQuery.Grouping |> List.map(fst) |> List.concat
+                let keys = sqlQuery.Grouping |> List.collect fst
 
                 let f = [And([],Some (sqlQuery.HavingFilters |> CommonTasks.parseHaving fieldNotation keys))]
                 ~~" HAVING "
@@ -883,10 +918,10 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
             | None -> ()
 
             match sqlQuery.Take, sqlQuery.Skip with
-            | Some take, Some skip ->  ~~(sprintf " LIMIT %i OFFSET %i;" take skip)
-            | Some take, None ->  ~~(sprintf " LIMIT %i;" take)
-            | None, Some skip -> ~~(sprintf " LIMIT %i OFFSET %i;" System.UInt32.MaxValue skip)
-            | None, None -> ()
+            | ValueSome take, ValueSome skip ->  ~~(sprintf " LIMIT %i OFFSET %i;" take skip)
+            | ValueSome take, ValueNone ->  ~~(sprintf " LIMIT %i;" take)
+            | ValueNone, ValueSome skip -> ~~(sprintf " LIMIT %i OFFSET %i;" System.UInt32.MaxValue skip)
+            | ValueNone, ValueNone -> ()
 
             let sql = sb.ToString()
             (sql,parameters)
@@ -896,21 +931,14 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
 
             CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
 
-            if entities.Count = 0 then
-                ()
-            else
-
-            use scope = TransactionUtils.ensureTransaction transactionOptions
-            try
-                // close the connection first otherwise it won't get enlisted into the transaction
-                if con.State = ConnectionState.Open then con.Close()
-                con.Open()
+            let processFunc (trans : IDbTransaction option) = 
                 // initially supporting update/create/delete of single entities, no hierarchies yet
-                entities.Keys
+                CommonTasks.sortEntities entities
                 |> Seq.iter(fun e ->
                     match e._State with
                     | Created ->
                         use cmd = createInsertCommand con sb e
+                        if trans.IsSome then cmd.Transaction <- trans.Value
                         Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                         if timeout.IsSome then
                             cmd.CommandTimeout <- timeout.Value
@@ -919,6 +947,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                         e._State <- Unchanged
                     | Modified fields ->
                         use cmd = createUpdateCommand con sb e fields
+                        if trans.IsSome then cmd.Transaction <- trans.Value
                         Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                         if timeout.IsSome then
                             cmd.CommandTimeout <- timeout.Value
@@ -926,6 +955,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                         e._State <- Unchanged
                     | Delete ->
                         use cmd = createDeleteCommand con sb e
+                        if trans.IsSome then cmd.Transaction <- trans.Value
                         Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                         if timeout.IsSome then
                             cmd.CommandTimeout <- timeout.Value
@@ -933,65 +963,113 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                         // remove the pk to prevent this attempting to be used again
                         e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
                         e._State <- Deleted
-                    | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
-                if scope<>null then scope.Complete()
+                    | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e)
 
-            finally
-                con.Close()
+            if entities.Count = 0 then
+                ()
+            else
+                match sqliteLibrary with 
+                | SQLiteLibrary.MicrosoftDataSqlite -> 
+                    // close the connection first otherwise it won't get enlisted into the transaction
+                    if con.State = ConnectionState.Open then con.Close()
+                    con.Open()
+                    use trans = con.BeginTransaction(TransactionUtils.toSystemDataIsolationLevel transactionOptions.IsolationLevel) //System.Data.IsolationLevel. transactionOptions.IsolationLevel)
+                    try 
+                        processFunc (Some trans)
+                        trans.Commit()
+                    with 
+                    | ex -> 
+                        trans.Rollback()
+                        con.Close()
+                        raise ex
+                | _ -> 
+                    use scope = TransactionUtils.ensureTransaction transactionOptions
+                    try
+                        // close the connection first otherwise it won't get enlisted into the transaction
+                        if con.State = ConnectionState.Open then con.Close()
+                        con.Open()
+                        processFunc None
+                        if not(isNull scope) then scope.Complete()
+                    finally
+                        con.Close()
 
         member this.ProcessUpdatesAsync(con, entities, transactionOptions, timeout) =
             let sb = Text.StringBuilder()
 
             CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
 
+            let processFunc (trans : System.Data.Common.DbTransaction option) = task {
+                // initially supporting update/create/delete of single entities, no hierarchies yet
+                let handleEntity (e: SqlEntity) =
+                    match e._State with
+                    | Created ->
+                        task {
+                            use cmd = createInsertCommand con sb e :?> System.Data.Common.DbCommand
+                            if trans.IsSome then cmd.Transaction <- trans.Value
+                            Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
+                            if timeout.IsSome then
+                                cmd.CommandTimeout <- timeout.Value
+                            let! id = cmd.ExecuteScalarAsync()
+                            CommonTasks.checkKey schemaCache.PrimaryKeys id e
+                            e._State <- Unchanged
+                        }
+                    | Modified fields ->
+                        task {
+                            use cmd = createUpdateCommand con sb e fields :?> System.Data.Common.DbCommand
+                            if trans.IsSome then cmd.Transaction <- trans.Value
+                            Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
+                            if timeout.IsSome then
+                                cmd.CommandTimeout <- timeout.Value
+                            let! c = cmd.ExecuteNonQueryAsync()
+                            e._State <- Unchanged
+                        }
+                    | Delete ->
+                        task {
+                            use cmd = createDeleteCommand con sb e :?> System.Data.Common.DbCommand
+                            if trans.IsSome then cmd.Transaction <- trans.Value
+                            Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
+                            if timeout.IsSome then
+                                cmd.CommandTimeout <- timeout.Value
+                            let! c = cmd.ExecuteNonQueryAsync()
+                            // remove the pk to prevent this attempting to be used again
+                            e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
+                            e._State <- Deleted
+                        }
+                    | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e
+
+                let! _ = Sql.evaluateOneByOne handleEntity (CommonTasks.sortEntities entities |> Seq.toList)
+                return ()
+            }
+
             if entities.Count = 0 then
                 task { () }
             else
+                match sqliteLibrary with 
+                | SQLiteLibrary.MicrosoftDataSqlite -> 
+                    task {
+                        // close the connection first otherwise it won't get enlisted into the transaction
+                        if con.State = ConnectionState.Open then con.Close()
+                        con.Open()
+                        use trans = con.BeginTransaction(TransactionUtils.toSystemDataIsolationLevel transactionOptions.IsolationLevel) //System.Data.IsolationLevel. transactionOptions.IsolationLevel)
+                        try 
+                            do! processFunc (Some trans)
+                            trans.Commit()
+                        with 
+                        | ex -> 
+                            trans.Rollback()
+                            con.Close()
+                            raise ex
+                    }
+                | _ -> 
+                    task {
+                        use scope = TransactionUtils.ensureTransaction transactionOptions
+                        try
+                            // close the connection first otherwise it won't get enlisted into the transaction
+                            if con.State = ConnectionState.Open then con.Close()
+                            do! con.OpenAsync() 
+                            do! processFunc None
+                            if not(isNull scope) then scope.Complete()
 
-            task {
-                use scope = TransactionUtils.ensureTransaction transactionOptions
-                try
-                    // close the connection first otherwise it won't get enlisted into the transaction
-                    if con.State = ConnectionState.Open then con.Close()
-                    do! con.OpenAsync()
-                    // initially supporting update/create/delete of single entities, no hierarchies yet
-                    let handleEntity (e: SqlEntity) =
-                        match e._State with
-                        | Created ->
-                            task {
-                                use cmd = createInsertCommand con sb e :?> System.Data.Common.DbCommand
-                                Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
-                                if timeout.IsSome then
-                                    cmd.CommandTimeout <- timeout.Value
-                                let! id = cmd.ExecuteScalarAsync()
-                                CommonTasks.checkKey schemaCache.PrimaryKeys id e
-                                e._State <- Unchanged
-                            }
-                        | Modified fields ->
-                            task {
-                                use cmd = createUpdateCommand con sb e fields :?> System.Data.Common.DbCommand
-                                Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
-                                if timeout.IsSome then
-                                    cmd.CommandTimeout <- timeout.Value
-                                let! c = cmd.ExecuteNonQueryAsync()
-                                e._State <- Unchanged
-                            }
-                        | Delete ->
-                            task {
-                                use cmd = createDeleteCommand con sb e :?> System.Data.Common.DbCommand
-                                Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
-                                if timeout.IsSome then
-                                    cmd.CommandTimeout <- timeout.Value
-                                let! c = cmd.ExecuteNonQueryAsync()
-                                // remove the pk to prevent this attempting to be used again
-                                e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
-                                e._State <- Deleted
-                            }
-                        | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
-
-                    do! Utilities.executeOneByOne handleEntity (entities.Keys|>Seq.toList)
-                    if scope<>null then scope.Complete()
-
-                finally
-                    con.Close()
-            }
+                        finally
+                            con.Close()
+                    }

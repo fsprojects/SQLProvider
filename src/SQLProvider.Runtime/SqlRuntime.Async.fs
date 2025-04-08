@@ -6,11 +6,12 @@ open System.Collections.Generic
 open QueryImplementation
 open FSharp.Data.Sql.Common
 open FSharp.Data.Sql.Patterns
+open System.Linq
 
 module AsyncOperations =
 
     let executeAsync (s:Linq.IQueryable<'T>) =
-        let yieldseq (en: IEnumerator<'T>) =
+        let inline yieldseq (en: IEnumerator<'T>) =
             seq {
                 while en.MoveNext() do
                 yield en.Current
@@ -26,53 +27,69 @@ module AsyncOperations =
                     match en.GetType() with
                     | null -> null
                     | x -> x.GetField("source", System.Reflection.BindingFlags.NonPublic ||| System.Reflection.BindingFlags.Instance)
-                if source <> null then
+                if isNull source then
+                    return yieldseq en
+                else
                     match source.GetValue en with
                     | :? IAsyncEnumerable as coll ->
                         do! coll.EvaluateQuery()
                         return yieldseq en
                     | c -> return yieldseq en
-                else
-                    return yieldseq en
         }
 
-    let private fetchTakeN (n: int) (s:Linq.IQueryable<'T>) =
-        task {
-            match findSqlService s with
-            | Some svc ->
-                return! executeQueryAsync svc.DataContext svc.Provider (Take(n, svc.SqlExpression)) svc.TupleIndex
-            | None ->
-                return s :> Collections.IEnumerable
-        }
+    let inline private fetchTakeN (n: int) (s:Linq.IQueryable<'T>) =
+        match findSqlService s with
+        | Some svc, wrapper ->
+            match wrapper with
+            | None -> executeQueryAsync svc.DataContext svc.Provider (Take(n, svc.SqlExpression)) svc.TupleIndex
+            | Some sourceRepl ->
+                task {
+                    let! res = executeQueryAsync svc.DataContext svc.Provider (Take(n, svc.SqlExpression)) svc.TupleIndex
+                    sourceRepl res
+                    return s.Take n :> Collections.IEnumerable
+                }
+
+        | None, _ ->
+            task { return s.Take n :> Collections.IEnumerable }
 
     let private fetchTakeOne (s:Linq.IQueryable<'T>) =
         fetchTakeN 1 s
 
-    let getHeadAsync (s:Linq.IQueryable<'T>) =
-        task {
-            let! res = fetchTakeOne s
-            return res |> Seq.cast<'T> |> Seq.head
-        }
-
     let getTryHeadAsync (s:Linq.IQueryable<'T>) =
         task {
             let! res = fetchTakeOne s
-            return res |> Seq.cast<'T> |> Seq.tryPick Some
+            let enu = res.GetEnumerator()
+            if enu.MoveNext() then
+                let firstItem = enu.Current
+                if isNull firstItem then return None
+                else
+                return Some (firstItem :?> 'T)
+            else return None
         }
 
-    let private getExactlyOneAnd (onSuccess: 'TSource -> 'TTarget) (onTooMany: seq<'TSource> -> 'TTarget) (onNone: unit -> 'TTarget) (s:Linq.IQueryable<'TSource>) =
+    let getHeadAsync (s:Linq.IQueryable<'T>) : System.Threading.Tasks.Task<'T> =
+        task {
+            let! h = getTryHeadAsync s
+            match h with
+            | Some x -> return x
+            | None -> return raise (ArgumentException "The input sequence was empty.")
+        }
+    let inline private getExactlyOneAnd ([<InlineIfLambda>] onSuccess: 'TSource -> 'TTarget) ([<InlineIfLambda>] onTooMany: 'TSource -> 'TTarget) ([<InlineIfLambda>] onNone: unit -> 'TTarget) (s:Linq.IQueryable<'TSource>) =
         task {
             let! res = fetchTakeN 2 s
-            let converted = res |> Seq.cast<'TSource>
-            match converted |> Seq.length with
-            | 0 ->
-                return onNone()
-            | 1 ->
-                return converted |> Seq.head |> onSuccess
-            | 2 ->
-                return converted |> onTooMany
-            | _ ->
-                return invalidOp "The function encountered an internal error. It tried to take two elements but got more elements."
+            let enu = res.GetEnumerator()
+            if enu.MoveNext() then
+                let firstItem = enu.Current
+                if enu.MoveNext() then
+                    return firstItem :?>'TSource |> onTooMany
+                else 
+                if isNull firstItem then
+                    return onNone()
+                else
+                
+                return firstItem :?>'TSource |> onSuccess
+
+            else return onNone()
         }
 
     let getExactlyOneAsync (s:Linq.IQueryable<'T>)=
@@ -92,21 +109,21 @@ module AsyncOperations =
     let getCountAsync (s:Linq.IQueryable<'T>) =
         task {
             match findSqlService s with
-            | Some svc ->
+            | Some svc, wrapper ->
                 let! res = executeQueryScalarAsync svc.DataContext svc.Provider (Count(svc.SqlExpression)) svc.TupleIndex
                 if res = box(DBNull.Value) then return 0 else
 
                 let t = (Utilities.convertTypes res typeof<int>)
 
                 return t |> unbox
-            | None ->
+            | None, _ ->
                 return s |> Seq.length
         }
 
     let getAggAsync<'T when 'T : comparison> (agg:string) (s:Linq.IQueryable<'T>) : System.Threading.Tasks.Task<'T> =
 
             match findSqlService s with
-            | Some svc ->
+            | Some svc, wrapper ->
 
                 match svc.SqlExpression with
                 | Projection(MethodCall(None, _, [SourceWithQueryData source; OptionalQuote (Lambda([ParamName param], OptionalConvertOrTypeAs(SqlColumnGet(entity,op,_)))) ]),_) ->
@@ -117,7 +134,9 @@ module AsyncOperations =
                             match entity with
                             | "" when source.SqlExpression.HasAutoTupled() -> param
                             | "" -> ""
-                            | _ -> FSharp.Data.Sql.Common.Utilities.resolveTuplePropertyName entity source.TupleIndex
+                            | _ ->
+                                let al = FSharp.Data.Sql.Common.Utilities.resolveTuplePropertyName entity source.TupleIndex
+                                if al.StartsWith("_") then al.TrimStart([|'_'|]) else al
                     let sqlExpression =
 
                         let opName =
@@ -140,7 +159,7 @@ module AsyncOperations =
                         return (Utilities.convertTypes res typeof<'T>) |> unbox
                     }
                 | _ -> failwithf "Not supported %s. You must have last a select clause to a single column to aggregate. %s" agg (svc.SqlExpression.ToString())
-            | None -> failwithf "Supported only on SQLProvider database IQueryables. Was %s" (s.GetType().FullName)
+            | None, _ -> failwithf "Supported only on SQLProvider database IQueryables. Was %s" (s.GetType().FullName)
 
 open AsyncOperations
 
@@ -170,6 +189,7 @@ module Seq =
     /// WARNING! Execute SQLProvider DELETE FROM query to remove elements from the database.
     let ``delete all items from single table``<'T> : System.Linq.IQueryable<'T> -> System.Threading.Tasks.Task<int> = function
         | :? IWithSqlService as source ->
+            if source.DataContext.IsReadOnly then failwith "Context is readonly" else
             task {
                 let! res = executeDeleteQueryAsync source.DataContext source.Provider source.SqlExpression source.TupleIndex
                 if res = box(DBNull.Value) then return Unchecked.defaultof<int> else

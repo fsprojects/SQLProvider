@@ -11,10 +11,6 @@ open FSharp.Data.Sql.Common.Utilities
 open FSharp.Data.Sql.QueryExpression
 open FSharp.Data.Sql.Schema
 
-// this is publically exposed and used in the runtime
-type IWithDataContext =
-    abstract DataContext : ISqlDataContext
-
 type CastTupleMaker<'T1,'T2,'T3,'T4,'T5,'T6,'T7> = 
     static member makeTuple2(t1:obj, t2:obj) = 
         (t1 :?> 'T1, t2 :?> 'T2) |> box
@@ -45,49 +41,59 @@ module internal QueryImplementation =
         abstract GetAsyncEnumerator : unit -> System.Threading.Tasks.Task<IEnumerator<'T>>
     type IAsyncEnumerable =
         abstract EvaluateQuery : unit -> System.Threading.Tasks.Task<unit>
-
+        
+    /// Try to detect if IQueryable is a database query.
+    /// It can be e.g. direct SQLProvider IWithSqlService (great)
+    /// or annoyingly a source inside a wrapper like WhereSelectEnumerableIterator, where it needs to be updated
     let findSqlService (iq:Linq.IQueryable<'T>) = 
         match iq with
-        | :? IWithSqlService as svc -> Some svc
+        | :? IWithSqlService as svc -> Some svc, None
         | :? System.Linq.EnumerableQuery as eq ->
             let enuProp = eq.GetType().GetProperty("Enumerable", System.Reflection.BindingFlags.NonPublic ||| System.Reflection.BindingFlags.Instance)
-            if enuProp = null then
+            if isNull enuProp then
                 let expProp = eq.GetType().GetProperty("Expression", System.Reflection.BindingFlags.NonPublic ||| System.Reflection.BindingFlags.Instance)
-                if expProp = null then None
+                if isNull expProp then None, None
                 else
                 let exp = expProp.GetValue(eq, null)
-                if exp = null then None
+                if isNull exp then None, None
                 else
                 match exp with
                 | :? Expression as e ->
                     match e with
-                    | MethodCall(None, _, [Constant( :? IWithSqlService as svc, _)]) -> Some svc
-                    | _ -> None
-                | _ -> None
+                    | MethodCall(None, _, [Constant( :? IWithSqlService as svc, _)]) -> Some svc, None
+                    | _ -> None, None
+                | _ -> None, None
             else
             let enu = enuProp.GetValue(eq, null)
-            if enu = null then None
+            if isNull enu then None, None
             else
             let srcProp = enu.GetType().GetField("source", System.Reflection.BindingFlags.NonPublic ||| System.Reflection.BindingFlags.Instance)
-            if srcProp = null then None
+            if isNull srcProp then None, None
             else
-            let sval = srcProp.GetValue(enu)
-            match sval with
-            | null -> None
-            //| :? IQueryable<_> as qs ->
-            //    match findSqlService qs with
-            //    | None -> None
-            //    | Some innerSvc -> Some innerSvc
-            | _ -> None
-        | _ -> None
+            let src = srcProp.GetValue enu
+            match src with
+            | :? IWithSqlService as svc when not(isNull src) ->
+                //let srcItemType = srcProp.GetType().Fiel
+                let genArgs = src.GetType().GetGenericArguments()
+                if genArgs.Length <> 1 then None, None
+                else
+                let tRes = typedefof<ResizeArray<_>>.MakeGenericType genArgs.[0]
+                Some svc, Some (fun (queryResultsourcePropertyReplacement : IEnumerable) ->
+                                    let enu2 = queryResultsourcePropertyReplacement.GetEnumerator()
+                                    let arr = Activator.CreateInstance(tRes, [||])
+                                    let addMethod = arr.GetType().GetMethod "Add"
+                                    while enu2.MoveNext() do
+                                        addMethod.Invoke(arr, [| enu2.Current |]) |> ignore
 
-    let (|FoundSqlService|_|) (s:obj) = 
-        match s with
-        | :? Linq.IQueryable<obj> as iq -> findSqlService iq
-        | _ -> None
+                                    srcProp.SetValue(enu, (box arr))
+
+                                )
+            | _ -> None, None
+        | _ -> None, None
 
     let (|SourceWithQueryData|_|) = function Constant ((:? IWithSqlService as org), _)    -> Some org | _ -> None
-    let (|RelDirection|_|)        = function Constant ((:? RelationshipDirection as s),_) -> Some s   | _ -> None
+    [<return: Struct>]
+    let (|RelDirection|_|)        = function Constant ((:? RelationshipDirection as s),_) -> ValueSome s   | _ -> ValueNone
 
     let (|OptionalOuterJoin|) e =
         match e with
@@ -95,7 +101,58 @@ module internal QueryImplementation =
         | MethodCall(None,MethodWithName("op_BangBang"), [inner]) -> (true,inner)
         | _ -> (false,e)
 
+    let inline internal invokeEntitiesListAvoidingDynamicInvoke (results:IEnumerable<SqlEntity>) (projector:Delegate) =
+        let returnType = projector.Method.ReturnType
+        if returnType.IsClass then // Try to avoid the slow DynamicInvoke on basic types
+            let invoker = projector :?> Func<SqlEntity, _> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+        else
+
+        let isValueOption = (returnType.Name.StartsWith("ValueOption") || returnType.Name.StartsWith("FSharpValueOption")) && returnType.GenericTypeArguments.Length = 1
+        if isValueOption then
+            if   Type.(=)(returnType, typeof<ValueOption<String>>) then let invoker = projector :?> Func<SqlEntity, ValueOption<String>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<ValueOption<Decimal>>) then let invoker = projector :?> Func<SqlEntity, ValueOption<Decimal>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<ValueOption<Int64>>) then let invoker = projector :?> Func<SqlEntity, ValueOption<Int64>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<ValueOption<Int32>>) then let invoker = projector :?> Func<SqlEntity, ValueOption<Int32>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<ValueOption<DateTime>>) then let invoker = projector :?> Func<SqlEntity, ValueOption<DateTime>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<ValueOption<Boolean>>) then let invoker = projector :?> Func<SqlEntity, ValueOption<Boolean>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<ValueOption<Guid>>) then let invoker = projector :?> Func<SqlEntity, ValueOption<Guid>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<ValueOption<Single>>) then let invoker = projector :?> Func<SqlEntity, ValueOption<Single>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<ValueOption<Int16>>) then let invoker = projector :?> Func<SqlEntity, ValueOption<Int16>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<ValueOption<UInt32>>) then let invoker = projector :?> Func<SqlEntity, ValueOption<UInt32>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<ValueOption<UInt16>>) then let invoker = projector :?> Func<SqlEntity, ValueOption<UInt16>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<ValueOption<UInt64>>) then let invoker = projector :?> Func<SqlEntity, ValueOption<UInt64>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<ValueOption<Byte>>) then let invoker = projector :?> Func<SqlEntity, ValueOption<Byte>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<ValueOption<SByte>>) then let invoker = projector :?> Func<SqlEntity, ValueOption<SByte>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<ValueOption<Char>>) then let invoker = projector :?> Func<SqlEntity, ValueOption<Char>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<ValueOption<DateTimeOffset>>) then let invoker = projector :?> Func<SqlEntity, ValueOption<DateTimeOffset>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<ValueOption<TimeSpan>>) then let invoker = projector :?> Func<SqlEntity, ValueOption<TimeSpan>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            else
+                seq { for e in results -> projector.DynamicInvoke e } |> Seq.cache :> System.Collections.IEnumerable
+        else
+            if   Type.(=)(returnType, typeof<Decimal>) then let invoker = projector :?> Func<SqlEntity, Decimal> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<Int64>) then let invoker = projector :?> Func<SqlEntity, Int64> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<DateTime>) then let invoker = projector :?> Func<SqlEntity, DateTime> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<Guid>) then let invoker = projector :?> Func<SqlEntity, Guid> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<Int32>) then let invoker = projector :?> Func<SqlEntity, Int32> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<Boolean>) then let invoker = projector :?> Func<SqlEntity, Boolean> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<Single>) then let invoker = projector :?> Func<SqlEntity, Single> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<Int16>) then let invoker = projector :?> Func<SqlEntity, Int16> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<UInt32>) then let invoker = projector :?> Func<SqlEntity, UInt32> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<UInt16>) then let invoker = projector :?> Func<SqlEntity, UInt16> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<UInt64>) then let invoker = projector :?> Func<SqlEntity, UInt64> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<Byte>) then let invoker = projector :?> Func<SqlEntity, Byte> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<SByte>) then let invoker = projector :?> Func<SqlEntity, SByte> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<Char>) then let invoker = projector :?> Func<SqlEntity, Char> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<DateTimeOffset>) then let invoker = projector :?> Func<SqlEntity, DateTimeOffset> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<TimeSpan>) then let invoker = projector :?> Func<SqlEntity, TimeSpan> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            else
+                seq { for e in results -> projector.DynamicInvoke e } |> Seq.cache :> System.Collections.IEnumerable
+
+#if DEBUG
     let parseGroupByQueryResults (projector:Delegate) (results:SqlEntity[]) =
+#else
+    let inline internal parseGroupByQueryResults (projector:Delegate) (results:SqlEntity[]) =
+#endif
                 let args = projector.GetType().GenericTypeArguments
                 let keyType, keyConstructor, itemEntityType = 
                     if args.[0].Name.StartsWith("IGrouping") then
@@ -103,7 +160,7 @@ module internal QueryImplementation =
                         else 
                             let kt = args.[0].GenericTypeArguments.[0]
                             let itmType = if args.[0].GenericTypeArguments.Length > 1 then args.[0].GenericTypeArguments.[1] else typeof<SqlEntity>
-                            if kt = typeof<obj> then None, None, itmType
+                            if Type.(=) (kt, typeof<obj>) then None, None, itmType
                             else
                                 let tyo = typedefof<GroupResultItems<_,SqlEntity>>.MakeGenericType(kt, itmType)
                                 Some kt, Some (tyo.GetConstructors()), itmType
@@ -113,12 +170,13 @@ module internal QueryImplementation =
                         match genOpt with
                         | None ->
                             // GroupValBy
-                            failwith "Not yet supported grouping operation"
+                            failwith ("Not yet supported grouping operation: " + projector.ToString())
+                            //None, None, args.[1]
                         | Some gen when gen.GenericTypeArguments.Length = 0 -> None, None, baseItmType
                         | Some gen ->
                             let kt = gen.GenericTypeArguments.[0]
                             let itmType = if gen.GenericTypeArguments.Length > 1 then gen.GenericTypeArguments.[1] else baseItmType
-                            if kt = typeof<obj> then None, None, itmType
+                            if Type.(=) (kt, typeof<obj>) then None, None, itmType
                             else
                                 let tyo = typedefof<GroupResultItems<_,_>>.MakeGenericType(kt, itmType)
                                 Some kt, Some (tyo.GetConstructors()), itmType
@@ -140,26 +198,26 @@ module internal QueryImplementation =
                     tup.GetMethod("makeTuple2"), tup.GetMethod("makeTuple3"), tup.GetMethod("makeTuple4"),
                     tup.GetMethod("makeTuple5"), tup.GetMethod("makeTuple6"), tup.GetMethod("makeTuple7")
 
+                let aggregates = Set.ofArray [|"COUNT_"; "COUNTD_"; "MIN_"; "MAX_"; "SUM_"; "AVG_";"STDDEV_";"VAR_"|]
                 // do group-read
                 let collected = 
                     results |> Array.map(fun (e:SqlEntity) ->
                         // Alias is '[Sum_Column]'
-                        let aggregates = [|"COUNT_"; "MIN_"; "MAX_"; "SUM_"; "AVG_";"STDDEV_";"VAR_"|]
                         let data = 
-                            e.ColumnValues |> Seq.toArray |> Array.filter(fun (key, _) -> aggregates |> Array.exists (key.Contains) |> not)
+                            e.ColumnValues |> Seq.toArray |> Array.filter(fun (key, _) -> aggregates |> Set.exists (key.Contains) |> not)
                         let entity =
-                            if itemEntityType = typeof<SqlEntity> then box e
-                            elif itemEntityType = typeof<Tuple<SqlEntity,SqlEntity>> then
+                            if Type.(=)(itemEntityType, typeof<SqlEntity>) then box e
+                            elif Type.(=)(itemEntityType, typeof<Tuple<SqlEntity,SqlEntity>>) then
                                     box(Tuple<_,_>(e, e))
-                            elif itemEntityType = typeof<Tuple<SqlEntity,SqlEntity,SqlEntity>> then
+                            elif Type.(=)(itemEntityType, typeof<Tuple<SqlEntity,SqlEntity,SqlEntity>>) then
                                     box(Tuple<_,_,_>(e, e, e))
-                            elif itemEntityType = typeof<Tuple<SqlEntity,SqlEntity,SqlEntity>> then
+                            elif Type.(=)(itemEntityType, typeof<Tuple<SqlEntity,SqlEntity,SqlEntity>>) then
                                     box(Tuple<_,_,_,_>(e, e, e, e))
-                            elif itemEntityType = typeof<Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity>> then
+                            elif Type.(=)(itemEntityType, typeof<Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity>>) then
                                     box(Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<_,_>(e, e))
-                            elif itemEntityType = typeof<Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity,SqlEntity>> then
+                            elif Type.(=)(itemEntityType, typeof<Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity,SqlEntity>>) then
                                     box(Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<_,_,_>(e, e, e))
-                            elif itemEntityType = typeof<Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity,SqlEntity,SqlEntity>> then
+                            elif Type.(=)(itemEntityType, typeof<Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity,SqlEntity,SqlEntity>>) then
                                     box(Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<_,_,_,_>(e, e, e, e))
                             else failwith ("Not supported grouping: " + itemEntityType.Name)
                             
@@ -172,7 +230,7 @@ module internal QueryImplementation =
                             | Some keyTypev ->
                                 let x = 
                                     let b = Utilities.convertTypes keyvalue keyTypev |> unbox
-                                    if b.GetType() = typeof<obj> then unbox b else b
+                                    if Type.(=)(b.GetType(), typeof<obj>) then unbox b else b
                                 keyConstructor.Value.[1].Invoke [|keyname; x; entity;|]
                             | None ->
                                 let ty = typedefof<GroupResultItems<_,_>>.MakeGenericType(keyvalue.GetType(), itemEntityType)
@@ -234,12 +292,10 @@ module internal QueryImplementation =
         if con.State <> ConnectionState.Open then con.Open()
         use reader = cmd.ExecuteReader()
         let results = dc.ReadEntities(baseTable.FullName, columns, reader)
-        let results =
-            if not isGroypBy then
-                seq { for e in results -> projector.DynamicInvoke(e) } |> Seq.cache :> System.Collections.IEnumerable
-            else parseGroupByQueryResults projector results
-        if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
-        results
+        if provider.CloseConnectionAfterQuery && con.State <> ConnectionState.Closed then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
+        if not isGroypBy then
+            invokeEntitiesListAvoidingDynamicInvoke results projector
+        else parseGroupByQueryResults projector results
 
     let executeQueryAsync (dc:ISqlDataContext) (provider:ISqlProvider) sqlExp ti =
        task {
@@ -256,16 +312,15 @@ module internal QueryImplementation =
            if con.State <> ConnectionState.Open then
                 do! con.OpenAsync() 
            if (con.State <> ConnectionState.Open) then // Just ensure, as not all the providers seems to work so great with OpenAsync.
-                if (con.State <> ConnectionState.Closed) && (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
+                if (con.State <> ConnectionState.Closed) && provider.CloseConnectionAfterQuery then con.Close()
                 con.Open()
            use! reader = cmd.ExecuteReaderAsync() 
            let! results = dc.ReadEntitiesAsync(baseTable.FullName, columns, reader)
-           let results =
+           if provider.CloseConnectionAfterQuery then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
+           return
                if not isGroypBy then
-                   seq { for e in results -> projector.DynamicInvoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+                    invokeEntitiesListAvoidingDynamicInvoke results projector
                else parseGroupByQueryResults projector results
-           if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
-           return results
        }
 
     let executeQueryScalar (dc:ISqlDataContext) (provider:ISqlProvider) sqlExp ti =
@@ -280,7 +335,7 @@ module internal QueryImplementation =
        // ignore any generated projection and just expect a single integer back
        if con.State <> ConnectionState.Open then con.Open()
        let result = cmd.ExecuteScalar()
-       if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
+       if provider.CloseConnectionAfterQuery then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
        result
 
     let executeQueryScalarAsync (dc:ISqlDataContext) (provider:ISqlProvider) sqlExp ti =
@@ -297,10 +352,10 @@ module internal QueryImplementation =
            if con.State <> ConnectionState.Open then
                 do! con.OpenAsync() 
            if (con.State <> ConnectionState.Open) then // Just ensure, as not all the providers seems to work so great with OpenAsync.
-                if (con.State <> ConnectionState.Closed) && (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
+                if (con.State <> ConnectionState.Closed) && provider.CloseConnectionAfterQuery then con.Close()
                 con.Open()
            let! executed = cmd.ExecuteScalarAsync()
-           if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
+           if provider.CloseConnectionAfterQuery then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
            return executed
        }
 
@@ -331,25 +386,29 @@ module internal QueryImplementation =
            if con.State <> ConnectionState.Open then
                 do! con.OpenAsync()
            if (con.State <> ConnectionState.Open) then // Just ensure, as not all the providers seems to work so great with OpenAsync.
-                if (con.State <> ConnectionState.Closed) && (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
+                if (con.State <> ConnectionState.Closed) && provider.CloseConnectionAfterQuery then con.Close()
                 con.Open()
            let! executed = cmd.ExecuteScalarAsync()
-           if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
+           if provider.CloseConnectionAfterQuery then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
            return executed
        }
 
+    type [<Struct>]SqlWhereType = NormalWhere | HavingWhere
     type SqlQueryable<'T>(dc:ISqlDataContext,provider,sqlQuery,tupleIndex) =
-        let asyncModePreEvaluated = System.Collections.Concurrent.ConcurrentStack<_>() 
+        let mutable asyncModePreEvaluated :System.Collections.Concurrent.ConcurrentStack<_> option = None
         static member Create(table,conString,provider) =
             SqlQueryable<'T>(conString,provider,BaseTable("",table),ResizeArray<_>()) :> IQueryable<'T>
+        interface ISqlQueryable
         interface IQueryable<'T>
         interface IQueryable with
             member __.Provider = SqlQueryProvider.Provider
             member x.Expression =  Expression.Constant(x,typeof<IQueryable<'T>>) :> Expression
             member __.ElementType = typeof<'T>
         interface seq<'T> with
-             member __.GetEnumerator() = 
-                match asyncModePreEvaluated.TryPop() with
+             member __.GetEnumerator() =
+                if asyncModePreEvaluated.IsNone then (Seq.cast<'T> (executeQuery dc provider sqlQuery tupleIndex)).GetEnumerator()
+                else
+                match asyncModePreEvaluated.Value.TryPop() with
                 | false, _ -> (Seq.cast<'T> (executeQuery dc provider sqlQuery tupleIndex)).GetEnumerator()
                 | true, res -> (Seq.cast<'T> res).GetEnumerator()
         interface IEnumerable with
@@ -365,7 +424,10 @@ module internal QueryImplementation =
              member __.EvaluateQuery() = 
                 task {
                     let! executeSql = executeQueryAsync dc provider sqlQuery tupleIndex
-                    asyncModePreEvaluated.Push executeSql 
+                    match asyncModePreEvaluated with
+                    | Some x -> ()
+                    | None -> asyncModePreEvaluated <- Some (System.Collections.Concurrent.ConcurrentStack<_>())
+                    asyncModePreEvaluated.Value.Push executeSql 
                     return ()
                 }
         interface IAsyncEnumerable<'T> with
@@ -376,9 +438,10 @@ module internal QueryImplementation =
                 }
     
     and SqlOrderedQueryable<'T>(dc:ISqlDataContext,provider,sqlQuery,tupleIndex) =
-        let asyncModePreEvaluated = System.Collections.Concurrent.ConcurrentStack<_>() 
+        let mutable asyncModePreEvaluated :System.Collections.Concurrent.ConcurrentStack<_> option = None
         static member Create(table,conString,provider) =
             SqlOrderedQueryable<'T>(conString,provider,BaseTable("",table),ResizeArray<_>()) :> IQueryable<'T>
+        interface ISqlQueryable
         interface IOrderedQueryable<'T>
         interface IQueryable<'T>
         interface IQueryable with
@@ -386,8 +449,10 @@ module internal QueryImplementation =
             member x.Expression =  Expression.Constant(x,typeof<IOrderedQueryable<'T>>) :> Expression
             member __.ElementType = typeof<'T>
         interface seq<'T> with
-             member __.GetEnumerator() = 
-                match asyncModePreEvaluated.TryPop() with
+             member __.GetEnumerator() =
+                if asyncModePreEvaluated.IsNone then (Seq.cast<'T> (executeQuery dc provider sqlQuery tupleIndex)).GetEnumerator()
+                else
+                match asyncModePreEvaluated.Value.TryPop() with
                 | false, _ -> (Seq.cast<'T> (executeQuery dc provider sqlQuery tupleIndex)).GetEnumerator()
                 | true, res -> (Seq.cast<'T> res).GetEnumerator()
         interface IEnumerable with
@@ -403,7 +468,10 @@ module internal QueryImplementation =
              member __.EvaluateQuery() = 
                 task {
                     let! executeSql = executeQueryAsync dc provider sqlQuery tupleIndex
-                    asyncModePreEvaluated.Push executeSql 
+                    match asyncModePreEvaluated with
+                    | Some x -> ()
+                    | None -> asyncModePreEvaluated <- Some (System.Collections.Concurrent.ConcurrentStack<_>())
+                    asyncModePreEvaluated.Value.Push executeSql 
                     return ()
                 }
         interface IAsyncEnumerable<'T> with
@@ -415,10 +483,11 @@ module internal QueryImplementation =
 
     /// Structure to make it easier to return IGrouping from GroupBy
     and SqlGroupingQueryable<'TKey, 'TEntity>(dc:ISqlDataContext,provider,sqlQuery,tupleIndex) =
-        let asyncModePreEvaluated = System.Collections.Concurrent.ConcurrentStack<_>() 
+        let mutable asyncModePreEvaluated :System.Collections.Concurrent.ConcurrentStack<_> option = None
         static member Create(table,conString,provider) =
             let res = SqlGroupingQueryable<'TKey, 'TEntity>(conString,provider,BaseTable("",table),ResizeArray<_>())
             res :> IQueryable<IGrouping<'TKey, 'TEntity>>
+        interface ISqlQueryable
         interface IQueryable<IGrouping<'TKey, 'TEntity>>
         interface IQueryable with
             member __.Provider = 
@@ -428,8 +497,13 @@ module internal QueryImplementation =
             member __.ElementType = 
                 typeof<IGrouping<'TKey, 'TEntity>>
         interface seq<IGrouping<'TKey, 'TEntity>> with
-             member __.GetEnumerator() = 
-                match asyncModePreEvaluated.TryPop() with
+             member __.GetEnumerator() =
+                if asyncModePreEvaluated.IsNone then
+                    executeQuery dc provider sqlQuery tupleIndex
+                        |> Seq.cast<IGrouping<'TKey, 'TEntity>>
+                        |> fun res -> res.GetEnumerator()
+                else
+                match asyncModePreEvaluated.Value.TryPop() with
                 | false, _ -> 
                     executeQuery dc provider sqlQuery tupleIndex
                         |> Seq.cast<IGrouping<'TKey, 'TEntity>>
@@ -450,7 +524,10 @@ module internal QueryImplementation =
              member __.EvaluateQuery() = 
                 task {
                     let! executeSql = executeQueryAsync dc provider sqlQuery tupleIndex
-                    asyncModePreEvaluated.Push executeSql 
+                    match asyncModePreEvaluated with
+                    | Some x -> ()
+                    | None -> asyncModePreEvaluated <- Some (System.Collections.Concurrent.ConcurrentStack<_>())
+                    asyncModePreEvaluated.Value.Push executeSql 
                     return ()
                 }
         interface IAsyncEnumerable<IGrouping<'TKey, 'TEntity>> with
@@ -460,7 +537,6 @@ module internal QueryImplementation =
                     let toseq = executeSql |> Seq.cast<IGrouping<'TKey, 'TEntity>>
                     return toseq.GetEnumerator()
                 }
-    and SqlWhereType = NormalWhere | HavingWhere
     and SqlQueryProvider() =
          static member val Provider =
 
@@ -482,7 +558,7 @@ module internal QueryImplementation =
                         match traversable, sqlExprProj with
                         | :? LambdaExpression as le,
                                 Projection(MethodCall(None, MethodWithName("Select"), [a ; OptionalQuote(Lambda([pe], nexp) as lambda1)]),innerProj)
-                                when le.Parameters.Count = 1 && nexp.Type = le.Parameters.[0].Type ->
+                                when le.Parameters.Count = 1 && Type.(=)(nexp.Type, le.Parameters.[0].Type) ->
 
                             let visitor =
                                 { new ExpressionVisitor() with
@@ -501,7 +577,7 @@ module internal QueryImplementation =
                             let visited = visitor.Visit traversable
                             let opt = ExpressionOptimizer.visit visited
 
-                            if pe.Type = typeof<SqlEntity> then
+                            if Type.(=)(pe.Type, typeof<SqlEntity>) then
 
                                 Some opt
                             else
@@ -546,7 +622,7 @@ module internal QueryImplementation =
                         | _ -> ()
 
                         let innersrc = (src :?> IWithSqlService)
-                        source.TupleIndex |> Seq.filter(fun s -> not(innersrc.TupleIndex.Contains s)) |> Seq.iter(fun s -> innersrc.TupleIndex.Add s)
+                        source.TupleIndex |> Seq.filter(innersrc.TupleIndex.Contains >> not) |> Seq.iter(innersrc.TupleIndex.Add)
                         let qry = parseWhere meth innersrc qual :> IQueryable
                         let svc = (qry :?> IWithSqlService)
                         use con = svc.Provider.CreateConnection(svc.DataContext.ConnectionString)
@@ -589,11 +665,11 @@ module internal QueryImplementation =
                         | OrElse(_) -> Or(conditions,nextFilter)
                         | _ -> failwith ("Filter problem: " + exp.ToString())
                     match exp with
-                    | AndAlsoOrElse(AndAlsoOrElse(_,_) as left, (AndAlsoOrElse(_,_) as right)) ->
+                    | AndAlsoOrElse(AndAlsoOrElse(_) as left, (AndAlsoOrElse(_) as right)) ->
                         extendFilter [] (Some ([filterExpression left; filterExpression right]))
-                    | AndAlsoOrElse(AndAlsoOrElse(_,_) as left,Condition(c))  ->
+                    | AndAlsoOrElse(AndAlsoOrElse(_) as left,Condition(c))  ->
                         extendFilter [c] (Some ([filterExpression left]))
-                    | AndAlsoOrElse(Condition(c),(AndAlsoOrElse(_,_) as right))  ->
+                    | AndAlsoOrElse(Condition(c),(AndAlsoOrElse(_) as right))  ->
                         extendFilter [c] (Some ([filterExpression right]))
                     | AndAlsoOrElse(Condition(c1) as cc1 ,Condition(c2)) as cc2 ->
                         if cc1 = cc2 then extendFilter [c1] None
@@ -602,8 +678,8 @@ module internal QueryImplementation =
                         Condition.And([cond],None)
 
                     // Support for simple boolean expressions:
-                    | AndAlso(Bool(b), x) | AndAlso(x, Bool(b)) when b = true -> filterExpression x
-                    | OrElse(Bool(b), x) | OrElse(x, Bool(b)) when b = false -> filterExpression x
+                    | AndAlso(Bool(b), x) | AndAlso(x, Bool(b)) when b -> filterExpression x
+                    | OrElse(Bool(b), x) | OrElse(x, Bool(b)) when not b -> filterExpression x
                     | Bool(b) when b -> Condition.ConstantTrue
                     | Bool(b) when not(b) -> Condition.ConstantFalse
                     | KnownTemporaryVariable(Lambda(_,Condition(cond))) ->
@@ -638,9 +714,9 @@ module internal QueryImplementation =
                     | BaseTable(alias,sourceEntity)
                     | FilterClause(_, BaseTable(alias,sourceEntity)) ->
                         sourceAlias, sourceEntity
-                    | FilterClause(_, SelectMany(a1, a2,CrossJoin(_,_),sqlExp))
+                    | FilterClause(_, SelectMany(a1, a2,CrossJoin(_),sqlExp))
                     | FilterClause(_, SelectMany(a1, a2,LinkQuery(_),sqlExp))
-                    | SelectMany(a1, a2,CrossJoin(_,_),sqlExp)
+                    | SelectMany(a1, a2,CrossJoin(_),sqlExp)
                     | SelectMany(a1, a2,LinkQuery(_),sqlExp)  ->
                         //let sourceAlias = if sourceTi <> "" then Utilities.resolveTuplePropertyName sourceTi source.TupleIndex else sourceAlias
                         //if source.TupleIndex.Any(fun v -> v = sourceAlias) |> not then source.TupleIndex.Add(sourceAlias)
@@ -650,9 +726,9 @@ module internal QueryImplementation =
                         | FilterClause(_, BaseTable(alias,sourceEntity)) when alias = a1 -> a1, sourceEntity
                         | BaseTable(alias,sourceEntity)
                         | FilterClause(_, BaseTable(alias,sourceEntity)) when alias = a2 -> a2, sourceEntity
-                        | FilterClause(_, SelectMany(a3, a4,CrossJoin(_,_),sqlExp2))
+                        | FilterClause(_, SelectMany(a3, a4,CrossJoin(_),sqlExp2))
                         | FilterClause(_, SelectMany(a3, a4,LinkQuery(_),sqlExp2))
-                        | SelectMany(a3, a4,CrossJoin(_,_),sqlExp2)
+                        | SelectMany(a3, a4,CrossJoin(_),sqlExp2)
                         | SelectMany(a3, a4,LinkQuery(_),sqlExp2)  ->
                             match sqlExp2 with
                             | BaseTable(alias,sourceEntity)
@@ -674,6 +750,11 @@ module internal QueryImplementation =
                     match exp with
                     | SqlColumnGet(sourceTi,sourceKey,_) -> [getAlias sourceTi, sourceKey]
                     | TupleSqlColumnsGet itms -> itms |> List.map(fun (ti,key,typ) -> getAlias ti, key)
+                    | SimpleCondition ((ti,key,op,None) as x) -> // Because you can do in F# but not in SQL: GroupBy (x.IsSome)
+                        let al = getAlias sourceTi
+                        let cond = And ([ti, key, op,None], None)
+                        let cop = CaseSqlPlain(cond, 1, 0)
+                        [al, CanonicalOperation(cop, KeyColumn "Key")]
                     | _ -> []
 
                 let data =  {
@@ -857,7 +938,6 @@ module internal QueryImplementation =
                         let ty = typedefof<SqlOrderedQueryable<_>>.MakeGenericType(meth.GetGenericArguments().[0])
                         let x = ty.GetConstructors().[0].Invoke [| source.DataContext ; source.Provider; sqlExpression; source.TupleIndex; |]
                         x :?> IQueryable<_>
-
                     | MethodCall(None, (MethodWithName "ThenBy" | MethodWithName "ThenByDescending" as meth), [SourceWithQueryData source; OptionalQuote (Lambda([ParamName param], OptionalConvertOrTypeAs (SqlColumnGet(entity,key,_)))) ]) ->
                         let alias =
                             match entity with
@@ -866,9 +946,9 @@ module internal QueryImplementation =
                             | _ -> Utilities.resolveTuplePropertyName entity source.TupleIndex
                         let ty = typedefof<SqlOrderedQueryable<_>>.MakeGenericType(meth.GetGenericArguments().[0])
                         let ascending = meth.Name = "ThenBy"
+                        let gb = source.SqlExpression.hasGroupBy()
                         match source.SqlExpression with
                         | OrderBy(_) ->
-                            let gb = source.SqlExpression.hasGroupBy()
                             let sqlExpression =
                                match gb, key with
                                | Some gbv, GroupColumn(KeyOp(""), _) ->
@@ -877,8 +957,22 @@ module internal QueryImplementation =
                                | _ -> OrderBy(alias,key,ascending,source.SqlExpression)
                             let x = ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; sqlExpression ; source.TupleIndex; |]
                             x :?> IQueryable<_>
-                        | _ -> failwith (sprintf "'thenBy' operations must come immediately after a 'sortBy' operation in a query")
-
+                        | _ when source.SqlExpression.hasSortBy() ->  failwith (sprintf "'thenBy' operations must come immediately after a 'sortBy' operation in a query")
+                        | _ -> // Then by alone works as OrderBy
+                            let sqlExpression =
+                                   match source.SqlExpression, gb, key with
+                                   | BaseTable("",entity),_,_ -> OrderBy("",key,ascending,BaseTable(alias,entity))
+                                   | _, Some gbv, GroupColumn(KeyOp(""), _) -> 
+                                        gbv |> snd |> List.fold(fun exprstate (al,itm) ->
+                                            OrderBy(al,itm,ascending,exprstate)) source.SqlExpression
+                                   | _ ->  OrderBy(alias,key,ascending,source.SqlExpression)
+                            let ty = typedefof<SqlOrderedQueryable<_>>.MakeGenericType(meth.GetGenericArguments().[0])
+                            let x = ty.GetConstructors().[0].Invoke [| source.DataContext ; source.Provider; sqlExpression; source.TupleIndex; |]
+                            x :?> IQueryable<_>
+                    | MethodCall(None, (MethodWithName "OrderBy" | MethodWithName "OrderByDescending" as meth), [SourceWithQueryData source; OptionalQuote (Lambda([ParamName param], OptionalConvertOrTypeAs (Constant(v,t))))])
+                    | MethodCall(None, (MethodWithName "ThenBy" | MethodWithName "ThenByDescending" as meth), [SourceWithQueryData source; OptionalQuote (Lambda([ParamName param], OptionalConvertOrTypeAs (Constant(v,t)))) ]) ->
+                        let ty = typedefof<SqlOrderedQueryable<_>>.MakeGenericType(meth.GetGenericArguments().[0]) // Sort by constant can be ignored, except it changes the return type
+                        ty.GetConstructors().[0].Invoke [| source.DataContext ; source.Provider; source.SqlExpression ; source.TupleIndex; |] :?> IQueryable<_>
                     | MethodCall(None, (MethodWithName "Distinct" as meth), [ SourceWithQueryData source ]) ->
                         let ty = typedefof<SqlQueryable<_>>.MakeGenericType(meth.GetGenericArguments().[0])
                         ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; Distinct(source.SqlExpression) ; source.TupleIndex; |] :?> IQueryable<_>
@@ -991,7 +1085,7 @@ module internal QueryImplementation =
                         let ty =
                             match projection with
                                 | :? LambdaExpression as meth -> typedefof<SqlQueryable<_>>.MakeGenericType(meth.ReturnType)
-                                | _ -> failwith "unsupported projection in join"
+                                | _ -> failwithf "unsupported projection in join (%O)" projection
                         ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; sqlExpression; source.TupleIndex; |] :?> IQueryable<_>
 
                     | MethodCall(None, (MethodWithName "SelectMany"),
@@ -1001,14 +1095,14 @@ module internal QueryImplementation =
                         let ty =
                             match projection with
                                 | :? LambdaExpression as meth -> typedefof<SqlQueryable<_>>.MakeGenericType(meth.ReturnType)
-                                | _ -> failwith "unsupported projection in select many"
+                                | _ -> failwithf "unsupported projection in select many (%O)" projection
 
                         let ex = processSelectManys projectionParams.[1].Name inner source.SqlExpression projectionParams source 
                         ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; ex; source.TupleIndex;|] :?> IQueryable<_>
 
                     | MethodCall(None, (MethodWithName "Select"), [ SourceWithQueryData source; OptionalQuote (Lambda([ v1 ], _) as lambda) ]) as whole ->
                         let ty = typedefof<SqlQueryable<_>>.MakeGenericType((lambda :?> LambdaExpression).ReturnType )
-                        if v1.Name.StartsWith "_arg" && v1.Type <> typeof<SqlEntity> && not(v1.Type.Name.StartsWith("IGrouping")) then
+                        if v1.Name.StartsWith "_arg" && Type.(<>)(v1.Type, typeof<SqlEntity>) && not(v1.Type.Name.StartsWith("IGrouping")) then
                             // this is the projection from a join - ignore
                             // causing the ignore here will give us wrong return tyoe to deal with in convertExpression lambda handling
                             ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; source.SqlExpression; source.TupleIndex; |] :?> IQueryable<_>
@@ -1067,13 +1161,13 @@ module internal QueryImplementation =
                         |> Option.fold (fun _ x -> x) Unchecked.defaultof<'T>
                     | MethodCall(_, (MethodWithName "Single"), [Constant(query, _)]) ->
                         match (query :?> seq<_>) |> Seq.toList with
-                        | x::[] -> x
+                        | [x] -> x
                         | [] -> raise <| InvalidOperationException("Encountered zero elements in the input sequence")
                         | _ -> raise <| InvalidOperationException("Encountered more than one element in the input sequence")
                     | MethodCall(_, (MethodWithName "SingleOrDefault"), [ConstantOrNullableConstant(Some query)]) ->
                         match (query :?> seq<_>) |> Seq.toList with
                         | [] -> Unchecked.defaultof<'T>
-                        | x::[] -> x
+                        | [x] -> x
                         | _ -> raise <| InvalidOperationException("Encountered more than one element in the input sequence")
                     | MethodCall(None, (MethodWithName "Count"), [Constant(query, _)]) ->
                         let svc = (query :?> IWithSqlService)
@@ -1088,7 +1182,7 @@ module internal QueryImplementation =
                                 member t.Provider = source.Provider
                                 member t.TupleIndex = source.TupleIndex }
                         let res = parseWhere meth limitedSource qual
-                        res |> Seq.length > 0 |> box :?> 'T
+                        res |> Seq.isEmpty |> not |> box :?> 'T
                     | MethodCall(None, (MethodWithName "All" as meth), [ SourceWithQueryData source; OptionalQuote qual ]) ->
                         let negativeCheck = 
                             match qual with
@@ -1103,7 +1197,7 @@ module internal QueryImplementation =
                                 member t.TupleIndex = source.TupleIndex }
                         
                         let res = parseWhere meth limitedSource negativeCheck
-                        res |> Seq.length = 0 |> box :?> 'T
+                        res |> Seq.isEmpty |> box :?> 'T
                     | MethodCall(None, (MethodWithName "First" as meth), [ SourceWithQueryData source; OptionalQuote qual ]) ->
                         let limitedSource = 
                             {new IWithSqlService with 
@@ -1175,7 +1269,7 @@ module internal QueryImplementation =
     let getAgg<'T when 'T : comparison> (agg:string) (s:Linq.IQueryable<'T>) : 'T =
 
         match findSqlService s with
-        | Some svc ->
+        | Some svc, wapper ->
 
             match svc.SqlExpression with
             | Projection(MethodCall(None, _, [SourceWithQueryData source; OptionalQuote (Lambda([ParamName param], OptionalConvertOrTypeAs(SqlColumnGet(entity,op,_)))) ]),_) ->
@@ -1208,7 +1302,24 @@ module internal QueryImplementation =
                 if res = box(DBNull.Value) then Unchecked.defaultof<'T> else
                 (Utilities.convertTypes res typeof<'T>) |> unbox
             | _ -> failwithf "Not supported %s. You must have last a select clause to a single column to aggregate. %s" agg (svc.SqlExpression.ToString())
-        | None -> failwithf "Supported only on SQLProvider database IQueryables. Was %s" (s.GetType().FullName)
+        | None, _ -> failwithf "Supported only on SQLProvider database IQueryables. Was %s" (s.GetType().FullName)
+
+module QueryFactory =
+    let createRelated(dc:ISqlDataContext,provider:ISqlProvider,inst:SqlEntity,pe,pk,fe,fk,direction) : System.Linq.IQueryable<SqlEntity> =
+            let parseKey k = KeyColumn k
+            if direction = RelationshipDirection.Children then
+                QueryImplementation.SqlQueryable<_>(dc,provider,
+                    FilterClause(
+                        Condition.And(["__base__",(parseKey fk),ConditionOperator.Equal, Some(inst.GetColumn pk)],None),
+                        BaseTable("__base__",Table.FromFullName fe)),ResizeArray<_>()) :> System.Linq.IQueryable<_>
+            else
+                QueryImplementation.SqlQueryable<_>(dc,provider,
+                    FilterClause(
+                        Condition.And(["__base__",(parseKey pk),ConditionOperator.Equal, Some(box<|inst.GetColumn fk)],None),
+                        BaseTable("__base__",Table.FromFullName pe)),ResizeArray<_>()) :> System.Linq.IQueryable<_>
+
+    let createEntities(dc:ISqlDataContext,provider:ISqlProvider,table:string) : System.Linq.IQueryable<SqlEntity> =
+        QueryImplementation.SqlQueryable.Create(Table.FromFullName table,dc,provider)
 
 module Seq =
     /// Execute SQLProvider query to get the sum of elements.

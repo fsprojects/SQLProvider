@@ -1,7 +1,7 @@
 (*** hide ***)
-#r "../../../bin/netstandard2.0/FSharp.Data.SqlProvider.dll"
+#r "../../../bin/lib/netstandard2.0/FSharp.Data.SqlProvider.dll"
 (*** hide ***)
-let [<Literal>] resolutionPath = __SOURCE_DIRECTORY__ + @"/../../files/sqlite" 
+let [<Literal>] resolutionPath = __SOURCE_DIRECTORY__ + @"/../../files/sqlite"
 (*** hide ***)
 let [<Literal>] connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"\..\northwindEF.db;Version=3;Read Only=false;FailIfMissing=True;"
 
@@ -16,14 +16,14 @@ let parseTimezoneFunction(region:string,sdate:DateTime,customer:int) = ""
 
 ## How to see the SQL-clause?
 
-To display / debug your SQL-clauses you can add listener for your logging framework to SqlQueryEvent:
+To display / debug your SQL-clauses you can add a listener for your logging framework to SqlQueryEvent:
 *)
 
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %O")
 
 (**
 
-The event has separate fields of Command and Parameters 
+The event has separate fields of Command and Parameters
 for you to store your clauses with a strongly typed logging system like [Logary](https://github.com/logary/logary).
 
 # Querying
@@ -78,7 +78,7 @@ let exampleAsync =
                 select (order)
             } |> Seq.executeQueryAsync
         return res
-    } 
+    }
 
 let itemAsync =
     task {
@@ -88,7 +88,7 @@ let itemAsync =
                 where (order.Freight > 0m)
             } |> Seq.headAsync
         return item
-    } 
+    }
 
 (**
 
@@ -96,14 +96,14 @@ If you consider using asynchronous queries, read more from the [async documentat
 
 ## SELECT -clause operations
 
-You can control the execution context of the select-operations by `GetDataContext` parameter `selectOperations`.
+You can control the execution context of the select-operations by the `GetDataContext` parameter `selectOperations`.
 The LINQ-query stays the same. You have two options: DotNetSide or DatabaseSide.
 
-This might have a significant effect on the size of data transferred from the database.
+This might significantly affect the size of data transferred from the database.
 
 ### SelectOperations.DotNetSide (Default)
 
-Fetch the columns and run operations in .NET-side.
+Fetch the columns and run operations on the .NET-side.
 
 ```fsharp
     let dc = sql.GetDataContext(SelectOperations.DotNetSide) // (same as without the parameter)
@@ -115,18 +115,18 @@ Fetch the columns and run operations in .NET-side.
 ```
 
 ```sql
-SELECT 
+SELECT
    [cust].[Country] as 'Country',
-   [cust].[City] as 'City' 
+   [cust].[City] as 'City'
 FROM main.Customers as [cust]
 ```
 
 ### SelectOperations.DatabaseSide
 
-Execute the operations as part of SQL. 
+Execute the operations as part of SQL.
 ```
 let dc = sql.GetDataContext(SelectOperations.DatabaseSide)
-let qry = 
+let qry =
     query {
         for cust in dc.Main.Customers do
         select (if cust.Country = "UK" then (cust.City)
@@ -135,71 +135,72 @@ let qry =
 ```
 
 ```sql
-SELECT 
-   CASE WHEN ([cust].[Country] = @param1) THEN 
-   [cust].[City] 
-   ELSE @param2 
-END as [result] 
+SELECT
+   CASE WHEN ([cust].[Country] = @param1) THEN
+   [cust].[City]
+   ELSE @param2
+END as [result]
 FROM main.Customers as [cust]
 -- params @param1 - "UK"; @param2 - "Outside UK"
 ```
 
+If your query is a sub-query (a part of a larger query), then the operations are always executed on DatabaseSide.
 
 ## Supported Query Expression Keywords
 
 | Keyword            | Supported  |  Notes
 | --------------------- |:-:|---------------------------------------|
-.Contains()              |X | `open System.Linq`, in where, SQL IN-clause, nested query    | 
-.Concat()                |X | `open System.Linq`, SQL UNION ALL-clause                     | 
-.Union()                 |X | `open System.Linq`, SQL UNION-clause                         | 
-all	                     |X |                                                       | 
-averageBy                |X | Single table (1)                                       | 
-averageByNullable        |X | Single table (1)                                      | 
-contains                 |X |                                                       | 
-count                    |X |                                                       | 
-distinct                 |X |                                                       | 
-exactlyOne               |X |                                                       | 
-exactlyOneOrDefault      |X |                                                       | 
-exists                   |X |                                                       | 
-find                     |X |                                                       | 
-groupBy                  |x | Simple support (2) | 
-groupJoin                |  |                                                       | 
-groupValBy	             |  |                                                       | 
-head                     |X |                                                       | 
-headOrDefault            |X |                                                       | 
+.Contains()              |X | `open System.Linq`, in where, SQL IN-clause, nested query    |
+.Concat()                |X | `open System.Linq`, SQL UNION ALL-clause                     |
+.Union()                 |X | `open System.Linq`, SQL UNION-clause                         |
+all	                     |X |                                                       |
+averageBy                |X | Single table (1)                                       |
+averageByNullable        |X | Single table (1)                                      |
+contains                 |X |                                                       |
+count                    |X |                                                       |
+distinct                 |X |                                                       |
+exactlyOne               |X |                                                       |
+exactlyOneOrDefault      |X |                                                       |
+exists                   |X |                                                       |
+find                     |X |                                                       |
+groupBy                  |x | Simple support (2) |
+groupJoin                |  |                                                       |
+groupValBy	             |  |                                                       |
+head                     |X |                                                       |
+headOrDefault            |X |                                                       |
 if                       |X |                                                       |
-join                     |X |                                                       | 
-last                     |  |                                                       | 
-lastOrDefault            |  |                                                       | 
-leftOuterJoin            |  |                                                       | 
+join                     |X |                                                       |
+last                     |  |                                                       |
+lastOrDefault            |  |                                                       |
+leftOuterJoin            |  |                                                       |
 let                      |x | ...but not using tmp variables in where-clauses       |
-maxBy                    |X | Single table (1)                                      | 
-maxByNullable            |X | Single table (1)                                      | 
-minBy                    |X | Single table (1)                                      | 
-minByNullable            |X | Single table (1)                                      | 
-nth                      |X |                                                       | 
-select                   |X |                                                       | 
-skip                     |X |                                                       | 
-skipWhile                |  |                                                       | 
-sortBy                   |X |                                                       | 
-sortByDescending	     |X |                                                       | 
-sortByNullable           |X |                                                       | 
-sortByNullableDescending |X |                                                       | 
-sumBy                    |X | Single table (1)                                      | 
-sumByNullable            |X | Single table (1)                                      | 
-take                     |X |                                                       | 
-takeWhile                |  |                                                       | 
-thenBy	                 |X |                                                       |     
-thenByDescending	     |X |                                                       |   
-thenByNullable           |X |                                                       | 
+maxBy                    |X | Single table (1)                                      |
+maxByNullable            |X | Single table (1)                                      |
+minBy                    |X | Single table (1)                                      |
+minByNullable            |X | Single table (1)                                      |
+nth                      |X |                                                       |
+select                   |X |                                                       |
+skip                     |X |                                                       |
+skipWhile                |  |                                                       |
+sortBy                   |X |                                                       |
+sortByDescending	     |X |                                                       |
+sortByNullable           |X |                                                       |
+sortByNullableDescending |X |                                                       |
+sumBy                    |X | Single table (1)                                      |
+sumByNullable            |X | Single table (1)                                      |
+take                     |X |                                                       |
+takeWhile                |  |                                                       |
+thenBy	                 |X |                                                       |
+thenByDescending	     |X |                                                       |
+thenByNullable           |X |                                                       |
 thenByNullableDescending |X |                                                       |
-where                    |x | Server side variables must either be plain without .NET operations or use the supported canonical functions. | 
+where                    |x | Server side variables must either be plain without .NET operations or use the supported canonical functions. |
 
 Currently SQL-provider doesn't generate nested queries in from-clauses, the query is flattened to a single select. Nested in-clauses in where-clauses are supported.
-(1) Single table, if you want multiple tables, use corresponding Seq query or async aggregates, like Seq.sumQuery or Seq.sumAsync.
-(2) Very simple groupBy (and having) is supported: Single table, or max 3 table joins before groupBy, with direct aggregates like `.Count()` or direct parameter calls like `.Sum(fun entity -> entity.UnitPrice)`, and max 7 key columns. No nested grouping.
- 
-### Canonical Functions 
+(1) Single table: if you want multiple tables, use corresponding Seq query or async aggregates, like Seq.sumQuery or Seq.sumAsync.
+(2) Very simple groupBy (and having) is supported: Single table or max 3 table joins before groupBy, with direct aggregates like `.Count()` or direct parameter calls like `.Sum(fun entity -> entity.UnitPrice)`, and max 7 key columns. No nested grouping.
+
+### Canonical Functions
 
 Besides that, we support these .NET-functions to transfer the logics to SQL-clauses (starting from SQLProvider version 1.0.57).
 If you use these, remember to check your database indexes.
@@ -219,14 +220,14 @@ If you use these, remember to check your database indexes.
 .IndexOf(x, i)  | CHARINDEX       |              | LOCATE     | INSTR       |        | InStr   | LOCATE      |                 |
 (+)             | `+`             | `||`         | CONCAT     | `||`        | `||`   | &       | CONCAT      |                 |
 
-In where-clauses you can also use `.Contains("...")`, `.StartsWith("...")` and `.EndsWith("...")`, which are translated to 
+In where-clauses you can also use `.Contains("...")`, `.StartsWith("...")` and `.EndsWith("...")`, which are translated to
 corresponding `LIKE`-clauses (e.g. StartsWith("abc") is `LIKE ('asdf%')`.
 
-`Substring(startpos,length)` is supported. IndexOf with length paramter is supported except PostgreSql and SQLite.
+`Substring(startpos,length)` is supported. IndexOf with length parameter is supported except PostgreSql and SQLite.
 
 Operations do support parameters to be either constants or other SQL-columns (e.g. `x.Substring(x.Length() - 1)`).
 
- 
+
 #### .NET DateTime Functions
 
 | .NET           | MsSqlServer    | PostgreSql| MySql    | Oracle    | SQLite  | MSAccess  | Odbc       | Notes
@@ -247,8 +248,8 @@ Operations do support parameters to be either constants or other SQL-columns (e.
 .AddMinutes(f)   | DATEADD MINUTE | + INTERVAL| DATE_ADD | + INTERVAL| DATETIME| DateAdd   |            |   |
 .AddSeconds(f)   | DATEADD SECOND | + INTERVAL| DATE_ADD | + INTERVAL| DATETIME| DateAdd   |            |   |
 
-AddYears, AddDays and AddMinutes parameter can be either constant or other SQL-column, except in SQLite which supports only constant. 
-AddMonths, AddHours and AddSeconds supports only constants for now. 
+AddYears, AddDays and AddMinutes parameters can be either constant or other SQL-column, except in SQLite which supports only constant.
+AddMonths, AddHours and AddSeconds support only constants for now.
 Odbc standard doesn't seem to have a date-add functionality.
 .NET has float parameters on some time-functions like AddDays, but SQL may ignore the decimal fraction.
 
@@ -280,7 +281,7 @@ Math.Pow(x,y)   | POWER(x,y) | POWER(x,y) | POWER(x,y) | POWER(x,y) |    | x^y  
 (%)             | %          | %         | %       | %     | %          | %       | %        |   |
 
 Microsoft SQL Server doesn't have Greatest and Least functions, so that will be done via nested SQL clause: (select max(v) from (values (x), (y)) as value(v))
-It might also not be standard ODBC, but should work e.g. on Amazon Redshift.
+It might also not be standard ODBC, but it should work e.g. on Amazon Redshift.
 
 #### Condition operations and others
 
@@ -289,15 +290,15 @@ It might also not be standard ODBC, but should work e.g. on Amazon Redshift.
 .ToString()       | CAST(NVARCHAR)| ::varchar| CAST(CHAR)| CAST(VARCHAR)| CAST(TEXT)| CStr| CONVERT|   |
 if x then y else z| CASE WHEN  | CASE WHEN | IF(x,y,z)| CASE WHEN| CASE WHEN| iif(x,y,z)| CASE WHEN|   |
 
-If the condition is not using SQL columns, it will be parsed before creation of SQL.
+If the condition does not use SQL columns, it will be parsed before creating SQL.
 If the condition is containing columns, it will be parsed into SQL.
 
-If the condition is in the result of projection (the final select clause), 
-it may be parsed after execution of the SQL, depending on parameter setting `selectOperations`.
+If the condition is the result of projection (the final select clause),
+it may be parsed after execution of the SQL, depending on the parameter setting `selectOperations`.
 
-#### Aggregate Functions 
+#### Aggregate Functions
 
-Also you can use these to return an aggregated value, or in a group-by clause:
+Also, you can use these to return an aggregated value, or in a group-by-clause:
 
 | .NET          | MsSqlServer| PostgreSql| MySql   | Oracle   | SQLite | MSAccess| Odbc     |  Notes
 |---------------|------------|-----------|---------|----------|--------|---------|----------|--------------------|
@@ -318,14 +319,14 @@ Others can be used from List, Seq and Array modules, or Seq.countAsync, Seq.sumA
 
 ## More details
 
-By default `query { ... }` is `IQueryable<T>` which is lazy. To execute the query you have to do `Seq.toList`, `Seq.toArray`, or some corresponding operation. If you don't do that but just continue inside another `query { ... }` or use System.Linq `.Where(...)` etc, that will still be combined to the same SQL-query.
+By default, `query { ... }` is `IQueryable<T>`, which is lazy. To execute the query you have to do `Seq.toList`, `Seq.toArray`, or perform some corresponding operations. If you don't do that, but just continue inside another `query { ... }` or use System.Linq `.Where(...)` etc, that will still be combined to the same SQL-query.
 
-There are some limitation of complexity of your queries, but for example
-this is still ok and will give you very simple select-clause:
+There are some limitations to the complexity of your queries but for example
+this is still ok and will give you a very simple select-clause:
 
 *)
 
-let randomBoolean = 
+let randomBoolean =
     let r = System.Random()
     fun () -> r.NextDouble() > 0.5
 let c1 = randomBoolean()
@@ -341,19 +342,19 @@ let sample =
     } |> Seq.toArray
 
 (**
-It can be for example (but it can also leave [Freight]-condition away and select ShipRegion instead of ShipAddress, depending on your randon values):
+It can be for example (but it can also leave [Freight]-condition away and select ShipRegion instead of ShipAddress, depending on your random values):
 
 ```sql
-    SELECT 
+    SELECT
         [_arg2].[ShipAddress] as 'ShipAddress',
-        [_arg2].[ShipCountry] as 'ShipCountry' 
-    FROM main.Orders as [_arg2] 
-    WHERE (([_arg2].[Freight]> @param1)) 
+        [_arg2].[ShipCountry] as 'ShipCountry'
+    FROM main.Orders as [_arg2]
+    WHERE (([_arg2].[Freight]> @param1))
 ```
 
 ## Expressions
 
-These operators perform no specific function in the code itself, rather they
+These operators perform no specific function in the code itself. Instead, they
 are placeholders replaced by their database-specific server-side operations.
 Their utility is in forcing the compiler to check against the correct types.
 
@@ -377,17 +378,17 @@ You can find some custom operators `using FSharp.Data.Sql`:
 
 ### When using Option types, check IsSome in where-clauses.
 
-You may want to use F# Option to represent database null, with SQLProvider 
+You may want to use the F# Option to represent database null, with SQLProvider
 static constructor parameter `UseOptionTypes = true`.
 Database null-checking is done with `x IS NULL`.
-With option types, easiest way to do that is to check `IsSome` and `IsNone`:
+With option types, the easiest way to do that is to check `IsSome` and `IsNone`:
 
 ```fsharp
 let result =
     query {
         for order in ctx.Main.Orders do
         where (
-            order.ShippedDate.IsSome && 
+            order.ShippedDate.IsSome &&
             order.ShippedDate.Value.Year = 2015)
         select (order.OrderId, order.Freight)
     } |> Array.executeQueryAsync
@@ -399,7 +400,7 @@ This is how you make your code easier to read when you have multiple code paths.
 SQLProvider will optimize the SQL-clause before sending it to the database,
 so it will still be simple.
 
-Consider how clean is this source-code compared to other with similar logic:
+Consider how clean is this source-code compared to others with similar logic:
 
 *)
 open System.Linq
@@ -412,30 +413,43 @@ let getOrders(futureOrders:bool, shipYears:int list) =
     let result =
         query {
             for order in ctx.Main.Orders do
-            where ( 
+            where (
                 (noYearFilter || shipYears.Contains(order.ShippedDate.Year))
                 &&
                 ((futureOrders && order.OrderDate > today) ||
                  (pastOrders   && order.OrderDate <= today))
-            ) 
+            )
             select (order.OrderId, order.Freight)
         } |> Array.executeQueryAsync
     result
 
 (**
 
+<details>
+  <summary>Technical details</summary>
+
+  This is what happens behind the scenes:
+
+![1. Evaluate what we can do on the .NET side to short-circuit the SQL, 2. Optimize with Boolean algebra what is not needed, 3. Gather AST and translate to SQL](https://raw.githubusercontent.com/fsprojects/SQLProvider/master/docs/files/where.png "1. Evaluate what we can on the .NET side to short-circuit the SQL, 2. Optimize with Boolean algebra what is not needed, 3. Gather AST and translate to SQL")
+
+  The F# query syntax is LINQ Abstract Syntax Tree (AST), and SQLProvider does process those on querying.
+
+![Operations that can be done on .NET side vs. Operations translated to SQL](https://raw.githubusercontent.com/fsprojects/SQLProvider/master/docs/files/linq-ast.png "Operations that can be done on .NET side vs. Operations translated to SQL")
+
+</details>
+
 
 ### Don't select all the fields if you don't need them
 
-In general you should select only columns you need 
-and not a whole object if you don't update its fields.
+In general, you should select only the columns you need
+and only a whole object if you update its fields.
 
 *)
 
 // Select all the fields from a table, basically:
-// SELECT TOP 1 Address, City, CompanyName, 
-//      ContactName, ContactTitle, Country, 
-//      CustomerID, Fax, Phone, PostalCode, 
+// SELECT TOP 1 Address, City, CompanyName,
+//      ContactName, ContactTitle, Country,
+//      CustomerID, Fax, Phone, PostalCode,
 //      Region FROM main.Customers
 let selectFullObject =
     query {
@@ -453,7 +467,7 @@ let selectSmallObject =
 
 (**
 
-If you still want the whole objects and return those to a client 
+If you still want the whole objects and return those to a client
 as untyped records, you can use `ColumnValues |> Map.ofSeq`:
 
 *)
@@ -474,7 +488,7 @@ F# Map values are accessed like this: `myItem.["City"]`
 
 ### Using code logic in select-clause
 
-Don't be scared to insert non-Sql syntax to select-clauses.
+Feel free to insert non-Sql syntax to select-clauses.
 They will be parsed business-logic side!
 
 *)
@@ -486,9 +500,9 @@ let fetchOrders customerZone =
         // where(...)
         select {
             OrderId = order.OrderId
-            Timezone = 
+            Timezone =
                 parseTimezoneFunction(order.ShipRegion, order.ShippedDate, customerZone);
-            Status = 
+            Status =
                 if order.ShippedDate > currentDate then "Shipped"
                 elif order.OrderDate > currentDate then "Ordered"
                 elif order.RequiredDate > currentDate then "Late"
@@ -500,28 +514,28 @@ let fetchOrders customerZone =
 (**
 
 You can't have a `let` inside a select, but you can have custom function calls like
-`parseTimezoneFunction` here. Just be careful, they are executed for each result item separately.
-So if you want also SQL to execute there, it's rather better to do a separate function taking
-a collection as parameter. See below.
+`parseTimezoneFunction` here. Just be careful; they are executed separately for each result item.
+So, if you also want SQL to execute there, doing a separate function and taking
+a collection as a parameter is better. See below.
 
 
 ### Using one sub-query to populate items
 
-Sometimes you want to fetch efficiently sub-items, like
+Sometimes, you want to fetch efficiently sub-items, like
 "Give me all orders with their order-rows"
 
-In the previous example we fetched OrderRows as empty array.
-Now we populate those with one query in immutable way:
+In the previous example, we fetched OrderRows as an empty array.
+Now, we populate those with one query in an immutable way:
 
 *)
 
 let orders = fetchOrders 123
 
-let orderIds = 
-    orders 
-    |> Array.map(fun o -> o.OrderId) 
+let orderIds =
+    orders
+    |> Array.map(fun o -> o.OrderId)
     |> Array.distinct
-    
+
 // Fetch all rows with one query
 let subItems =
     query {
@@ -529,16 +543,16 @@ let subItems =
         where (orderIds.Contains(row.OrderId))
         select (row.OrderId, row.ProductId, row.Quantity)
     } |> Seq.toArray
-    
+
 let ordersWithDetails =
-    orders 
+    orders
     |> Array.map(fun order ->
-        {order with 
+        {order with
             // Match the corresponding sub items
             // to a parent item's colleciton:
-            OrderRows = 
-                subItems 
-                |> Array.filter(fun (orderId,_,_) -> 
+            OrderRows =
+                subItems
+                |> Array.filter(fun (orderId,_,_) ->
                     order.OrderId = orderId)
                 })
 
@@ -546,8 +560,8 @@ let ordersWithDetails =
 
 ### How to deal with large IN-queries?
 
-The pervious query had `orderIds.Contains(row.OrderId)`.
-Which is fine if your collection has 50 items but what if there are 5000 orderIds?
+The previous query had `orderIds.Contains(row.OrderId)`.
+This is fine if your collection has 50 items. But what if there are 5000 orderIds?
 SQL-IN will fail. You have two easy options to deal with that.
 
 #### Chunk your collection:
@@ -573,9 +587,9 @@ for chunk in chunked do
 
 #### Creating a nested query
 
-By leaving the last `|> Seq.toArray` away from your main query you create a lazy
-`IQueryable<...>`-query. Which means your IN-objects are not fetched from
-the database, but is actually a nested query.
+By leaving the last `|> Seq.toArray` away from your main query, you create a lazy
+`IQueryable<...>`-query. This means your IN-objects are not fetched from
+the database but are actually formed as a nested query.
 
 *)
 let nestedOrders =
@@ -583,7 +597,7 @@ let nestedOrders =
         for order in ctx.Main.Orders do
         // where(...)
         select (order.OrderId)
-    } 
+    }
 
 let subItemsAll =
     query {
@@ -600,26 +614,26 @@ let fetchOrders2 customerZone =
         // where(...)
         select {
             OrderId = order.OrderId
-            Timezone = 
+            Timezone =
                 parseTimezoneFunction(order.ShipRegion, order.ShippedDate, customerZone);
-            Status = 
+            Status =
                 if order.ShippedDate > currentDate then "Shipped"
                 elif order.OrderDate > currentDate then "Ordered"
                 elif order.RequiredDate > currentDate then "Late"
                 else "Waiting"
-            OrderRows = 
-                subItemsAll |> (Array.filter(fun (orderId,_,_) -> 
+            OrderRows =
+                subItemsAll |> (Array.filter(fun (orderId,_,_) ->
                     order.OrderId = orderId));
         }
     } |> Seq.toArray
 
 (**
 
-That way order hit count doesn't matter as the database is taking care of it.
+That way, the order hit count doesn't matter as the database takes care of it.
 
 ### Group-by and more complex query scenarios
 
-One problem with SQLProvider is that monitorin the SQL-clause performance hitting to
+One problem with SQLProvider is that monitoring the SQL-clause performance hitting
 database indexes is hard to track. So **the best way to handle complex SQL
 is to create a database view and query that from SQLProvider**.
 
@@ -637,13 +651,13 @@ let freightsByCity =
 
 (**
 
-Group-by is support is limited, mostly for single tables only.
-F# Linq query syntax doesnt support doing `select count(1), sum(UnitPrice) from Products`
+Group-by support is limited, mostly for single tables only.
+F# Linq query syntax doesn't support doing `select count(1), sum(UnitPrice) from Products`
 but you can group by a constant to get that:
 
 *)
 
-let qry = 
+let qry =
     query {
         for p in ctx.Main.Products do
         groupBy 1 into g
@@ -652,7 +666,7 @@ let qry =
 
 (**
 
-For more info see:
+For more info, see:
 
  * [Composable Query](composable.html)
  * [Mapping to record types](mappers.html)

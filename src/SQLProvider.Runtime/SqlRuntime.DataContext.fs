@@ -13,9 +13,9 @@ open System.Collections.Concurrent
 module internal ProviderBuilder =
     open FSharp.Data.Sql.Providers
 
-    let createProvider vendor resolutionPath referencedAssemblies runtimeAssembly owner tableNames contextSchemaPath odbcquote sqliteLibrary ssdtPath =
-        let referencedAssemblies = Array.append [|runtimeAssembly|] referencedAssemblies
+    let providerFactory = fun vendor resolutionPath referencedAssemblies runtimeAssembly owner tableNames contextSchemaPath odbcquote sqliteLibrary ssdtPath ->
         match vendor with
+#if COMMON
         | DatabaseProviderTypes.MSSQLSERVER -> MSSqlServerProvider(contextSchemaPath, tableNames) :> ISqlProvider
         | DatabaseProviderTypes.MSSQLSERVER_DYNAMIC -> MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, referencedAssemblies, tableNames) :> ISqlProvider
         | DatabaseProviderTypes.MSSQLSERVER_SSDT -> MSSqlServerProviderSsdt(tableNames, ssdtPath) :> ISqlProvider
@@ -26,66 +26,50 @@ module internal ProviderBuilder =
         | DatabaseProviderTypes.MSACCESS -> MSAccessProvider(contextSchemaPath) :> ISqlProvider
         | DatabaseProviderTypes.ODBC -> OdbcProvider(contextSchemaPath, odbcquote) :> ISqlProvider
         | DatabaseProviderTypes.FIREBIRD -> FirebirdProvider(resolutionPath, contextSchemaPath, owner, referencedAssemblies, odbcquote) :> ISqlProvider
+        | DatabaseProviderTypes.DUCKDB -> DuckDbProvider(resolutionPath, contextSchemaPath, owner, referencedAssemblies) :> ISqlProvider
+#endif
+        | DatabaseProviderTypes.EXTERNAL 
         | _ -> failwith ("Unsupported database provider: " + vendor.ToString())
 
-type public SqlDataContext (typeName, connectionString:string, providerType, resolutionPath, referencedAssemblies, runtimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, transactionOptions, commandTimeout:Option<int>, sqlOperationsInSelect, ssdtPath) =
-    let pendingChanges = System.Collections.Concurrent.ConcurrentDictionary<SqlEntity, DateTime>()
+type public SqlDataContext (typeName, connectionString:string, providerType:DatabaseProviderTypes, resolutionPath:string, referencedAssemblies:string array, runtimeAssembly: string, owner: string, caseSensitivity, tableNames:string, contextSchemaPath:string, odbcquote:OdbcQuoteCharacter, sqliteLibrary:SQLiteLibrary, transactionOptions, commandTimeout:Option<int>, sqlOperationsInSelect, ssdtPath:string, isReadOnly:bool) =
+    let pendingChanges = if isReadOnly then null else System.Collections.Concurrent.ConcurrentDictionary<SqlEntity, DateTime>()
     static let providerCache = ConcurrentDictionary<string,Lazy<ISqlProvider>>()
     let myLock2 = new Object();
 
     let provider =
         let addCache() =
             lazy
-                let prov : ISqlProvider = ProviderBuilder.createProvider providerType resolutionPath referencedAssemblies runtimeAssembly owner tableNames contextSchemaPath odbcquote sqliteLibrary ssdtPath
+                let referencedAssemblies = Array.append [|runtimeAssembly|] referencedAssemblies
+                let prov : ISqlProvider = SqlDataContext.ProviderFactory providerType resolutionPath referencedAssemblies runtimeAssembly owner tableNames contextSchemaPath odbcquote sqliteLibrary ssdtPath
                 if not (prov.GetSchemaCache().IsOffline) then
                     use con =
-                        if providerType = DatabaseProviderTypes.MSSQLSERVER_SSDT then
-                            Stubs.connection
-                        else
+                        if prov.DesignConnection then
                             let con = prov.CreateConnection(connectionString)
                             con.Open()
                             con
+                        else
+                            Stubs.connection
                             
                     // create type mappings and also trigger the table info read so the provider has
                     // the minimum base set of data available
                     prov.CreateTypeMappings(con)
                     prov.GetTables(con,caseSensitivity) |> ignore
-                    if (providerType <> DatabaseProviderTypes.MSACCESS && providerType.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
+                    if prov.CloseConnectionAfterQuery && con.State <> ConnectionState.Closed then con.Close()
                 prov
         try providerCache.GetOrAdd(typeName, fun _ -> addCache()).Value
         with | ex ->
             let x = providerCache.TryRemove typeName
             reraise()
 
-    let initCallSproc (dc:ISqlDataContext) (def:RunTimeSprocDefinition) (values:obj array) (con:IDbConnection) (com:IDbCommand) =
-        
-        if (providerType <> DatabaseProviderTypes.SQLITE) then 
-            com.CommandType <- CommandType.StoredProcedure
-
-        let columns =
-            def.Params
-            |> List.map (fun p -> p.Name, Column.FromQueryParameter(p))
-            |> Map.ofList
-
-        let entity = new SqlEntity(dc, def.Name.DbName, columns)
-
-        let toEntityArray rowSet =
-            [|
-                for row in rowSet do
-                    let entity = new SqlEntity(dc, def.Name.DbName, columns)
-                    entity.SetData(row)
-                    yield entity
-            |]
-
-        let param = def.Params |> List.toArray
-
-        Common.QueryEvents.PublishSqlQuery dc.ConnectionString (sprintf "EXEC %s(%s)" com.CommandText (String.Join(", ", (values |> Seq.map (sprintf "%A"))))) []
-        param, entity, toEntityArray
+    /// IoC: A factory that can be used to extend custom SQLProvider implementations from separate Nuget packages
+    /// Parameters: vendor resolutionPath referencedAssemblies runtimeAssembly owner tableNames contextSchemaPath odbcquote sqliteLibrary ssdtPath
+    static member val ProviderFactory = ProviderBuilder.providerFactory with get, set
 
     interface ISqlDataContext with
         member __.ConnectionString with get() = connectionString
         member __.CommandTimeout with get() = commandTimeout
         member __.CreateConnection() = provider.CreateConnection(connectionString)
+        member __.IsReadOnly = isReadOnly
 
         member __.GetPrimaryKeyDefinition(tableName) =
             let schemaCache = provider.GetSchemaCache()
@@ -93,7 +77,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
             | false ->
                 use con = provider.CreateConnection(connectionString)
                 provider.GetTables(con, caseSensitivity)
-                |> List.tryFind (fun t -> t.Name = tableName)
+                |> Array.tryFind (fun t -> t.Name = tableName)
                 |> Option.bind (fun t -> provider.GetPrimaryKey(t))
             | true ->
                 schemaCache.Tables.TryGetValue(tableName)
@@ -102,11 +86,12 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
                     | false, _ -> None
             |> (fun x -> defaultArg x "")
 
-        member __.SubmitChangedEntity e = pendingChanges.AddOrUpdate(e, DateTime.UtcNow, fun oldE dt -> DateTime.UtcNow) |> ignore
-        member __.ClearPendingChanges() = pendingChanges.Clear()
-        member __.GetPendingEntities() = pendingChanges.Keys |> Seq.toList
+        member __.SubmitChangedEntity e = if isReadOnly then failwith "Context is readonly" else pendingChanges.AddOrUpdate(e, DateTime.UtcNow, fun oldE dt -> DateTime.UtcNow) |> ignore
+        member __.ClearPendingChanges() = if isReadOnly then failwith "Context is readonly" else pendingChanges.Clear()
+        member __.GetPendingEntities() = if isReadOnly then failwith "Context is readonly" else (CommonTasks.sortEntities pendingChanges) |> Seq.toList
 
         member __.SubmitPendingChanges() =
+            if isReadOnly then failwith "Context is readonly" else 
             use con = provider.CreateConnection(connectionString)
             lock myLock2 (fun () ->
                 provider.ProcessUpdates(con, pendingChanges, transactionOptions, commandTimeout)
@@ -114,6 +99,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
             )
 
         member __.SubmitPendingChangesAsync() =
+            if isReadOnly then failwith "Context is readonly" else 
             task {
                 use con = provider.CreateConnection(connectionString) :?> System.Data.Common.DbConnection
                 let maxWait = DateTime.Now.AddSeconds(3.)
@@ -124,20 +110,10 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
             }
 
         member this.CreateRelated(inst:SqlEntity,_,pe,pk,fe,fk,direction) : IQueryable<SqlEntity> =
-            let parseKey k = KeyColumn k
-            if direction = RelationshipDirection.Children then
-                QueryImplementation.SqlQueryable<_>(this,provider,
-                    FilterClause(
-                        Condition.And(["__base__",(parseKey fk),ConditionOperator.Equal, Some(inst.GetColumn pk)],None),
-                        BaseTable("__base__",Table.FromFullName fe)),ResizeArray<_>()) :> IQueryable<_>
-            else
-                QueryImplementation.SqlQueryable<_>(this,provider,
-                    FilterClause(
-                        Condition.And(["__base__",(parseKey pk),ConditionOperator.Equal, Some(box<|inst.GetColumn fk)],None),
-                        BaseTable("__base__",Table.FromFullName pe)),ResizeArray<_>()) :> IQueryable<_>
+            QueryFactory.createRelated(this,provider,inst,pe,pk,fe,fk,direction)
 
         member this.CreateEntities(table:string) : IQueryable<SqlEntity> =
-            QueryImplementation.SqlQueryable.Create(Table.FromFullName table,this,provider)
+            QueryFactory.createEntities(this, provider, table)
 
         member this.CallSproc(def:RunTimeSprocDefinition, retCols:QueryParameter[], values:obj array) =
             use con = provider.CreateConnection(connectionString)
@@ -145,7 +121,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
             use com = provider.CreateCommand(con, def.Name.DbName)
             if commandTimeout.IsSome then
                 com.CommandTimeout <- commandTimeout.Value
-            let param, entity, toEntityArray = initCallSproc (this) def values con com
+            let param, entity, toEntityArray = CommonTasks.initCallSproc (this) def values con com provider.StoredProcedures
 
             let entities =
                 match provider.ExecuteSprocCommand(com, param, retCols, values) with
@@ -161,7 +137,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
                             entity.SetColumnSilent(name, data)
                     entity |> box
 
-            if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
+            if provider.CloseConnectionAfterQuery then con.Close()
             entities
 
         member this.CallSprocAsync(def:RunTimeSprocDefinition, retCols:QueryParameter[], values:obj array) =
@@ -172,14 +148,14 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
                 use com = provider.CreateCommand(con, def.Name.DbName)
                 if commandTimeout.IsSome then
                     com.CommandTimeout <- commandTimeout.Value
-                let param, entity, toEntityArray = initCallSproc (this) def values con com
+                let param, entity, toEntityArray = CommonTasks.initCallSproc (this) def values con com provider.StoredProcedures
 
                 let! resOrErr =
                     provider.ExecuteSprocCommandAsync((com:?> System.Data.Common.DbCommand), param, retCols, values)
                      |> Async.AwaitTask
                      |> Async.Catch
-                     |> Async.StartAsTask
-                let entities =
+                     |> Async.StartImmediateAsTask
+                return
                     match resOrErr with
                     | Choice1Of2 res ->
                         match res with
@@ -194,13 +170,12 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
                                     let data = toEntityArray rs
                                     entity.SetColumnSilent(name, data)
 
-                            if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
+                            if provider.CloseConnectionAfterQuery then con.Close()
                             entity
                     | Choice2Of2 err ->
-                        if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
+                        if provider.CloseConnectionAfterQuery then con.Close()
                         raise err
 
-                return entities
             }
 
         member this.GetIndividual(table,id) : SqlEntity =
@@ -224,12 +199,12 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
             if con.State <> ConnectionState.Open then con.Open()
             use reader = com.ExecuteReader()
             let entity = (this :> ISqlDataContext).ReadEntities(table.FullName, columns, reader) |> Seq.exactlyOne
-            if (provider.GetType() <> typeof<Providers.MSAccessProvider>) then con.Close()
+            if provider.CloseConnectionAfterQuery then con.Close()
             entity
 
         member this.ReadEntities(name: string, columns: ColumnLookup, reader: IDataReader) =
-            [| while reader.Read() = true do
-                 let e = SqlEntity(this, name, columns)
+            [| while reader.Read() do
+                 let e = SqlEntity(this, name, columns, reader.FieldCount)
                  for i = 0 to reader.FieldCount - 1 do
                     match reader.GetValue(i) with
                     | null | :? DBNull ->  e.SetColumnSilent(reader.GetName(i),null)
@@ -245,7 +220,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
                     let! h = reader.ReadAsync()
                     hasNext <- h
                     if hasNext then
-                        let e = SqlEntity(this, name, columns)
+                        let e = SqlEntity(this, name, columns, reader.FieldCount)
                         for i = 0 to reader.FieldCount - 1 do
                             let! valu = reader.GetFieldValueAsync(i)
                             match valu with
@@ -257,9 +232,10 @@ type public SqlDataContext (typeName, connectionString:string, providerType, res
             }
 
         member this.CreateEntity(tableName) =
+            if isReadOnly then failwith "Context is readonly" else 
             use con = provider.CreateConnection(connectionString)
             let columns = provider.GetColumns(con, Table.FromFullName(tableName))
-            new SqlEntity(this, tableName, columns)
+            new SqlEntity(this, tableName, columns, columns.Count)
 
         member __.SqlOperationsInSelect with get() = sqlOperationsInSelect
 

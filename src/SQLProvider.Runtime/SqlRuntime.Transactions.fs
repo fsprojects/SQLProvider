@@ -1,4 +1,4 @@
-﻿namespace FSharp.Data.Sql.Transactions
+namespace FSharp.Data.Sql.Transactions
 
 open System
 
@@ -14,13 +14,14 @@ type IsolationLevel =
     | DontCreateTransaction = 99
 
 /// Corresponds to the System.Transactions.TransactionOptions.
+[<Struct>]
 type TransactionOptions = {
     Timeout : TimeSpan
     IsolationLevel : IsolationLevel
 }
 
-module internal TransactionUtils =
-    let toSystemTransactionsIsolationLevel isolationLevel =
+module TransactionUtils =
+    let internal toSystemTransactionsIsolationLevel isolationLevel =
         match isolationLevel with
         | IsolationLevel.Serializable -> System.Transactions.IsolationLevel.Serializable
         | IsolationLevel.RepeatableRead -> System.Transactions.IsolationLevel.RepeatableRead
@@ -31,7 +32,18 @@ module internal TransactionUtils =
         | IsolationLevel.Unspecified -> System.Transactions.IsolationLevel.Unspecified
         | _ -> failwithf "Unhandled IsolationLevel value: %A." isolationLevel
 
-    let fromSystemTransactionsIsolationLevel isolationLevel =
+    let internal toSystemDataIsolationLevel isolationLevel =
+        match isolationLevel with
+        | IsolationLevel.Serializable -> System.Data.IsolationLevel.Serializable
+        | IsolationLevel.RepeatableRead -> System.Data.IsolationLevel.RepeatableRead
+        | IsolationLevel.ReadCommitted -> System.Data.IsolationLevel.ReadCommitted
+        | IsolationLevel.ReadUncommitted -> System.Data.IsolationLevel.ReadUncommitted
+        | IsolationLevel.Snapshot -> System.Data.IsolationLevel.Snapshot
+        | IsolationLevel.Chaos -> System.Data.IsolationLevel.Chaos
+        | IsolationLevel.Unspecified -> System.Data.IsolationLevel.Unspecified
+        | _ -> failwithf "Unhandled IsolationLevel value: %A." isolationLevel
+
+    let internal fromSystemTransactionsIsolationLevel isolationLevel =
         match isolationLevel with
         | System.Transactions.IsolationLevel.Serializable -> IsolationLevel.Serializable
         | System.Transactions.IsolationLevel.RepeatableRead -> IsolationLevel.RepeatableRead
@@ -47,7 +59,7 @@ module internal TransactionUtils =
             Unchecked.defaultof<Transactions.TransactionScope>
         else
         let transactionOptions =
-            new Transactions.TransactionOptions(
+            Transactions.TransactionOptions(
                 Timeout = transactionOptions.Timeout,
                 IsolationLevel = toSystemTransactionsIsolationLevel transactionOptions.IsolationLevel)
         
@@ -57,7 +69,7 @@ module internal TransactionUtils =
         // Without it, transactions are not thread-safe over threads e.g. using async can be dangerous)
         // However, default option for TransactionScopeOption is Required, so you can create top level transaction
         // and this Mono-transaction will have its properties.
-        let isMono = Type.GetType ("Mono.Runtime") <> null
+        let isMono = not (isNull(Type.GetType "Mono.Runtime"))
         match isMono with
         | true -> new Transactions.TransactionScope(transactionScopeOption, transactionOptions)
         | false ->
@@ -66,7 +78,7 @@ module internal TransactionUtils =
 
 type TransactionOptions with
     static member Default =
-        let sysTranOpt = new System.Transactions.TransactionOptions()
+        let sysTranOpt = System.Transactions.TransactionOptions()
         {
             Timeout = sysTranOpt.Timeout
             IsolationLevel = TransactionUtils.fromSystemTransactionsIsolationLevel sysTranOpt.IsolationLevel

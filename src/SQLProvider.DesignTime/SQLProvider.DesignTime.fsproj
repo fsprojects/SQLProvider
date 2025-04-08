@@ -3,22 +3,23 @@
   <Import Project="..\..\netfx.props" />
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>netstandard2.0;netcoreapp3.1;net472;net6.0</TargetFrameworks>
-    <DefineConstants>NETSTANDARD;NO_GENERATIVE;DESIGNTIME</DefineConstants>
+    <TargetFrameworks>netstandard2.0;netstandard2.1;net472;net48;net6.0;net8.0</TargetFrameworks>
+    <DefineConstants>NETSTANDARD;NO_GENERATIVE;DESIGNTIME;COMMON</DefineConstants>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <AssemblyName>FSharp.Data.SqlProvider.DesignTime</AssemblyName>
     <Name>FSharp.Data.SqlProvider</Name>
     <OutputPath>..\..\bin\typeproviders\fsharp41\</OutputPath>
-	<TargetFSharpCoreVersion>6.0.0.0</TargetFSharpCoreVersion>
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+	<TargetFSharpCoreVersion>8.0.0.0</TargetFSharpCoreVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <Optimize>true</Optimize>
     <Tailcalls>true</Tailcalls>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'net6.0' Or '$(TargetFramework)' == 'netstandard2.1' ">
-    <DefineConstants>$(DefineConstants);MICROSOFTSQL</DefineConstants>
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net8.0' Or '$(TargetFramework)' == 'net6.0' Or '$(TargetFramework)' == 'netstandard2.1' Or '$(TargetFramework)' == 'netcoreapp3.1' ">
+    <DefineConstants>$(DefineConstants);MICROSOFTSQL;NETSTANDARD21</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\..\paket-files\sourcefiles\fsprojects\FSharp.TypeProviders.SDK\src\ProvidedTypes.fsi">
@@ -63,36 +64,6 @@
     <Compile Include="..\SQLProvider.Runtime\Ssdt.DacpacParser.fs">
       <Link>Ssdt.DacpacParser.fs</Link>
     </Compile>    
-    <Compile Include="..\SQLProvider.Runtime\Providers.MsSqlServer.fs">
-      <Link>Providers.MsSqlServer.fs</Link>
-    </Compile>
-    <Compile Include="..\SQLProvider.Runtime\Providers.MsSqlServer.Dynamic.fs">
-      <Link>Providers.MsSqlServer.Dynamic.fs</Link>
-    </Compile>
-    <Compile Include="..\SQLProvider.Runtime\Providers.MsSqlServer.Ssdt.fs">
-      <Link>Providers.MsSqlServer.Ssdt.fs</Link>
-    </Compile>
-    <Compile Include="..\SQLProvider.Runtime\Providers.MSAccess.fs">
-      <Link>Providers.MSAccess.fs</Link>
-    </Compile>
-    <Compile Include="..\SQLProvider.Runtime\Providers.MySql.fs">
-      <Link>Providers.MySql.fs</Link>
-    </Compile>
-    <Compile Include="..\SQLProvider.Runtime\Providers.Odbc.fs">
-      <Link>Providers.Odbc.fs</Link>
-    </Compile>
-    <Compile Include="..\SQLProvider.Runtime\Providers.Oracle.fs">
-      <Link>Providers.Oracle.fs</Link>
-    </Compile>
-    <Compile Include="..\SQLProvider.Runtime\Providers.Postgresql.fs">
-      <Link>Providers.Postgresql.fs</Link>
-    </Compile>
-    <Compile Include="..\SQLProvider.Runtime\Providers.SQLite.fs">
-      <Link>Providers.SQLite.fs</Link>
-    </Compile>
-    <Compile Include="..\SQLProvider.Runtime\Providers.Firebird.fs">
-      <Link>Providers.Firebird.fs</Link>
-    </Compile>
     <Compile Include="..\SQLProvider.Runtime\SqlRuntime.QueryExpression.fs">
       <Link>SqlRuntime.QueryExpression.fs</Link>
     </Compile>
@@ -101,6 +72,39 @@
     </Compile>
     <Compile Include="..\SQLProvider.Runtime\SqlRuntime.Async.fs">
       <Link>SqlRuntime.Async.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider.Runtime\Providers.MsSqlServer.fs">
+        <Link>Providers.MsSqlServer.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider.Runtime\Providers.MsSqlServer.Dynamic.fs">
+        <Link>Providers.MsSqlServer.Dynamic.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider.Runtime\Providers.MsSqlServer.Ssdt.fs">
+        <Link>Providers.MsSqlServer.Ssdt.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider.Runtime\Providers.MSAccess.fs">
+        <Link>Providers.MSAccess.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider.Runtime\Providers.MySql.fs">
+        <Link>Providers.MySql.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider.Runtime\Providers.Odbc.fs">
+        <Link>Providers.Odbc.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider.Runtime\Providers.Oracle.fs">
+        <Link>Providers.Oracle.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider.Runtime\Providers.Postgresql.fs">
+        <Link>Providers.Postgresql.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider.Runtime\Providers.SQLite.fs">
+        <Link>Providers.SQLite.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider.Runtime\Providers.Firebird.fs">
+        <Link>Providers.Firebird.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider.Runtime\Providers.DuckDb.fs">
+        <Link>Providers.DuckDb.fs</Link>
     </Compile>
     <Compile Include="..\SQLProvider.Runtime\SqlRuntime.DataContext.fs">
       <Link>SqlRuntime.DataContext.fs</Link>
@@ -123,15 +127,14 @@
     <Reference Include="System.IO.Compression" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net472" Version="1.0.3">
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net472" Version="1.0.3" Condition="'$(TargetFramework)' == 'net472'">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <!--
-    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net48" Version="1.0.3">
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net48" Version="1.0.3" Condition="'$(TargetFramework)' == 'net48'">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
-    </PackageReference>-->
+    </PackageReference>
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

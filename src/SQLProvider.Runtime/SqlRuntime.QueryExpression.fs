@@ -18,11 +18,24 @@ module internal QueryExpressionTransformer =
         | _ -> failwith "never"
 
 
+    let rec directAggregate (exp:Expression) picker =
+        match exp.NodeType, exp with
+        | _, OptionalConvertOrTypeAs(SqlColumnGet(entity, op, _)) ->
+            picker entity op
+        | ExpressionType.Quote, (:? UnaryExpression as ce) 
+        | ExpressionType.Convert, (:? UnaryExpression as ce) -> directAggregate ce.Operand picker
+        | ExpressionType.MemberAccess, ( :? MemberExpression as me2) -> 
+            match me2.Member with 
+            | :? PropertyInfo as p when p.Name = "Value" && (me2.Member.DeclaringType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpOption`1") ||
+                                                                me2.Member.DeclaringType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpValueOption`1")) -> directAggregate (me2.Expression) picker
+            | _ -> None
+        | _ -> None
+
     let transform (projection:Expression) (tupleIndex:string ResizeArray) (databaseParam:ParameterExpression) (aliasEntityDict:Map<string,Table>) (ultimateChild:(string * Table) option) (replaceParams:Dictionary<ParameterExpression, LambdaExpression>) useCanonicalsOnSelect =
         let (|OperationColumnOnly|_|) = function
             | MethodCall(None, MethodWithName "Select", [Constant(_, t) ;
                 OptionalQuote (Lambda([ParamName sourceAlias],(SqlColumnGet(entity,(CanonicalOperation(_) | KeyColumn(_) as coltyp),rtyp) as oper))) as exp]) when 
-                    (t = typeof<System.Linq.IQueryable<SqlEntity>> || t = typeof<System.Linq.IOrderedQueryable<SqlEntity>>) && ((not(databaseParam.Type.Name.StartsWith("IGrouping")))) ->
+                    (Type.(=)(t, typeof<System.Linq.IQueryable<SqlEntity>>) || Type.(=)(t, typeof<System.Linq.IOrderedQueryable<SqlEntity>>)) && ((not(databaseParam.Type.Name.StartsWith("IGrouping")))) ->
                 let resolved = Utilities.resolveTuplePropertyName entity tupleIndex
                 let al = if String.IsNullOrEmpty resolved then sourceAlias else resolved
                 Some ((al,coltyp,rtyp), exp, oper.Type)
@@ -32,7 +45,8 @@ module internal QueryExpressionTransformer =
         let groupProjectionMap = ResizeArray<alias*SqlColumnType>()
 
         let (|SingleTable|MultipleTables|) = function
-            | MethodCall(None, MethodWithName "Select", [Constant(_, t) ;exp]) when t = typeof<System.Linq.IQueryable<SqlEntity>> || t = typeof<System.Linq.IOrderedQueryable<SqlEntity>> ->
+            | MethodCall(None, MethodWithName "Select", [Constant(_, t) ;exp]) when
+                    (Type.(=)(t, typeof<System.Linq.IQueryable<SqlEntity>>) || Type.(=)(t, typeof<System.Linq.IOrderedQueryable<SqlEntity>>)) && aliasEntityDict.Count < 2 ->
                 SingleTable exp
             | MethodCall(None, MethodWithName "Select", [_ ;exp]) ->
                 MultipleTables exp
@@ -40,7 +54,16 @@ module internal QueryExpressionTransformer =
                 if not(groupProjectionMap.Contains (entity,ct)) then
                     groupProjectionMap.Add(entity,ct)
                 MultipleTables exp
-            | _ -> failwith ("Unsupported projection: " + projection.NodeType.ToString())
+            | Lambda([ParamName sourceAlias],NewExpr(_, [
+                        (SqlColumnGet(entity1,ct1,rtyp1) as oper1);
+                        (SqlColumnGet(entity2,ct2,rtyp2) as oper2)
+                        ])) as exp ->
+                if not(groupProjectionMap.Contains (entity1,ct1)) then
+                    groupProjectionMap.Add(entity1,ct1)
+                if not(groupProjectionMap.Contains (entity2,ct2)) then
+                    groupProjectionMap.Add(entity2,ct2)
+                MultipleTables exp
+            | _ -> failwith ("Unsupported projection type " + projection.NodeType.ToString() + ": " + projection.ToString())
 
             // 1. only one table was involed so the input is a single parameter
             // 2. the input is a n tuple returned from the query
@@ -52,71 +75,114 @@ module internal QueryExpressionTransformer =
         
         let (|SourceTupleGet|_|) (e:Expression) =
             match e with
-            | PropertyGet(Some(ParamWithName "tupledArg"), info) when info.PropertyType = typeof<SqlEntity> ->
+            | PropertyGet(Some(ParamWithName "tupledArg"), info) when Type.(=)(info.PropertyType, typeof<SqlEntity>) ->
                 let alias = Utilities.resolveTuplePropertyName (e :?> MemberExpression).Member.Name tupleIndex
-                if aliasEntityDict.ContainsKey(alias) then
-                    Some (alias,aliasEntityDict.[alias].FullName, None)
-                elif ultimateChild.IsSome then
-                    Some (alias, fst(ultimateChild.Value), None)
-                else None
+                match aliasEntityDict.TryGetValue alias with
+                | true, aliasVal ->
+                    Some (alias,aliasVal.FullName, None)
+                | false, _ ->
+                    if ultimateChild.IsSome then
+                        Some (alias, fst(ultimateChild.Value), None)
+                    else None
             | MethodCall(Some(PropertyGet(Some(ParamWithName "tupledArg"),info) as getter),
                          (MethodWithName "GetColumn" | MethodWithName "GetColumnOption" | MethodWithName "GetColumnValueOption" as mi) ,
-                         [String key]) when info.PropertyType = typeof<SqlEntity> ->
+                         [String key]) when Type.(=)(info.PropertyType, typeof<SqlEntity>) ->
                 let alias = Utilities.resolveTuplePropertyName (getter :?> MemberExpression).Member.Name tupleIndex
-                if aliasEntityDict.ContainsKey(alias) then
-                    Some (alias,aliasEntityDict.[alias].FullName, Some(key,mi))
-                elif ultimateChild.IsSome then
-                    Some (alias,fst(ultimateChild.Value), Some(key,mi))
-                else None
+                match aliasEntityDict.TryGetValue alias with
+                | true, aliasVal ->
+                    Some (alias,aliasVal.FullName, Some(key,mi))
+                | false, _ ->
+                    if ultimateChild.IsSome then
+                        Some (alias,fst(ultimateChild.Value), Some(key,mi))
+                    else None
             | eOther when eOther.NodeType.ToString().Contains("Parameter") && (eOther :? ParameterExpression) ->
                 let param = eOther :?> ParameterExpression
-                if param.Type = typeof<SqlEntity> then
+                if Type.(=)(param.Type, typeof<SqlEntity>) then
                     let alias = Utilities.resolveTuplePropertyName (param.Name) tupleIndex
-                    if aliasEntityDict.ContainsKey(alias) then
-                        Some (alias,aliasEntityDict.[alias].FullName, None)
-                    elif ultimateChild.IsSome then
-                        Some (fst(ultimateChild.Value),snd(ultimateChild.Value).FullName, None)
-                    else None
+                    match aliasEntityDict.TryGetValue alias with
+                    | true, aliasVal ->
+                        Some (alias,aliasVal.FullName, None)
+                    | false, _ ->
+                        if ultimateChild.IsSome then
+                            Some (fst(ultimateChild.Value),snd(ultimateChild.Value).FullName, None)
+                        else None
                 else None
             | PropertyGet(Some(PropertyGet(Some(ParamWithName "tupledArg"), nestedTuple)), info) 
-                    when nestedTuple.Name = "Item8" && info.PropertyType = typeof<SqlEntity> && nestedTuple.PropertyType.Name.StartsWith("AnonymousObject") ->
+                    when nestedTuple.Name = "Item8" && Type.(=)(info.PropertyType, typeof<SqlEntity>) && nestedTuple.PropertyType.Name.StartsWith("AnonymousObject") ->
                 // After 7 members tuple starts to nest Item:s.
                 let foundMember, name = Int32.TryParse((e :?> MemberExpression).Member.Name.Replace("Item", ""))
                 if not foundMember then None
                 else
                 let alias = Utilities.resolveTuplePropertyName ("Item" + (7 + name).ToString()) tupleIndex
-                if aliasEntityDict.ContainsKey(alias) then
-                    Some (alias,aliasEntityDict.[alias].FullName, None)
-                else None
+                match aliasEntityDict.TryGetValue alias with
+                | true, aliasVal ->
+                    Some (alias,aliasVal.FullName, None)
+                | false, _ -> None
             | MethodCall(Some(PropertyGet(Some(PropertyGet(Some(ParamWithName "tupledArg"), nestedTuple)), info) as getter),
                          (MethodWithName "GetColumn" | MethodWithName "GetColumnOption" | MethodWithName "GetColumnValueOption" as mi) ,
-                         [String key]) when nestedTuple.Name = "Item8" && info.PropertyType = typeof<SqlEntity> && nestedTuple.PropertyType.Name.StartsWith("AnonymousObject") ->
+                         [String key]) when nestedTuple.Name = "Item8" && Type.(=)(info.PropertyType, typeof<SqlEntity>) && nestedTuple.PropertyType.Name.StartsWith("AnonymousObject") ->
                 let foundMember, name = Int32.TryParse((getter :?> MemberExpression).Member.Name.Replace("Item", ""))
                 if not foundMember then None
                 else
                 let alias = Utilities.resolveTuplePropertyName ("Item" + (7 + name).ToString()) tupleIndex
-                if aliasEntityDict.ContainsKey(alias) then
-                    Some (alias,aliasEntityDict.[alias].FullName, Some(key,mi))
-                else None
+                match aliasEntityDict.TryGetValue alias with
+                | true, aliasVal ->
+                    Some (alias,aliasVal.FullName, Some(key,mi))
+                | false, _ -> None
             | _ -> None
 
         let (|GroupByAggregate|_|) (e:Expression) =
             // On group-by aggregates we support currently only direct calls like .Count() or .Sum()
             // and direct parameter calls like .Sum(fun entity -> entity.UnitPrice)
             match e.NodeType, e with
-            | ExpressionType.Call, (:? MethodCallExpression as me) -> 
+            | ExpressionType.Call, (:? MethodCallExpression as me) ->
+
+                let checkInnerdSelect (m:MethodCallExpression) =
+                    if m.Arguments.Count > 0 && (m.Arguments.[0].Type.IsGenericType) then
+                        match m.Arguments.[0].NodeType, m.Arguments.[0] with
+                        | ExpressionType.Call, (:? MethodCallExpression as me2) ->
+                            if me2.Arguments.Count > 0 && (me2.Arguments.[0].Type.IsGenericType) &&
+                                    (me2.Arguments.[0].Type.Name.StartsWith("IGrouping") || me2.Arguments.[0].Type.Name.StartsWith("Grouping")) && me2.Method.Name = "Select"
+                                then Some me2
+                                else None
+                        | _ -> None
+                    else None
+
+                let hasInnerDistinct =
+                    if me.Arguments.Count > 0 && (me.Arguments.[0].Type.IsGenericType) then
+                        match me.Arguments.[0].NodeType, me.Arguments.[0] with
+                        | ExpressionType.Call, (:? MethodCallExpression as me2) ->
+                            if me2.Arguments.Count > 0 && (me2.Arguments.[0].Type.IsGenericType) &&
+                                    (me2.Arguments.[0].Type.Name.StartsWith("IGrouping") || me2.Arguments.[0].Type.Name.StartsWith("Grouping") || (checkInnerdSelect me2).IsSome) && me2.Method.Name = "Distinct"
+                                then Some me2
+                                else None
+                        | _ -> None
+                    else None
+
+                let hasInnerdSelect =
+                    match hasInnerDistinct with
+                    | Some innerDist -> checkInnerdSelect innerDist
+                    | None -> checkInnerdSelect me
+
                 let isGrouping = 
                     me.Arguments.Count > 0 && (me.Arguments.[0].Type.IsGenericType) &&
-                    (me.Arguments.[0].Type.Name.StartsWith("IGrouping") || me.Arguments.[0].Type.Name.StartsWith("Grouping"))
+                    (me.Arguments.[0].Type.Name.StartsWith("IGrouping") || me.Arguments.[0].Type.Name.StartsWith("Grouping")) || hasInnerdSelect.IsSome
+
                 let isNumType (ty:Type) =
-                    decimalTypes  |> Seq.exists(fun t -> t = ty) || integerTypes |> Seq.exists(fun t -> t = ty)
+                    decimalTypes  |> Seq.exists(fun t -> Type.(=)(t, ty)) || integerTypes |> Seq.exists(fun t -> Type.(=)(t, ty))
 
                 let op =
                     if me.Arguments.Count = 1 && (me.Arguments.[0].NodeType = ExpressionType.Parameter ||
                                                     (me.Arguments.[0].NodeType = ExpressionType.New && me.Arguments.[0].Type.Name.StartsWith("Grouping")) || 
-                                                    (me.Arguments.[0].NodeType = ExpressionType.MemberAccess && me.Arguments.[0].Type.Name.StartsWith("IGrouping"))
-                                                 ) then
+                                                    (me.Arguments.[0].NodeType = ExpressionType.MemberAccess && (me.Arguments.[0].Type.Name.StartsWith("IGrouping"))) ||
+                                                    (hasInnerDistinct.IsSome && (
+                                                         hasInnerDistinct.Value.Arguments.[0].NodeType = ExpressionType.Parameter ||
+                                                        (hasInnerDistinct.Value.Arguments.[0].NodeType = ExpressionType.New && hasInnerDistinct.Value.Arguments.[0].Type.Name.StartsWith("Grouping")) || 
+                                                        (hasInnerDistinct.Value.Arguments.[0].NodeType = ExpressionType.MemberAccess && (hasInnerDistinct.Value.Arguments.[0].Type.Name.StartsWith("IGrouping")))
+                                                    )
+                                                 )) then
                         match me.Method.Name with
+                        | "Count" when hasInnerDistinct.IsSome -> Some (CountDistOp "", None)
                         | "Count" -> Some (CountOp "", None)
                         | "Sum" when isNumType me.Type -> Some (SumOp "", None)
                         | "Avg" | "Average" when (isNumType me.Type) -> Some (AvgOp "", None)
@@ -126,6 +192,41 @@ module internal QueryExpressionTransformer =
                         | "Variance" when isNumType me.Type -> Some (VarianceOp "", None)
                         | _ -> None
 
+                    elif me.Arguments.Count = 1 && me.Arguments.[0].NodeType = ExpressionType.Call && [|"Count"; "Sum"; "Avg"; "Min"; "Max"; "StdDev"; "Variance"|] |> Array.contains me.Method.Name then
+                        let firstArg =
+                            match hasInnerDistinct with
+                            | Some innerDist -> innerDist.Arguments.[0].NodeType, innerDist.Arguments.[0]
+                            | None -> me.Arguments.[0].NodeType, me.Arguments.[0]
+                        match firstArg with
+                        | ExpressionType.Call, (:? MethodCallExpression as me2) when me2.Arguments.Count = 2 && (me2.Arguments.[0].Type.IsGenericType) &&
+                                    (me2.Arguments.[0].Type.Name.StartsWith("IGrouping") || me2.Arguments.[0].Type.Name.StartsWith("Grouping")) && me2.Method.Name = "Select" ->
+
+                            match me2.Arguments.[1] with
+                            | :? LambdaExpression as la ->
+
+                                let getOp al op =
+                                    let key = Utilities.getBaseColumnName op
+                                    let ops =
+                                        match op with
+                                        | CanonicalOperation _ -> Some (al,op)
+                                        | KeyColumn _
+                                        | GroupColumn _ -> None
+
+                                    match me.Method.Name with
+                                    | "Count" when hasInnerDistinct.IsSome -> Some (CountDistOp key, ops)
+                                    | "Count" -> Some (CountOp key, ops)
+                                    | "Sum" -> Some (SumOp key, ops)
+                                    | "Avg" | "Average" -> Some (AvgOp key, ops)
+                                    | "Min" -> Some (MinOp key, ops)
+                                    | "Max" -> Some (MaxOp key, ops)
+                                    | "StdDev" | "StDev" | "StandardDeviation" -> Some (StdDevOp key, ops)
+                                    | "Variance" -> Some (VarianceOp key, ops)
+                                    | _ -> None
+
+                                directAggregate la.Body getOp
+                            | _ -> None
+                        | _ -> None
+
                     elif me.Arguments.Count = 2 then
                         match me.Arguments.[1] with
                         | :? LambdaExpression as la ->
@@ -133,6 +234,7 @@ module internal QueryExpressionTransformer =
                             let getOp al op =
                                 let key = Utilities.getBaseColumnName op
                                 match me.Method.Name with
+                                | "Count" when hasInnerDistinct.IsSome -> Some (CountDistOp key, Some (al,op))
                                 | "Count" -> Some (CountOp key, Some (al,op))
                                 | "Sum" -> Some (SumOp key, Some (al,op))
                                 | "Avg" | "Average" -> Some (AvgOp key, Some (al,op))
@@ -142,52 +244,37 @@ module internal QueryExpressionTransformer =
                                 | "Variance" -> Some (VarianceOp key, Some (al,op))
                                 | _ -> None
 
-                            let rec directAggregate (exp:Expression) =
-                                match exp.NodeType, exp with
-                                | _, OptionalConvertOrTypeAs(SqlColumnGet(entity, op, _)) ->
-                                    getOp entity op
-                                | ExpressionType.Quote, (:? UnaryExpression as ce) 
-                                | ExpressionType.Convert, (:? UnaryExpression as ce) -> directAggregate ce.Operand
-                                | ExpressionType.MemberAccess, ( :? MemberExpression as me2) -> 
-                                    match me2.Member with 
-                                    | :? PropertyInfo as p when p.Name = "Value" && (me2.Member.DeclaringType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpOption`1") ||
-                                                                                     me2.Member.DeclaringType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpValueOption`1")) -> directAggregate (me2.Expression)
-                                    | _ -> None
-                                // This lamda could be parsed more if we would want to support
-                                // more complex aggregate scenarios.
-                                // Subtables
-                                | _, OptionalFSharpOptionValue(MethodCall(Some(o),((MethodWithName "GetColumn" as meth) | (MethodWithName "GetColumnOption" as meth) | (MethodWithName "GetColumnValueOption" as meth)),[String key])) when o.Type.Name = "SqlEntity" -> 
-                                    match o.NodeType, o with
-                                    | ExpressionType.Call, (:? MethodCallExpression as ce)
-                                            when (ce.Method.Name = "GetSubTable" && ce.Object <> null && ce.Object :? ParameterExpression ) ->
-                                        let alias = (ce.Object :?> ParameterExpression).Name
-                                        getOp alias (KeyColumn key)
-                                    | _ -> None
-                                | _ -> None
-                            directAggregate la.Body
+                            directAggregate la.Body getOp
                         | _ -> None
                     else None
 
                 match isGrouping, op with
                 | true, Some (o, calcs) ->
-                    let methodname = "Aggregate"+me.Method.Name
+                    let methodname =
+                        if hasInnerDistinct.IsSome then "Aggregate"+me.Method.Name+"Distinct"
+                        else "Aggregate"+me.Method.Name
                     
                     let v = match o with 
-                            | CountOp x | SumOp x | AvgOp x | MinOp x | MaxOp x | StdDevOp x | VarianceOp x 
+                            | CountOp x | SumOp x | AvgOp x | MinOp x | MaxOp x | StdDevOp x | VarianceOp x | CountDistOp x
                             | KeyOp x -> x
                     //Count 1 is over all the items
                     let vf = if v = "" then None else Some v
+                    let paramArg =
+                        match hasInnerdSelect with
+                        | Some selParam -> selParam.Arguments.[0]
+                        | None -> me.Arguments.[0]
+                        
                     let ty =
                         let retType =
-                            if me.Arguments.[0].Type.GetGenericArguments().Length > 1 then
-                                me.Arguments.[0].Type.GetGenericArguments().[1]
+                            if paramArg.Type.GetGenericArguments().Length > 1 then
+                                paramArg.Type.GetGenericArguments().[1]
                             else typeof<SqlEntity>
-                        typedefof<GroupResultItems<_,_>>.MakeGenericType(me.Arguments.[0].Type.GetGenericArguments().[0], retType)
+                        typedefof<GroupResultItems<_,_>>.MakeGenericType(paramArg.Type.GetGenericArguments().[0], retType)
                     let aggregateColumn = Expression.Constant(vf, typeof<Option<string>>) :> Expression
                     let meth = ty.GetMethod(methodname)
                     let generic = meth.MakeGenericMethod(me.Method.ReturnType);
                     let replacementExpr =
-                        Expression.Call(Expression.Convert(me.Arguments.[0], ty), generic, aggregateColumn)
+                        Expression.Call(Expression.Convert(paramArg, ty), generic, aggregateColumn)
                     let res =
                         match calcs with
                         | None -> Some (("",GroupColumn(o,SqlColumnType.KeyColumn(v))), replacementExpr)
@@ -231,7 +318,7 @@ module internal QueryExpressionTransformer =
                         values.Add(OperationColumn(name, coltyp))
                         Some projection
                 | false, _ -> 
-                    projectionMap.Add(foundAlias,new ResizeArray<_>(seq{yield OperationColumn(name, coltyp)}))
+                    projectionMap.Add(foundAlias, ResizeArray<_>(seq{yield OperationColumn(name, coltyp)}))
                     Some projection           
                 | _ -> 
                     // This table is alredy fetched as all columns
@@ -244,12 +331,12 @@ module internal QueryExpressionTransformer =
                 // needs to be replaced with a call to GetSubEntity using the result as an input
                 match projectionMap.TryGetValue alias with
                 | true, values -> values.Clear()
-                | false, _ -> projectionMap.Add(alias,new ResizeArray<_>())
+                | false, _ -> projectionMap.Add(alias, ResizeArray<_>())
                 Some (Expression.Call(databaseParam,getSubEntityMi,Expression.Constant(alias),Expression.Constant(name)))
             | _, SourceTupleGet(alias,name,Some(key,mi)) ->
                 match projectionMap.TryGetValue alias with
                 | true, values when values.Count > 0 -> values.Add(EntityColumn(key))
-                | false, _ -> projectionMap.Add(alias,new ResizeArray<_>(seq{yield EntityColumn(key)}))
+                | false, _ -> projectionMap.Add(alias, ResizeArray<_>(seq{yield EntityColumn(key)}))
                 | _ -> ()
                 Some
                     (match databaseParam.Type.Name.StartsWith("IGrouping") with
@@ -263,36 +350,47 @@ module internal QueryExpressionTransformer =
                                 mi,Expression.Constant(key))))
 
             | ExpressionType.Call, MethodCall(Some(ParamName pname as p),(MethodWithName "GetColumn" | MethodWithName "GetColumnOption" | MethodWithName "GetColumnValueOption" as mi),[String key]) 
-                    when p.Type = typeof<SqlEntity> ->
+                    when Type.(=)(p.Type, typeof<SqlEntity>) ->
 
                 let foundAlias = 
-                    if aliasEntityDict.ContainsKey(pname) then Some pname
+                    if aliasEntityDict.ContainsKey(pname) then ValueSome pname
                     elif pname.StartsWith "Item" then
                         let al = Utilities.resolveTuplePropertyName pname tupleIndex
-                        if aliasEntityDict.ContainsKey(al) then Some al
-                        elif ultimateChild.IsSome then Some (fst ultimateChild.Value)
-                        else None
-                    elif ultimateChild.IsSome then Some (fst ultimateChild.Value)
-                    else None
+                        if aliasEntityDict.ContainsKey(al) then ValueSome al
+                        elif ultimateChild.IsSome then ValueSome (fst ultimateChild.Value)
+                        else ValueNone
+                    else
+                    let prevParamKey = replaceParams.Keys |> Seq.toList |> List.tryFind(fun p -> p.Name = pname)
+
+                    let ultimateFallback = if ultimateChild.IsSome then ValueSome (fst ultimateChild.Value) else ValueNone
+                    match prevParamKey |> Option.map replaceParams.TryGetValue with
+                    | Some (true, par) ->
+                        match par.Body.NodeType, par.Body with
+                        | ExpressionType.Call, (:? MethodCallExpression as ce) when (ce.Method.Name = "GetSubTable" && (not(isNull ce.Object)) && ce.Object :? ParameterExpression && ce.Arguments.Count = 2) ->
+                            match ce.Arguments.[0] with
+                            | :? ConstantExpression as c when aliasEntityDict.ContainsKey (c.Value.ToString()) -> ValueSome (c.Value.ToString())
+                            | _ -> ultimateFallback
+                        | _ -> ultimateFallback
+                    | _ -> ultimateFallback
 
                 match foundAlias with
-                | Some alias ->
+                | ValueSome alias ->
                     match projectionMap.TryGetValue alias with
                     | true, values when values.Count > 0 -> values.Add(EntityColumn(key))
-                    | false, _ -> projectionMap.Add(alias,new ResizeArray<_>(seq{yield EntityColumn(key)}))
+                    | false, _ -> projectionMap.Add(alias, ResizeArray<_>(seq{yield EntityColumn(key)}))
                     | _ -> ()
                     Some
                         (match databaseParam.Type.Name.StartsWith("IGrouping") with
                          | false -> Expression.Call(databaseParam,mi,Expression.Constant(key))
                          | true -> Expression.Call(Expression.Parameter(typeof<SqlEntity>,alias),mi,Expression.Constant(key)))
-                | None -> None
+                | ValueNone -> None
             | _ -> None
 
 
         // this is not tail recursive but it shouldn't matter in practice ....
         let rec transform  (en:String voption) (e:Expression): Expression =
             let e = ExpressionOptimizer.doReduction e
-            if e = null then null else
+            if isNull e then null else
             match e.NodeType, e with
             | OperationItem me -> upcast me
             | ProjectionItem me -> upcast me
@@ -304,7 +402,7 @@ module internal QueryExpressionTransformer =
             | ExpressionType.ArrayLength,        (:? UnaryExpression as e)       -> upcast Expression.ArrayLength(transform en e.Operand)
             | ExpressionType.Quote,              (:? UnaryExpression as e)       -> upcast Expression.Quote(transform en e.Operand)
             | ExpressionType.TypeAs,             (:? UnaryExpression as e)       -> upcast Expression.TypeAs(transform en e.Operand,e.Type)
-            | ExpressionType.Add,                (:? BinaryExpression as e)  when e.Left.Type = typeof<string> && e.Right.Type = typeof<string> -> 
+            | ExpressionType.Add,                (:? BinaryExpression as e)  when Type.(=) (e.Left.Type, typeof<string>) && Type.(=)(e.Right.Type, typeof<string>) -> 
                                                                              // http://stackoverflow.com/questions/7027384/the-binary-operator-add-is-not-defined-for-the-types-system-string-and-syste
                                                                              let concatMethod = typeof<string>.GetMethod("Concat", [| typeof<string>; typeof<string> |]); 
                                                                              upcast Expression.Add(transform en e.Left, transform en e.Right, concatMethod)
@@ -326,7 +424,7 @@ module internal QueryExpressionTransformer =
             | ExpressionType.GreaterThanOrEqual, (:? BinaryExpression as e)      -> upcast Expression.GreaterThanOrEqual(transform en e.Left, transform en e.Right)
             | ExpressionType.Equal,              (:? BinaryExpression as e)      -> upcast Expression.Equal(transform en e.Left, transform en e.Right)
             | ExpressionType.NotEqual,           (:? BinaryExpression as e)      -> upcast Expression.NotEqual(transform en e.Left, transform en e.Right)
-            | ExpressionType.Coalesce,           (:? BinaryExpression as e)   when e.Conversion <> null -> 
+            | ExpressionType.Coalesce,           (:? BinaryExpression as e)   when not (isNull e.Conversion) -> 
                                                                                     let left = transform en e.Left
                                                                                     let right = transform en e.Right
                                                                                     let conv = transform en e.Conversion
@@ -347,13 +445,13 @@ module internal QueryExpressionTransformer =
                                                                                     upcast Expression.Constant(e.Value, typeof<obj>)
             | ExpressionType.Constant,           (:? ConstantExpression as e)    -> upcast e
             | ExpressionType.Parameter,          (:? ParameterExpression as e)   -> match en with //Todo:ValueOption upcast here too
-                                                                                    | ValueSome(en) when en = e.Name && (replaceParams=null || not(replaceParams.ContainsKey(e))) ->
+                                                                                    | ValueSome(en) when en = e.Name && (isNull replaceParams || not(replaceParams.ContainsKey(e))) ->
                                                                                          match projectionMap.TryGetValue en with
                                                                                          | true, values -> values.Clear()
-                                                                                         | false, _ -> projectionMap.Add(en,new ResizeArray<_>())
+                                                                                         | false, _ -> projectionMap.Add(en, ResizeArray<_>())
                                                                                          upcast databaseParam
                                                                                     | _ ->
-                                                                                        if replaceParams<>null && replaceParams.ContainsKey(e) then
+                                                                                        if (not (isNull replaceParams)) && replaceParams.ContainsKey(e) then
                                                                                             replaceParams.[e].Body
                                                                                         else
                                                                                             upcast e
@@ -362,7 +460,7 @@ module internal QueryExpressionTransformer =
                                                                                     if replaceParams.Count>0 then
                                                                                         ExpressionOptimizer.Methods.``remove AnonymousType`` memb
                                                                                     else upcast memb
-            | ExpressionType.Call,               (:? MethodCallExpression as e)  -> let transformed = Expression.Call( (if e.Object = null then null else transform en e.Object), e.Method, e.Arguments |> Seq.map(fun a -> transform en a))
+            | ExpressionType.Call,               (:? MethodCallExpression as e)  -> let transformed = Expression.Call( (if isNull e.Object then null else transform en e.Object), e.Method, e.Arguments |> Seq.map(fun a -> transform en a))
                                                                                     match transformed with
                                                                                     | GroupByAggregate(param, callreplace) -> 
                                                                                         if not(groupProjectionMap.Contains param) then
@@ -372,12 +470,12 @@ module internal QueryExpressionTransformer =
                                                                                         upcast transformed
             | ExpressionType.Lambda,             (:? LambdaExpression as e)      -> let exType = e.GetType()
                                                                                     if  exType.IsGenericType
-                                                                                        && exType.GetGenericTypeDefinition() = typeof<Expression<obj>>.GetGenericTypeDefinition()
+                                                                                        && Type.(=)(exType.GetGenericTypeDefinition(), typeof<Expression<obj>>.GetGenericTypeDefinition())
                                                                                         && exType.GenericTypeArguments.[0].IsSubclassOf typeof<Delegate> then
                                                                                         upcast Expression.Lambda(e.GetType().GenericTypeArguments.[0],transform en e.Body, e.Parameters)
                                                                                     else
                                                                                         upcast Expression.Lambda(transform en e.Body, e.Parameters)
-            | ExpressionType.New,                (:? NewExpression as e)         -> if e.Members = null then
+            | ExpressionType.New,                (:? NewExpression as e)         -> if isNull e.Members then
                                                                                       upcast Expression.New(e.Constructor, e.Arguments |> Seq.map(fun a -> transform en a))
                                                                                     else
                                                                                       upcast Expression.New(e.Constructor, e.Arguments |> Seq.map(fun a -> transform en a), e.Members)
@@ -393,7 +491,7 @@ module internal QueryExpressionTransformer =
                 if useCanonicalsOnSelect then
                     match projection with
                     | OperationColumnOnly((al,coltyp,rtyp), OptionalQuote(lambda), opType) ->
-                        projectionMap.Add(al,new ResizeArray<_>(seq{yield OperationColumn("result", coltyp)}))
+                        projectionMap.Add(al, ResizeArray<_>(seq{yield OperationColumn("result", coltyp)}))
                         let meth = 
                             if opType.IsGenericType && opType.GetGenericTypeDefinition() = typedefof<Option<_>> then
                                 typeof<SqlEntity>.GetMethod("GetColumnOption").MakeGenericMethod([|opType.GetGenericArguments().[0]|])
@@ -422,16 +520,16 @@ module internal QueryExpressionTransformer =
         let legaliseName (alias:alias) =
                 if alias.StartsWith("_") then alias.TrimStart([|'_'|]) else alias
 
-        let entityIndex = new ResizeArray<_>(entityIndex |> Seq.map (legaliseName))
+        let entityIndex = ResizeArray<_>(entityIndex |> Seq.map (legaliseName))
 
         let sqlQuery = SqlQuery.ofSqlExp(exp,entityIndex)
-        let groupgin = new ResizeArray<_>()
+        let groupgin = ResizeArray<_>()
 
          // note : the baseAlias here will always be "" when no criteria has been applied, because the LINQ tree never needed to refer to it
         let baseAlias,baseTable =
             match sqlQuery.UltimateChild with
-            | Some(baseAlias,baseTable) when baseAlias = ""-> (baseTable.Name,baseTable)
-            | Some(baseAlias,baseTable) -> (baseAlias,baseTable)
+            | Some(baseAlias,baseTable) when baseAlias = ""-> baseTable.Name,baseTable
+            | Some(baseAlias,baseTable) -> baseAlias,baseTable
             | _ -> failwith ("Unknown sqlQuery.UltimateChild: " + sqlQuery.UltimateChild.ToString())
 
         let (projectionDelegate,projectionColumns) =
@@ -451,7 +549,7 @@ module internal QueryExpressionTransformer =
                     | true, 3 -> Expression.Parameter(typeof<System.Linq.IGrouping<_,Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity,SqlEntity,SqlEntity>>>,"result")
                     | _ -> Expression.Parameter(typeof<SqlEntity>,"result")
                 let pmap = Dictionary<string,ProjectionParameter ResizeArray>()
-                pmap.Add(baseAlias, new ResizeArray<_>())
+                pmap.Add(baseAlias, ResizeArray<_>())
                 (Expression.Lambda(initDbParam,initDbParam).Compile(),pmap)
             | projs -> 
                 let replaceParams = Dictionary<ParameterExpression, LambdaExpression>()
@@ -466,18 +564,18 @@ module internal QueryExpressionTransformer =
                     let rec shouldFlattenToSqlEntity (e:Expression) =
                         let callEntityType (exp:Expression) =
                             exp.NodeType = ExpressionType.Call &&
-                            (exp :?> MethodCallExpression).Object <> null && 
-                            (exp :?> MethodCallExpression).Object.Type = typeof<SqlEntity>
+                            (not(isNull (exp :?> MethodCallExpression).Object)) && 
+                            Type.(=)((exp :?> MethodCallExpression).Object.Type, typeof<SqlEntity>)
                         
                         let rec tupleofentities (tupleType:Type) =
                             if (tupleType.Name.StartsWith("AnonymousObject") || tupleType.Name.StartsWith("Tuple")) then
                                 let ps = tupleType.GetGenericArguments()
-                                ps |> Seq.forall(fun t -> t<>null && (t = typeof<SqlEntity> || (tupleofentities t))) 
+                                ps |> Seq.forall(fun t -> (not(isNull t)) && (Type.(=)(t, typeof<SqlEntity>) || (tupleofentities t))) 
                             else false
 
                         if e.NodeType = ExpressionType.New then
                             let ne = e :?> NewExpression
-                            ne <> null && (ne.Type.Name.StartsWith("AnonymousObject") || ne.Type.Name.StartsWith("Tuple")) && 
+                            (not(isNull ne)) && (ne.Type.Name.StartsWith("AnonymousObject") || ne.Type.Name.StartsWith("Tuple")) && 
                                 (ne.Arguments |> Seq.forall(fun a -> (callEntityType a) || (shouldFlattenToSqlEntity a))) 
                         else if e.NodeType = ExpressionType.Parameter then
                             let p = e :?> ParameterExpression
@@ -526,7 +624,7 @@ module internal QueryExpressionTransformer =
                         | ExpressionType.Quote, (:? UnaryExpression as ce) ->  
                             generateReplacementParams ce.Operand
                         | ExpressionType.Call, (:? MethodCallExpression as me) ->  
-                            me.Arguments |> Seq.iter(fun a -> generateReplacementParams a)
+                            me.Arguments |> Seq.iter generateReplacementParams
                         | _ -> ()
 
                     generateReplacementParams(currentProj)
@@ -547,7 +645,7 @@ module internal QueryExpressionTransformer =
                                 // Should gather the column names what we want to aggregate, not just operations.
                                 let aggregations:(alias * SqlColumnType) list =
                                     List.concat [ x; (groupProjectionMap |> Seq.toList)]
-                                    |> Seq.map(fun op ->
+                                    |> List.collect(fun op ->
                                         if not (group |> List.isEmpty) then 
                                             group 
                                             |> List.choose(fun (baseal, cc) -> 
@@ -560,13 +658,14 @@ module internal QueryExpressionTransformer =
                                                 | KeyColumn c, (a,GroupColumn(VarianceOp "", KeyColumn "")) -> Some (a, GroupColumn(VarianceOp c, KeyColumn c))
                                                 | KeyColumn c, (a,GroupColumn(KeyOp "", KeyColumn "")) -> Some (a, GroupColumn(KeyOp c, KeyColumn c))
                                                 | KeyColumn c, (a,GroupColumn(CountOp "", KeyColumn "")) -> Some (a, GroupColumn(CountOp c, KeyColumn c))
+                                                | KeyColumn c, (a,GroupColumn(CountDistOp "", KeyColumn "")) -> Some (a, GroupColumn(CountDistOp c, KeyColumn c))
                                                 | KeyColumn c, (a,GroupColumn(agg, KeyColumn g)) when g <> "" -> Some (op)
                                                 | KeyColumn c, (a,GroupColumn(_)) when Utilities.getBaseColumnName (snd op) <> "" -> Some (op)
                                                 | KeyColumn c, (a,KeyColumn(c2)) when Utilities.getBaseColumnName (snd op) <> "" -> Some (op)
                                                 | _ -> None)
 
                                         else [op]
-                                    ) |> Seq.concat |> Seq.toList
+                                    )
                                 group, aggregations)
                         groupgin.AddRange(gatheredAggregations)
 
@@ -576,7 +675,19 @@ module internal QueryExpressionTransformer =
                 let rec composeProjections projs prevLambda (foundparams : Dictionary<string, ResizeArray<ProjectionParameter>>) = 
                     match projs with 
                     | [] -> prevLambda, foundparams
-                    | proj::tail -> 
+                    | proj::tail ->
+                        let operations =
+                            // Full entities don't need to be transferred recursively
+                            // but Canonical operation structures cannot be lost.
+                            [| for KeyValue(k,v) in foundparams do
+                                if k = "" then yield k, v
+                                else
+                                  for colp in v do
+                                    match colp with
+                                    | OperationColumn _ ->  yield k, v
+                                    | EntityColumn _ -> () |]
+                        foundparams.Clear()
+                        operations |> Array.distinct |> Array.iter(fun (k, v) ->foundparams.Add(k,v))
                         let lambda1, dbparams1 = visitExpression proj prevLambda initDbParam
                         dbparams1 |> Seq.iter(fun k -> foundparams.[k.Key] <- k.Value )
                         composeProjections tail lambda1 foundparams
@@ -610,12 +721,12 @@ module internal QueryExpressionTransformer =
                             // Whole entity plus operation columns. We need urgent table lookup.
                             let myLock = provider.GetLockObject()
                             let cols = lock myLock (fun () -> provider.GetColumns (con,snd sqlQuery.UltimateChild.Value))
-                            let opcols = projectionColumns |> Seq.map(fun p -> p.Value) |> Seq.concat
+                            let opcols = projectionColumns |> Seq.collect(fun p -> p.Value)
                             let allcols = cols |> Map.toSeq |> Seq.map(fun (k,_) -> EntityColumn k)
                             let itms = Seq.concat [|opcols;allcols|] |> Seq.distinct |> Seq.toList
                             let tmp = sel
                             projectionColumns.Clear()
-                            projectionColumns.Add(tmp.Key, new ResizeArray<ProjectionParameter>(itms))
+                            projectionColumns.Add(tmp.Key, ResizeArray<ProjectionParameter>(itms))
                             tmp.Key
                         | Some sel ->
                             let tmp = sel
@@ -623,10 +734,10 @@ module internal QueryExpressionTransformer =
                             projectionColumns.Add(tmp.Key, tmp.Value)
                             tmp.Key
                         | None ->
-                            let itms = projectionColumns |> Seq.map(fun p -> p.Value) |> Seq.concat |> Seq.distinct |> Seq.toList
+                            let itms = projectionColumns |> Seq.collect(fun p -> p.Value) |> Seq.distinct |> Seq.toList
                             let selKey = (projectionColumns.Keys |> Seq.head)
                             projectionColumns.Clear()
-                            projectionColumns.Add(selKey, new ResizeArray<ProjectionParameter>(itms))
+                            projectionColumns.Add(selKey, ResizeArray<ProjectionParameter>(itms))
                             projectionColumns.Keys |> Seq.head
 
                { sqlQuery with UltimateChild = Some(alias,snd sqlQuery.UltimateChild.Value) }, alias
@@ -639,8 +750,8 @@ module internal QueryExpressionTransformer =
             // to the only table in the query, so replace it
             if String.IsNullOrWhiteSpace(name) || name = "__base__" || entityIndex.Count = 0 then
                 match defaultTable with
-                | Some(s) -> s
-                | None -> baseName
+                | ValueSome(s) -> s
+                | ValueNone -> baseName
             else 
                 let tbl = Utilities.resolveTuplePropertyName name entityIndex
                 if tbl = "" then baseName else tbl
@@ -658,7 +769,7 @@ module internal QueryExpressionTransformer =
         // Resolves aliases on canonical multi-column functions
         let rec visitCanonicals resolverfunc = function
             | CanonicalOperation(subItem, col) -> 
-                let resolver (al:string) = // Don't try to resolve if already resolved
+                let inline resolver (al:string) = // Don't try to resolve if already resolved
                     if al = "" || al.StartsWith "Item" || entityIndex.Count = 0 then resolverfunc al else al
                 let resolvedSub =
                     match subItem with
@@ -740,7 +851,7 @@ module internal QueryExpressionTransformer =
         // 2.
         // Some aliases will have blank table information, but these can be resolved by looking
         // in the link data or ultimate base entity
-        let resolveAlias alias table =
+        let inline resolveAlias alias table =
             if table.Name <> "" then table else
             match sqlQuery.UltimateChild with
             | Some(uc) when alias = fst uc -> snd uc
@@ -754,12 +865,12 @@ module internal QueryExpressionTransformer =
         // able to be resolved now.
         let resolveLinks (outerAlias:alias, linkData:LinkData, innerAlias) =
             let resolved = sqlQuery.Aliases.[outerAlias]
-            let resolvePrimary name =
+            let inline resolvePrimary name =
                 if String.IsNullOrWhiteSpace(name) || name = "__base__" then innerAlias
                 else 
                     let tbl = Utilities.resolveTuplePropertyName name entityIndex
                     if tbl = "" then innerAlias else tbl
-            let resolveForeign name =
+            let inline resolveForeign name =
                 if String.IsNullOrWhiteSpace(name) || name = "__base__" then outerAlias
                 else 
                     let tbl = Utilities.resolveTuplePropertyName name entityIndex
@@ -795,10 +906,12 @@ module internal QueryExpressionTransformer =
         
         // make sure the provider has cached the columns for the tables within the projection
         projectionColumns
-        |> Seq.iter(function KeyValue(k,_) ->
-                                let table = match sqlQuery.Aliases.TryFind k with
-                                            | Some v -> v
-                                            | None -> snd sqlQuery.UltimateChild.Value
+        |> Seq.map(function KeyValue(k,_) ->
+                                match sqlQuery.Aliases.TryFind k with
+                                | Some v -> v
+                                | None -> snd sqlQuery.UltimateChild.Value)
+        |> Seq.distinct
+        |> Seq.iter(function table ->
                                 let myLock = provider.GetLockObject()
                                 lock myLock (fun () -> provider.GetColumns (con,table) |> ignore ))
 

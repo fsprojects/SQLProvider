@@ -1,4 +1,4 @@
-﻿namespace FSharp.Data.Sql
+namespace FSharp.Data.Sql
 
 
 open Microsoft.FSharp.Quotations
@@ -9,7 +9,7 @@ module QuotationHelpers =
     let rec coerceValues fieldTypeLookup fields = 
         Array.mapi (fun i v ->
                 let expr = 
-                    if v = null then simpleTypeExpr v
+                    if isNull v then simpleTypeExpr v
                     elif FSharpType.IsUnion (v.GetType()) then unionExpr v |> snd
                     elif FSharpType.IsRecord (v.GetType()) then recordExpr v |> snd
                     else simpleTypeExpr v
@@ -37,7 +37,7 @@ module QuotationHelpers =
         let exprs = coerceValues (fun _ -> typ) (instance |> Array.map box)
         arrayType, Expr.NewArray(typ, exprs)
 
-    let createLetExpr varType instance body args = 
+    let inline internal createLetExpr varType instance body args = 
         let var = Var("instance", varType)  
         Expr.Let(var, instance, body args (Expr.Var(var)))
 

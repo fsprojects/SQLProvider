@@ -1,5 +1,5 @@
-﻿#r @"..\..\bin\net451\FSharp.Data.SqlProvider.dll" 
-//#r @"F:\dropbox\SqlProvider\bin\net451\Debug\FSharp.Data.SqlProvider.dll"
+#r @"..\..\bin\lib\net48\FSharp.Data.SqlProvider.dll" 
+//#r @"F:\dropbox\SqlProvider\bin\lib\net48\Debug\FSharp.Data.SqlProvider.dll"
 module GraphViz  =
 //http://www.graphviz.org/doc/info/attrs.html#d:arrowtail
 // script for helping to visualise crazy LINQ expression tress with graphviz

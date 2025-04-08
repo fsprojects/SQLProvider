@@ -2,6 +2,7 @@ namespace FSharp.Data.Sql
 
 open System.Linq
 
+[<Struct>]
 type ConditionOperator = 
     | Like
     | NotLike
@@ -41,15 +42,17 @@ type ConditionOperator =
         | NestedExists  -> "EXISTS"
         | NestedNotExists  -> "NOT EXISTS"
 
+[<Struct>]
 type AggregateOperation = // Aggregate (column name if not default)
-| KeyOp of string
-| MaxOp of string
-| MinOp of string
-| SumOp of string
-| AvgOp of string
-| CountOp of string
-| StdDevOp of string
-| VarianceOp of string
+| KeyOp of key: string
+| MaxOp of max: string
+| MinOp of min: string
+| SumOp of sum: string
+| AvgOp of avg: string
+| CountOp of count: string
+| CountDistOp of countDist: string
+| StdDevOp of std: string
+| VarianceOp of var: string
 
 type SelectOperations =
 | DotNetSide = 0
@@ -125,7 +128,7 @@ module ColumnSchema =
     | CaseNotSql of Condition * SqlItemOrColumn // operation, if-true
     | CaseSqlPlain of Condition * obj * obj // with 2 constants
     | CastVarchar
-
+    | CastInt
 
     and SqlColumnType =
     | KeyColumn of string

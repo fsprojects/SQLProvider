@@ -1,7 +1,7 @@
 (*** hide ***)
-#r "../../../bin/netstandard2.0/FSharp.Data.SqlProvider.dll"
+#r "../../../bin/lib/netstandard2.0/FSharp.Data.SqlProvider.dll"
 (*** hide ***)
-let [<Literal>] resolutionPath = __SOURCE_DIRECTORY__ + @"/../../files/sqlite" 
+let [<Literal>] resolutionPath = __SOURCE_DIRECTORY__ + @"/../../files/sqlite"
 (*** hide ***)
 let [<Literal>] connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"\..\northwindEF.db;Version=3;Read Only=false;FailIfMissing=True;"
 
@@ -20,9 +20,9 @@ type sql  = SqlDataProvider<
 (**
 ## Adding a Mapper using dataContext to use generated types from db
 
-This mapper will get sure that you always sync your types with types you receive from your db.
+This mapper will ensure that you always sync your types with those you receive from your DB.
 
-First add an Domain Model
+First, add a Domain Model
 
 *)
 
@@ -65,8 +65,8 @@ let qry = query { for row in employees do
                   select row} |> Seq.map (fun x -> x.MapTo<Employee2>())
 
 (**
-The target type can be a record (as in the example) or a class type with properties named as the source columns and with a paremeterless setter.
-The target field name can also be different than the column name; in this case it must be decorated with the MappedColumnAttribute custom attribute:
+The target type can be a record (as in the example) or a class type with properties named as the source columns and with a parameterless setter.
+The target field name can also be different than the column name; in this case, it must be decorated with the MappedColumnAttribute custom attribute:
 *)
 
 open FSharp.Data.Sql.Common
@@ -76,19 +76,19 @@ type Employee3 = {
     [<MappedColumn("LastName")>] FamilyName:string
     }
 
-let qry2 = 
-          query { 
+let qry2 =
+          query {
                 for row in employees do
                 select row} |> Seq.map (fun x -> x.MapTo<Employee3>())
 
 
 (**
-Or alternatively the ColumnValues from  SQLEntity can be used to create a map, with the
+Or alternatively, the ColumnValues from  SQLEntity can be used to create a map, with the
 column as a key:
 *)
 
-let rows = 
-        query { 
+let rows =
+        query {
             for row in employees do
             select row} |> Seq.toArray
 

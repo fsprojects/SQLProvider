@@ -5,7 +5,7 @@ title
     SQLProvider
 owners
     "Ross McKinlay, Colin Bull, Tuomas Hietanen"
-authors 
+authors
     "Ross McKinlay, Colin Bull, Tuomas Hietanen"
 projectUrl
     http://github.com/fsprojects/SQLProvider
@@ -24,17 +24,22 @@ summary
 description
     Type providers for SQL database access.
 files
-    ../../bin/net472/FSharp.Data.SqlProvider.* ==> lib/net472
-    ../../bin/net6.0/FSharp.Data.SqlProvider.* ==> lib/net6.0
-    ../../bin/netstandard2.0/FSharp.Data.SQLProvider.* ==> lib/netstandard2.0
-    ../../bin/netstandard2.1/FSharp.Data.SQLProvider.* ==> lib/netstandard2.1
+    ../../bin/lib/net472/FSharp.Data.SqlProvider.* ==> lib/net472
+    ../../bin/lib/net48/FSharp.Data.SqlProvider.* ==> lib/net48
+    ../../bin/lib/net6.0/FSharp.Data.SqlProvider.* ==> lib/net6.0
+    ../../bin/lib/net8.0/FSharp.Data.SqlProvider.* ==> lib/net8.0
+    ../../bin/lib/netstandard2.0/FSharp.Data.SqlProvider.* ==> lib/netstandard2.0
+    ../../bin/lib/netstandard2.1/FSharp.Data.SqlProvider.* ==> lib/netstandard2.1
     ../../bin/typeproviders/fsharp41/net6.0/*.dll ==> typeproviders/fsharp41/net6.0
     ../../bin/typeproviders/fsharp41/netstandard2.0/*.dll ==> typeproviders/fsharp41/netstandard2.0
     ../../bin/typeproviders/fsharp41/netcoreapp3.1/*.dll ==> typeproviders/fsharp41/netcoreapp3.1
     ../../bin/typeproviders/fsharp41/net472/*.dll ==> typeproviders/fsharp41/net472
-    ../../bin/typeproviders/fsharp41/net6.0/*.dll ==> typeproviders/fsharp41/net6.0
+    ../../bin/typeproviders/fsharp41/net48/*.dll ==> typeproviders/fsharp41/net48
+    ../../bin/typeproviders/fsharp41/net8.0/*.dll ==> typeproviders/fsharp41/net8.0
 references
     FSharp.Data.SqlProvider.dll
 dependencies
-    FSharp.Core >= 6.0.7
+    FSharp.Core >= 8.0.301
     Newtonsoft.Json >= 13.0.1
+    System.Memory >= 4.5.5
+

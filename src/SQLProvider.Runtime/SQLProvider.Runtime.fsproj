@@ -5,14 +5,14 @@
   <Import Project="..\..\netfx.props" />
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>netstandard2.0;netstandard2.1;net472;net6.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;netstandard2.1;net472;net48;net6.0;net8.0</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <DefineConstants>TP_RUNTIME;NETSTANDARD;NO_GENERATIVE</DefineConstants>
     <AssemblyName>FSharp.Data.SqlProvider</AssemblyName>
     <Name>FSharp.Data.SqlProvider</Name>
-    <DocumentationFile>..\..\bin\net48\FSharp.Data.SqlProvider.XML</DocumentationFile>
-    <OutputPath>..\..\bin\</OutputPath>
+    <DocumentationFile>..\..\bin\lib\$(TargetFramework)\FSharp.Data.SqlProvider.XML</DocumentationFile>
+    <OutputPath>..\..\bin\lib\</OutputPath>
     <PackageReleaseNotes>https://github.com/fsprojects/SQLProvider/blob/master/docs/RELEASE_NOTES.md</PackageReleaseNotes>
     <PackageProjectUrl>https://fsprojects.github.io/SQLProvider</PackageProjectUrl>
     <RepositoryUrl>https://github.com/fsprojects/SQLProvider</RepositoryUrl>
@@ -20,8 +20,8 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
-    <TargetFSharpCoreVersion>6.0.0.0</TargetFSharpCoreVersion>
-    <PackageTags>sql, mysql, sql-server, sqlite, postgresql, oracle, mariadb, typeprovider, firebirdsql, f#, fsharp, database, sqlserver, dotnet</PackageTags>
+    <TargetFSharpCoreVersion>8.0.0.0</TargetFSharpCoreVersion>
+    <PackageTags>sql, mysql, sql-server, sqlite, postgresql, oracle, mariadb, typeprovider, firebirdsql, f#, fsharp, database, sqlserver, dotnet, duckdb</PackageTags>
     <PackageLicenseUrl>https://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt</PackageLicenseUrl>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <RepositoryType>git</RepositoryType>
@@ -30,13 +30,16 @@
     <FsDocsNavbarPosition>fixed-right</FsDocsNavbarPosition>
     <FsDocsWarnOnMissingDocs>false</FsDocsWarnOnMissingDocs>
     <FsDocsTheme>default</FsDocsTheme>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+    <DefineConstants>$(DefineConstants);COMMON</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <Optimize>true</Optimize>
     <Tailcalls>true</Tailcalls>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'net6.0' Or '$(TargetFramework)' == 'netstandard2.1' ">
-      <DefineConstants>$(DefineConstants);MICROSOFTSQL</DefineConstants>
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net8.0' Or '$(TargetFramework)' == 'net6.0' Or '$(TargetFramework)' == 'netstandard2.1' ">
+      <DefineConstants>$(DefineConstants);MICROSOFTSQL;NETSTANDARD21</DefineConstants>
   </PropertyGroup>
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
   <ItemGroup>
@@ -56,6 +59,9 @@
     <Compile Include="SqlRuntime.Transactions.fs" />
     <Compile Include="SqlRuntime.Common.fs" />
     <Compile Include="Ssdt.DacpacParser.fs" />
+    <Compile Include="SqlRuntime.QueryExpression.fs" />
+    <Compile Include="SqlRuntime.Linq.fs" />
+    <Compile Include="SqlRuntime.Async.fs" />
     <Compile Include="Providers.MsSqlServer.fs" />
     <Compile Include="Providers.MsSqlServer.Dynamic.fs" />
     <Compile Include="Providers.MsSqlServer.Ssdt.fs" />
@@ -66,32 +72,36 @@
     <Compile Include="Providers.Postgresql.fs" />
     <Compile Include="Providers.SQLite.fs" />
     <Compile Include="Providers.Firebird.fs" />
-    <Compile Include="SqlRuntime.QueryExpression.fs" />
-    <Compile Include="SqlRuntime.Linq.fs" />
-    <Compile Include="SqlRuntime.Async.fs" />
+    <Compile Include="Providers.DuckDb.fs" />
     <Compile Include="SqlRuntime.DataContext.fs" />
+    <None Include="..\..\README.md" Link="README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net472" Version="1.0.0">
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net472" Version="1.0.3" Condition=" '$(TargetFramework)' == 'net472'">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <!--
-    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net48" Version="1.0.0">
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net48" Version="1.0.3" Condition=" '$(TargetFramework)' == 'net48'">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
-    </PackageReference>-->
+    </PackageReference>
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
   </ItemGroup>
-  <Target Name="BeforeBuild" Condition=" '$(TargetFramework)' != 'net6.0' And '$(TargetFramework)' != 'netstandard2.1' ">
+  <Target Name="BeforeBuild" Condition=" '$(TargetFramework)' != 'net8.0' And '$(TargetFramework)' != 'net6.0' And '$(TargetFramework)' != 'netstandard2.1' ">
     <!--<MSBuild Projects="..\SQLProvider.DesignTime\SQLProvider.DesignTime.fsproj" Targets="Restore" />-->
     <MSBuild Projects="..\SQLProvider.DesignTime\SQLProvider.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFrameworks=netcoreapp3.1" />
     <MSBuild Projects="..\SQLProvider.DesignTime\SQLProvider.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=netstandard2.0" />
-    <!--<MSBuild Projects="..\SQLProvider.DesignTime\SQLProvider.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=net48" />-->
-    <MSBuild Projects="..\SQLProvider.DesignTime\SQLProvider.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=net472" />
+    <MSBuild Projects="..\SQLProvider.DesignTime\SQLProvider.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=net472" Condition=" '$(TargetFramework)' == 'net472'" />
+    <MSBuild Projects="..\SQLProvider.DesignTime\SQLProvider.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=net48" Condition=" '$(TargetFramework)' == 'net48'" />
   </Target>
-  <Target Name="BeforeBuild" Condition=" '$(TargetFramework)' == 'net6.0' Or '$(TargetFramework)' == 'netstandard2.1' ">
-      <MSBuild Projects="..\SQLProvider.DesignTime\SQLProvider.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=net6.0" />
+  <Target Name="BeforeBuild" Condition=" '$(TargetFramework)' == 'netstandard2.1' ">
+        <MSBuild Projects="..\SQLProvider.DesignTime\SQLProvider.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=netstandard2.1" />
+  </Target>
+  <Target Name="BeforeBuild" Condition=" '$(TargetFramework)' == 'net6.0' ">
+        <MSBuild Projects="..\SQLProvider.DesignTime\SQLProvider.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=net6.0" />
+  </Target>
+  <Target Name="BeforeBuild" Condition=" '$(TargetFramework)' == 'net8.0' ">
+      <MSBuild Projects="..\SQLProvider.DesignTime\SQLProvider.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=net8.0" />
   </Target>
   <Target Name="AfterBuild">
   </Target>

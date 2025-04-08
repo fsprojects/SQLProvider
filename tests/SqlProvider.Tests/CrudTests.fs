@@ -1,9 +1,8 @@
 #if INTERACTIVE
-#I @"../../bin/net472/"
-#I @"../../bin/net472/"
+#I @"../../bin/lib/net48/"
 #r "FSharp.Data.SqlProvider.dll"
 #r @"System.Transactions.dll"
-#r @"../../packages/NUnit/lib/nunit.framework.dll"
+#r @"../../packages/NUnit/lib/netstandard2.0/nunit.framework.dll"
 #else
 module CrudTests
 #endif
@@ -25,8 +24,8 @@ let connectionString =  @"Data Source=" + __SOURCE_DIRECTORY__ + @"/db/northwind
 type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL, ResolutionPath = resolutionPath, SQLiteLibrary=Common.SQLiteLibrary.SystemDataSQLite>
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %O")
 
- 
-let createCustomer (dc:sql.dataContext) = 
+
+let createCustomer (dc:sql.dataContext) =
     let newCustomer = dc.Main.Customers.Create()
     newCustomer.CustomerId <- "SQLPROVIDER"
     newCustomer.Address <- "FsPRojects"
@@ -42,70 +41,70 @@ let createCustomer (dc:sql.dataContext) =
     newCustomer
 
 [<Test>]
-let ``Can create and delete an entity``() = 
+let ``Can create and delete an entity``() =
     let dcTestParam = sql.GetDataContext(200)
     let dc = sql.GetDataContext()
-    
-    let originalCustomers = 
+
+    let originalCustomers =
         query { for cust in dc.Main.Customers do
                 select cust }
         |> Seq.toList
-     
+
     createCustomer dc |> ignore
-    
+
     dc.SubmitUpdates()
 
-    let newCustomers = 
+    let newCustomers =
         query { for cust in dc.Main.Customers do
                 select cust  }
         |> Seq.toList
-    
-    let created = 
+
+    let created =
         newCustomers |> List.find (fun x -> x.CustomerId = "SQLPROVIDER")
-    
+
     Assert.AreEqual("Phone Number", created.Phone)
     created.Delete()
     dc.SubmitUpdates()
     Assert.AreEqual(originalCustomers.Length, newCustomers.Length - 1)
 
 [<Test>]
-let ``Can create, update and delete an entity``() = 
+let ``Can create, update and delete an entity``() =
     let dc = sql.GetDataContext()
-    
-    let originalCustomers = 
+
+    let originalCustomers =
         query { for cust in dc.Main.Customers do
                 select cust }
         |> Seq.toList
-     
+
     let ent = createCustomer dc
 
-    dc.SubmitUpdates()    
+    dc.SubmitUpdates()
     dc.SubmitUpdates() // run twice just to test extra won't hurt
 
     ent.SetColumn("Phone", "Updated Number")
 
-    dc.SubmitUpdates()    
+    dc.SubmitUpdates()
     dc.SubmitUpdates()
 
     // let's create new context just to test that it is actually there.
     let dc2 = sql.GetDataContext()
- 
-    let newCustomers = 
+
+    let newCustomers =
         query { for cust in dc2.Main.Customers do
                 select cust  }
         |> Seq.toList
-    
-    let created = 
+
+    let created =
         newCustomers |> List.find (fun x -> x.CustomerId = "SQLPROVIDER")
 
     Assert.AreEqual(originalCustomers.Length, newCustomers.Length - 1)
 
     Assert.AreEqual("Updated Number", created.Phone)
     created.Delete()
-    dc2.SubmitUpdates()    
+    dc2.SubmitUpdates()
     dc2.SubmitUpdates()
 
-    let reallyDeleted = 
+    let reallyDeleted =
         query { for cust in dc2.Main.Customers do
                 select cust  }
         |> Seq.toList
@@ -113,9 +112,9 @@ let ``Can create, update and delete an entity``() =
     Assert.AreEqual(originalCustomers.Length, reallyDeleted.Length)
 
 [<Test>]
-let ``Can persist a blob``() = 
+let ``Can persist a blob``() =
     let dc = sql.GetDataContext()
-    
+
     let imageBytes = [| 0uy .. 100uy |]
 
     let savedEntity = dc.Main.Pictures.``Create(Image)`` imageBytes
@@ -144,10 +143,10 @@ let ``Can enlist in a transaction scope and rollback changes without complete``(
         GC.Collect()
     let dc2 = sql.GetDataContext()
 
-    let created = 
+    let created =
         query { for cust in dc2.Main.Customers do
                 where (cust.CustomerId = "SQLPROVIDER")
-                select cust  
+                select cust
         }
         |> Seq.toList
 
@@ -155,37 +154,37 @@ let ``Can enlist in a transaction scope and rollback changes without complete``(
 
 
 [<Test>]
-let ``Conflict resolution is correctly applied``() = 
+let ``Conflict resolution is correctly applied``() =
     let dc = sql.GetDataContext()
 
     let ent = createCustomer dc
-    dc.SubmitUpdates()    
+    dc.SubmitUpdates()
 
-    let getCurrentAddress = 
+    let getCurrentAddress =
         query { for cust in dc.Main.Customers do
                 where (cust.CustomerId = ent.CustomerId)
                 select (cust.Address)
-        } 
-    
-    // Works when reusing the same entity with changed properties    
-    let newAddress = "FsProjects 2.0"    
+        }
+
+    // Works when reusing the same entity with changed properties
+    let newAddress = "FsProjects 2.0"
     ent.Address <- newAddress
     ent.OnConflict <- Common.OnConflict.Update
-    dc.SubmitUpdates()    
-    
+    dc.SubmitUpdates()
+
     Assert.AreEqual(getCurrentAddress |> Seq.head, newAddress)
 
     // Works when creating a fresh entity
     let ent2 = createCustomer dc
-    let newerAddress = "FsProjects 3.0"    
+    let newerAddress = "FsProjects 3.0"
     ent2.Address <- newerAddress
     ent2.OnConflict <- Common.OnConflict.Update
-    dc.SubmitUpdates()    
-    
+    dc.SubmitUpdates()
+
     Assert.AreEqual(getCurrentAddress |> Seq.head, newerAddress)
-    
+
     // DoNothing doesn't update the address
-    let ent3 = createCustomer dc        
+    let ent3 = createCustomer dc
     ent3.Address <- "asdkjskdjsldjskjdls"
     ent3.OnConflict <- Common.OnConflict.DoNothing
     dc.SubmitUpdates()
@@ -204,7 +203,7 @@ let ``Conflict resolution is correctly applied``() =
 module UtilsTests =
 
     [<Test>]
-    let ``List.evaluateOneByOne test``() = 
+    let ``List.evaluateOneByOne test``() =
         // This is a helper for executing Tasks as one-by-one to not mess data connections or contexts.
         // If you use Aync, use rateher Async.Sequential
         let initList = [1;2;3;4;5;6;7;8;9]
@@ -217,7 +216,7 @@ module UtilsTests =
         Assert.AreEqual(initList, processList.Result)
 
     [<Test>]
-    let ``List.evaluateOneByOne test, no stackoverflow``() = 
+    let ``List.evaluateOneByOne test, no stackoverflow``() =
         let initList = [1 .. 5000]
         let processList =
             initList |> List.evaluateOneByOne(fun x -> task { return x + 0 })

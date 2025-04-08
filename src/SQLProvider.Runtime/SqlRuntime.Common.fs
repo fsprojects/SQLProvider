@@ -26,6 +26,9 @@ type DatabaseProviderTypes =
     | FIREBIRD = 7
     | MSSQLSERVER_DYNAMIC = 8
     | MSSQLSERVER_SSDT = 9
+    | DUCKDB = 10
+    | EXTERNAL = 11
+
 type RelationshipDirection = Children = 0 | Parents = 1
 
 type CaseSensitivityChange =
@@ -55,13 +58,13 @@ type OdbcQuoteCharacter =
     | APHOSTROPHE = 5 
 
 type SQLiteLibrary =
-    // .NET Framework default
+    /// .NET Framework default
     | SystemDataSQLite = 0
-    // Mono version
+    /// Mono version
     | MonoDataSQLite = 1
-    // Auto-select by environment
+    /// Auto-select by environment
     | AutoSelect = 2
-    // Microsoft.Data.Sqlite. May support .NET Standard 2.0 contract in the future.
+    /// Microsoft.Data.Sqlite. May support .NET Standard 2.0 contract in the future.
     | MicrosoftDataSqlite = 3
 
 module public QueryEvents =
@@ -79,18 +82,33 @@ module public QueryEvents =
    }
    with 
       override x.ToString() =
-        let paramsString = x.Parameters |> Seq.fold (fun acc (pName, pValue) -> acc + (sprintf "%s - %A; " pName pValue)) ""
-        sprintf "%s -- params %s" x.Command paramsString
+        let arr = x.Parameters |> Seq.toArray
+        if arr.Length = 0 then x.Command
+        else
+            let paramsString = arr |> Seq.fold (fun (sb:StringBuilder) (pName, pValue) -> sb.Append(sprintf "%s - %A; " pName pValue)) (StringBuilder())
+            sprintf "%s -- params %s" x.Command (paramsString.ToString())
       
       /// Use this to execute similar queries to test the result of the executed query.
       member x.ToRawSql() =
-        x.Parameters |> Seq.fold (fun (acc:string) (pName, pValue) -> 
+        x.Parameters
+        |> Seq.sortByDescending (fun (n,_) -> n.Length)
+        |> Seq.fold (fun (acc:StringBuilder) (pName, pValue) -> 
             match pValue with
             | :? String as pv -> acc.Replace(pName, (sprintf "'%s'" (pv.Replace("'", "''"))))
-            | :? DateTime as pv -> acc.Replace(pName, (sprintf "'%s'" (pv.ToString("yyyy-MM-dd hh:mm:ss"))))
-            | _ -> acc.Replace(pName, (sprintf "%O" pValue))) x.Command
+            | :? Guid as pv -> acc.Replace(pName, (sprintf "'%s'" (pv.ToString())))
+            | :? DateTime as pv -> acc.Replace(pName, (sprintf "'%s'" (pv.ToString("yyyy-MM-dd HH:mm:ss"))))
+            | :? DateTimeOffset as pv -> acc.Replace(pName, (sprintf "'%s'" (pv.ToString("yyyy-MM-dd HH:mm:ss zzz"))))
+            | _ -> acc.Replace(pName, (sprintf "%O" pValue))) (StringBuilder x.Command)
+        |> string<StringBuilder>
 
-   let private sqlEvent = new Event<SqlEventData>()
+      member x.ToRawSqlWithParamInfo() =
+        let arr = x.Parameters |> Seq.toArray
+        if arr.Length = 0 then x.Command
+        else
+            let paramsString = arr |> Seq.fold (fun (sb:StringBuilder) (pName, pValue) -> sb.Append(sprintf "%s - %A; " pName pValue)) (StringBuilder())
+            sprintf "%s -- params opened: %s" (x.ToRawSql()) (paramsString.ToString())
+
+   let private sqlEvent = Event<SqlEventData>()
    
    /// This event fires immediately before the execution of every generated query. 
    /// Listen to this event to display or debug the content of your queries.
@@ -113,7 +131,7 @@ module public QueryEvents =
    let internal PublishSqlQuery connStr qry (spc:IDbDataParameter seq) = 
       publishSqlQuery connStr qry (spc |> Seq.map(fun p -> p.ParameterName, p.Value))
 
-   let internal PublishSqlQueryCol connStr qry (spc:DbParameterCollection) = 
+   let PublishSqlQueryCol connStr qry (spc:DbParameterCollection) = 
       publishSqlQuery connStr qry [ for p in spc -> (p.ParameterName, p.Value) ]
 
    let internal PublishSqlQueryICol connStr qry (spc:IDataParameterCollection) = 
@@ -122,14 +140,14 @@ module public QueryEvents =
                                       yield (p.ParameterName, p.Value)]
 
 
-   let private expressionEvent = new Event<System.Linq.Expressions.Expression>()
+   let private expressionEvent = Event<System.Linq.Expressions.Expression>()
    
    [<CLIEvent>]
    let LinqExpressionEvent = expressionEvent.Publish
 
    let internal PublishExpression(e) = expressionEvent.Trigger(e)
 
-   
+[<Struct>]
 type EntityState =
     | Unchanged
     | Created
@@ -137,6 +155,7 @@ type EntityState =
     | Delete
     | Deleted
 
+[<Struct>]
 type OnConflict = 
     /// Throws an exception if the primary key already exists (default behaviour).
     | Throw
@@ -151,82 +170,90 @@ type MappedColumnAttribute(name: string) =
     inherit Attribute()
     member x.Name with get() = name
 
+type ResultSet = seq<(string * obj)[]>
+type ReturnSetType =
+    | ScalarResultSet of string * obj
+    | ResultSet of string * ResultSet
+type ReturnValueType =
+    | Unit
+    | Scalar of string * obj
+    | SingleResultSet of string * ResultSet
+    | Set of seq<ReturnSetType>
+
 [<System.Runtime.Serialization.DataContract(Name = "SqlEntity", Namespace = "http://schemas.microsoft.com/sql/2011/Contracts"); DefaultMember("Item")>]
-type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
-    let table = Table.FromFullName tableName
+type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup, activeColumnCount:int) =
+
     let propertyChanged = Event<_,_>()
 
-    let data = Dictionary<string,obj>()
-    let aliasCache = new ConcurrentDictionary<string,SqlEntity>(HashIdentity.Structural)
-
-    let replaceFirst (text:string) (oldValue:string) (newValue) =
-        let position = text.IndexOf oldValue
-        if position < 0 then
-            text
-        else
-            text.Substring(0, position) + newValue + text.Substring(position + oldValue.Length)
+    let data = Dictionary<string,obj>(activeColumnCount)
+    let mutable aliasCache = None
 
     member val _State = Unchanged with get, set
 
     member e.Delete() =
+        if dc.IsReadOnly then failwith "Context is readonly" else
         e._State <- Delete
         dc.SubmitChangedEntity e
 
     member internal e.TriggerPropertyChange(name) = propertyChanged.Trigger(e, PropertyChangedEventArgs(name))
-    member internal __.ColumnValuesWithDefinition = seq { for kvp in data -> kvp.Key, kvp.Value, columns.TryFind(kvp.Key) }
+    member __.ColumnValuesWithDefinition = seq { for kvp in data -> kvp.Key, kvp.Value, columns.TryFind(kvp.Key) }
 
     member __.ColumnValues = seq { for kvp in data -> kvp.Key, kvp.Value }
     member __.HasColumn(key, ?comparison)= 
         let comparisonOption = defaultArg comparison StringComparison.InvariantCulture
         columns |> Seq.exists(fun kp -> (kp.Key |> SchemaProjections.buildFieldName).Equals(key, comparisonOption))
-    member __.Table= table
+    member __.Table= Table.FromFullName tableName
     member __.DataContext with get() = dc
 
     member __.GetColumn<'T>(key) : 'T =
         let defaultValue() =
-            if typeof<'T> = typeof<string> then (box String.Empty) :?> 'T
+            if Type.(=)(typeof<'T>, typeof<string>) then (box String.Empty) :?> 'T
             else Unchecked.defaultof<'T>
-        if data.ContainsKey key then
-           match data.[key] with
+        match data.TryGetValue key with
+        | false, _ -> defaultValue()
+        | true, dataitem ->
+           match dataitem with
            | null -> defaultValue()
            | :? System.DBNull -> defaultValue()
            // Postgres array types
            | :? Array as arr -> 
                 unbox arr
            // This deals with an oracle specific case where the type mappings says it returns a System.Decimal but actually returns a float!?!?!  WTF...           
-           | data when typeof<'T> <> data.GetType() && 
-                       typeof<'T> <> typeof<obj> &&
+           | data when Type.(<>)(typeof<'T>, data.GetType()) && 
+                       Type.(<>)(typeof<'T>, typeof<obj>) &&
                        (data :? IConvertible)
                 -> unbox <| Convert.ChangeType(data, typeof<'T>)
            | data -> unbox data
-        else defaultValue()
 
     member __.GetColumnOption<'T>(key) : Option<'T> =
-       if data.ContainsKey key then
-           match data.[key] with
+        match data.TryGetValue key with
+        | false, _ -> None
+        | true, dataitem ->
+           match dataitem with
            | null -> None
            | :? System.DBNull -> None
-           | data when data.GetType() <> typeof<'T> && typeof<'T> <> typeof<obj> -> Some(unbox<'T> <| Convert.ChangeType(data, typeof<'T>))
+           | data when Type.(<>)(data.GetType(), typeof<'T>) && Type.(<>)(typeof<'T>, typeof<obj>) -> Some(unbox<'T> <| Convert.ChangeType(data, typeof<'T>))
            | data -> Some(unbox data)
-       else None
 
     member __.GetColumnValueOption<'T>(key) : ValueOption<'T> =
-       if data.ContainsKey key then
-           match data.[key] with
+       match data.TryGetValue key with
+       | false, _ -> ValueNone
+       | true, dataitem ->
+           match dataitem with
            | null -> ValueNone
            | :? System.DBNull -> ValueNone
-           | data when data.GetType() <> typeof<'T> && typeof<'T> <> typeof<obj> -> ValueSome(unbox<'T> <| Convert.ChangeType(data, typeof<'T>))
+           | data when Type.(<>)(data.GetType(), typeof<'T>) && Type.(<>)(typeof<'T>, typeof<obj>) -> ValueSome(unbox<'T> <| Convert.ChangeType(data, typeof<'T>))
            | data -> ValueSome(unbox data)
-       else ValueNone
 
     member __.GetPkColumnOption<'T>(keys: string list) : 'T list =
         keys |> List.choose(fun key -> 
             __.GetColumnOption<'T>(key)) 
 
-    member internal this.GetColumnOptionWithDefinition(key) =
+    member this.GetColumnOptionWithDefinition(key) =
         this.GetColumnOption(key) |> Option.bind (fun v -> Some(box v, columns.TryFind(key)))
 
     member private e.UpdateField key =
+        if dc.IsReadOnly then failwith "Context is readonly" else
         match e._State with
         | Modified fields ->
             e._State <- Modified (key::fields)
@@ -253,23 +280,25 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
     member __.SetColumnOptionSilent(key,value) =
       match value with
       | Some value ->
-          if not (data.ContainsKey key) then data.Add(key,value)
-          else data.[key] <- value
+          if data.ContainsKey key then
+              data.[key] <- value
+          else data.Add(key,value)
       | None -> data.Remove key |> ignore
 
     member __.SetPkColumnOptionSilent(keys,value) =
-        keys |> List.iter(fun x -> 
-            match value with
-            | Some value ->
-                if not (data.ContainsKey x) then data.Add(x,value)
-                else data.[x] <- value
-            | None -> data.Remove x |> ignore)
+        match value with
+        | Some value ->
+            keys |> List.iter(fun x -> 
+                if data.ContainsKey x then data.[x] <- value
+                else data.Add(x,value))
+        | None ->
+            keys |> List.iter(fun x -> data.Remove x |> ignore)
 
     member e.SetColumnOption(key,value) =
       match value with
       | Some value ->
-          if not (data.ContainsKey key) then data.Add(key,value)
-          else data.[key] <- value
+          if data.ContainsKey key then data.[key] <- value
+          else data.Add(key,value)
           e.TriggerPropertyChange key
       | None -> if data.Remove key then e.TriggerPropertyChange key
       e.UpdateField key
@@ -277,8 +306,8 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
     member e.SetColumnValueOption(key,value) =
       match value with
       | ValueSome value ->
-          if not (data.ContainsKey key) then data.Add(key,value)
-          else data.[key] <- value
+          if data.ContainsKey key then data.[key] <- value
+          else data.Add(key,value)
           e.TriggerPropertyChange key
       | ValueNone -> if data.Remove key then e.TriggerPropertyChange key
       e.UpdateField key
@@ -287,47 +316,29 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
 
     /// creates a new SQL entity from alias data in this entity
     member internal e.GetSubTable(alias:string,tableName) =
-        aliasCache.GetOrAdd(alias, fun alias ->
+
+        match aliasCache with
+        | Some x -> ()
+        | None ->
+            aliasCache <- Some (Dictionary<string,SqlEntity>(HashIdentity.Structural))
+
+        match aliasCache.Value.TryGetValue alias with
+        | true, entity -> entity
+        | false, _ ->
             let tableName = if tableName <> "" then tableName else e.Table.FullName
-            let newEntity = SqlEntity(dc, tableName, columns)
+            let selectedColumns = 
+                e.ColumnValues
+                |> Seq.toArray
+                |> Array.choose (Utilities.checkPred alias)
+
+            let newEntity = SqlEntity(dc, tableName, columns, selectedColumns.Length)
             // attributes names cannot have a period in them unless they are an alias
-            let pred =
-                let prefix = "[" + alias + "]."
-                let prefix2 = alias + "."
-                let prefix3 = "`" + alias + "`."
-                let prefix4 = alias + "_"
-                let prefix5 = alias.ToUpper() + "_"
-                (fun (k:string,v) ->
-                    if k.StartsWith prefix then
-                        let temp = replaceFirst k prefix ""
-                        let temp = temp.Substring(1,temp.Length-2)
-                        Some(temp,v)
-                    // this case is for PostgreSQL and other vendors that use " as whitespace qualifiers
-                    elif  k.StartsWith prefix2 then
-                        let temp = replaceFirst k prefix2 ""
-                        Some(temp,v)
-                    // this case is for MySQL and other vendors that use ` as whitespace qualifiers
-                    elif  k.StartsWith prefix3 then
-                        let temp = replaceFirst k prefix3 ""
-                        let temp = temp.Substring(1,temp.Length-2)
-                        Some(temp,v)
-                    //this case for MSAccess, uses _ as whitespace qualifier
-                    elif  k.StartsWith prefix4 then
-                        let temp = replaceFirst k prefix4 ""
-                        Some(temp,v)
-                    //this case for Firebird version<=2.1, all uppercase
-                    elif  k.StartsWith prefix5 then 
-                        let temp = replaceFirst k prefix5 ""
-                        Some(temp,v)
-                    elif not(String.IsNullOrEmpty(k)) then // this is for dynamic alias columns: [a].[City] as City
-                        Some(k,v)
-                    else None)
 
-            e.ColumnValues
-            |> Seq.choose pred
-            |> Seq.iter( fun (k,v) -> newEntity.SetColumnSilent(k,v))
+            selectedColumns
+            |> Array.iter( fun (k,v) -> newEntity.SetColumnSilent(k,v))
 
-            newEntity)
+            aliasCache.Value.Add(alias,newEntity)
+            newEntity
 
     member x.MapTo<'a>(?propertyTypeMapping : (string * obj) -> obj) =
         let typ = typeof<'a>
@@ -364,7 +375,7 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
     /// UPDATE: Updates the exising database entity with the values that this entity contains.
     /// INSERT: Makes a copy of entity (database row), which is a new row with the same columns and values (except Id)
     member __.CloneTo(secondContext, itemExistsAlready:bool) = 
-        let newItem = SqlEntity(secondContext, tableName, columns)
+        let newItem = SqlEntity(secondContext, tableName, columns, columns.Count)
         if itemExistsAlready then 
             newItem.SetData(data |> Seq.map(fun kvp -> kvp.Key, kvp.Value))
             newItem._State <- Modified (data |> Seq.toList 
@@ -372,7 +383,7 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
                                              |> List.filter(fun k -> k <> "Id"))
         else 
             newItem.SetData(data 
-                      |> Seq.filter(fun kvp -> kvp.Key <> "Id" && kvp.Value <> null) 
+                      |> Seq.filter(fun kvp -> kvp.Key <> "Id" && not (isNull kvp.Value)) 
                       |> Seq.map(fun kvp -> kvp.Key, kvp.Value))
             newItem._State <- Created
         newItem
@@ -416,39 +427,54 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup) =
                                  override __.ShouldSerializeValue(_) = false })
                |> Seq.cast<PropertyDescriptor> |> Seq.toArray )
 
-and ResultSet = seq<(string * obj)[]>
-and ReturnSetType =
-    | ScalarResultSet of string * obj
-    | ResultSet of string * ResultSet
-and ReturnValueType =
-    | Unit
-    | Scalar of string * obj
-    | SingleResultSet of string * ResultSet
-    | Set of seq<ReturnSetType>
-
 and ISqlDataContext =
+    /// Connection string to database
     abstract ConnectionString           : string
+    /// Command timeout (in seconds)
     abstract CommandTimeout             : Option<int>
+    /// CreateRelated: instance, _, primary_table, primary_key, foreing_Table, foreign_key, direction. Returns entities
     abstract CreateRelated              : SqlEntity * string * string * string * string * string * RelationshipDirection -> System.Linq.IQueryable<SqlEntity>
+    /// Create entities for a table.
     abstract CreateEntities             : string -> System.Linq.IQueryable<SqlEntity>
+    /// Call stored procedure: Definition, return columns, values. Returns result.
     abstract CallSproc                  : RunTimeSprocDefinition * QueryParameter[] * obj[] -> obj
+    /// Call stored procedure: Definition, return columns, values. Returns result task.
     abstract CallSprocAsync             : RunTimeSprocDefinition * QueryParameter[] * obj[] -> System.Threading.Tasks.Task<SqlEntity>
+    /// Get individual row. Takes tablename and id.
     abstract GetIndividual              : string * obj -> SqlEntity
+    /// Save entity to database.
     abstract SubmitChangedEntity        : SqlEntity -> unit
+    /// Save database-changes in a transaction to database.
     abstract SubmitPendingChanges       : unit -> unit
+    /// Save database-changes in a transaction to database.
     abstract SubmitPendingChangesAsync  : unit -> System.Threading.Tasks.Task<unit>
+    /// Remove changes that are in context.
     abstract ClearPendingChanges        : unit -> unit
+    /// List changes that are in context.
     abstract GetPendingEntities         : unit -> SqlEntity list
+    /// Give a tablename and this returns the key name
     abstract GetPrimaryKeyDefinition    : string -> string
+    /// return a new, unopened connection using the provided connection string
     abstract CreateConnection           : unit -> IDbConnection
+    /// Takes table-name. Returns new entity.
     abstract CreateEntity               : string -> SqlEntity
+    /// Read entity. Table name, columns, data-reader. Returns entities.
     abstract ReadEntities               : string * ColumnLookup * IDataReader -> SqlEntity[]
+    /// Read entity. Table name, columns, data-reader. Returns entities task.
     abstract ReadEntitiesAsync          : string * ColumnLookup * DbDataReader -> System.Threading.Tasks.Task<SqlEntity[]>
+    /// Operations of select in SQL-side or in .NET side?
     abstract SqlOperationsInSelect      : SelectOperations
+    /// Save schema offline as Json
     abstract SaveContextSchema          : string -> unit
+    /// Context meant to be read operations only
+    abstract IsReadOnly                 : bool
 
-// LinkData is for joins with SelectMany
-and LinkData =
+/// This is publically exposed and used in the runtime
+type IWithDataContext =
+    abstract DataContext : ISqlDataContext
+
+/// LinkData is for joins with SelectMany
+type LinkData =
     { PrimaryTable       : Table
       PrimaryKey         : SqlColumnType list
       ForeignTable       : Table
@@ -459,19 +485,19 @@ and LinkData =
         member x.Rev() =
             { x with PrimaryTable = x.ForeignTable; PrimaryKey = x.ForeignKey; ForeignTable = x.PrimaryTable; ForeignKey = x.PrimaryKey }
 
-// GroupData is for group-by projections
-and GroupData =
+/// GroupData is for group-by projections
+type GroupData =
     { PrimaryTable       : Table
       KeyColumns         : (alias * SqlColumnType) list
       AggregateColumns   : (alias * SqlColumnType) list
       Projection         : Expression option }
 
-and table = string
+type table = string
 
-and SelectData = LinkQuery of LinkData | GroupQuery of GroupData | CrossJoin of alias * Table
-and UnionType = NormalUnion | UnionAll | Intersect | Except
-and internal SqlExp =
-    | BaseTable    of alias * Table                         // name of the initiating IQueryable table - this isn't always the ultimate table that is selected
+type SelectData = LinkQuery of LinkData | GroupQuery of GroupData | CrossJoin of struct (alias * Table)
+type [<Struct>] UnionType = NormalUnion | UnionAll | Intersect | Except
+type SqlExp =
+    | BaseTable    of struct (alias * Table)                // name of the initiating IQueryable table - this isn't always the ultimate table that is selected
     | SelectMany   of alias * alias * SelectData * SqlExp   // from alias, to alias and join data including to and from table names. Note both the select many and join syntax end up here
     | FilterClause of Condition * SqlExp                    // filters from the where clause(es)
     | HavingClause of Condition * SqlExp                    // filters from the where clause(es)
@@ -515,8 +541,23 @@ and internal SqlExp =
                 | Count(rest) 
                 | AggregateOp(_,_,rest) -> isGroupBy rest
             isGroupBy this
+        member this.hasSortBy() =
+            let rec isSortBy = function
+                | OrderBy(_) -> true
+                | BaseTable(_) -> false
+                | SelectMany(_,_,_,rest)
+                | FilterClause(_,rest)
+                | HavingClause(_,rest)
+                | Projection(_,rest)
+                | Distinct rest
+                | Skip(_,rest)
+                | Take(_,rest)
+                | Union(_,_,_,rest)
+                | Count(rest) 
+                | AggregateOp(_,_,rest) -> isSortBy rest
+            isSortBy this
 
-and internal SqlQuery =
+type SqlQuery =
     { Filters       : Condition list
       HavingFilters : Condition list
       Links         : (alias * LinkData * alias) list
@@ -527,14 +568,14 @@ and internal SqlQuery =
       Grouping      : (list<alias * SqlColumnType> * list<alias * SqlColumnType>) list //key columns, aggregate columns
       Distinct      : bool
       UltimateChild : (string * Table) option
-      Skip          : int option
-      Take          : int option
+      Skip          : int voption
+      Take          : int voption
       Union         : (UnionType*string*seq<IDbDataParameter>) option
       Count         : bool 
       AggregateOp   : (alias * SqlColumnType) list }
     with
         static member Empty = { Filters = []; Links = []; Grouping = []; Aliases = Map.empty; Ordering = []; Count = false; AggregateOp = []; CrossJoins = []
-                                Projection = []; Distinct = false; UltimateChild = None; Skip = None; Take = None; Union = None; HavingFilters = [] }
+                                Projection = []; Distinct = false; UltimateChild = None; Skip = ValueNone; Take = ValueNone; Union = None; HavingFilters = [] }
 
         static member ofSqlExp(exp,entityIndex: string ResizeArray) =
             let legaliseName (alias:alias) =
@@ -542,8 +583,8 @@ and internal SqlQuery =
 
             let rec convert (q:SqlQuery) = function
                 | BaseTable(a,e) -> match q.UltimateChild with
-                                        | Some(_,_) when q.CrossJoins.IsEmpty -> q
-                                        | None when q.Links.Length > 0 && q.Links |> List.exists(fun (a',_,_) -> a' = a) = false ->
+                                        | Some(_) when q.CrossJoins.IsEmpty -> q
+                                        | None when q.Links.Length > 0 && q.Links |> List.exists(fun (a',_,_) -> a' = a) |> not ->
                                                 // the check here relates to the special case as described in the FilterClause below.
                                                 // need to make sure the pre-tuple alias (if applicable) is not used in the projection,
                                                 // but rather the later alias of the same object after it has been tupled.
@@ -581,13 +622,14 @@ and internal SqlQuery =
                     convert { q with Ordering = (legaliseName alias,key,desc)::q.Ordering } rest
                 | Skip(amount, rest) ->
                     if q.Skip.IsSome then failwith "skip may only be specified once"
-                    else convert { q with Skip = Some(amount) } rest
+                    elif amount = 0 then convert q rest
+                    else convert { q with Skip = ValueSome amount } rest
                 | Take(amount, rest) ->
                     if q.Union.IsSome then failwith "Union and take-limit is not yet supported as SQL-syntax varies."
                     match q.Take with
-                    | Some x when amount <= x || amount = 1 -> convert { q with Take = Some(amount) } rest
-                    | Some x -> failwith "take may only be specified once"
-                    | None -> convert { q with Take = Some(amount) } rest
+                    | ValueSome x when amount <= x || amount = 1 -> convert { q with Take = ValueSome(amount) } rest
+                    | ValueSome x -> failwith "take may only be specified once"
+                    | ValueNone -> convert { q with Take = ValueSome(amount) } rest
                 | Count(rest) ->
                     if q.Count then failwith "count may only be specified once"
                     else convert { q with Count = true } rest
@@ -600,7 +642,7 @@ and internal SqlQuery =
             let sq = convert (SqlQuery.Empty) exp
             sq
 
-and internal ISqlProvider =
+type ISqlProvider =
     /// return a new, unopened connection using the provided connection string
     abstract CreateConnection : string -> IDbConnection
     /// return a new command associated with the provided connection and command text
@@ -611,7 +653,7 @@ and internal ISqlProvider =
     /// to generate a cache of type mappings, and to set the three mapping function properties
     abstract CreateTypeMappings : IDbConnection -> Unit
     /// Queries the information schema and returns a list of table information
-    abstract GetTables  : IDbConnection * CaseSensitivityChange -> Table list
+    abstract GetTables  : IDbConnection * CaseSensitivityChange -> Table array
     /// Queries table descriptions / comments for tooltip-info, table name to description
     abstract GetTableDescription  : IDbConnection * string -> string
     /// Queries the given table and returns a list of its columns
@@ -626,7 +668,7 @@ and internal ISqlProvider =
     /// Returns constraint information for a given table, returning two lists of relationships, where
     /// the first are relationships where the table is the primary entity, and the second where
     /// it is the foreign entity
-    abstract GetRelationships : IDbConnection * Table -> (Relationship list * Relationship list)
+    abstract GetRelationships : IDbConnection * Table -> (Relationship array * Relationship array)
     /// Returns a list of stored procedure metadata
     abstract GetSprocs  : IDbConnection -> Sproc list
     /// Returns the db vendor specific SQL  query to select the top x amount of rows from
@@ -644,37 +686,43 @@ and internal ISqlProvider =
     /// the other parameters are the base table alias, the base table, and a dictionary containing
     /// the columns from the various table aliases that are in the SELECT projection
     abstract GenerateQueryText : SqlQuery * string * Table * Dictionary<string,ResizeArray<ProjectionParameter>> * bool * IDbConnection -> string * ResizeArray<IDbDataParameter>
-    ///Builds a command representing a call to a stored procedure
+    /// Builds a command representing a call to a stored procedure
     abstract ExecuteSprocCommand : IDbCommand * QueryParameter[] * QueryParameter[] *  obj[] -> ReturnValueType
-    ///Builds a command representing a call to a stored procedure, executing async
+    /// Builds a command representing a call to a stored procedure, executing async
     abstract ExecuteSprocCommandAsync : System.Data.Common.DbCommand * QueryParameter[] * QueryParameter[] *  obj[] -> System.Threading.Tasks.Task<ReturnValueType>
-    ///Provider specific lock to do provider specific locking
+    /// Provider specific lock to do provider specific locking
     abstract GetLockObject : unit -> obj
+    /// MS Access needs to keep connection open
+    abstract CloseConnectionAfterQuery : bool
+    /// SQLITE doesn't have command type of stored procedures
+    abstract StoredProcedures : bool
+    /// MSSDT doesn't do design-time connection
+    abstract DesignConnection : bool
 
-and internal SchemaCache =
+and SchemaCache =
     { PrimaryKeys   : ConcurrentDictionary<string,string list>
       Tables        : ConcurrentDictionary<string,Table>
       Columns       : ConcurrentDictionary<string,ColumnLookup>
-      Relationships : ConcurrentDictionary<string,Relationship list * Relationship list>
+      Relationships : ConcurrentDictionary<string,Relationship array * Relationship array>
       Sprocs        : ResizeArray<Sproc>
       SprocsParams  : ConcurrentDictionary<string,QueryParameter list> //sproc name and params
       Packages      : ResizeArray<CompileTimeSprocDefinition>
-      Individuals   : ResizeArray<SqlEntity>
+      Individuals   : ConcurrentDictionary<string, (obj * IDictionary<string,obj>) array> //table name and entities
       IsOffline     : bool }
     with
         static member Empty = { 
             PrimaryKeys = ConcurrentDictionary<string,string list>()
             Tables = ConcurrentDictionary<string,Table>()
             Columns = ConcurrentDictionary<string,ColumnLookup>()
-            Relationships = ConcurrentDictionary<string,Relationship list * Relationship list>()
+            Relationships = ConcurrentDictionary<string,Relationship array * Relationship array>()
             Sprocs = ResizeArray()
             SprocsParams = ConcurrentDictionary<string,QueryParameter list>()
             Packages = ResizeArray()
-            Individuals = ResizeArray()
+            Individuals = ConcurrentDictionary<string, _>()
             IsOffline = false }
         static member Load(filePath) =
             use ms = new MemoryStream(Encoding.UTF8.GetBytes(File.ReadAllText(filePath)))
-            let ser = new System.Runtime.Serialization.Json.DataContractJsonSerializer(typeof<SchemaCache>)
+            let ser = System.Runtime.Serialization.Json.DataContractJsonSerializer(typeof<SchemaCache>)
             { (ser.ReadObject(ms) :?> SchemaCache) with IsOffline = true }
         static member LoadOrEmpty(filePath) =
             if String.IsNullOrEmpty(filePath) || (not(System.IO.File.Exists filePath)) then 
@@ -683,7 +731,7 @@ and internal SchemaCache =
                 SchemaCache.Load(filePath)
         member this.Save(filePath) =
             use ms = new MemoryStream()
-            let ser = new System.Runtime.Serialization.Json.DataContractJsonSerializer(this.GetType())
+            let ser = System.Runtime.Serialization.Json.DataContractJsonSerializer(this.GetType())
             ser.WriteObject(ms, { this with IsOffline = true });  
             let json = ms.ToArray();  
             File.WriteAllText(filePath, Encoding.UTF8.GetString(json, 0, json.Length))
@@ -759,7 +807,7 @@ type GroupResultItems<'key, 'SqlEntity>(keyname:String*String*String*String*Stri
             | _ -> failwith ("Unknown aggregate item: " + typeof<'SqlEntity>.Name)
         let itm = 
             if Seq.isEmpty itms then
-                let cols = (keyname |> fun (x1,x2,x3,x4,x5,x6,x7) -> x1 + " " + x2+ " " + x3 + " " + x4 + " " + x5 + " " + x6 + " " + x7).Trim()
+                let cols = (keyname |> fun (x1,x2,x3,x4,x5,x6,x7) -> StringBuilder(x1).Append(" ").Append(x2).Append(" ").Append(x3).Append(" ").Append(x4).Append(" ").Append(x5).Append(" ").Append(x6).Append(" ").Append(x7).ToString()).Trim()
                 failwithf "Unsupported aggregate: %s %s" cols (if columnName.IsSome then columnName.Value else "")
             else itms |> Seq.head |> snd
         if itm = box(DBNull.Value) then Unchecked.defaultof<'ret>
@@ -770,6 +818,7 @@ type GroupResultItems<'key, 'SqlEntity>(keyname:String*String*String*String*Stri
     interface System.Linq.IGrouping<'key, 'SqlEntity> with
         member __.Key = keyval
     member __.AggregateCount<'T>(columnName) = this.fetchItem<'T> "COUNT" columnName
+    member __.AggregateCountDistinct<'T>(columnName) = this.fetchItem<'T> "COUNTD" columnName
     member __.AggregateSum<'T>(columnName) = 
         let x = this.fetchItem<'T> "SUM" columnName 
         x
@@ -789,7 +838,7 @@ type GroupResultItems<'key, 'SqlEntity>(keyname:String*String*String*String*Stri
         let i = x |> Seq.head
         GroupResultItems<'key, 'SqlEntity>("", v, i)
 
-module internal CommonTasks =
+module CommonTasks =
 
     let ``ensure columns have been loaded`` (provider:ISqlProvider) (con:IDbConnection) (entities:ConcurrentDictionary<SqlEntity, DateTime>) =
         entities |> Seq.map(fun e -> e.Key.Table)
@@ -797,12 +846,14 @@ module internal CommonTasks =
                     |> Seq.iter(fun t -> provider.GetColumns(con,t) |> ignore )
 
     let checkKey (pkLookup:ConcurrentDictionary<string, string list>) id (e:SqlEntity) =
-        if pkLookup.ContainsKey e.Table.FullName then
-            match e.GetPkColumnOption pkLookup.[e.Table.FullName] with
-            | [] ->  e.SetPkColumnSilent(pkLookup.[e.Table.FullName], id)
+        match pkLookup.TryGetValue e.Table.FullName with
+        | true, pkKey ->
+            match e.GetPkColumnOption pkKey with
+            | [] ->  e.SetPkColumnSilent(pkKey, id)
             | _  -> () // if the primary key exists, do nothing
                             // this is because non-identity columns will have been set
                             // manually and in that case scope_identity would bring back 0 "" or whatever
+        | false, _ -> ()
 
     let parseHaving fieldNotation (keys:(alias*SqlColumnType) list) (conditionList : Condition list) =
         if keys.Length <> 1 then
@@ -813,7 +864,7 @@ module internal CommonTasks =
             let replaceEmptyKey = 
                 match key with
                 | KeyColumn keyName -> function GroupColumn (KeyOp k,c) when k = "" -> GroupColumn (KeyOp keyName,c) | x -> x
-                | _ -> fun x -> x
+                | _ -> id
 
             let rec parseFilters conditionList = 
                 conditionList |> List.map(function 
@@ -825,6 +876,52 @@ module internal CommonTasks =
                         Condition.Or(curr, tail |> Option.map parseFilters)
                     | x -> x)
             parseFilters conditionList
+
+    /// deterministically sort entities before processing in a creation order, so that user can reliably save entities with foreign key relations
+    let inline sortEntities (entities: ConcurrentDictionary<SqlEntity, DateTime>) = entities |> Seq.sortBy (fun e -> e.Value) |> Seq.map (fun e -> e.Key)
+
+    /// Check if we know primary column data type from cache.
+    /// This helps matching parameter types if there are many different DBTypes mapped to same .NET type, like nvarchar and varchar to string.
+    let searchDataTypeFromCache (provider:ISqlProvider) con (sqlQuery:SqlQuery) (baseAlias:string) (baseTable:Table) (alias:string) (col:SqlColumnType) =
+        match col with
+        | KeyColumn name when not (String.IsNullOrEmpty alias) ->
+            if alias = baseAlias then
+                match provider.GetColumns(con,baseTable).TryGetValue name with
+                | true, col -> ValueSome col.TypeMapping.DbType
+                | _ -> ValueNone
+            else
+                match sqlQuery.Aliases.TryGetValue alias with
+                | true, table ->
+                    match provider.GetColumns(con,table).TryGetValue name with
+                    | true, col -> ValueSome col.TypeMapping.DbType
+                    | _ -> ValueNone
+                | false, _ -> ValueNone
+        | _ -> ValueNone
+
+    let initCallSproc (dc:ISqlDataContext) (def:RunTimeSprocDefinition) (values:obj array) (con:IDbConnection) (com:IDbCommand) hasStoredProcedures =
+        
+        if hasStoredProcedures then 
+            com.CommandType <- CommandType.StoredProcedure
+
+        let columns =
+            def.Params
+            |> List.map (fun p -> p.Name, Column.FromQueryParameter(p))
+            |> Map.ofList
+
+        let entity = SqlEntity(dc, def.Name.DbName, columns, columns.Count)
+
+        let toEntityArray rowSet =
+            [|
+                for row in rowSet do
+                    let entity = SqlEntity(dc, def.Name.DbName, columns, columns.Count)
+                    entity.SetData(row)
+                    yield entity
+            |]
+
+        let param = def.Params |> List.toArray
+
+        QueryEvents.PublishSqlQuery dc.ConnectionString (sprintf "EXEC %s(%s)" com.CommandText (String.concat ", " (values |> Seq.map (sprintf "%A")))) []
+        param, entity, toEntityArray
 
 module public OfflineTools =
 
@@ -858,7 +955,139 @@ module public OfflineTools =
                 SprocsParams = System.Collections.Concurrent.ConcurrentDictionary( 
                                 Seq.concat [|s1.SprocsParams ; s2.SprocsParams |] |> Seq.distinctBy(fun d -> d.Key));
                 Packages = ResizeArray(Seq.concat [| s1.Packages ; s2.Packages |] |> Seq.distinctBy(fun s -> s.ToString()));
-                Individuals = ResizeArray(Seq.concat [| s1.Individuals ; s2.Individuals |] |> Seq.distinct);
+                Individuals = System.Collections.Concurrent.ConcurrentDictionary( 
+                                Seq.concat [|s1.Individuals ; s2.Individuals |] |> Seq.distinctBy(fun d -> d.Key));
                 IsOffline = s1.IsOffline || s2.IsOffline}
         merged.Save targetfile
         "Merge saved " + targetfile + " at " + DateTime.Now.ToString("hh:mm:ss")
+
+    open System.Linq
+    open System.Collections
+
+    type MockQueryable<'T>(dc:ISqlDataContext, itms:IQueryable<'T>) = //itms:IQueryable<'T>) =
+        interface FSharp.Data.Sql.Patterns.ISqlQueryable
+        interface IQueryable<'T>
+        interface IQueryable with
+            member __.Provider = itms.Provider
+            member x.Expression =  itms.Expression
+            member __.ElementType = itms.ElementType
+        interface seq<'T> with
+             member __.GetEnumerator() = itms.GetEnumerator()
+        interface IEnumerable with
+             member x.GetEnumerator() = itms.GetEnumerator()
+        interface IWithDataContext with
+             member __.DataContext = dc
+
+    let internal makeColumns (dummydata: obj) =
+        let tableItem = (dummydata :?> seq<obj> |> Seq.head).GetType()
+
+        let columnNames =
+            tableItem.GetProperties()
+            |> Array.map(fun col -> col.Name, col.PropertyType.Name)
+
+        let cols = columnNames |> Array.map(fun (nam,typ) ->
+            let tempCol = { Name = nam
+                            TypeMapping = TypeMapping.Create(typ); IsPrimaryKey = false
+                            IsNullable = String.IsNullOrEmpty typ || typ.StartsWith "FSharpOptio" || typ.StartsWith "FSharpValueOption"
+                            IsAutonumber = false;  HasDefault = false; IsComputed = false; TypeInfo = ValueNone }
+            nam, tempCol) |> ColumnLookup
+        columnNames, cols
+
+
+    let internal createMockEntitiesDc<'T when 'T :> SqlEntity> dc (tableName:string) (dummydata: obj) =
+        let columnNames, cols = makeColumns dummydata
+        let rowData = 
+            dummydata :?> seq<obj>
+            |> Seq.map(fun row ->
+                let entity = SqlEntity(dc, tableName, cols, cols.Count)
+                for (col, _) in columnNames do
+                    let colProp = row.GetType().GetProperty(col)
+                    let colData = if isNull colProp then null else colProp.GetValue(row, null)
+                    let typ = if isNull colData || isNull (colData.GetType()) then "" else colData.GetType().Name
+                    if typ.StartsWith "FSharpOptio" || typ.StartsWith "FSharpValueOption" then
+                        let noneProp = colData.GetType().GetProperty("IsNone")
+                        let optIsNone =
+                            if isNull noneProp then null
+                            elif noneProp.GetIndexParameters().Length = 0 then
+                                colData.GetType().GetProperty("IsNone").GetValue(colData, null)
+                            else
+                                isNull (colData.GetType().GetProperty "Value")
+                        if (isNull optIsNone) || optIsNone = true then
+                            entity.SetColumnOptionSilent(col, None)
+                        else
+                            let optValProp = colData.GetType().GetProperty("Value")
+                            if isNull optValProp then 
+                                entity.SetColumnOptionSilent(col, None)
+                            else
+                                let optVal = optValProp.GetValue(colData, null)
+                                entity.SetColumnOptionSilent(col, Some optVal)
+                    else
+                        entity.SetColumnSilent(col, colData)
+                entity :?> 'T)
+        MockQueryable(dc, rowData.AsQueryable()) :> IQueryable<'T>
+
+    /// This can be used for testing. Creates de-attached entities..
+    /// Example: FSharp.Data.Sql.Common.OfflineTools.CreateMockEntities "MyTable1" [| {| MyColumn1 = "a"; MyColumn2 = 0 |} |]
+    let CreateMockEntities<'T when 'T :> SqlEntity> (tableName:string) (dummydata: obj) =
+        createMockEntitiesDc<'T> Unchecked.defaultof<ISqlDataContext> tableName dummydata
+
+    /// This can be used for testing. Creates fake DB-context entities..
+    /// Example: FSharp.Data.Sql.Common.OfflineTools.CreateMockSqlDataContext ["schema.MyTable1"; [| {| MyColumn1 = "a"; MyColumn2 = 0 |} |] :> obj] |> Map.ofList
+    /// See project unit-test for more examples.
+    /// NOTE: Case-sensitivity. Tables and columns are DB-names, not Linq-names.
+    /// Limitation of mockContext: You cannot Create new entities to the mock context.
+    let CreateMockSqlDataContext<'T> (dummydata: Map<string,obj>) =
+        let pendingChanges = System.Collections.Concurrent.ConcurrentDictionary<SqlEntity, DateTime>()
+        let x = { new ISqlDataContext with
+                    member this.CallSproc(arg1: FSharp.Data.Sql.Schema.RunTimeSprocDefinition, arg2: FSharp.Data.Sql.Schema.QueryParameter array, arg3: obj array) =
+                        // Note: Calling Sproc result on mock will still fail because SqlEntity "ResultSet" is null and not an array.
+                        SqlEntity(this, arg1.Name.FullName, Array.empty |> ColumnLookup, 0)
+                    member this.CallSprocAsync(arg1: FSharp.Data.Sql.Schema.RunTimeSprocDefinition, arg2: FSharp.Data.Sql.Schema.QueryParameter array, arg3: obj array) =
+                        // Note: Calling Sproc result on mock will still fail because SqlEntity "ResultSet" is null and not an array.
+                        task { return SqlEntity(this, arg1.Name.FullName, Array.empty |> ColumnLookup, 0) }
+                    member this.ClearPendingChanges(): unit = pendingChanges.Clear()
+                    member this.CommandTimeout: Option<int> = None
+                    member this.CreateConnection(): Data.IDbConnection = raise (System.NotImplementedException())
+                    member this.CreateEntities(arg1: string): IQueryable<SqlEntity> =
+                        match dummydata.TryGetValue arg1 with
+                        | true, tableData -> createMockEntitiesDc this arg1 tableData
+                        | false, _ -> failwith ("Add table to dummydata: " + arg1) 
+                    member this.CreateEntity(arg1: string): SqlEntity =
+                        match dummydata.TryGetValue arg1 with
+                        | true, tableData ->
+                            let _, cols = makeColumns tableData
+                            new SqlEntity(this, arg1, cols, cols.Count)
+                        | false, _ -> new SqlEntity(this, arg1, Seq.empty |> ColumnLookup, 0)
+                    member this.CreateRelated(inst: SqlEntity, arg2: string, pe: string, pk: string, fe: string, fk: string, direction: RelationshipDirection): IQueryable<SqlEntity> =
+                        if direction = RelationshipDirection.Children then
+                            match dummydata.TryGetValue fe with
+                            | true, tableData ->
+                                let related = createMockEntitiesDc this fe tableData
+                                match (inst.ColumnValues |> Map.ofSeq).TryGetValue pk with
+                                | true, relevant ->
+                                    related.Where(fun e -> e.ColumnValues |> Seq.exists(fun (k, v) -> k = fk && v = relevant))
+                                | false, _ -> failwith ("Key not found: " + arg2 + " " + pk)
+                            | false, _ -> failwith ("Add table to dummydata: " + fe)
+                        else
+                            match dummydata.TryGetValue pe with
+                            | true, tableData ->
+                                    let related = createMockEntitiesDc this pe tableData
+                                    match (inst.ColumnValues |> Map.ofSeq).TryGetValue fk with
+                                    | true, relevant -> 
+                                        related.Where(fun e -> e.ColumnValues |> Seq.exists(fun (k, v) -> k = pk && v = relevant))
+                                    | false, _ -> failwith ("Key not found: " + arg2 + " " + fk)
+                            | false, _ -> failwith ("Add table to dummydata: " + pe)
+                    member this.GetIndividual(arg1: string, arg2: obj): SqlEntity = raise (System.NotImplementedException())
+                    member this.GetPendingEntities(): SqlEntity list = (CommonTasks.sortEntities pendingChanges) |> Seq.toList
+                    member this.GetPrimaryKeyDefinition(arg1: string): string = ""
+                    member this.ReadEntities(arg1: string, arg2: FSharp.Data.Sql.Schema.ColumnLookup, arg3: Data.IDataReader): SqlEntity array = raise (System.NotImplementedException())
+                    member this.ReadEntitiesAsync(arg1: string, arg2: FSharp.Data.Sql.Schema.ColumnLookup, arg3: Data.Common.DbDataReader): Threading.Tasks.Task<SqlEntity array> = raise (System.NotImplementedException())
+                    member _.SaveContextSchema(arg1: string): unit = ()
+                    member _.SqlOperationsInSelect = FSharp.Data.Sql.SelectOperations.DotNetSide
+                    member _.SubmitChangedEntity(arg1: SqlEntity): unit = pendingChanges.AddOrUpdate(arg1, DateTime.UtcNow, fun oldE dt -> DateTime.UtcNow) |> ignore
+                    member _.SubmitPendingChanges(): unit = ()
+                    member _.SubmitPendingChangesAsync(): Threading.Tasks.Task<unit> = task {return ()}
+                    member _.ConnectionString = ""
+                    member _.IsReadOnly = false
+               }
+        x :> obj |> unbox<'T>

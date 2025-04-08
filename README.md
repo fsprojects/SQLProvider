@@ -31,6 +31,7 @@ The provider currently has explicit implementations for the following database v
 * MySQL (& MariaDB)
 * MsAccess
 * Firebird
+* DuckDB
 
 There is also an ODBC provider that will let you connect to any ODBC source with limited features. 
 
@@ -54,7 +55,7 @@ may cause some security problems depending on your system's configuration and
 which version of the .NET framework you are using.  If you encounter problems 
 loading dynamic assemblies, they can likely be resolved by applying the 
 following element into the configuration files of  fsi.exe, devenv.exe and 
-your program or the program using your library : http://msdn.microsoft.com/en-us/library/dd409252(VS.100).aspx
+your program or the program using your library: http://msdn.microsoft.com/en-us/library/dd409252(VS.100).aspx
 
 ## Example
 

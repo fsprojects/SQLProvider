@@ -1,11 +1,10 @@
-version 7.2.0
+version 8.1.0
 source https://api.nuget.org/v3/index.json
 storage: none
-clitool dotnet-mono 0.5.6
 
-nuget FSharp.Core == 6.0.7
-nuget System.Data.SqlClient framework: net461, net472, net480, netstandard2.0, netstandard2.1, netcoreapp2.1, netcoreapp3.1
-nuget NETStandard.Library.NETFramework storage: packages 
+nuget FSharp.Core == 8.0.301
+nuget System.Data.SqlClient framework: net461, net472, net48, netstandard2.0, netstandard2.1, netcoreapp2.1, netcoreapp3.1
+nuget NETStandard.Library.NETFramework storage: packages
 nuget System.Data.OleDb
 nuget System.Runtime
 nuget System.Runtime.Loader
@@ -18,7 +17,8 @@ nuget System.Reflection.TypeExtensions
 nuget System.Data.Common
 nuget System.Data.Odbc
 nuget Microsoft.Data.SQLite 2.0
-nuget Microsoft.Data.SqlClient framework: net6.0, netstandard2.1
+nuget Microsoft.Data.SqlClient framework: net8.0, net6.0, netstandard2.1
+nuget System.Memory
 
 group Build
 
@@ -26,7 +26,7 @@ group Build
     storage: packages
 
     nuget Microsoft.SourceLink.GitHub prerelease copy_local: true
-    nuget FSharp.Core == 6.0.7
+    nuget FSharp.Core == 8.0.301
     nuget FSharp.Formatting >= 4.0.0
     nuget Nuget.CommandLine
     nuget RazorEngine
@@ -44,9 +44,12 @@ group Build
     nuget Fake.BuildServer.AppVeyor
     nuget Fake.BuildServer.Travis
     nuget Fake.DotNet.MSBuild
-    nuget Fake.DotNet.FSFormatting 
+    nuget Fake.DotNet.FSFormatting
     nuget Fake.DotNet.Testing.NUnit
+    nuget FSharp.Compiler.Service 43.8.301
     nuget System.Data.SqlClient
+    nuget MSBuild.StructuredLogger
+
 
 group SourceFiles
     source https://api.nuget.org/v3/index.json
@@ -70,23 +73,23 @@ group Docs
     nuget Fake.IO.FileSystem
     nuget FAKE.Core.Environment
     nuget Fake.DotNet.Cli
-    nuget FSharp.Formatting >= 4.0.0
+    nuget FSharp.Formatting prerelease
     nuget FSharp.Literate >= 4.0.0
     nuget Dotnet.ProjInfo.Workspace.FCS
-	nuget FSharp.Compiler.Service 41.0.7
+	nuget FSharp.Compiler.Service 43.8.301
 
 group Tests
     source https://api.nuget.org/v3/index.json
-    frameworks: netcoreapp3.1, net472
-    storage: packages 
+    frameworks: netcoreapp3.1, net472, net48
+    storage: packages
 
     nuget MySql.Data < 7.0.0
-    nuget MySqlConnector 0.36.1
+    nuget MySqlConnector 2.3.1
     nuget Microsoft.NET.Test.Sdk
     nuget NUnit3TestAdapter
     nuget Newtonsoft.Json
     nuget Npgsql < 4.0
-    nuget NUnit
+    nuget NUnit 3.14.0
     nuget Oracle.ManagedDataAccess 12.2.1100
     nuget FirebirdSql.Data.FirebirdClient 5.12.1
     nuget System.Data.SQLite.Core 1.0.105.2

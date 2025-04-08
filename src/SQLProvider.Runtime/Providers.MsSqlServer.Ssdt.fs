@@ -18,6 +18,7 @@ open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
 open FSharp.Data.Sql.Ssdt.DacpacParser
 
+#nowarn 0044
 module MSSqlServerSsdt =
 
     [<Literal>]
@@ -57,7 +58,7 @@ module MSSqlServerSsdt =
                     yield Path.Combine(p, origPath)
                 | _ -> ()
                 // executing assembly dir
-                match asmToPath (Assembly.GetExecutingAssembly()) with
+                match asmToPath (Reflection.execAssembly.Force()) with
                 | Some p ->
                     yield p
                     yield Path.Combine(p, origPath)
@@ -91,8 +92,6 @@ module MSSqlServerSsdt =
                     relativeEnvFilePath
                 ] |> List.choose id
 
-
-
         let allPossiblePaths =
             paths
             |> List.choose chooseDacpac
@@ -104,7 +103,7 @@ module MSSqlServerSsdt =
         match bestOption with
         | Some b -> b.FullName
         | None ->
-            let sb = new StringBuilder()
+            let sb = StringBuilder()
             sb.AppendLine(sprintf "Unable to find .dacpac file. Search path includes executing assembly, configured ssd path, entry assembly, and the environment variable '%s'." DACPAC_SEARCH_PATH_ENV_VAR_NAME) |> ignore
             sb.AppendLine("Looked in:") |> ignore
             for s in allPossiblePaths do
@@ -183,12 +182,14 @@ module MSSqlServerSsdt =
           Column.IsNullable = col.AllowNulls
           Column.IsPrimaryKey =
             tbl.PrimaryKey
-            |> ValueOption.map (fun pk -> pk.Columns |> List.exists (fun pkCol -> pkCol.Name = col.Name))
+            |> ValueOption.map (fun pk -> pk.Columns |> Array.exists (fun pkCol -> pkCol.Name = col.Name))
             |> ValueOption.defaultValue false
           Column.IsAutonumber = col.IsIdentity
           Column.HasDefault = col.HasDefault
           Column.IsComputed = col.ComputedColumn
           Column.TypeInfo = if col.DataType = "" then ValueNone else ValueSome col.DataType }
+
+    let ssdtCache = ConcurrentDictionary<string,Lazy<SsdtSchema>>()
 
 type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
     let schemaCache = SchemaCache.Empty
@@ -199,7 +200,14 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
     // Remembers the version of each instance it connects to
     let mssqlVersionCache = ConcurrentDictionary<string, Lazy<Version>>()
 
-    let ssdtSchema = lazy (MSSqlServerSsdt.parseDacpac ssdtPath)
+    let getSsdtSchema path = lazy (MSSqlServerSsdt.parseDacpac path)
+
+    let ssdtSchema = 
+        try MSSqlServerSsdt.ssdtCache.GetOrAdd(ssdtPath, fun _ -> getSsdtSchema ssdtPath).Value
+        with | ex ->
+            let x = MSSqlServerSsdt.ssdtCache.TryRemove ssdtPath
+            reraise()
+
     let sprocReturnParam i =
         { Name = "ResultSet" + (match i with | 0 -> "" | x -> "_" + x.ToString())
           TypeMapping =
@@ -222,12 +230,15 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                 r |> List.toArray)
 
     interface ISqlProvider with
+        member __.CloseConnectionAfterQuery = true
+        member __.DesignConnection = false
+        member __.StoredProcedures = true
         member __.GetLockObject() = myLock
         member __.GetTableDescription(con,tableName) =
             tableName +
-            (ssdtSchema.Value.Descriptions
-             |> List.filter(fun d -> (d.DecriptionType = "SqlTableBase" || d.DecriptionType = "SqlView") && d.ColumnName.IsNone)
-             |> List.tryFind(fun d -> if tableName.Contains "." then d.Schema + "." + d.TableName = tableName else d.TableName = tableName)
+            (ssdtSchema.Descriptions
+             |> Array.filter(fun d -> (d.DecriptionType = "SqlTableBase" || d.DecriptionType = "SqlView") && d.ColumnName.IsNone)
+             |> Array.tryFind(fun d -> if tableName.Contains "." then d.Schema + "." + d.TableName = tableName else d.TableName = tableName)
              |> Option.map (fun d ->
                 if String.IsNullOrEmpty d.Description then ""
                 elif d.Description.StartsWith("N'") then
@@ -237,9 +248,9 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
              )
         member __.GetColumnDescription(con,tableName,columnName) =
             let tableName = RegexParsers.splitFullName tableName |> Seq.last
-            (ssdtSchema.Value.Tables
-             |> List.tryFind (fun t -> if tableName.Contains "." then t.Schema + "." + t.Name = tableName else t.Name = tableName)
-             |> Option.bind (fun t -> t.Columns |> List.tryFind (fun c -> c.Name = columnName))
+            (ssdtSchema.Tables
+             |> Array.tryFind (fun t -> if tableName.Contains "." then t.Schema + "." + t.Name = tableName else t.Name = tableName)
+             |> Option.bind (fun t -> t.Columns |> Array.tryFind (fun c -> c.Name = columnName))
              |> Option.map (fun c ->
                 if String.IsNullOrEmpty c.Description then ""
                 elif c.Description.StartsWith("N'") then
@@ -247,9 +258,9 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                 else " / " + c.Description)
              |> Option.defaultValue columnName)
             +
-            (ssdtSchema.Value.Descriptions
-             |> List.filter(fun d -> d.DecriptionType = "SqlColumn" && d.ColumnName.IsSome && d.ColumnName.Value = columnName)
-             |> List.tryFind(fun d ->
+            (ssdtSchema.Descriptions
+             |> Array.filter(fun d -> d.DecriptionType = "SqlColumn" && d.ColumnName.IsSome && d.ColumnName.Value = columnName)
+             |> Array.tryFind(fun d ->
                     if tableName.Contains "." then d.Schema + "." + d.TableName = tableName else d.TableName = tableName)
              |> Option.map(fun d ->
                     if String.IsNullOrEmpty d.Description then ""
@@ -258,8 +269,8 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                     else " / " + d.Description)
              |> Option.defaultValue ""
              )
-        member __.CreateConnection(connectionString) = new SqlConnection(connectionString) :> IDbConnection
-        member __.CreateCommand(connection,commandText) = new SqlCommand(commandText, downcast connection) :> IDbCommand
+        member __.CreateConnection(connectionString) = MSSqlServer.createConnection connectionString
+        member __.CreateCommand(connection,commandText) = MSSqlServer.createCommand commandText connection
         member __.CreateCommandParameter(param, value) =
             let p = SqlParameter(param.Name,value)
             p.DbType <- param.TypeMapping.DbType
@@ -274,16 +285,22 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
             p :> IDbDataParameter
         member __.ExecuteSprocCommand(com, inputParameters, returnCols, values:obj array) =
                 let returnCols2 =
-                    try getSprocReturnParams com.Connection com.CommandText (inputParameters |> Seq.toList)
-                    with _ -> returnCols
+                    match returnCols |> Array.filter(fun p -> p.Name = "ReturnValue") with
+                    | [||] ->
+                        try getSprocReturnParams com.Connection com.CommandText (inputParameters |> Seq.toList)
+                        with _ -> returnCols
+                    | functionReturn -> functionReturn
 
                 if com.Connection.State <> ConnectionState.Open then com.Connection.Open()
                 MSSqlServer.executeSprocCommand com inputParameters returnCols2 values
         member __.ExecuteSprocCommandAsync(com, inputParameters, returnCols, values:obj array) =
             task {
                 let returnCols2 =
-                    try getSprocReturnParams com.Connection com.CommandText (inputParameters |> Seq.toList)
-                    with _ -> returnCols
+                    match returnCols |> Array.filter(fun p -> p.Name = "ReturnValue") with
+                    | [||] ->
+                        try getSprocReturnParams com.Connection com.CommandText (inputParameters |> Seq.toList)
+                        with _ -> returnCols
+                    | functionReturn -> functionReturn
                 if com.Connection.State <> ConnectionState.Open then
                     do! com.Connection.OpenAsync()
 
@@ -299,67 +316,70 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                 if allowed = [||] then true
                 else allowed |> Array.exists (fun tblName -> String.Compare(tbl.Name, tblName, true) = 0)
 
-            ssdtSchema.Value.Tables
-            |> Seq.map MSSqlServerSsdt.ssdtTableToTable
-            |> Seq.filter filterByTableNames
-            |> Seq.map (fun tbl -> schemaCache.Tables.GetOrAdd(tbl.FullName, tbl))
-            |> Seq.toList
+            ssdtSchema.Tables
+            |> Array.map MSSqlServerSsdt.ssdtTableToTable
+            |> Array.filter filterByTableNames
+            |> Array.map (fun tbl -> schemaCache.Tables.GetOrAdd(tbl.FullName, tbl))
 
         member __.GetPrimaryKey(table) =
-            match ssdtSchema.Value.TryGetTableByName(table.Name) with
-            |  ValueSome { PrimaryKey = ValueSome { Columns = [c] } } -> Some (c.Name)
+            match ssdtSchema.TryGetTableByName(table.Name) with
+            |  ValueSome { PrimaryKey = ValueSome { Columns = [|c|] } } -> Some (c.Name)
             | _ -> None
 
         member __.GetColumns(con,table) =
-            let columns =
-                match ssdtSchema.Value.TryGetTableByName(table.Name) with
-                | ValueSome ssdtTbl ->
-                    ssdtTbl.Columns
-                    |> List.map (MSSqlServerSsdt.ssdtColumnToColumn (ssdtSchema.Value.UserDefinedDataTypes) ssdtTbl)
-                    |> List.map (fun col -> col.Name, col)
-                | ValueNone -> []
-                |> Map.ofList
 
-            // Add PKs to cache
-            columns
-            |> Seq.map (fun kvp -> kvp.Value)
-            |> Seq.iter (fun col ->
-                if col.IsPrimaryKey then
-                    schemaCache.PrimaryKeys.AddOrUpdate(table.FullName, [col.Name], fun key old ->
-                         match col.Name with
-                         | "" -> old
-                         | x -> match old with
-                                | [] -> [x]
-                                | os -> x::os |> Seq.distinct |> Seq.toList |> List.sort
-                    ) |> ignore
-            )
+            match schemaCache.Columns.TryGetValue table.FullName with
+            | (true,data) when data.Count > 0 -> data
+            | _ ->
 
-            // Add columns to cache
-            schemaCache.Columns.AddOrUpdate(table.FullName, columns, fun x old -> match columns.Count with 0 -> old | x -> columns)
+                let columns =
+                    match ssdtSchema.TryGetTableByName(table.Name) with
+                    | ValueSome ssdtTbl ->
+                        ssdtTbl.Columns
+                        |> Array.map (MSSqlServerSsdt.ssdtColumnToColumn (ssdtSchema.UserDefinedDataTypes) ssdtTbl)
+                        |> Array.map (fun col -> col.Name, col)
+                    | ValueNone -> [||]
+                    |> Map.ofArray
+
+                // Add PKs to cache
+                columns
+                |> Seq.map (fun kvp -> kvp.Value)
+                |> Seq.iter (fun col ->
+                    if col.IsPrimaryKey then
+                        schemaCache.PrimaryKeys.AddOrUpdate(table.FullName, [col.Name], fun key old ->
+                             match col.Name with
+                             | "" -> old
+                             | x -> match old with
+                                    | [] -> [x]
+                                    | os -> x::os |> Seq.distinct |> Seq.toList |> List.sort
+                        ) |> ignore
+                )
+
+                // Add columns to cache
+                schemaCache.Columns.AddOrUpdate(table.FullName, columns, fun x old -> match columns.Count with 0 -> old | x -> columns)
 
         member __.GetRelationships(con, table) =
-            let ssdtSchema = ssdtSchema.Value
             schemaCache.Relationships.GetOrAdd(table.FullName, fun name ->
                 let children =
                     ssdtSchema.Relationships
-                    |> List.filter (fun r -> Table.CreateFullName(r.ForeignTable.Schema, r.ForeignTable.Name) = table.FullName)
-                    |> List.map (fun r ->
+                    |> Array.filter (fun r -> Table.CreateFullName(r.ForeignTable.Schema, r.ForeignTable.Name) = table.FullName)
+                    |> Array.map (fun r ->
                         { Name = r.Name
                           PrimaryTable = Table.CreateFullName(r.ForeignTable.Schema, r.ForeignTable.Name)
-                          PrimaryKey = r.ForeignTable.Columns.Head.Name
+                          PrimaryKey = r.ForeignTable.Columns.[0].Name
                           ForeignTable = Table.CreateFullName(r.DefiningTable.Schema, r.DefiningTable.Name)
-                          ForeignKey = r.DefiningTable.Columns.Head.Name }
+                          ForeignKey = r.DefiningTable.Columns.[0].Name }
                     )
 
                 let parents =
                     ssdtSchema.Relationships
-                    |> List.filter (fun r -> Table.CreateFullName(r.DefiningTable.Schema, r.DefiningTable.Name) = table.FullName)
-                    |> List.map (fun r ->
+                    |> Array.filter (fun r -> Table.CreateFullName(r.DefiningTable.Schema, r.DefiningTable.Name) = table.FullName)
+                    |> Array.map (fun r ->
                         { Name = r.Name
                           PrimaryTable = Table.CreateFullName(r.ForeignTable.Schema, r.ForeignTable.Name)
-                          PrimaryKey = r.ForeignTable.Columns.Head.Name
+                          PrimaryKey = r.ForeignTable.Columns.[0].Name
                           ForeignTable = Table.CreateFullName(r.DefiningTable.Schema, r.DefiningTable.Name)
-                          ForeignKey = r.DefiningTable.Columns.Head.Name }
+                          ForeignKey = r.DefiningTable.Columns.[0].Name }
                     )
 
                 children, parents
@@ -368,45 +388,57 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
         member __.GetSprocs(con) =
             let convertExecutable type' elems =
                 elems
-                |> List.map (fun sp ->
+                |> Array.map (fun sp ->
                     let inParams =
                         sp.Parameters
-                        |> List.mapi (fun idx p ->
+                        |> Array.mapi (fun idx p ->
                             { Name = p.Name
-                              TypeMapping = MSSqlServerSsdt.tryFindMappingOrVariant (ssdtSchema.Value.UserDefinedDataTypes) p.DataType
+                              TypeMapping = MSSqlServerSsdt.tryFindMappingOrVariant (ssdtSchema.UserDefinedDataTypes) p.DataType
                               Direction = if p.IsOutput then ParameterDirection.InputOutput else ParameterDirection.Input
                               Length = p.Length
                               Ordinal = idx }
                         )
+                        |> Array.toList
                     let outParams =
                         sp.Parameters
-                        |> List.filter (fun p -> p.IsOutput)
-                        |> List.mapi (fun idx p ->
+                        |> Array.filter (fun p -> p.IsOutput)
+                        |> Array.mapi (fun idx p ->
                             { Name = p.Name
-                              TypeMapping = MSSqlServerSsdt.tryFindMappingOrVariant (ssdtSchema.Value.UserDefinedDataTypes) p.DataType
+                              TypeMapping = MSSqlServerSsdt.tryFindMappingOrVariant (ssdtSchema.UserDefinedDataTypes) p.DataType
                               Direction = ParameterDirection.InputOutput
                               Length = p.Length
                               Ordinal = idx }
                         )
+                        |> Array.toList
+
+                    let returnValue =
+                        match sp.ReturnValueDataType with
+                        | ValueNone -> []
+                        | ValueSome dt ->
+                            [{ Name = "ReturnValue"
+                               TypeMapping = MSSqlServerSsdt.tryFindMappingOrVariant (ssdtSchema.UserDefinedDataTypes) dt
+                               Direction = ParameterDirection.ReturnValue
+                               Length = ValueNone
+                               Ordinal = outParams.Length }]
     
                     // If no outParams, add a "ResultSet" property (see issue #706)
                     let outParams =
                         match outParams with
-                        | [] -> [ sprocReturnParam 0 ]
-                        | _ -> outParams
+                        | [] -> [ sprocReturnParam 0 ] @ returnValue
+                        | _ -> outParams @ returnValue
     
                     let spName = { ProcName = sp.Name; Owner = sp.Schema; PackageName = sp.Schema; }
     
                     Root(type', Sproc({ Name = spName; Params = (fun con -> inParams); ReturnColumns = (fun con sparams -> outParams) }))
                 )
-            let sprocs = convertExecutable "Procedures" ssdtSchema.Value.StoredProcs
-            let funcs = convertExecutable "Functions" ssdtSchema.Value.Functions
-            List.append sprocs funcs
+            let sprocs = convertExecutable "Procedures" ssdtSchema.StoredProcs
+            let funcs = convertExecutable "Functions" ssdtSchema.Functions
+            Array.append sprocs funcs |> Array.toList
             
         member __.GetIndividualsQueryText(table,amount) = String.Empty // Not implemented for SSDT
         member __.GetIndividualQueryText(table,column) = String.Empty // Not implemented for SSDT
 
-        member __.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript, con) =
+        member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript, con) =
             // TODO: Copied from Providers.MsSqlServer -- maybe this code should be shared? (also exists in Providers.MsSqlServer.Dynamic)
 
             let parameters = ResizeArray<_>()
@@ -416,9 +448,12 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                 incr param
                 sprintf "@param%i" !param
 
-            let createParam (value:obj) =
+            let createParam (columnDataType:DbType voption) (value:obj) =
                 let paramName = nextParam()
                 let p = MSSqlServer.createOpenParameter(paramName,value)
+                match columnDataType with
+                | ValueNone -> ()
+                | ValueSome colType -> p.DbType <- colType
                 p :> IDbDataParameter
 
             let fieldParam (value:obj) =
@@ -468,6 +503,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                     | IndexOfStart(SqlCol(al2, col2), SqlConstant startPos) -> sprintf "CHARINDEX(%s,%s,%s)" (fieldNotation al2 col2) column (fieldParam startPos)
                     | IndexOfStart(SqlCol(al2, col2), SqlCol(al3, col3)) -> sprintf "CHARINDEX(%s,%s,%s)" (fieldNotation al2 col2) column (fieldNotation al3 col3)
                     | CastVarchar -> sprintf "CAST(%s AS NVARCHAR(MAX))" column
+                    | CastInt -> sprintf "CAST(%s AS INT)" column
                     // Date functions
                     | Date -> sprintf "CAST(%s AS DATE)" column
                     | Year -> sprintf "YEAR(%s)" column
@@ -506,6 +542,8 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                     | CaseSql(f, SqlCol(al2, col2)) -> sprintf "CASE WHEN %s THEN %s ELSE %s END " (buildf f) column (fieldNotation al2 col2)
                     | CaseSql(f, SqlConstant itm) -> sprintf "CASE WHEN %s THEN %s ELSE %s END " (buildf f) column (fieldParam itm)
                     | CaseNotSql(f, SqlConstant itm) -> sprintf "CASE WHEN %s THEN %s ELSE %s END " (buildf f) (fieldParam itm) column
+                    | CaseSqlPlain(Condition.ConstantTrue, itm, _) -> sprintf " (SELECT %s) " (fieldParam itm)
+                    | CaseSqlPlain(Condition.ConstantFalse, _, itm2) -> sprintf " (SELECT %s) " (fieldParam itm2)
                     | CaseSqlPlain(f, itm, itm2) -> sprintf "CASE WHEN %s THEN %s ELSE %s END " (buildf f) (fieldParam itm) (fieldParam itm2)
                     | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
                 | GroupColumn (StdDevOp key, KeyColumn _) -> sprintf "STDEV(%s)" (colSprint key)
@@ -523,6 +561,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                         let build op preds (rest:Condition list option) =
                             ~~ "("
                             preds |> List.iteri( fun i (alias,col,operator,data) ->
+                                    let columnDataType = CommonTasks.searchDataTypeFromCache (this:>ISqlProvider) con sqlQuery baseAlias baseTable alias col
                                     let column = fieldNotation alias col
                                     let extractData data =
                                             match data with
@@ -530,23 +569,23 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                                             | Some(x) when (box x :? obj array) ->
                                                 // in and not in operators pass an array
                                                 let elements = box x :?> obj array
-                                                Array.init (elements.Length) (fun i -> createParam (elements.GetValue(i)))
-                                            | Some(x) -> [|createParam (box x)|]
-                                            | None ->    [|createParam DBNull.Value|]
+                                                Array.init (elements.Length) (elements.GetValue >> createParam columnDataType)
+                                            | Some(x) -> [|createParam columnDataType (box x)|]
+                                            | None ->    [|createParam columnDataType DBNull.Value|]
 
                                     let operatorIn operator (array : IDbDataParameter[]) =
                                         if Array.isEmpty array then
                                             match operator with
                                             | FSharp.Data.Sql.In -> "1=0" // nothing is in the empty set
                                             | FSharp.Data.Sql.NotIn -> "1=1" // anything is not in the empty set
-                                            | _ -> failwith "Should not be called with any other operator"
+                                            | _ -> failwithf "Should not be called with any other operator (%O)" operator
                                         else
-                                            let text = String.Join(",", array |> Array.map (fun p -> p.ParameterName))
+                                            let text = String.concat "," (array |> Array.map (fun p -> p.ParameterName))
                                             Array.iter parameters.Add array
                                             match operator with
                                             | FSharp.Data.Sql.In -> sprintf "%s IN (%s)" column text
                                             | FSharp.Data.Sql.NotIn -> sprintf "%s NOT IN (%s)" column text
-                                            | _ -> failwith "Should not be called with any other operator"
+                                            | _ -> failwithf "Should not be called with any other operator (%O)" operator
 
                                     let prefix = if i>0 then (sprintf " %s " op) else ""
                                     let paras = extractData data
@@ -559,7 +598,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                                         | FSharp.Data.Sql.NestedNotExists -> sprintf "NOT EXISTS (%s)" innersql
                                         | FSharp.Data.Sql.NestedIn -> sprintf "%s IN (%s)" column innersql
                                         | FSharp.Data.Sql.NestedNotIn -> sprintf "%s NOT IN (%s)" column innersql
-                                        | _ -> failwith "Should not be called with any other operator"
+                                        | _ -> failwithf "Should not be called with any other operator (%O)" operator
 
                                     ~~(sprintf "%s%s" prefix <|
                                         match operator with
@@ -584,10 +623,10 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                             ))
                             // there's probably a nicer way to do this
                             let rec aux = function
-                                | x::[] when preds.Length > 0 ->
+                                | [x] when preds.Length > 0 ->
                                     ~~ (sprintf " %s " op)
                                     filterBuilder' [x]
-                                | x::[] -> filterBuilder' [x]
+                                | [x] -> filterBuilder' [x]
                                 | x::xs when preds.Length > 0 ->
                                     ~~ (sprintf " %s " op)
                                     filterBuilder' [x]
@@ -616,7 +655,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
             let (~~) (t:string) = sb.Append t |> ignore
 
             match sqlQuery.Take, sqlQuery.Skip, sqlQuery.Ordering with
-            | Some _, Some _, [] -> failwith "skip and take paging requires an orderBy clause."
+            | ValueSome _, ValueSome _, [] -> failwith "skip and take paging requires an orderBy clause."
             | _ -> ()
 
             let getTable x =
@@ -629,7 +668,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
             // build  the select statement, this is easy ...
             let selectcolumns =
                 if projectionColumns |> Seq.isEmpty then "1" else
-                String.Join(",",
+                (String.concat "," 
                     [|for KeyValue(k,v) in projectionColumns do
                         let cols = (getTable k).FullName
                         let k = if k <> "" then k elif baseAlias <> "" then baseAlias else baseTable.Name
@@ -655,13 +694,13 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                     match sqlQuery.Grouping with
                     | [] -> FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation MSSqlServer.fieldNotationAlias sqlQuery.AggregateOp
                     | g  ->
-                        let keys = g |> List.map(fst) |> List.concat |> List.map(fun (a,c) ->
+                        let keys = g |> List.collect fst |> List.map(fun (a,c) ->
                             let fn = fieldNotation a c
                             if not (tmpGrpParams.ContainsKey (a,c)) then
                                 tmpGrpParams.Add((a,c), fn)
                             if sqlQuery.Aliases.Count < 2 then fn
                             else sprintf "%s as '%s'" fn fn)
-                        let aggs = g |> List.map(snd) |> List.concat
+                        let aggs = g |> List.collect snd
                         let res2 = FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation MSSqlServer.fieldNotationAlias aggs |> List.toSeq
                         [String.Join(", ", keys) + (if List.isEmpty aggs || List.isEmpty keys then ""  else ", ") + String.Join(", ", res2)]
                 match extracolumns with
@@ -676,7 +715,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                     let destTable = getTable destAlias
                     ~~  (sprintf "%s [%s].[%s] as [%s] on "
                             joinType destTable.Schema destTable.Name destAlias)
-                    ~~  (String.Join(" AND ", (List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
+                    ~~  (String.concat " AND " ((List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
                         sprintf "%s = %s"
                             (fieldNotation (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias) foreignKey)
                             (fieldNotation (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias) primaryKey)
@@ -686,8 +725,9 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                 groupkeys
                 |> List.iteri(fun i (alias,column) ->
                     let cname =
-                        if tmpGrpParams.ContainsKey(alias,column) then tmpGrpParams.[alias,column]
-                        else fieldNotation alias column
+                        match tmpGrpParams.TryGetValue((alias,column)) with
+                        | true, x -> x
+                        | false, _ -> fieldNotation alias column
                     if i > 0 then ~~ ", "
                     ~~ cname)
 
@@ -703,17 +743,17 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                 // SELECT
                 if sqlQuery.Distinct && sqlQuery.Count then
                     let colsAggrs = columns.Split([|" as "|], StringSplitOptions.None)
-                    let distColumns = colsAggrs.[0] + (if colsAggrs.Length = 2 then "" else " + ',' + " + String.Join(" + ',' + ", colsAggrs |> Seq.filter(fun c -> c.Contains ",") |> Seq.map(fun c -> c.Substring(c.IndexOf(",")+1))))
+                    let distColumns = colsAggrs.[0] + (if colsAggrs.Length = 2 then "" else " + ',' + " + String.Join(" + ',' + ", colsAggrs |> Seq.filter(fun c -> c.Contains ",") |> Seq.map(fun c -> c.Substring(c.IndexOf(',')+1))))
                     ~~(sprintf "SELECT COUNT(DISTINCT %s) " distColumns)
                 elif sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s%s " (if sqlQuery.Take.IsSome then sprintf "TOP %i " sqlQuery.Take.Value else "")   columns)
                 elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
                 else
                     match sqlQuery.Skip, sqlQuery.Take with
-                    | None, Some take -> ~~(sprintf "SELECT TOP %i %s " take columns)
+                    | ValueNone, ValueSome take -> ~~(sprintf "SELECT TOP %i %s " take columns)
                     | _ -> ~~(sprintf "SELECT %s " columns)
                 //ROW_NUMBER
                 match mssqlPaging,sqlQuery.Skip, sqlQuery.Take with
-                | MSSQLPagingCompatibility.RowNumber, Some _, _ ->
+                | MSSQLPagingCompatibility.RowNumber, ValueSome _, _ ->
                     //INCLUDE order by clause in ROW_NUMBER () OVER() of CTE
                     if sqlQuery.Ordering.Length > 0 then
                         ~~", ROW_NUMBER() OVER(ORDER BY  "
@@ -736,13 +776,13 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
 
             // GROUP BY
             if sqlQuery.Grouping.Length > 0 then
-                let groupkeys = sqlQuery.Grouping |> List.map(fst) |> List.concat
+                let groupkeys = sqlQuery.Grouping |> List.collect fst
                 if groupkeys.Length > 0 then
                     ~~" GROUP BY "
                     groupByBuilder groupkeys
 
             if sqlQuery.HavingFilters.Length > 0 then
-                let keys = sqlQuery.Grouping |> List.map(fst) |> List.concat
+                let keys = sqlQuery.Grouping |> List.collect fst
 
                 let f = [And([],Some (sqlQuery.HavingFilters |> CommonTasks.parseHaving fieldNotation keys))]
                 ~~" HAVING "
@@ -751,7 +791,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
             // ORDER BY
             match mssqlPaging, sqlQuery.Skip, sqlQuery.Take with
             | MSSQLPagingCompatibility.Offset, _, _
-            | MSSQLPagingCompatibility.RowNumber, None, _ ->
+            | MSSQLPagingCompatibility.RowNumber, ValueNone, _ ->
               if sqlQuery.Ordering.Length > 0 then
                   ~~"ORDER BY "
                   orderByBuilder()
@@ -780,12 +820,12 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                     let outerSb = System.Text.StringBuilder()
                     outerSb.Append "WITH CTE AS ( "  |> ignore
                     match sqlQuery.Skip, sqlQuery.Take with
-                    | Some skip, Some take ->
+                    | ValueSome skip, ValueSome take ->
                         outerSb.Append (sb.ToString()) |> ignore
                         outerSb.Append ")" |> ignore
                         outerSb.Append (sprintf "SELECT %s FROM CTE [%s] WHERE RN BETWEEN %i AND %i" columns (if baseAlias = "" then baseTable.Name else baseAlias) (skip+1) (skip+take))  |> ignore
                         outerSb.ToString()
-                    | Some skip, None ->
+                    | ValueSome skip, ValueNone ->
                         outerSb.Append (sb.ToString()) |> ignore
                         outerSb.Append ")" |> ignore
                         outerSb.Append (sprintf "SELECT %s FROM CTE [%s] WHERE RN > %i " columns (if baseAlias = "" then baseTable.Name else baseAlias) skip)  |> ignore
@@ -794,10 +834,10 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                       sb.ToString()
                 | _ ->
                     match sqlQuery.Skip, sqlQuery.Take with
-                    | Some skip, Some take ->
+                    | ValueSome skip, ValueSome take ->
                         // Note: this only works in >=SQL2012
                         ~~ (sprintf "OFFSET %i ROWS FETCH NEXT %i ROWS ONLY" skip take)
-                    | Some skip, None ->
+                    | ValueSome skip, ValueNone ->
                         // Note: this only works in >=SQL2012
                         ~~ (sprintf "OFFSET %i ROWS FETCH NEXT %i ROWS ONLY" skip System.UInt32.MaxValue)
                     | _ -> ()
@@ -821,7 +861,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                 if con.State = ConnectionState.Open then con.Close()
                 con.Open()
                 // initially supporting update/create/delete of single entities, no hierarchies yet
-                entities.Keys
+                CommonTasks.sortEntities entities
                 |> Seq.iter(fun e ->
                     match e._State with
                     | Created ->
@@ -848,9 +888,9 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                         // remove the pk to prevent this attempting to be used again
                         e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
                         e._State <- Deleted
-                    | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
+                    | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e)
                                    // but is possible if you try to use same context on multiple threads. Don't do that.
-                if scope<>null then scope.Complete()
+                if not(isNull scope) then scope.Complete()
 
             finally
                 con.Close()
@@ -905,10 +945,10 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                                 e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
                                 e._State <- Deleted
                             }
-                        | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
+                        | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e
 
-                    do! Utilities.executeOneByOne handleEntity (entities.Keys|>Seq.toList)
-                    if scope<>null then scope.Complete()
+                    let! _ = Sql.evaluateOneByOne handleEntity (CommonTasks.sortEntities entities |> Seq.toList)
+                    if not(isNull scope) then scope.Complete()
 
                 finally
                     con.Close()

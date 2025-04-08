@@ -1,11 +1,11 @@
-<Project Sdk="MSBuild.Sdk.SqlProj/2.0.0">
+<Project Sdk="MSBuild.Sdk.SqlProj/2.8.1">
   <PropertyGroup>
-    <TargetFramework>net6</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <SuppressTSqlWarnings>71558,71502</SuppressTSqlWarnings>
     <SqlServerVersion>SqlAzure</SqlServerVersion>
-    <BundledNETCoreAppTargetFrameworkVersion>6.0</BundledNETCoreAppTargetFrameworkVersion>
+    <BundledNETCoreAppTargetFrameworkVersion>8.0</BundledNETCoreAppTargetFrameworkVersion>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-    <TargetFrameworkProfile />
+    <TargetDatabaseSet>True</TargetDatabaseSet>
   </PropertyGroup>
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -23,7 +23,7 @@
     <ModelCollation>1033, CI</ModelCollation>
     <DefaultFileStructure>BySchemaAndSchemaType</DefaultFileStructure>
     <DeployToDatabase>True</DeployToDatabase>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8.0</TargetFrameworkVersion>
     <TargetLanguage>CS</TargetLanguage>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <SqlServerVerification>False</SqlServerVerification>

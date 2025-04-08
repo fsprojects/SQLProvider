@@ -13,6 +13,7 @@ open FSharp.Data.Sql
 open FSharp.Data.Sql.Transactions
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
+#nowarn 0044
 
 module MSSqlServer =
     let getSchema name (args:string[]) (con:IDbConnection) =
@@ -30,7 +31,7 @@ module MSSqlServer =
         let dt = getSchema "DataTypes" [||] con
 
         let getDbType(providerType:int) =
-            let p = new SqlParameter()
+            let p = SqlParameter()
             if providerType = 31
             then p.SqlDbType <- SqlDbType.DateTime
             else if providerType = 32
@@ -40,7 +41,7 @@ module MSSqlServer =
 
         let getClrType (input:string) =
             let t = Type.GetType input
-            if t <> null then t.ToString() else typeof<String>.ToString()
+            if isNull t then typeof<String>.ToString() else t.ToString()
 
         let mappings =
             [
@@ -79,8 +80,28 @@ module MSSqlServer =
         findClrType <- clrMappings.TryFind
         findDbType <- dbMappings.TryFind
 
-    let createConnection connectionString = new SqlConnection(connectionString) :> IDbConnection
+    let checkIfMsSqlAssemblyIsDesingOnly (assembly:System.Reflection.Assembly)=
+        try
+            let metaData =
+                assembly.GetCustomAttributes(typeof<System.Reflection.AssemblyMetadataAttribute>, false)
+            if not (isNull metaData) && metaData.Length > 0 then
+                let isNotRuntimeDll =
+                    metaData |> Array.map(fun x -> x :?> System.Reflection.AssemblyMetadataAttribute)
+                    |> Array.exists(fun c -> c.Key = "NotSupported" && c.Value = "True")
+                if isNotRuntimeDll then true
+                else false
+            else false
+        with
+        | _ -> false
 
+    let createConnection connectionString =
+        //try
+            new SqlConnection(connectionString) :> IDbConnection
+        //with
+        //| :? System.PlatformNotSupportedException ->
+        //    printfn "%O" System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription
+        //    reraise()
+            
     let createCommand commandText (connection:IDbConnection) = new SqlCommand(commandText, downcast connection) :> IDbCommand
 
     let dbUnbox<'a> (v:obj) : 'a =
@@ -99,10 +120,9 @@ module MSSqlServer =
         com.ExecuteReader()
 
     let readParameter (parameter:IDbDataParameter) =
-        if parameter <> null then
+        if isNull parameter then null else
             let par = parameter :?> SqlParameter
             par.Value
-        else null
         
     let readInOutParameterFromCommand name (com:IDbCommand) = 
         if not (com.Parameters.Contains name) then 
@@ -113,7 +133,7 @@ module MSSqlServer =
             
     let createOpenParameter(name,v:obj)= 
         let p = SqlParameter(name,v)
-        if v = null then p
+        if isNull v then p
         else
         match v.GetType().FullName with
         | "Microsoft.SqlServer.Types.SqlGeometry" -> p.UdtTypeName <- "Geometry"
@@ -356,8 +376,10 @@ module MSSqlServer =
 
         let cmd = new SqlCommand()
         cmd.Connection <- con :?> SqlConnection
-        let haspk = schemaCache.PrimaryKeys.ContainsKey(entity.Table.FullName)
-        let pk = if haspk then schemaCache.PrimaryKeys.[entity.Table.FullName] else []
+        let haspk, pk =
+            match schemaCache.PrimaryKeys.TryGetValue entity.Table.FullName with
+            | true, pk -> true, pk
+            | false, _ -> false, []
         let columnNames, values =
             (([],0),entity.ColumnValues)
             ||> Seq.fold(fun (out,i) (k,v) ->
@@ -398,8 +420,10 @@ module MSSqlServer =
 
         let cmd = new SqlCommand()
         cmd.Connection <- con :?> SqlConnection
-        let haspk = schemaCache.PrimaryKeys.ContainsKey(entity.Table.FullName)
-        let pk = if haspk then schemaCache.PrimaryKeys.[entity.Table.FullName] else []
+        let pk =
+            match schemaCache.PrimaryKeys.TryGetValue entity.Table.FullName with
+            | true, pk -> pk
+            | false, _ -> []
         sb.Clear() |> ignore
         match pk with
         | [x] when changedColumns |> List.exists ((=)x)
@@ -431,8 +455,8 @@ module MSSqlServer =
         | ks -> 
             ~~(sprintf "UPDATE [%s].[%s] SET %s WHERE "
                 entity.Table.Schema entity.Table.Name
-                (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "[%s] = %s" c p.ParameterName ) )))
-            ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "[%s] = @pk%i" k i))))
+                ((String.concat "," (data |> Array.map(fun (c,p) -> sprintf "[%s] = %s" c p.ParameterName )) )))
+            ~~(String.concat " AND " (ks |> List.mapi(fun i k -> (sprintf "[%s] = @pk%i" k i))))
 
         cmd.Parameters.AddRange(data |> Array.map snd)
         pkValues |> List.iteri(fun i pkValue ->
@@ -447,8 +471,10 @@ module MSSqlServer =
         let cmd = new SqlCommand()
         cmd.Connection <- con :?> SqlConnection
         sb.Clear() |> ignore
-        let haspk = schemaCache.PrimaryKeys.ContainsKey(entity.Table.FullName)
-        let pk = if haspk then schemaCache.PrimaryKeys.[entity.Table.FullName] else []
+        let pk =
+            match schemaCache.PrimaryKeys.TryGetValue entity.Table.FullName with
+            | true, pk -> pk
+            | false, _ -> []
         sb.Clear() |> ignore
         let pkValues =
             match entity.GetPkColumnOption<obj> pk with
@@ -462,7 +488,7 @@ module MSSqlServer =
         | [] -> ()
         | ks -> 
             ~~(sprintf "DELETE FROM [%s].[%s] WHERE " entity.Table.Schema entity.Table.Name)
-            ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "[%s] = @id%i" k i))))
+            ~~(String.concat " AND " (ks |> List.mapi(fun i k -> (sprintf "[%s] = @id%i" k i))))
 
         cmd.CommandText <- sb.ToString()
         cmd
@@ -484,9 +510,12 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
     let mssqlVersionCache = ConcurrentDictionary<string, Lazy<Version>>()
 
     interface ISqlProvider with
+        member __.CloseConnectionAfterQuery = true
+        member __.DesignConnection = true
+        member __.StoredProcedures = true
         member __.GetLockObject() = myLock
         member __.GetTableDescription(con,tableName) = 
-            let tn = tableName.Substring(tableName.LastIndexOf(".")+1) 
+            let tn = tableName.Substring(tableName.LastIndexOf('.')+1) 
             let baseq =
                 """select sep.value
                 from sys.tables st
@@ -500,13 +529,12 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
             use reader = com.ExecuteReader()
             if reader.Read() then
                 let itm = reader.GetValue(0)
-                if itm <> null then
+                if isNull itm then "" else
                     reader.GetValue(0).ToString()
-                else ""
             else ""
 
         member __.GetColumnDescription(con,tableName,columnName) =
-            let tn = tableName.Substring(tableName.LastIndexOf(".")+1) 
+            let tn = tableName.Substring(tableName.LastIndexOf('.')+1) 
             let baseq =
                 """select sep.value
                 from sys.tables st
@@ -545,7 +573,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
             [ while reader.Read() do
                 let table ={ Schema = reader.GetSqlString(0).Value ; Name = reader.GetSqlString(1).Value ; Type=reader.GetSqlString(2).Value.ToLower() }
                 yield schemaCache.Tables.GetOrAdd(table.FullName,table)
-                ])
+                ] |> List.toArray)
 
         member __.GetPrimaryKey(table) =
             match schemaCache.PrimaryKeys.TryGetValue table.FullName with
@@ -668,7 +696,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                                 PrimaryTable = Table.CreateFullName(reader.GetSqlString(9).Value, reader.GetSqlString(5).Value)
                                 PrimaryKey = reader.GetSqlString(6).Value
                                 ForeignTable = Table.CreateFullName(reader.GetSqlString(8).Value, reader.GetSqlString(1).Value)
-                                ForeignKey=reader.GetSqlString(2).Value } ]
+                                ForeignKey=reader.GetSqlString(2).Value } ] |> List.toArray
                 reader.Dispose()
                 let baseq2 = sprintf "%s WHERE KCU1.TABLE_NAME = @tblName" baseQuery
                 use com2 = new SqlCommand(baseq2,con:?>SqlConnection)
@@ -681,7 +709,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                                 PrimaryTable = Table.CreateFullName(reader.GetSqlString(9).Value, reader.GetSqlString(5).Value);
                                 PrimaryKey = reader.GetSqlString(6).Value
                                 ForeignTable = Table.CreateFullName(reader.GetSqlString(8).Value, reader.GetSqlString(1).Value);
-                                ForeignKey=reader.GetSqlString(2).Value } ]
+                                ForeignKey=reader.GetSqlString(2).Value } ] |> List.toArray
                 (children,parents))
             res)
 
@@ -689,7 +717,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
         member __.GetIndividualsQueryText(table,amount) = sprintf "SELECT TOP %i * FROM %s" amount table.FullName
         member __.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM [%s].[%s] WHERE [%s].[%s].[%s] = @id" table.Schema table.Name table.Schema table.Name column
 
-        member __.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript, con) =
+        member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript, con) =
             let parameters = ResizeArray<_>()
             // make this nicer later..
             let param = ref 0
@@ -697,9 +725,12 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                 incr param
                 sprintf "@param%i" !param
 
-            let createParam (value:obj) =
+            let createParam (columnDataType:DbType voption) (value:obj) =
                 let paramName = nextParam()
                 let p = MSSqlServer.createOpenParameter(paramName,value)
+                match columnDataType with
+                | ValueNone -> ()
+                | ValueSome colType -> p.DbType <- colType
                 p :> IDbDataParameter
 
             let fieldParam (value:obj) =
@@ -749,6 +780,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                     | IndexOfStart(SqlCol(al2, col2), SqlConstant startPos) -> sprintf "CHARINDEX(%s,%s,%s)" (fieldNotation al2 col2) column (fieldParam startPos)
                     | IndexOfStart(SqlCol(al2, col2), SqlCol(al3, col3)) -> sprintf "CHARINDEX(%s,%s,%s)" (fieldNotation al2 col2) column (fieldNotation al3 col3)
                     | CastVarchar -> sprintf "CAST(%s AS NVARCHAR(MAX))" column
+                    | CastInt -> sprintf "CAST(%s AS INT)" column
                     // Date functions
                     | Date -> sprintf "CAST(%s AS DATE)" column
                     | Year -> sprintf "YEAR(%s)" column
@@ -787,6 +819,8 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                     | CaseSql(f, SqlCol(al2, col2)) -> sprintf "CASE WHEN %s THEN %s ELSE %s END " (buildf f) column (fieldNotation al2 col2)
                     | CaseSql(f, SqlConstant itm) -> sprintf "CASE WHEN %s THEN %s ELSE %s END " (buildf f) column (fieldParam itm)
                     | CaseNotSql(f, SqlConstant itm) -> sprintf "CASE WHEN %s THEN %s ELSE %s END " (buildf f) (fieldParam itm) column
+                    | CaseSqlPlain(Condition.ConstantTrue, itm, _) -> sprintf " (SELECT %s) " (fieldParam itm)
+                    | CaseSqlPlain(Condition.ConstantFalse, _, itm2) -> sprintf " (SELECT %s) " (fieldParam itm2)
                     | CaseSqlPlain(f, itm, itm2) -> sprintf "CASE WHEN %s THEN %s ELSE %s END " (buildf f) (fieldParam itm) (fieldParam itm2)
                     | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
                 | GroupColumn (StdDevOp key, KeyColumn _) -> sprintf "STDEV(%s)" (colSprint key)
@@ -804,6 +838,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                         let build op preds (rest:Condition list option) =
                             ~~ "("
                             preds |> List.iteri( fun i (alias,col,operator,data) ->
+                                    let columnDataType = CommonTasks.searchDataTypeFromCache (this:>ISqlProvider) con sqlQuery baseAlias baseTable alias col
                                     let column = fieldNotation alias col
                                     let extractData data =
                                             match data with
@@ -811,23 +846,23 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                                             | Some(x) when (box x :? obj array) ->
                                                 // in and not in operators pass an array
                                                 let elements = box x :?> obj array
-                                                Array.init (elements.Length) (fun i -> createParam (elements.GetValue(i)))
-                                            | Some(x) -> [|createParam (box x)|]
-                                            | None ->    [|createParam DBNull.Value|]
+                                                Array.init (elements.Length) (elements.GetValue >> createParam columnDataType)
+                                            | Some(x) -> [|createParam columnDataType (box x)|]
+                                            | None ->    [|createParam columnDataType DBNull.Value|]
 
                                     let operatorIn operator (array : IDbDataParameter[]) =
                                         if Array.isEmpty array then
                                             match operator with
                                             | FSharp.Data.Sql.In -> "1=0" // nothing is in the empty set
                                             | FSharp.Data.Sql.NotIn -> "1=1" // anything is not in the empty set
-                                            | _ -> failwith "Should not be called with any other operator"
+                                            | _ -> failwithf "Should not be called with any other operator (%O)" operator
                                         else
-                                            let text = String.Join(",", array |> Array.map (fun p -> p.ParameterName))
+                                            let text = (String.concat "," (array |> Array.map (fun p -> p.ParameterName)))
                                             Array.iter parameters.Add array
                                             match operator with
                                             | FSharp.Data.Sql.In -> sprintf "%s IN (%s)" column text
                                             | FSharp.Data.Sql.NotIn -> sprintf "%s NOT IN (%s)" column text
-                                            | _ -> failwith "Should not be called with any other operator"
+                                            | _ -> failwithf "Should not be called with any other operator (%O)" operator
 
                                     let prefix = if i>0 then (sprintf " %s " op) else ""
                                     let paras = extractData data
@@ -840,7 +875,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                                         | FSharp.Data.Sql.NestedNotExists -> sprintf "NOT EXISTS (%s)" innersql
                                         | FSharp.Data.Sql.NestedIn -> sprintf "%s IN (%s)" column innersql
                                         | FSharp.Data.Sql.NestedNotIn -> sprintf "%s NOT IN (%s)" column innersql
-                                        | _ -> failwith "Should not be called with any other operator"
+                                        | _ -> failwithf "Should not be called with any other operator (%O)" operator
 
                                     ~~(sprintf "%s%s" prefix <|
                                         match operator with
@@ -865,10 +900,10 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                             ))
                             // there's probably a nicer way to do this
                             let rec aux = function
-                                | x::[] when preds.Length > 0 ->
+                                | [x] when preds.Length > 0 ->
                                     ~~ (sprintf " %s " op)
                                     filterBuilder' [x]
-                                | x::[] -> filterBuilder' [x]
+                                | [x] -> filterBuilder' [x]
                                 | x::xs when preds.Length > 0 ->
                                     ~~ (sprintf " %s " op)
                                     filterBuilder' [x]
@@ -897,7 +932,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
             let (~~) (t:string) = sb.Append t |> ignore
 
             match sqlQuery.Take, sqlQuery.Skip, sqlQuery.Ordering with
-            | Some _, Some _, [] -> failwith "skip and take paging requires an orderBy clause."
+            | ValueSome _, ValueSome _, [] -> failwith "skip and take paging requires an orderBy clause."
             | _ -> ()
 
             let getTable x =
@@ -910,7 +945,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
             // build  the select statement, this is easy ...
             let selectcolumns =
                 if projectionColumns |> Seq.isEmpty then "1" else
-                String.Join(",",
+                (String.concat ","
                     [|for KeyValue(k,v) in projectionColumns do
                         let cols = (getTable k).FullName
                         let k = if k <> "" then k elif baseAlias <> "" then baseAlias else baseTable.Name
@@ -936,13 +971,13 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                     match sqlQuery.Grouping with
                     | [] -> FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation MSSqlServer.fieldNotationAlias sqlQuery.AggregateOp
                     | g  -> 
-                        let keys = g |> List.map(fst) |> List.concat |> List.map(fun (a,c) ->
+                        let keys = g |> List.collect fst |> List.map(fun (a,c) ->
                             let fn = fieldNotation a c
                             if not (tmpGrpParams.ContainsKey (a,c)) then
                                 tmpGrpParams.Add((a,c), fn)
                             if sqlQuery.Aliases.Count < 2 then fn
                             else sprintf "%s as '%s'" fn fn)
-                        let aggs = g |> List.map(snd) |> List.concat
+                        let aggs = g |> List.collect snd
                         let res2 = FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation MSSqlServer.fieldNotationAlias aggs |> List.toSeq
                         [String.Join(", ", keys) + (if List.isEmpty aggs || List.isEmpty keys then ""  else ", ") + String.Join(", ", res2)] 
                 match extracolumns with
@@ -957,7 +992,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                     let destTable = getTable destAlias
                     ~~  (sprintf "%s [%s].[%s] as [%s] on "
                             joinType destTable.Schema destTable.Name destAlias)
-                    ~~  (String.Join(" AND ", (List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
+                    ~~  (String.concat " AND " ((List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
                         sprintf "%s = %s"
                             (fieldNotation (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias) foreignKey)
                             (fieldNotation (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias) primaryKey)
@@ -967,8 +1002,9 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                 groupkeys
                 |> List.iteri(fun i (alias,column) ->
                     let cname =
-                        if tmpGrpParams.ContainsKey(alias,column) then tmpGrpParams.[alias,column]
-                        else fieldNotation alias column
+                        match tmpGrpParams.TryGetValue((alias,column)) with
+                        | true, x -> x
+                        | false, _ -> fieldNotation alias column
                     if i > 0 then ~~ ", "
                     ~~ cname)
 
@@ -984,17 +1020,17 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                 // SELECT
                 if sqlQuery.Distinct && sqlQuery.Count then
                     let colsAggrs = columns.Split([|" as "|], StringSplitOptions.None)
-                    let distColumns = colsAggrs.[0] + (if colsAggrs.Length = 2 then "" else " + ',' + " + String.Join(" + ',' + ", colsAggrs |> Seq.filter(fun c -> c.Contains ",") |> Seq.map(fun c -> c.Substring(c.IndexOf(",")+1))))
+                    let distColumns = colsAggrs.[0] + (if colsAggrs.Length = 2 then "" else " + ',' + " + String.Join(" + ',' + ", colsAggrs |> Seq.filter(fun c -> c.Contains ",") |> Seq.map(fun c -> c.Substring(c.IndexOf(',')+1))))
                     ~~(sprintf "SELECT COUNT(DISTINCT %s) " distColumns)
                 elif sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s%s " (if sqlQuery.Take.IsSome then sprintf "TOP %i " sqlQuery.Take.Value else "")   columns)
                 elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
                 else
                     match sqlQuery.Skip, sqlQuery.Take with
-                    | None, Some take -> ~~(sprintf "SELECT TOP %i %s " take columns)
+                    | ValueNone, ValueSome take -> ~~(sprintf "SELECT TOP %i %s " take columns)
                     | _ -> ~~(sprintf "SELECT %s " columns)
                 //ROW_NUMBER
                 match mssqlPaging,sqlQuery.Skip, sqlQuery.Take with
-                | MSSQLPagingCompatibility.RowNumber, Some _, _ -> 
+                | MSSQLPagingCompatibility.RowNumber, ValueSome _, _ -> 
                     //INCLUDE order by clause in ROW_NUMBER () OVER() of CTE
                     if sqlQuery.Ordering.Length > 0 then
                         ~~", ROW_NUMBER() OVER(ORDER BY  "
@@ -1017,13 +1053,13 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
 
             // GROUP BY
             if sqlQuery.Grouping.Length > 0 then
-                let groupkeys = sqlQuery.Grouping |> List.map(fst) |> List.concat
+                let groupkeys = sqlQuery.Grouping |> List.collect fst
                 if groupkeys.Length > 0 then
                     ~~" GROUP BY "
                     groupByBuilder groupkeys
 
             if sqlQuery.HavingFilters.Length > 0 then
-                let keys = sqlQuery.Grouping |> List.map(fst) |> List.concat
+                let keys = sqlQuery.Grouping |> List.collect fst
 
                 let f = [And([],Some (sqlQuery.HavingFilters |> CommonTasks.parseHaving fieldNotation keys))]
                 ~~" HAVING "
@@ -1032,7 +1068,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
             // ORDER BY
             match mssqlPaging, sqlQuery.Skip, sqlQuery.Take with
             | MSSQLPagingCompatibility.Offset, _, _
-            | MSSQLPagingCompatibility.RowNumber, None, _ ->
+            | MSSQLPagingCompatibility.RowNumber, ValueNone, _ ->
               if sqlQuery.Ordering.Length > 0 then
                   ~~"ORDER BY "
                   orderByBuilder()
@@ -1061,12 +1097,12 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                     let outerSb = System.Text.StringBuilder()
                     outerSb.Append "WITH CTE AS ( "  |> ignore
                     match sqlQuery.Skip, sqlQuery.Take with
-                    | Some skip, Some take ->
+                    | ValueSome skip, ValueSome take ->
                         outerSb.Append (sb.ToString()) |> ignore
                         outerSb.Append ")" |> ignore
                         outerSb.Append (sprintf "SELECT %s FROM CTE [%s] WHERE RN BETWEEN %i AND %i" columns (if baseAlias = "" then baseTable.Name else baseAlias) (skip+1) (skip+take))  |> ignore
                         outerSb.ToString()
-                    | Some skip, None ->
+                    | ValueSome skip, ValueNone ->
                         outerSb.Append (sb.ToString()) |> ignore
                         outerSb.Append ")" |> ignore
                         outerSb.Append (sprintf "SELECT %s FROM CTE [%s] WHERE RN > %i " columns (if baseAlias = "" then baseTable.Name else baseAlias) skip)  |> ignore
@@ -1075,10 +1111,10 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                       sb.ToString()
                 | _ ->
                     match sqlQuery.Skip, sqlQuery.Take with
-                    | Some skip, Some take ->
+                    | ValueSome skip, ValueSome take ->
                         // Note: this only works in >=SQL2012
                         ~~ (sprintf "OFFSET %i ROWS FETCH NEXT %i ROWS ONLY" skip take)
-                    | Some skip, None ->
+                    | ValueSome skip, ValueNone ->
                         // Note: this only works in >=SQL2012
                         ~~ (sprintf "OFFSET %i ROWS FETCH NEXT %i ROWS ONLY" skip System.UInt32.MaxValue)
                     | _ -> ()
@@ -1100,7 +1136,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                 if con.State = ConnectionState.Open then con.Close()
                 con.Open()
                 // initially supporting update/create/delete of single entities, no hierarchies yet
-                entities.Keys
+                CommonTasks.sortEntities entities
                 |> Seq.iter(fun e ->
                     match e._State with
                     | Created ->
@@ -1127,9 +1163,9 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                         // remove the pk to prevent this attempting to be used again
                         e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
                         e._State <- Deleted
-                    | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
+                    | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! %O" e)
                                    // but is possible if you try to use same context on multiple threads. Don't do that.
-                if scope<>null then scope.Complete()
+                if not(isNull scope) then scope.Complete()
 
             finally
                 con.Close()
@@ -1182,10 +1218,10 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                                 e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
                                 e._State <- Deleted
                             }
-                        | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
+                        | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e
 
-                    do! Utilities.executeOneByOne handleEntity (entities.Keys|>Seq.toList)
-                    if scope<>null then scope.Complete()
+                    let! _ = Sql.evaluateOneByOne handleEntity (CommonTasks.sortEntities entities |> Seq.toList)
+                    if not (isNull scope) then scope.Complete()
 
                 finally
                     con.Close()

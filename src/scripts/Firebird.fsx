@@ -1,5 +1,5 @@
-﻿
-#r @"D:\Gibran\Projetos\GitRep\SQLProvider\bin\net451\FSharp.Data.SqlProvider.dll"
+
+#r @"D:\Gibran\Projetos\GitRep\SQLProvider\bin\lib\net48\FSharp.Data.SqlProvider.dll"
 open FSharp.Data.Sql
 open FSharp.Data.Sql.Providers
 

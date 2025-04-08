@@ -37,14 +37,14 @@
   </ItemGroup>
   <ItemGroup><!-- Mono fix -->
     <Reference Condition="'$(IsWindows)' != 'true' Or '$(TargetFramework)' == 'netstandard2.0'" Include="FSharp.Data.SqlProvider">
-      <HintPath>../../../bin/net472/FSharp.Data.SqlProvider.dll</HintPath>
-      <!--HintPath>../../packages/SQLProvider/lib/net472/FSharp.Data.SqlProvider.dll</HintPath-->
+      <HintPath>../../../bin/net48/FSharp.Data.SqlProvider.dll</HintPath>
+      <!--HintPath>../../packages/SQLProvider/lib/net48/FSharp.Data.SqlProvider.dll</HintPath-->
     </Reference>
   </ItemGroup>  
   <ItemGroup>
     <PackageReference Condition="'$(IsWindows)' == 'true' And '$(TargetFramework)' != 'netstandard2.0'" Include="SQLProvider" Version="1.1.91" />
     <PackageReference Include="System.Console" Version="4.3.1" />
-    <PackageReference Include="System.Data.SqlClient" Version="4.8.5" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.8.6" />
     <PackageReference Include="System.Runtime" Version="4.3.0" />
     <PackageReference Include="System.Runtime.Extensions" Version="4.3.0" />
     <PackageReference Include="System.Reflection" Version="4.3.0" />

@@ -1,8 +1,8 @@
 ﻿#if INTERACTIVE
 #r @"C:\Program Files\dotnet\sdk\2.0.0\Microsoft\Microsoft.NET.Build.Extensions\net461\lib\netstandard.dll"
-#r "../../../bin/netstandard2.0/FSharp.Data.SqlProvider.dll"
+#r "../../../bin/lib/netstandard2.0/FSharp.Data.SqlProvider.dll"
 // On Non-Windows-machine, fsharpi is not running on Core:
-// #r "../../../bin/net472/FSharp.Data.SqlProvider.dll"
+// #r "../../../bin/lib/net48/FSharp.Data.SqlProvider.dll"
 
 #else
 module NetstandardTest
@@ -21,7 +21,7 @@ type HR = SqlDataProvider<Common.DatabaseProviderTypes.MSSQLSERVER, connStr>
 let main argv =
     let runtimeConnectionString = connStr
     let ctx = HR.GetDataContext runtimeConnectionString
-    let employeesFirstName = 
+    let employeesFirstName =
         query {
             for emp in ctx.Dbo.Employees do
             select emp.FirstName

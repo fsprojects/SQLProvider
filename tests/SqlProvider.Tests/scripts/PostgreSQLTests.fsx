@@ -1,5 +1,5 @@
 #if INTERACTIVE
-#r @"../../bin/net472/FSharp.Data.SqlProvider.dll"
+#r @"../../bin/lib/net48/FSharp.Data.SqlProvider.dll"
 #r @"../../packages/NUnit/lib/nunit.framework.dll"
 #else
 module PostgreSQLTests
@@ -22,7 +22,7 @@ let [<Literal>] connStr = "User ID=postgres;Host=localhost;Port=5432;Database=sq
 let [<Literal>] connStr = "User ID=postgres;Password=Password12!;Host=localhost;Port=5432;Database=sqlprovider;"
 #else
 let [<Literal>] connStr = "User ID=postgres;Password=postgres;Host=localhost;Port=5432;Database=sqlprovider;"
-#endif 
+#endif
 #endif
 
 [<Literal>]
@@ -33,7 +33,7 @@ FSharp.Data.Sql.Common.QueryEvents.LinqExpressionEvent |> Event.add (printfn "Ex
 
 let processId = System.Diagnostics.Process.GetCurrentProcess().Id;
 
-type HR = 
+type HR =
   SqlDataProvider<
       DatabaseVendor = Common.DatabaseProviderTypes.POSTGRESQL,
       ConnectionString = connStr,
@@ -72,10 +72,10 @@ type LocationQuery = {
 [<Test>]
 let ``Find Tokyo location`` () =
     let ctx = HR.GetDataContext()
-    
+
     let locationQuery = { City = "Tokyo"; PostalCode = Some "1689" }
 
-    let result = 
+    let result =
       query {
        for location in ctx.Public.Locations do
        where (location.City = locationQuery.City)
@@ -92,27 +92,27 @@ let ``Find Tokyo location`` () =
     Assert.AreEqual(tokyo.PostalCode, Some "1689")
     Assert.AreEqual(tokyo.City, "Tokyo")
     Assert.AreEqual(tokyo.StateProvince, Some "Tokyo Prefecture")
-    Assert.AreEqual(tokyo.CountryId, Some "JP") 
+    Assert.AreEqual(tokyo.CountryId, Some "JP")
 
 [<Test>]
-let employeesFirstNameNoProj () = 
-    let ctx = HR.GetDataContext()    
+let employeesFirstNameNoProj () =
+    let ctx = HR.GetDataContext()
     query {
         for emp in ctx.Public.Employees do
         select true
     } |> Seq.toList |> Assert.IsNotEmpty
 
 [<Test>]
-let employeesFirstNameIdProj () = 
-    let ctx = HR.GetDataContext() 
+let employeesFirstNameIdProj () =
+    let ctx = HR.GetDataContext()
     query {
         for emp in ctx.Public.Employees do
         select emp
     } |> Seq.toList |> Assert.IsNotEmpty
 
 [<Test>]
-let first10employess () = 
-    let ctx = HR.GetDataContext() 
+let first10employess () =
+    let ctx = HR.GetDataContext()
     query {
         for emp in ctx.Public.Employees do
         select emp.EmployeeId
@@ -120,8 +120,8 @@ let first10employess () =
     } |> Seq.toList |> Assert.IsNotEmpty
 
 [<Test>]
-let skip2first10employess () = 
-    let ctx = HR.GetDataContext() 
+let skip2first10employess () =
+    let ctx = HR.GetDataContext()
     query {
         for emp in ctx.Public.Employees do
         select emp.EmployeeId
@@ -130,8 +130,8 @@ let skip2first10employess () =
     } |> Seq.toList |> Assert.IsNotEmpty
 
 [<Test>]
-let employeesFirstName () = 
-    let ctx = HR.GetDataContext() 
+let employeesFirstName () =
+    let ctx = HR.GetDataContext()
     query {
         for emp in ctx.Public.Employees do
         select (emp.FirstName, emp.LastName, emp.Email, emp.SalaryHistory)
@@ -140,8 +140,8 @@ let employeesFirstName () =
 // Note that Employees-table and Email should have a Comment-field in database, visible as XML-tooltip in your IDE.
 
 [<Test>]
-let employeesSortByName () = 
-    let ctx = HR.GetDataContext() 
+let employeesSortByName () =
+    let ctx = HR.GetDataContext()
     query {
         for emp in ctx.Public.Employees do
         sortBy emp.FirstName
@@ -150,8 +150,8 @@ let employeesSortByName () =
     } |> Seq.toList |> Assert.IsNotEmpty
 
 [<Test>]
-let salesNamedDavid () = 
-    let ctx = HR.GetDataContext() 
+let salesNamedDavid () =
+    let ctx = HR.GetDataContext()
     query {
             for emp in ctx.Public.Employees do
             join d in ctx.Public.Departments on (emp.DepartmentId = Some(d.DepartmentId))
@@ -160,8 +160,8 @@ let salesNamedDavid () =
     } |> Seq.toList |> Assert.IsNotEmpty
 
 [<Test>]
-let employeesJob () = 
-    let ctx = HR.GetDataContext() 
+let employeesJob () =
+    let ctx = HR.GetDataContext()
     query {
             for emp in ctx.Public.Employees do
             for manager in emp.``public.employees by employee_id_1`` do
@@ -172,8 +172,8 @@ let employeesJob () =
 
 //Can map SQLEntities to a domain type
 [<Test>]
-let topSales5ByCommission () = 
-    let ctx = HR.GetDataContext() 
+let topSales5ByCommission () =
+    let ctx = HR.GetDataContext()
     query {
         for emp in ctx.Public.Employees do
         sortByDescending emp.CommissionPct
@@ -184,8 +184,8 @@ let topSales5ByCommission () =
     |> Seq.toList |> Assert.IsNotEmpty
 
 [<Test>]
-let canonicalTest () = 
-    let ctx = HR.GetDataContext() 
+let canonicalTest () =
+    let ctx = HR.GetDataContext()
     query {
             for emp in ctx.Public.Employees do
             join d in ctx.Public.Departments on (emp.DepartmentId.Value+1 = d.DepartmentId+1)
@@ -197,7 +197,7 @@ let canonicalTest () =
             )
             select (d.DepartmentName, emp.FirstName, emp.LastName, emp.HireDate)
     } |> Seq.toList |> Assert.IsNotEmpty
-    
+
 open Newtonsoft.Json
 
 type OtherCountryInformation = {
@@ -213,8 +213,8 @@ type Country = {
 
 //Can customise SQLEntity mapping
 [<Test>]
-let countries () = 
-    let ctx = HR.GetDataContext() 
+let countries () =
+    let ctx = HR.GetDataContext()
     query {
         for emp in ctx.Public.Countries do
         select emp
@@ -234,12 +234,12 @@ let countries () =
 
 [<Test>]
 let ``Reassign optional and array columns`` () =
-    let ctx = HR.GetDataContext() 
+    let ctx = HR.GetDataContext()
 
     let oldNames = [| "Antarctica"; "South Pole" |]
     let newNames = [| "Antartica"; "Antarctica"; "South Pole" |]
 
-    let antartica = 
+    let antartica =
       let result =
           query {
               for reg in ctx.Public.Regions do
@@ -255,7 +255,7 @@ let ``Reassign optional and array columns`` () =
           newRegion.RegionAlternateNames <- oldNames
           ctx.SubmitUpdates()
           newRegion
-        
+
     Assert.AreEqual(antartica.RegionName, Some("Antartica"))
     Assert.AreEqual(antartica.RegionAlternateNames, oldNames)
 
@@ -272,22 +272,22 @@ let ``Reassign optional and array columns`` () =
 //********************** Procedures **************************//
 
 [<Test>]
-let ``Existing item is successfully deleted, then restored``() = 
-    let ctx = HR.GetDataContext() 
-    let getIfexisting employeeId startDate = 
+let ``Existing item is successfully deleted, then restored``() =
+    let ctx = HR.GetDataContext()
+    let getIfexisting employeeId startDate =
         query {
           for x in ctx.Public.JobHistory do
           where ((x.EmployeeId = employeeId) && (x.StartDate = startDate))
-          headOrDefault 
+          headOrDefault
         }
-        
-    let removeIfExists employeeId startDate =      
-      let current = getIfexisting employeeId startDate 
+
+    let removeIfExists employeeId startDate =
+      let current = getIfexisting employeeId startDate
       if current <> null then
           current.Delete()
           ctx.SubmitUpdates()
 
-    
+
     let existing = getIfexisting 100 (DateTime(1993, 1, 13))
     Assert.IsNotNull existing
 
@@ -297,11 +297,11 @@ let ``Existing item is successfully deleted, then restored``() =
     ctx.Functions.AddJobHistory.Invoke(100, DateTime(1993, 1, 13), DateTime(1998, 7, 24), "IT_PROG", 60)
     let existing = getIfexisting 100 (DateTime(1993, 1, 13))
     Assert.IsNotNull existing
-    
+
 //Support for sprocs that return ref cursors
 [<Test>]
-let employees () = 
-    let ctx = HR.GetDataContext() 
+let employees () =
+    let ctx = HR.GetDataContext()
     [
       for e in ctx.Functions.GetEmployees.Invoke().ReturnValue do
         yield e.MapTo<Employee>()
@@ -316,8 +316,8 @@ type Region = {
 
 //Support for MARS procs
 [<Test>]
-let locations_and_regions () = 
-    let ctx = HR.GetDataContext() 
+let locations_and_regions () =
+    let ctx = HR.GetDataContext()
     let results = ctx.Functions.GetLocationsAndRegions.Invoke()
     [
       for e in results.ReturnValue do
@@ -329,7 +329,7 @@ let locations_and_regions () =
 
 //Support for sprocs that return ref cursors and has in parameters
 let getemployees hireDate =
-    let ctx = HR.GetDataContext() 
+    let ctx = HR.GetDataContext()
     let results = (ctx.Functions.GetEmployeesStartingAfter.Invoke hireDate)
     [
       for e in results.ReturnValue do
@@ -337,7 +337,7 @@ let getemployees hireDate =
     ]
 
 [<Test>]
-let ``Run a sproc with a parameter returning a ref cursor`` () = 
+let ``Run a sproc with a parameter returning a ref cursor`` () =
   let result = getemployees (new System.DateTime(1999,4,1))
   Assert.IsNotNull result
   Assert.IsNotEmpty result
@@ -345,8 +345,8 @@ let ``Run a sproc with a parameter returning a ref cursor`` () =
 // Support for sprocs that return `table of`
 [<Test>]
 let ``Return HR info`` () =
-    let ctx = HR.GetDataContext() 
-    let hrInfo = 
+    let ctx = HR.GetDataContext()
+    let hrInfo =
       ctx.Functions.GetDepartments.Invoke().ReturnValue
       |> Array.map (fun e -> e.MapTo<Department>())
       |> sprintf "%A"
@@ -395,8 +395,8 @@ let ``Return HR info`` () =
 //********************** Functions ***************************//
 
 [<Test>]
-let fullName () = 
-    let ctx = HR.GetDataContext() 
+let fullName () =
+    let ctx = HR.GetDataContext()
     ctx.Functions.EmpFullname.Invoke(100).ReturnValue
     |> Assert.IsNotNullOrEmpty
 
@@ -410,9 +410,9 @@ open Microsoft.FSharp.Quotations
 open Microsoft.FSharp.Quotations.Patterns
 
 [<Test>]
-let ``Create and print PostgreSQL specific types``() = 
+let ``Create and print PostgreSQL specific types``() =
 
-  let ctx = HR.GetDataContext() 
+  let ctx = HR.GetDataContext()
   let tt = ctx.Public.PostgresqlTypes.Create()
 
   //tt.Abstime0 <- Some DateTime.Today
@@ -472,16 +472,16 @@ let ``Create and print PostgreSQL specific types``() =
   //tt.Polygon0 <- Some(polygon [| point (0.0, 0.0); point (0.0, 1.0); point (1.0, 1.0) |])
   //tt.Tsquery0 <- Some(NpgsqlTypes.NpgsqlTsQuery.Parse("test"))
   //tt.Tsvector0 <- Some(NpgsqlTypes.NpgsqlTsVector.Parse("test"))
-  
+
   ctx.SubmitUpdates()
-    
+
   let ttb = query {
       for t in ctx.Public.PostgresqlTypes do
       where (t.PostgresqlTypesId = tt.PostgresqlTypesId)
       exactlyOne
   }
   Assert.IsNotNull ttb
-    
+
   let printTest (exp: Expr) =
       match exp with
       | Call(_,mi,[Value(name,_)]) ->
@@ -490,11 +490,11 @@ let ``Create and print PostgreSQL specific types``() =
       | _ ->
         sprintf "Invalid expression: %A" exp
 
-  let bigint0 = printTest <@@ tt.Bigint0 @@>    
-  let bit0    = printTest <@@ tt.Bit0 @@>       
-  let box0    = printTest <@@ tt.Box0 @@>       
-  let interva = printTest <@@ tt.Interval0 @@>  
-  let jsonb0  = printTest <@@ tt.Jsonb0 @@>     
+  let bigint0 = printTest <@@ tt.Bigint0 @@>
+  let bit0    = printTest <@@ tt.Bit0 @@>
+  let box0    = printTest <@@ tt.Box0 @@>
+  let interva = printTest <@@ tt.Interval0 @@>
+  let jsonb0  = printTest <@@ tt.Jsonb0 @@>
 
   Assert.AreEqual(bigint0, """"bigint_0": Some 100L => Some 100L""")
   Assert.AreEqual(bit0   , """"bit_0": Some (seq [true; true; true; true; ...]) => Some (seq [true; true; true; true; ...])""")
@@ -506,27 +506,27 @@ let ``Create and print PostgreSQL specific types``() =
 
 
 [<Test>]
-let ``Access a different schema than the default one``() = 
+let ``Access a different schema than the default one``() =
   let ctx = HR.GetDataContext()
-  
+
   let testRow = ctx.OtherSchema.TableInOtherSchema.Create()
-  testRow.ColumnInOtherSchema <- 42  
+  testRow.ColumnInOtherSchema <- 42
   ctx.SubmitUpdates()
 
 //********************** Upsert ***************************//
 
 
 [<Test>]
-let ``Upsert on table with single primary key``() = 
+let ``Upsert on table with single primary key``() =
   let ctx = HR.GetDataContext()
 
   let readGermany =
-    query { 
-      for country in ctx.Public.Countries do 
-      where (country.CountryId = "DE") 
+    query {
+      for country in ctx.Public.Countries do
+      where (country.CountryId = "DE")
       select country.CountryName.Value
     }
-    
+
   let oldGermany = Seq.head readGermany
   let newGermany = "West " + oldGermany
 
@@ -542,18 +542,18 @@ let ``Upsert on table with single primary key``() =
   Assert.AreEqual(newGermany, newGermanyDb)
 
 [<Test>]
-let ``Upsert on table with composite primary key``() = 
+let ``Upsert on table with composite primary key``() =
   let ctx = HR.GetDataContext()
-  
+
   let employeeId, startDate, jobId, oldEndDate =
-    query { 
-      for jobHistory in ctx.Public.JobHistory do 
+    query {
+      for jobHistory in ctx.Public.JobHistory do
       select (jobHistory.EmployeeId, jobHistory.StartDate, jobHistory.JobId, jobHistory.EndDate)
     }
     |> Seq.head
-  
+
   let newEndDate = oldEndDate.AddDays(1.0)
-    
+
   let jh = ctx.Public.JobHistory.Create()
   jh.EmployeeId <- employeeId
   jh.StartDate <- startDate
@@ -564,8 +564,8 @@ let ``Upsert on table with composite primary key``() =
   ctx.SubmitUpdates()
 
   let newEndDateDb =
-    query { 
-      for jobHistory in ctx.Public.JobHistory do 
+    query {
+      for jobHistory in ctx.Public.JobHistory do
       where (jobHistory.EmployeeId = employeeId)
       where (jobHistory.StartDate = startDate)
       select (jobHistory.EndDate)
@@ -575,13 +575,13 @@ let ``Upsert on table with composite primary key``() =
   Assert.AreEqual(newEndDate, newEndDateDb)
 
 [<Test>]
-let ``Upsert with DO NOTHING leaves data unchanged``() = 
+let ``Upsert with DO NOTHING leaves data unchanged``() =
   let ctx = HR.GetDataContext()
-  
+
   let readGermanyRegion =
-    query { 
-      for country in ctx.Public.Countries do 
-      where (country.CountryId = "DE") 
+    query {
+      for country in ctx.Public.Countries do
+      where (country.CountryId = "DE")
       select country.RegionId.Value
     }
 
@@ -592,7 +592,7 @@ let ``Upsert with DO NOTHING leaves data unchanged``() =
   wg.CountryId <- "DE"
   wg.CountryName <- Some "Germany"
   wg.RegionId <- Some newGermanyRegionThatShouldNotBeSet
-  wg.OnConflict <- Common.OnConflict.DoNothing 
+  wg.OnConflict <- Common.OnConflict.DoNothing
   ctx.SubmitUpdates()
 
   let newGermanyRegionDb = Seq.head readGermanyRegion

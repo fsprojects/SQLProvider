@@ -6,10 +6,18 @@ open System.Reflection
 open FSharp.Data.Sql
 open FSharp.Data.Sql.Schema
 
+/// Marker interface
+type ISqlQueryable = interface end
+
 [<return: Struct>]
-let (|MethodWithName|_|)   (s:string) (m:MethodInfo)   = if s = m.Name then ValueSome () else ValueNone
+let inline (|MethodWithName|_|)   (s:string) (m:MethodInfo)   = if s = m.Name then ValueSome () else ValueNone
 [<return: Struct>]
-let (|PropertyWithName|_|) (s:string) (m:PropertyInfo) = if s = m.Name then ValueSome () else ValueNone
+let inline (|PropertyWithName|_|) (s:string) (m:PropertyInfo) = if s = m.Name then ValueSome () else ValueNone
+
+let inline (|MemberAccess|_|) (e:Expression) = 
+    match e.NodeType, e with 
+    | ExpressionType.MemberAccess, ( :? MemberExpression as me) -> Some me
+    | _ -> None
 
 let (|MethodCall|_|) (e:Expression) = 
     match e.NodeType, e with 
@@ -23,22 +31,52 @@ let (|NewExpr|_|) (e:Expression) =
         Some (e.Constructor, Seq.toList e.Arguments)
     | _ -> None
 
+let (|Constant|_|) (exp:Expression) =
+    let e = ExpressionOptimizer.doReduction exp
+    match e.NodeType, e with 
+    | ExpressionType.Constant, (:? ConstantExpression as ce) -> Some (ce.Value, ce.Type)
+    | _ -> None
+
+let rec (|OptionalConvertOrTypeAs|) (e:Expression) = 
+    match e.NodeType, e with 
+    | ExpressionType.Convert, (:? UnaryExpression as ue ) 
+    | ExpressionType.TypeAs, (:? UnaryExpression as ue ) -> 
+        match ue.Operand with OptionalConvertOrTypeAs(x) -> x
+    | ExpressionType.Call, (:? MethodCallExpression as e) when e.Method.Name = "Parse" && e.Arguments.Count = 1 ->
+        // Don't do any magic, just: DateTime.Parse('2000-01-01') -> '2000-01-01'
+        e.Arguments.[0]
+    | ExpressionType.Call, (:? MethodCallExpression as e) when e.Method.Name = "Box" && e.Arguments.Count = 1 && e.Arguments.[0].Type.IsValueType ->
+        e.Arguments.[0]
+    | ExpressionType.Call, (:? MethodCallExpression as e) when isNull e.Object && e.Method.Name = "ToString" && e.Arguments.Count = 1 ->
+        e.Arguments.[0]
+    | _ -> e
+
 let (|SeqValuesQueryable|_|) (e:Expression) =
     let rec isQueryable (ty : Type) = 
-        ty.FindInterfaces((fun ty _ -> ty = typeof<System.Linq.IQueryable>), null)
+        ty.FindInterfaces((fun ty _ -> Type.(=)(ty, typeof<System.Linq.IQueryable>)), null)
         |> (not << Seq.isEmpty)
 
     match (isQueryable e.Type) with
     | false -> None
-    | true -> 
-        let values = Expression.Lambda(e).Compile().DynamicInvoke() :?> System.Linq.IQueryable
-        match values.GetType().Name = "SqlQueryable`1" with
-        | true -> Some values
-        | false -> None
+    | true ->
+        match e.NodeType, e with
+        | ExpressionType.Constant, (:? ConstantExpression as ce) ->
+            match ce.Value with
+            | :? ISqlQueryable ->
+                let values = (Expression.Lambda(e).Compile() :?> Func<System.Linq.IQueryable>).Invoke()
+                Some values
+            | _ -> None
+        | _ ->
+            let values = (Expression.Lambda(e).Compile() :?> Func<System.Linq.IQueryable>).Invoke()
+            match values with
+            | :? ISqlQueryable -> Some values
+            | _ -> None
 
 let (|SeqValues|_|) (e:Expression) =
+    if e.Type.FullName = "System.String" then None // String is char[] but we don't want to hit that!
+    else
     let rec isEnumerable (ty : Type) = 
-        ty.FindInterfaces((fun ty _ -> ty = typeof<System.Collections.IEnumerable>), null)
+        ty.FindInterfaces((fun ty _ -> Type.(=)(ty, typeof<System.Collections.IEnumerable>)), null)
         |> (not << Seq.isEmpty)
 
     match (isEnumerable e.Type) with
@@ -48,7 +86,23 @@ let (|SeqValues|_|) (e:Expression) =
         // select x from xs where x in (select y from ys)
         // ...but instead we just execute the sub-query. Works when sub-query results are small.
 
-        let values = Expression.Lambda(e).Compile().DynamicInvoke() :?> System.Collections.IEnumerable
+        let values = 
+            match e.NodeType, e with
+            | ExpressionType.Constant, (:? ConstantExpression as ce) when not(isNull ce.Value) ->
+                ce.Value :?> System.Collections.IEnumerable
+            | ExpressionType.MemberAccess, (:? MemberExpression as me) when (me.Expression :? ConstantExpression) ->
+                let ceVal = (me.Expression :?> ConstantExpression).Value
+                let myVal = 
+                    match me.Member with
+                    | :? FieldInfo as fieldInfo when not(isNull(fieldInfo)) ->
+                        fieldInfo.GetValue ceVal
+                    | :? PropertyInfo as propInfo when not(isNull(propInfo)) ->
+                        propInfo.GetValue(ceVal, null)
+                    | _ -> ceVal
+                myVal :?> System.Collections.IEnumerable
+            | _ ->
+                (Expression.Lambda(e).Compile() :?> Func<System.Collections.IEnumerable>).Invoke()
+
         // Working with untyped IEnumerable so need to do a lot manually instead of using Seq
         // Work out the size the sequence
         let mutable count = 0
@@ -78,25 +132,21 @@ let (|ConvertOrTypeAs|_|) (e:Expression) =
     | ExpressionType.TypeAs, (:? UnaryExpression as ue ) -> Some ue.Operand
     | _ -> None
 
-
-let (|Constant|_|) (e:Expression) = 
-    match e.NodeType, e with 
-    | ExpressionType.Constant, (:? ConstantExpression as ce) -> Some (ce.Value, ce.Type)
-    | _ -> None
-
-let (|OptionNone|_|) (e: Expression) =
+[<return: Struct>]
+let inline (|OptionNone|_|) (e: Expression) =
     match e with
     | MethodCall(None,MethodWithName("get_None"),[]) ->
         match e with
         | :? MethodCallExpression as e when (e.Method.DeclaringType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpOption`1")
-                                             || e.Method.DeclaringType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpValueOption`1")) -> Some()
-        | _ -> None
-    | _ -> None
+                                             || e.Method.DeclaringType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpValueOption`1")) -> ValueSome()
+        | _ -> ValueNone
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|NullConstant|_|) (e:Expression) = 
     match e.NodeType, e with 
-    | ExpressionType.Constant, (:? ConstantExpression as ce) when ce.Value = null -> Some()
-    | _ -> None
+    | ExpressionType.Constant, (:? ConstantExpression as ce) when isNull ce.Value -> ValueSome()
+    | _ -> ValueNone
 
 let (|ConstantOrNullableConstant|_|) (e:Expression) = 
     match e.NodeType, e with 
@@ -109,9 +159,9 @@ let (|ConstantOrNullableConstant|_|) (e:Expression) =
         else
             Some(Some(ce.Value))
     | ExpressionType.Convert, (:? UnaryExpression as ue ) -> 
-        match ue.Operand with
-        | :? ConstantExpression as ce -> if ce.Value = null then Some(None) else Some(Some(ce.Value))
-        | :? NewExpression as ne -> Some(Some(Expression.Lambda(ne).Compile().DynamicInvoke()))
+        match ue.Operand.NodeType, ue.Operand with
+        | ExpressionType.Constant, (:? ConstantExpression as ce) -> if isNull ce.Value then Some(None) else Some(Some(ce.Value))
+        | ExpressionType.New, (:? NewExpression as ne) -> Some(Some(Expression.Lambda(ne).Compile().DynamicInvoke()))
         | _ -> failwith ("unsupported nullable expression " + e.ToString())
     | _ -> None
 
@@ -132,13 +182,13 @@ let rec (|Bool|_|) (e:Expression) =
     | _ -> None
 
 [<return: Struct>]
-let (|ParamName|_|) (e:Expression) = 
+let inline (|ParamName|_|) (e:Expression) = 
     match e.NodeType, e with 
     | ExpressionType.Parameter, (:? ParameterExpression as pe) ->  ValueSome pe.Name
     | _ -> ValueNone    
 
 [<return: Struct>]
-let (|ParamWithName|_|) (s:String) (e:Expression) = 
+let inline (|ParamWithName|_|) (s:String) (e:Expression) = 
     match e with 
     | ParamName(n) when s = n -> ValueSome ()
     | _ -> ValueNone    
@@ -148,21 +198,9 @@ let (|Lambda|_|) (e:Expression) =
     | ExpressionType.Lambda, (:? LambdaExpression as ce) ->  Some (Seq.toList ce.Parameters, ce.Body)
     | _ -> None
 
-let (|OptionalQuote|) (e:Expression) = 
+let inline (|OptionalQuote|) (e:Expression) = 
     match e.NodeType, e with 
     | ExpressionType.Quote, (:? UnaryExpression as ce) ->  ce.Operand
-    | _ -> e
-
-let rec (|OptionalConvertOrTypeAs|) (e:Expression) = 
-    match e.NodeType, e with 
-    | ExpressionType.Convert, (:? UnaryExpression as ue ) 
-    | ExpressionType.TypeAs, (:? UnaryExpression as ue ) -> 
-        match ue.Operand with OptionalConvertOrTypeAs(x) -> x
-    | ExpressionType.Call, (:? MethodCallExpression as e) when e.Method.Name = "Parse" && e.Arguments.Count = 1 ->
-        // Don't do any magic, just: DateTime.Parse('2000-01-01') -> '2000-01-01'
-        e.Arguments.[0]
-    | ExpressionType.Call, (:? MethodCallExpression as e) when e.Method.Name = "Box" && e.Arguments.Count = 1 && e.Arguments.[0].Type.IsValueType ->
-        e.Arguments.[0]
     | _ -> e
 
 let (|OptionalCopyOfStruct|) (e:Expression) = 
@@ -202,16 +240,26 @@ let (|AndAlsoOrElse|_|) (e:Expression) =
     | ExpressionType.AndAlso, ( :? BinaryExpression as be)  -> Some(be.Left,be.Right)
     | _ -> None
 
+let (|FSharpIsNullMethod|_|) (e:Expression) = 
+    match e.NodeType, e with 
+    | ExpressionType.Call, (:? MethodCallExpression as e) ->
+        if isNull e.Object && e.Method.Name = "IsNull" && e.Arguments.Count = 1 && e.Method.DeclaringType.FullName = "Microsoft.FSharp.Core.Operators" then
+            Some (e.Arguments.[0])
+        else
+            None
+    | _ -> None
+
 let (|OptionIsSome|_|) : Expression -> _ = function    
     | MethodCall(None,MethodWithName("get_IsSome"), [e] ) -> Some e
     | :? UnaryExpression as ue when ue.NodeType = ExpressionType.Not ->
         match ue.Operand with
         | MethodCall(None,MethodWithName("get_IsNone"), [e] ) -> Some e
-        | :? MemberExpression as me when me.Member.Name = "IsNone" -> Some (me.Expression)
+        | MemberAccess me when me.Member.Name = "IsNone" -> Some (me.Expression)
         | MethodCall(Some (Lambda([ParamName para], (:? MemberExpression as me))),MethodWithName("Invoke"),[e]) when para = "copyOfStruct" && me.Member.Name = "IsNone" -> Some e
         | CopyOfStruct "IsNone" exp -> Some exp
+        | FSharpIsNullMethod exp -> Some exp
         | _ -> None
-    | :? MemberExpression as me when me.Member.Name = "IsSome" -> Some (me.Expression)
+    | MemberAccess me when me.Member.Name = "IsSome" -> Some (me.Expression)
     | CopyOfStruct "IsSome" exp -> Some exp
     | _ -> None
 
@@ -220,11 +268,12 @@ let (|OptionIsNone|_|) : Expression -> _ = function
     | :? UnaryExpression as ue when ue.NodeType = ExpressionType.Not ->
         match ue.Operand with
         | MethodCall(None,MethodWithName("get_IsSome"), [e] ) -> Some e
-        | :? MemberExpression as me when me.Member.Name = "IsSome" -> Some (me.Expression)
+        | MemberAccess me when me.Member.Name = "IsSome" -> Some (me.Expression)
         | CopyOfStruct "IsSome" exp -> Some exp
         | _ -> None
-    | :? MemberExpression as me when me.Member.Name = "IsNone" -> Some (me.Expression)
+    | MemberAccess me when me.Member.Name = "IsNone" -> Some (me.Expression)
     | CopyOfStruct "IsNone" exp -> Some exp
+    | FSharpIsNullMethod exp -> Some exp
     | _ -> None
 
 let (|SqlCondOp|_|) (e:Expression) = 
@@ -254,7 +303,7 @@ let (|SqlNegativeCondOp|_|) (e:Expression) =
 let (|MethodCallOrFSharpWrap|_|) (e:Expression) = 
     match e.NodeType, e with 
     | ExpressionType.Call, (:? MethodCallExpression as e) ->
-        if e.Object = null && e.Method.Name.Contains("$") && e.Arguments.Count = 2 && e.Method.DeclaringType.FullName = "Microsoft.FSharp.Core.Operators" then
+        if isNull e.Object && e.Method.Name.Contains("$") && e.Arguments.Count = 2 && e.Method.DeclaringType.FullName = "Microsoft.FSharp.Core.Operators" then
             match e.Arguments.[0].NodeType, e.Arguments.[0] with
             | ExpressionType.Call, (:? MethodCallExpression as ec) when ec.Method.Name = "ToFSharpFunc" && ec.Arguments.Count = 1 ->
                 match ec.Arguments.[0] with
@@ -272,13 +321,13 @@ let (|MethodCallOrFSharpWrap|_|) (e:Expression) =
 let (|SqlPlainColumnGet|_|) = function
     | OptionalFSharpOptionValue(MethodCall(Some(o),((MethodWithName "GetColumn" as meth) | (MethodWithName "GetColumnOption" as meth)| (MethodWithName "GetColumnValueOption" as meth)),[String key])) when o.Type.Name = "SqlEntity" -> 
         match o with
-        | :? MemberExpression as m  -> 
+        | MemberAccess m  -> 
             match m.Expression with
             | null -> Some(m.Member.Name,KeyColumn key,meth.ReturnType) // Nested tuples:
-            | :? MemberExpression as x when x.Type.Name.StartsWith("AnonymousObject") && x.Member.Name = "Item8" ->
+            | MemberAccess x when x.Type.Name.StartsWith("AnonymousObject") && x.Member.Name = "Item8" ->
                 let rec findNested (expr:MemberExpression) depth = 
                     match expr.Expression with
-                    | :? MemberExpression as xx when xx.Type.Name.StartsWith("AnonymousObject") && xx.Member.Name = "Item8" ->
+                    | MemberAccess xx when xx.Type.Name.StartsWith("AnonymousObject") && xx.Member.Name = "Item8" ->
                         findNested xx (depth+7)
                     | _ -> depth
                 let isOk, memberName = Int32.TryParse(m.Member.Name.Replace("Item","")) 
@@ -292,6 +341,18 @@ let (|SqlPlainColumnGet|_|) = function
         | _ -> None
     | _ -> None
 
+let (|SqlSubtableColumnGet|_|) = function
+    | OptionalFSharpOptionValue(MethodCall(Some(o),((MethodWithName "GetColumn" as meth) | (MethodWithName "GetColumnOption" as meth) | (MethodWithName "GetColumnValueOption" as meth)),[String key])) when o.Type.Name = "SqlEntity" -> 
+        match o.NodeType, o with
+        | ExpressionType.Call, (:? MethodCallExpression as ce)
+                when (ce.Method.Name = "GetSubTable" && (not(isNull ce.Object)) && (ce.Object :? ParameterExpression)) ->
+            let par = ce.Object :?> ParameterExpression
+            if String.IsNullOrEmpty par.Name then None
+            else
+            Some(par.Name,KeyColumn key,meth.ReturnType) 
+        | _ -> None
+    | _ -> None
+
 let decimalTypes = [| typeof<decimal>; typeof<float32>; typeof<double>; typeof<float>;
                       typeof<Option<decimal>>; typeof<Option<float32>>; typeof<Option<double>>; typeof<Option<float>>;
                       typeof<ValueOption<decimal>>; typeof<ValueOption<float32>>; typeof<ValueOption<double>>; typeof<ValueOption<float>>;|]
@@ -300,23 +361,41 @@ let integerTypes = [| typeof<Int32>; typeof<Int64>; typeof<Int16>; typeof<int8>;
                       typeof<ValueOption<Int32>>; typeof<ValueOption<Int64>>; typeof<ValueOption<Int16>>; typeof<ValueOption<int8>>; typeof<ValueOption<UInt32>>; typeof<ValueOption<UInt64>>; typeof<ValueOption<UInt16>>; typeof<ValueOption<uint8>>;|]
 
 let intType (typ:Type) = 
-    if typ <> null && typ.IsGenericType && typ.GetGenericTypeDefinition() = typedefof<Option<_>> then typeof<Option<int>>
-    elif typ <> null && typ.IsGenericType && typ.GetGenericTypeDefinition() = typedefof<ValueOption<_>> then typeof<ValueOption<int>>
+    if (not (isNull typ)) && typ.IsGenericType && typ.GetGenericTypeDefinition() = typedefof<Option<_>> then typeof<Option<int>>
+    elif (not (isNull typ)) && typ.IsGenericType && typ.GetGenericTypeDefinition() = typedefof<ValueOption<_>> then typeof<ValueOption<int>>
     else typeof<int>
 
-let rec (|SqlColumnGet|_|) (e:Expression) =  
+let inline internal getRightFromOp (right:Expression) =
+    match right.NodeType, right with
+    | ExpressionType.Constant, (:? ConstantExpression as ce) -> ce.Value
+    | ExpressionType.MemberAccess, (:? MemberExpression as me) when (me.Expression :? ConstantExpression) ->
+        let ceVal = (me.Expression :?> ConstantExpression).Value
+        let myVal = 
+            match me.Member with
+            | :? FieldInfo as fieldInfo when not(isNull fieldInfo) ->
+                fieldInfo.GetValue ceVal
+            | :? PropertyInfo as propInfo when not(isNull propInfo) ->
+                propInfo.GetValue(ceVal, null)
+            | _ -> ceVal
+        myVal
+    | ExpressionType.Call, (:? MethodCallExpression as e) when e.Method.ReturnType.IsClass -> (Expression.Lambda(right).Compile() :?> Func<_>).Invoke() |> box
+    | _ -> Expression.Lambda(right).Compile().DynamicInvoke()
+
+let rec (|SqlColumnGet|_|) (ex:Expression) =
+
+    let e = ExpressionOptimizer.doReduction ex
     match e.NodeType, e with 
     | _, SqlPlainColumnGet(m, k, t) -> Some(m,k,t)
 
     // These are aggregations, e.g. GROUPBY, HAVING-clause
     | ExpressionType.MemberAccess, ( :? MemberExpression as me) when 
-            me.Expression <> null && me.Expression.Type <> null && me.Expression.Type.Name <> null &&
+            (not (isNull me.Expression || isNull me.Expression.Type || isNull me.Expression.Type.Name)) &&
             me.Expression.Type.Name.StartsWith("IGrouping")  -> 
         match me.Member with 
         | :? PropertyInfo as p when p.Name = "Key" -> Some(String.Empty, GroupColumn (KeyOp "",SqlColumnType.KeyColumn("Key")), p.DeclaringType) 
         | _ -> None
-    | ExpressionType.Call, ( :? MethodCallExpression as e) when e.Arguments <> null && e.Arguments.Count = 1 && 
-            e.Arguments.[0] <> null && e.Arguments.[0].Type <> null && e.Arguments.[0].Type.Name <> null &&
+    | ExpressionType.Call, ( :? MethodCallExpression as e) when (not (isNull e.Arguments)) && e.Arguments.Count = 1 && 
+            not( isNull e.Arguments.[0] || isNull e.Arguments.[0].Type || isNull e.Arguments.[0].Type.Name) &&
             e.Arguments.[0].Type.Name.StartsWith("IGrouping") ->
         if e.Arguments.[0].NodeType = ExpressionType.Parameter then
             let pn = match e.Arguments.[0] with :? ParameterExpression as p -> p.Name | _ -> e.Method.Name
@@ -331,13 +410,13 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
             | _ -> None
         else 
             match e.Arguments.[0], e.Method.Name with
-            | :? MemberExpression as m, "Count" -> Some(m.Member.Name, GroupColumn (CountOp "",SqlColumnType.KeyColumn(m.Member.Name)), e.Method.DeclaringType)
-            | :? MemberExpression as m, ("Average" | "Avg") -> Some(m.Member.Name, GroupColumn (AvgOp "",SqlColumnType.KeyColumn(m.Member.Name)), e.Method.DeclaringType)
-            | :? MemberExpression as m, "Min" -> Some(m.Member.Name, GroupColumn (MinOp "",SqlColumnType.KeyColumn(m.Member.Name)), e.Method.DeclaringType)
-            | :? MemberExpression as m, "Max" -> Some(m.Member.Name, GroupColumn (MaxOp "",SqlColumnType.KeyColumn(m.Member.Name)), e.Method.DeclaringType)
-            | :? MemberExpression as m, "Sum" -> Some(m.Member.Name, GroupColumn (SumOp "",SqlColumnType.KeyColumn(m.Member.Name)), e.Method.DeclaringType)
-            | :? MemberExpression as m, ("StdDev" | "StDev" | "StandardDeviation") -> Some(m.Member.Name, GroupColumn (StdDevOp "",SqlColumnType.KeyColumn(m.Member.Name)), e.Method.DeclaringType)
-            | :? MemberExpression as m, "Variance" -> Some(m.Member.Name, GroupColumn (VarianceOp "",SqlColumnType.KeyColumn(m.Member.Name)), e.Method.DeclaringType)
+            | MemberAccess m, "Count" -> Some(m.Member.Name, GroupColumn (CountOp "",SqlColumnType.KeyColumn(m.Member.Name)), e.Method.DeclaringType)
+            | MemberAccess m, ("Average" | "Avg") -> Some(m.Member.Name, GroupColumn (AvgOp "",SqlColumnType.KeyColumn(m.Member.Name)), e.Method.DeclaringType)
+            | MemberAccess m, "Min" -> Some(m.Member.Name, GroupColumn (MinOp "",SqlColumnType.KeyColumn(m.Member.Name)), e.Method.DeclaringType)
+            | MemberAccess m, "Max" -> Some(m.Member.Name, GroupColumn (MaxOp "",SqlColumnType.KeyColumn(m.Member.Name)), e.Method.DeclaringType)
+            | MemberAccess m, "Sum" -> Some(m.Member.Name, GroupColumn (SumOp "",SqlColumnType.KeyColumn(m.Member.Name)), e.Method.DeclaringType)
+            | MemberAccess m, ("StdDev" | "StDev" | "StandardDeviation") -> Some(m.Member.Name, GroupColumn (StdDevOp "",SqlColumnType.KeyColumn(m.Member.Name)), e.Method.DeclaringType)
+            | MemberAccess m, "Variance" -> Some(m.Member.Name, GroupColumn (VarianceOp "",SqlColumnType.KeyColumn(m.Member.Name)), e.Method.DeclaringType)
             | _ -> None
 
     // These are canonical functions
@@ -346,13 +425,13 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
         | "ToString", [] ->   Some(alias, CanonicalOperation(CanonicalOp.CastVarchar, col), typ)
         | _ ->
             match p1.Type with
-            | t when t = typeof<System.String> || t= typeof<Option<System.String>> || t= typeof<ValueOption<System.String>> -> // String functions
+            | t when Type.(=)(t, typeof<System.String>) || Type.(=)(t, typeof<Option<System.String>>) || Type.(=)(t, typeof<ValueOption<System.String>>) -> // String functions
                 match meth.Name, par with
                 | "Substring", [Int startPos] -> Some(alias, CanonicalOperation(CanonicalOp.Substring(SqlConstant startPos), col), typ)
-                | "Substring", [SqlColumnGet(al2,col2,typ2) as pe] when integerTypes |> Seq.exists((=) pe.Type) -> Some(alias, CanonicalOperation(CanonicalOp.Substring(SqlCol(al2,col2)), col), typ)
+                | "Substring", [SqlColumnGet(al2,col2,typ2) as pe] when integerTypes |> Seq.exists(fun t -> Type.(=)(pe.Type, t)) -> Some(alias, CanonicalOperation(CanonicalOp.Substring(SqlCol(al2,col2)), col), typ)
                 | "Substring", [Int startPos; Int strLen] -> Some(alias, CanonicalOperation(CanonicalOp.SubstringWithLength(SqlConstant startPos,SqlConstant strLen), col), typ)
-                | "Substring", [SqlColumnGet(al2,col2,typ2) as pe; Int strLen] when integerTypes |> Seq.exists((=) pe.Type) -> Some(alias, CanonicalOperation(CanonicalOp.SubstringWithLength(SqlCol(al2,col2),SqlConstant strLen), col), typ)
-                | "Substring", [Int startPos; SqlColumnGet(al2,col2,typ2) as pe] when integerTypes |> Seq.exists((=) pe.Type) -> Some(alias, CanonicalOperation(CanonicalOp.SubstringWithLength(SqlConstant startPos,SqlCol(al2,col2)), col), typ)
+                | "Substring", [SqlColumnGet(al2,col2,typ2) as pe; Int strLen] when integerTypes |> Seq.exists(fun t -> Type.(=)(pe.Type, t)) -> Some(alias, CanonicalOperation(CanonicalOp.SubstringWithLength(SqlCol(al2,col2),SqlConstant strLen), col), typ)
+                | "Substring", [Int startPos; SqlColumnGet(al2,col2,typ2) as pe] when integerTypes |> Seq.exists(fun t -> Type.(=)(pe.Type, t)) -> Some(alias, CanonicalOperation(CanonicalOp.SubstringWithLength(SqlConstant startPos,SqlCol(al2,col2)), col), typ)
                 | "Substring", [SqlColumnGet(al2,col2,ty2) as pe1; SqlColumnGet(al3,col3,ty3) as pe2]  when integerTypes |> Seq.exists((=) pe1.Type) && integerTypes |> Seq.exists((=) pe2.Type) -> Some(alias, CanonicalOperation(CanonicalOp.SubstringWithLength(SqlCol(al2,col2),SqlCol(al3,col3)), col), typ)
                 | "ToUpper", []
                 | "ToUpperInvariant", [] -> Some(alias, CanonicalOperation(CanonicalOp.ToUpper, col), typ)
@@ -369,29 +448,33 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
                 | "IndexOf", [String search; Int startPos] -> Some(alias, CanonicalOperation(CanonicalOp.IndexOfStart(SqlConstant search, SqlConstant startPos), col), intType typ)
                 | "IndexOf", [SqlColumnGet(al2,col2,_); Int startPos] -> Some(alias, CanonicalOperation(CanonicalOp.IndexOfStart(SqlCol(al2,col2), SqlConstant startPos), col), intType typ)
                 | "IndexOf", [String search; SqlColumnGet(al2,col2,typ2) as pe] when integerTypes |> Seq.exists(fun t -> t = pe.Type) -> Some(alias, CanonicalOperation(CanonicalOp.IndexOfStart(SqlConstant search, SqlCol(al2,col2)), col), intType typ)
-                | "IndexOf", [SqlColumnGet(al2,col2,_); SqlColumnGet(al3,col3,typ2) as pe] when integerTypes |> Seq.exists((=) pe.Type) -> Some(alias, CanonicalOperation(CanonicalOp.IndexOfStart(SqlCol(al2,col2), SqlCol(al3,col3)), col), intType typ)
+                | "IndexOf", [SqlColumnGet(al2,col2,_); SqlColumnGet(al3,col3,typ2) as pe] when integerTypes |> Seq.exists(fun t -> Type.(=)(pe.Type, t)) -> Some(alias, CanonicalOperation(CanonicalOp.IndexOfStart(SqlCol(al2,col2), SqlCol(al3,col3)), col), intType typ)
                 | _ -> None
-            | t when t = typeof<System.DateTime> || t = typeof<Option<System.DateTime>> || t = typeof<ValueOption<System.DateTime>> -> // DateTime functions
+            | t when Type.(=)(t, typeof<System.DateTime>) || Type.(=)(t, typeof<Option<System.DateTime>>) || Type.(=)(t, typeof<ValueOption<System.DateTime>>) -> // DateTime functions
                 match meth.Name, par with
                 | "AddYears", [Int x] -> Some(alias, CanonicalOperation(CanonicalOp.AddYears(SqlConstant(box x)), col), typ)
-                | "AddYears", [SqlColumnGet(al2,col2,typ2) as pe] when integerTypes |> Seq.exists((=) pe.Type) -> Some(alias, CanonicalOperation(CanonicalOp.AddYears(SqlCol(al2,col2)), col), typ)
+                | "AddYears", [SqlColumnGet(al2,col2,typ2) as pe] when integerTypes |> Seq.exists(fun t -> Type.(=)(pe.Type, t)) -> Some(alias, CanonicalOperation(CanonicalOp.AddYears(SqlCol(al2,col2)), col), typ)
                 | "AddMonths", [Int x] -> Some(alias, CanonicalOperation(CanonicalOp.AddMonths(x), col), typ)
                 | "AddDays", [Float x] -> Some(alias, CanonicalOperation(CanonicalOp.AddDays(SqlConstant(box x)), col), typ)
-                | "AddDays", [OptionalConvertOrTypeAs(SqlColumnGet(al2,col2,typ2)) as pe] when integerTypes |> Seq.exists((=) pe.Type) || decimalTypes |> Seq.exists((=) pe.Type)  -> Some(alias, CanonicalOperation(CanonicalOp.AddDays(SqlCol(al2,col2)), col), typ)
+                | "AddDays", [OptionalConvertOrTypeAs(Int x)] -> Some(alias, CanonicalOperation(CanonicalOp.AddDays(SqlConstant(box x)), col), typ)
+                | "AddDays", [OptionalConvertOrTypeAs(SqlColumnGet(al2,col2,typ2)) as pe] when integerTypes |> Seq.exists(fun t -> Type.(=)(pe.Type, t)) || decimalTypes |> Seq.exists(fun t -> Type.(=)(pe.Type, t))  -> Some(alias, CanonicalOperation(CanonicalOp.AddDays(SqlCol(al2,col2)), col), typ)
                 | "AddHours", [Float x] -> Some(alias, CanonicalOperation(CanonicalOp.AddHours(x), col), typ)
+                | "AddHours", [OptionalConvertOrTypeAs(Int x)] -> Some(alias, CanonicalOperation(CanonicalOp.AddHours(x), col), typ)
                 | "AddMinutes", [Float x] -> Some(alias, CanonicalOperation(CanonicalOp.AddMinutes(SqlConstant(box x)), col), typ)
-                | "AddMinutes", [OptionalConvertOrTypeAs(SqlColumnGet(al2,col2,typ2)) as pe] when integerTypes |> Seq.exists((=) pe.Type) || decimalTypes |> Seq.exists((=) pe.Type)  -> Some(alias, CanonicalOperation(CanonicalOp.AddMinutes(SqlCol(al2,col2)), col), typ)
+                | "AddMinutes", [OptionalConvertOrTypeAs(Int x)] -> Some(alias, CanonicalOperation(CanonicalOp.AddMinutes(SqlConstant(box x)), col), typ)
+                | "AddMinutes", [OptionalConvertOrTypeAs(SqlColumnGet(al2,col2,typ2)) as pe] when integerTypes |> Seq.exists(fun t -> Type.(=)(pe.Type, t)) || decimalTypes |> Seq.exists(fun t -> Type.(=)(pe.Type, t))  -> Some(alias, CanonicalOperation(CanonicalOp.AddMinutes(SqlCol(al2,col2)), col), typ)
                 | "AddSeconds", [Float x] -> Some(alias, CanonicalOperation(CanonicalOp.AddSeconds(x), col), typ)
+                | "AddSeconds", [OptionalConvertOrTypeAs(Int x)] -> Some(alias, CanonicalOperation(CanonicalOp.AddSeconds(x), col), typ)
                 | _ -> None
             | _ -> None
     // These are canonical properties
     | _, OptionalFSharpOptionValue(PropertyGet(Some(OptionalFSharpOptionValue(SqlColumnGet(alias, col, typ) as p1)), propInfo)) -> 
         match p1.Type with
-        | t when t = typeof<System.String> || t = typeof<Option<System.String>> || t = typeof<ValueOption<System.String>>  -> // String functions
+        | t when Type.(=)(t, typeof<System.String>) || Type.(=)(t, typeof<Option<System.String>>) || Type.(=)(t, typeof<ValueOption<System.String>>)  -> // String functions
             match propInfo.Name with
             | "Length" -> Some(alias, CanonicalOperation(CanonicalOp.Length, col), intType typ)
             | _ -> None
-        | t when t = typeof<System.DateTime> || t = typeof<Option<System.DateTime>> || t = typeof<ValueOption<System.DateTime>> -> // DateTime functions
+        | t when Type.(=)(t, typeof<System.DateTime>) || Type.(=)(t, typeof<Option<System.DateTime>>) || Type.(=)(t, typeof<ValueOption<System.DateTime>>) -> // DateTime functions
             match propInfo.Name with
             | "Date" -> Some(alias, CanonicalOperation(CanonicalOp.Date, col), typ)
             | "Year" -> Some(alias, CanonicalOperation(CanonicalOp.Year, col), intType typ)
@@ -403,21 +486,21 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
             | _ -> None
         | _ -> None 
     | _, OptionalFSharpOptionValue(PropertyGet(Some(MethodCall(Some(OptionalFSharpOptionValue(SqlColumnGet(alias, col, typ)) as p1), meth, [par])), propInfo)) 
-            when (meth.Name = "Subtract" && (meth.ReturnType = typeof<System.TimeSpan> || meth.ReturnType = typeof<Option<System.TimeSpan>> || meth.ReturnType = typeof<ValueOption<System.TimeSpan>>) && 
-                  (p1.Type = typeof<System.DateTime> || p1.Type = typeof<Option<System.DateTime>> || p1.Type = typeof<ValueOption<System.DateTime>>)) -> 
+            when (meth.Name = "Subtract" && (Type.(=)(meth.ReturnType, typeof<System.TimeSpan>) || Type.(=)(meth.ReturnType, typeof<Option<System.TimeSpan>>) || Type.(=)(meth.ReturnType, typeof<ValueOption<System.TimeSpan>>)) && 
+                  (Type.(=)(p1.Type, typeof<System.DateTime>) || Type.(=)(p1.Type, typeof<Option<System.DateTime>>) || Type.(=)(p1.Type, typeof<ValueOption<System.DateTime>>))) -> 
         match propInfo.Name, par with
-        | "Days", (SqlColumnGet(al2,col2,typ2) as pe) when (pe.Type = typeof<System.DateTime> || pe.Type = typeof<Option<System.DateTime>> || pe.Type = typeof<ValueOption<System.DateTime>>) -> Some(alias, CanonicalOperation(CanonicalOp.DateDiffDays(SqlCol(al2,col2)), col), typ)
-        | "Seconds", (SqlColumnGet(al2,col2,typ2) as pe) when (pe.Type = typeof<System.DateTime> || pe.Type = typeof<Option<System.DateTime>> || pe.Type = typeof<ValueOption<System.DateTime>>) -> Some(alias, CanonicalOperation(CanonicalOp.DateDiffSecs(SqlCol(al2,col2)), col), typ)
-        | "Days", Constant(c,t) when t = typeof<System.DateTime> -> Some(alias, CanonicalOperation(CanonicalOp.DateDiffDays(SqlConstant(box c)), col), typ)
-        | "Seconds", Constant(c,t) when t = typeof<System.DateTime> -> Some(alias, CanonicalOperation(CanonicalOp.DateDiffSecs(SqlConstant(box c)), col), typ)
+        | "Days", (SqlColumnGet(al2,col2,typ2) as pe) when (Type.(=)(pe.Type, typeof<System.DateTime>) || Type.(=)(pe.Type, typeof<Option<System.DateTime>>) || Type.(=)(pe.Type, typeof<ValueOption<System.DateTime>>)) -> Some(alias, CanonicalOperation(CanonicalOp.DateDiffDays(SqlCol(al2,col2)), col), typ)
+        | "Seconds", (SqlColumnGet(al2,col2,typ2) as pe) when (Type.(=)(pe.Type, typeof<System.DateTime>) || Type.(=)(pe.Type, typeof<Option<System.DateTime>>) || Type.(=)(pe.Type, typeof<ValueOption<System.DateTime>>)) -> Some(alias, CanonicalOperation(CanonicalOp.DateDiffSecs(SqlCol(al2,col2)), col), typ)
+        | "Days", Constant(c,t) when Type.(=)(t, typeof<System.DateTime>) -> Some(alias, CanonicalOperation(CanonicalOp.DateDiffDays(SqlConstant(box c)), col), typ)
+        | "Seconds", Constant(c,t) when Type.(=)(t, typeof<System.DateTime>) -> Some(alias, CanonicalOperation(CanonicalOp.DateDiffSecs(SqlConstant(box c)), col), typ)
         | _ -> None
 
     // Numerical functions
     | _, OptionalFSharpOptionValue(MethodCallOrFSharpWrap(None, meth, ([OptionalFSharpOptionValue(OptionalConvertOrTypeAs(SqlColumnGet(alias, col, typ)) as pe)] as par)))
         when ((meth.Name = "Abs" || meth.Name = "Ceil" || meth.Name = "Floor" || meth.Name = "Round" || meth.Name = "Truncate" ||
                meth.Name = "Sqrt" || meth.Name = "Sin" || meth.Name = "Cos" || meth.Name = "Tan" || meth.Name = "ASin" || meth.Name = "ACos" || meth.Name = "ATan"
-              ) && (decimalTypes |> Array.exists((=) pe.Type))
-            || (meth.Name = "Abs" && integerTypes |> Array.exists((=) pe.Type))) -> 
+              ) && (decimalTypes |> Array.exists(fun t -> Type.(=)(pe.Type, t)))
+            || (meth.Name = "Abs" && integerTypes |> Array.exists(fun t -> Type.(=)(pe.Type, t)))) -> 
             
             match meth.Name, par with
             | "Abs", [_] -> Some(alias, CanonicalOperation(CanonicalOp.Abs, col), typ)
@@ -438,11 +521,11 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
     | _, OptionalFSharpOptionValue(MethodCall(None, meth, ([OptionalFSharpOptionValue(OptionalConvertOrTypeAs(SqlColumnGet(alias, col, typ)) as p1); par])))
         when (meth.Name = "Max" || meth.Name = "Min" || meth.Name = "Pow") -> 
             match meth.Name, par with
-            | "Max", (OptionalConvertOrTypeAs(SqlColumnGet(al2,col2,typ2)) as pe) when pe.Type = p1.Type -> Some(alias, CanonicalOperation(CanonicalOp.Greatest(SqlCol(al2,col2)), col), typ)
-            | "Min", (OptionalConvertOrTypeAs(SqlColumnGet(al2,col2,typ2)) as pe) when pe.Type = p1.Type -> Some(alias, CanonicalOperation(CanonicalOp.Least(SqlCol(al2,col2)), col), typ)
+            | "Max", (OptionalConvertOrTypeAs(SqlColumnGet(al2,col2,typ2)) as pe) when Type.(=)(pe.Type, p1.Type) -> Some(alias, CanonicalOperation(CanonicalOp.Greatest(SqlCol(al2,col2)), col), typ)
+            | "Min", (OptionalConvertOrTypeAs(SqlColumnGet(al2,col2,typ2)) as pe) when Type.(=)(pe.Type, p1.Type) -> Some(alias, CanonicalOperation(CanonicalOp.Least(SqlCol(al2,col2)), col), typ)
             | "Max", Constant(c,t) when t = p1.Type -> Some(alias, CanonicalOperation(CanonicalOp.Greatest(SqlConstant(c)), col), typ)
             | "Min", Constant(c,t) when t = p1.Type -> Some(alias, CanonicalOperation(CanonicalOp.Least(SqlConstant(c)), col), typ)
-            | "Pow", (OptionalConvertOrTypeAs(SqlColumnGet(al2,col2,typ2)) as pe) when pe.Type = p1.Type -> Some(alias, CanonicalOperation(CanonicalOp.Pow(SqlCol(al2,col2)), col), typ)
+            | "Pow", (OptionalConvertOrTypeAs(SqlColumnGet(al2,col2,typ2)) as pe) when Type.(=)(pe.Type, p1.Type) -> Some(alias, CanonicalOperation(CanonicalOp.Pow(SqlCol(al2,col2)), col), typ)
             | "Pow", Constant(c,t) when t = p1.Type -> Some(alias, CanonicalOperation(CanonicalOp.Pow(SqlConstant(c)), col), typ)
             | _ -> None
     | _, OptionalFSharpOptionValue(MethodCall(None, meth, ([Constant(c,typ); OptionalFSharpOptionValue(OptionalConvertOrTypeAs(SqlColumnGet(alias, col, typ2)) as p1)])))
@@ -466,10 +549,10 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
             | ExpressionType.Multiply -> "*"
             | ExpressionType.Divide -> "/"
             | ExpressionType.Modulo -> "%"
-            | _ -> failwith "Shouldn't hit"
+            | _ -> failwith ("Shouldn't hit " + op.ToString())
 
-        if be.Left.Type = typeof<System.DateTime> || be.Right.Type = typeof<System.DateTime> || be.Left.Type = typeof<Option<System.DateTime>> || be.Right.Type = typeof<Option<System.DateTime>>
-                || be.Left.Type = typeof<ValueOption<System.DateTime>> || be.Right.Type = typeof<ValueOption<System.DateTime>> then
+        if Type.(=)(be.Left.Type, typeof<System.DateTime>) || Type.(=)(be.Right.Type, typeof<System.DateTime>) || Type.(=)(be.Left.Type, typeof<Option<System.DateTime>>) || Type.(=)(be.Right.Type, typeof<Option<System.DateTime>>)
+                || Type.(=)(be.Left.Type, typeof<ValueOption<System.DateTime>>) || Type.(=)(be.Right.Type, typeof<ValueOption<System.DateTime>>) then
             // DateTime math operations are not supported directly as they return .NET TimeSpan which is not the clear translation of SQL.
             // You can use functions like .AddHours(), .AddDays(), .Subtract().Days and comparison.
             None
@@ -477,33 +560,33 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
 
         match be.Left, be.Right with
         | OptionalConvertOrTypeAs(OptionalFSharpOptionValue(SqlColumnGet(alias, col, typ))) as p1, OptionalConvertOrTypeAs(Constant(constVal,constTyp)) 
-            when (p1.Type = constTyp || (p1.Type.IsGenericType && (p1.Type.GetGenericTypeDefinition() = typedefof<Option<_>> || p1.Type.GetGenericTypeDefinition() = typedefof<ValueOption<_>>) && p1.Type.GenericTypeArguments.[0] = constTyp )
-                 || be.Left.Type = be.Right.Type) ->  // Support only numeric and string math
+            when (Type.(=)(p1.Type, constTyp) || (p1.Type.IsGenericType && (p1.Type.GetGenericTypeDefinition() = typedefof<Option<_>> || p1.Type.GetGenericTypeDefinition() = typedefof<ValueOption<_>>) && p1.Type.GenericTypeArguments.[0] = constTyp )
+                 || Type.(=)(be.Left.Type, be.Right.Type)) ->  // Support only numeric and string math
                 match p1.Type with
-                | t when (operation = "+" && (t = typeof<System.String> || t = typeof<System.Char> || t = typeof<Option<System.String>> || t = typeof<Option<System.Char>> || t = typeof<ValueOption<System.Char>>)) -> 
+                | t when (operation = "+" && (Type.(=)(t, typeof<System.String>) || Type.(=)(t, typeof<System.Char>) || Type.(=)(t, typeof<Option<System.String>>) || Type.(=)(t, typeof<Option<System.Char>>) || Type.(=)(t, typeof<ValueOption<System.Char>>))) -> 
                     // Standard SQL string concatenation is ||
                     Some(alias, CanonicalOperation(CanonicalOp.BasicMath("||", constVal), col), typ)
-                | t when (decimalTypes |> Seq.exists((=) t) || integerTypes |> Seq.exists((=) t)) ->
+                | t when (decimalTypes |> Seq.exists(fun tt -> Type.(=)(t, tt)) || integerTypes |> Seq.exists(fun tt -> Type.(=)(t, tt))) ->
                         Some(alias, CanonicalOperation(CanonicalOp.BasicMath(operation, constVal), col), typ)
                 | _ -> None
         | OptionalConvertOrTypeAs(Constant(constVal,constTyp)), (OptionalConvertOrTypeAs(OptionalFSharpOptionValue(SqlColumnGet(alias, col, typ))) as p1)
-            when (p1.Type = constTyp || (p1.Type.IsGenericType && (p1.Type.GetGenericTypeDefinition() = typedefof<Option<_>> || p1.Type.GetGenericTypeDefinition() = typedefof<ValueOption<_>>) && p1.Type.GenericTypeArguments.[0] = constTyp )
-                 || be.Left.Type = be.Right.Type) ->  // Support only numeric and string math
+            when (Type.(=)(p1.Type, constTyp) || (p1.Type.IsGenericType && (p1.Type.GetGenericTypeDefinition() = typedefof<Option<_>> || p1.Type.GetGenericTypeDefinition() = typedefof<ValueOption<_>>) && p1.Type.GenericTypeArguments.[0] = constTyp )
+                 || Type.(=)(be.Left.Type, be.Right.Type)) ->  // Support only numeric and string math
                 match p1.Type with
-                | t when (operation = "+" && (t = typeof<System.String> || t = typeof<System.Char> || t = typeof<Option<System.String>> || t = typeof<Option<System.Char>> || t = typeof<ValueOption<System.String>> || t = typeof<ValueOption<System.Char>>)) -> 
+                | t when (operation = "+" && (Type.(=)(t, typeof<System.String>) || Type.(=)(t, typeof<System.Char>) || Type.(=)(t, typeof<Option<System.String>>) || Type.(=)(t, typeof<Option<System.Char>>) || Type.(=)(t, typeof<ValueOption<System.String>>) || Type.(=)(t, typeof<ValueOption<System.Char>>))) -> 
                     // Standard SQL string concatenation is ||
                     Some(alias, CanonicalOperation(CanonicalOp.BasicMath("||", constVal), col), typ)
-                | t when (decimalTypes |> Seq.exists((=) t) || integerTypes |> Seq.exists((=) t)) ->
+                | t when (decimalTypes |> Seq.exists(fun tt -> Type.(=)(t, tt)) || integerTypes |> Seq.exists(fun tt -> Type.(=)(t, tt))) ->
                         Some(alias, CanonicalOperation(CanonicalOp.BasicMathLeft(operation, constVal), col), typ)
                 | _ -> None
         | OptionalConvertOrTypeAs(OptionalFSharpOptionValue(SqlColumnGet(aliasLeft, colLeft, typLeft))) as p1, (OptionalConvertOrTypeAs(OptionalFSharpOptionValue(SqlColumnGet(aliasRight, colRight, typRight))) as p2) 
-            when (p1.Type = p2.Type ||
+            when (Type.(=)(p1.Type, p2.Type) ||
                      (p1.Type.IsGenericType && (p1.Type.GetGenericTypeDefinition() = typedefof<Option<_>> || p1.Type.GetGenericTypeDefinition() = typedefof<ValueOption<_>>) && p1.Type.GenericTypeArguments.[0] = p2.Type ) ||
                      (p2.Type.IsGenericType && (p2.Type.GetGenericTypeDefinition() = typedefof<Option<_>> || p2.Type.GetGenericTypeDefinition() = typedefof<ValueOption<_>>) && p2.Type.GenericTypeArguments.[0] = p1.Type ) ||
-                         be.Left.Type = be.Right.Type) -> 
+                         Type.(=)(be.Left.Type, be.Right.Type)) -> 
                 let opFix = 
                     match p1.Type with
-                    | t when ((t = typeof<System.String> || t = typeof<System.Char> || t = typeof<Option<System.String>> || t = typeof<Option<System.Char>> || t = typeof<ValueOption<System.String>> || t = typeof<ValueOption<System.Char>>) && operation = "+") -> "||"
+                    | t when ((Type.(=)(t, typeof<System.String>) || Type.(=)(t, typeof<System.Char>) || Type.(=)(t, typeof<Option<System.String>>) || Type.(=)(t, typeof<Option<System.Char>>) || Type.(=)(t, typeof<ValueOption<System.String>>) || Type.(=)(t, typeof<ValueOption<System.Char>>)) && operation = "+") -> "||"
                     | _ -> operation
                 Some(aliasLeft, CanonicalOperation(CanonicalOp.BasicMathOfColumns(opFix, aliasRight, colRight), colLeft), typLeft)
         | _ -> None
@@ -518,11 +601,11 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
                 | OrElse(_) -> Or(conditions,nextFilter)
                 | _ -> failwith ("Filter problem: " + exp.ToString())
             match exp with
-            | AndAlsoOrElse(AndAlsoOrElse(_,_) as left, (AndAlsoOrElse(_,_) as right)) ->
+            | AndAlsoOrElse(AndAlsoOrElse(_) as left, (AndAlsoOrElse(_) as right)) ->
                 extendFilter [] (Some ([filterExpression left; filterExpression right]))
-            | AndAlsoOrElse(AndAlsoOrElse(_,_) as left,SimpleCondition(c))  ->
+            | AndAlsoOrElse(AndAlsoOrElse(_) as left,SimpleCondition(c))  ->
                 extendFilter [c] (Some ([filterExpression left]))
-            | AndAlsoOrElse(SimpleCondition(c),(AndAlsoOrElse(_,_) as right))  ->
+            | AndAlsoOrElse(SimpleCondition(c),(AndAlsoOrElse(_) as right))  ->
                 extendFilter [c] (Some ([filterExpression right]))
             | AndAlsoOrElse(SimpleCondition(c1) as cc1 ,SimpleCondition(c2)) as cc2 ->
                 if cc1 = cc2 then extendFilter [c1] None
@@ -531,16 +614,18 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
                 Condition.And([cond],None)
 
             // Support for simple boolean expressions:
-            | AndAlso(Bool(b), x) | AndAlso(x, Bool(b)) when b = true -> filterExpression x
-            | OrElse(Bool(b), x) | OrElse(x, Bool(b)) when b = false -> filterExpression x
+            | AndAlso(Bool(b), x) | AndAlso(x, Bool(b)) when b -> filterExpression x
+            | OrElse(Bool(b), x) | OrElse(x, Bool(b)) when not b -> filterExpression x
             | Bool(b) when b -> Condition.ConstantTrue
-            | Bool(b) when not(b) -> Condition.ConstantFalse
+            | Bool(b) when not b -> Condition.ConstantFalse
             | _ -> Condition.NotSupported exp
 
         let filter = filterExpression (ExpressionOptimizer.visit ce.Test)
 
         match filter, ce.IfTrue, ce.IfFalse with
         | Condition.NotSupported(x), _, _ -> None
+        | Condition.ConstantTrue, OptionalConvertOrTypeAs(SqlColumnGet(alias,col,typ)), _ -> Some(alias, col, typ)
+        | Condition.ConstantFalse, _, OptionalConvertOrTypeAs(SqlColumnGet(alias,col,typ)) -> Some(alias, col, typ)
         | _, OptionalConvertOrTypeAs(SqlColumnGet(al2,col2,typ2)), Constant(c, ct)  -> Some(al2, CanonicalOperation(CanonicalOp.CaseSql(filter, SqlConstant(c)), col2), typ2)
         | _, OptionalConvertOrTypeAs(SqlColumnGet(al2,col2,typ2)), OptionalConvertOrTypeAs(SqlColumnGet(al3,col3,typ3)) -> Some(al2, CanonicalOperation(CanonicalOp.CaseSql(filter, SqlCol(al3,col3)), col2), typ2)
         | _, Constant(c, ct), OptionalConvertOrTypeAs(SqlColumnGet(al2,col2,typ2)) -> Some(al2, CanonicalOperation(CanonicalOp.CaseNotSql(filter, SqlConstant(c)), col2), typ2)
@@ -550,31 +635,85 @@ let rec (|SqlColumnGet|_|) (e:Expression) =
         | _ -> None
 
     | ExpressionType.Call, (:? MethodCallExpression as e) when e.Method.Name = "Parse" && e.Arguments.Count = 1 && 
-                           (e.Type = typeof<System.DateTime> || e.Type = typeof<Option<System.DateTime>> || e.Type = typeof<ValueOption<System.DateTime>>) ->
+                           (Type.(=)(e.Type, typeof<System.DateTime>) || Type.(=)(e.Type, typeof<Option<System.DateTime>>) || Type.(=)(e.Type, typeof<ValueOption<System.DateTime>>)) ->
         // Don't do any magic, just: DateTime.Parse('2000-01-01') -> '2000-01-01'
         match e.Arguments.[0] with
-        | SqlColumnGet(alias, col, typ) when typ = typeof<String> || typ = typeof<Option<String>> || typ = typeof<ValueOption<String>> 
+        | SqlColumnGet(alias, col, typ) when Type.(=)(typ, typeof<String>) || Type.(=)(typ, typeof<Option<String>>) || Type.(=)(typ, typeof<ValueOption<String>>) 
             -> Some(alias, col, e.Type)
         | _ -> None
-
+    | ExpressionType.Call, (:? MethodCallExpression as e) when e.Method.Name = "Parse" && e.Arguments.Count = 1 && 
+                           (Type.(=)(e.Type, typeof<System.Int32>) || Type.(=)(e.Type, typeof<Option<System.Int32>>) || Type.(=)(e.Type, typeof<ValueOption<System.Int32>>)) ->
+        match e.Arguments.[0] with
+        | SqlColumnGet(alias, col, typ) when Type.(=)(typ, typeof<String>) || Type.(=)(typ, typeof<Option<String>>) || Type.(=)(typ, typeof<ValueOption<String>>) 
+            -> Some(alias, CanonicalOperation(CanonicalOp.CastInt, col), typ)
+        | _ -> None
+    | _, SqlSubtableColumnGet(alias,key,typ) -> Some(alias, key, typ)
     | _ -> None
 
 and (|SqlNegativeBooleanColumn|_|) (e:Expression) = 
     match e.NodeType, e with
     | ExpressionType.Not, (:? UnaryExpression as ue) ->
         match ue.Operand with
-        | SqlColumnGet(ti,key,ret) when ue.Operand.Type.FullName = "System.Boolean" || ret = typeof<bool> -> 
+        | SqlColumnGet(ti,key,ret) when ue.Operand.Type.FullName = "System.Boolean" || Type.(=)(ret, typeof<bool>) -> 
             Some(ti,key,ConditionOperator.Equal, Some(false |> box))
         | _ -> None
     | _ -> None
 
 //Simpler version of where Condition-pattern, used on case-when-clause
 and (|SimpleCondition|_|) exp =
-    let extractProperty op meth ti key =
+    let extractProperty op (meth:Expression) ti key =
         let invokation = 
-            // In case user feeds us incomplete lambda, we will not execute: the user might have a context needed for the compilation.
-            try Some(Expression.Lambda(meth).Compile().DynamicInvoke())
-            with err -> None
+            match meth.NodeType, meth with
+            | ExpressionType.Constant, (:? ConstantExpression as ce) -> Some ce.Value
+            | ExpressionType.MemberAccess, (:? MemberExpression as me) when (me.Expression :? ConstantExpression) ->
+                let ceVal = (me.Expression :?> ConstantExpression).Value
+                let myVal = 
+                    match me.Member with
+                    | :? FieldInfo as fieldInfo when not(isNull(fieldInfo)) ->
+                        fieldInfo.GetValue ceVal
+                    | :? PropertyInfo as propInfo when not(isNull(propInfo)) ->
+                        propInfo.GetValue(ceVal, null)
+                    | _ -> ceVal
+                Some myVal
+            | ExpressionType.Call, (:? MethodCallExpression as e) when e.Method.ReturnType.IsClass -> Some((Expression.Lambda(meth).Compile() :?> Func<_>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<Int32>) -> Some((Expression.Lambda(meth).Compile() :?> Func<Int32>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<Int64>) -> Some((Expression.Lambda(meth).Compile() :?> Func<Int64>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<Decimal>) -> Some((Expression.Lambda(meth).Compile() :?> Func<Decimal>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<DateTime>) -> Some((Expression.Lambda(meth).Compile() :?> Func<DateTime>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<Guid>) -> Some((Expression.Lambda(meth).Compile() :?> Func<Guid>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<Boolean>) -> Some((Expression.Lambda(meth).Compile() :?> Func<Boolean>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<Single>) -> Some((Expression.Lambda(meth).Compile() :?> Func<Single>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<Int16>) -> Some((Expression.Lambda(meth).Compile() :?> Func<Int16>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<UInt32>) -> Some((Expression.Lambda(meth).Compile() :?> Func<UInt32>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<UInt16>) -> Some((Expression.Lambda(meth).Compile() :?> Func<UInt16>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<UInt64>) -> Some((Expression.Lambda(meth).Compile() :?> Func<UInt64>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<Byte>) -> Some((Expression.Lambda(meth).Compile() :?> Func<Byte>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<Char>) -> Some((Expression.Lambda(meth).Compile() :?> Func<Char>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<DateTimeOffset>) -> Some((Expression.Lambda(meth).Compile() :?> Func<DateTimeOffset>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<TimeSpan>) -> Some((Expression.Lambda(meth).Compile() :?> Func<TimeSpan>).Invoke() |> box)
+
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<Int32>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Int32>>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<Int64>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Int64>>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<Decimal>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Decimal>>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<DateTime>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<DateTime>>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<Guid>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Guid>>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<Boolean>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Boolean>>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<Single>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Single>>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<Int16>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Int16>>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<UInt32>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<UInt32>>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<UInt16>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<UInt16>>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<UInt64>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<UInt64>>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<Byte>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Byte>>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<Char>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Char>>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<DateTimeOffset>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<DateTimeOffset>>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<TimeSpan>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<TimeSpan>>).Invoke() |> box)
+            | ExpressionType.MemberAccess, (:? MemberExpression as me) when Type.(=)(me.Type, typeof<DateTime>) && me.Member.Name = "Now" -> Some(DateTime.Now |> box)
+            | ExpressionType.MemberAccess, (:? MemberExpression as me) when Type.(=)(me.Type, typeof<DateTime>) && me.Member.Name = "UtcNow" -> Some(DateTime.UtcNow |> box)
+            | _ ->
+                // In case user feeds us incomplete lambda, we will not execute: the user might have a context needed for the compilation.
+                try
+                    Some(Expression.Lambda(meth).Compile().DynamicInvoke())
+                with err -> None
         match invokation with
         | None -> None
         | Some invokedResult -> 
@@ -585,7 +724,7 @@ and (|SimpleCondition|_|) exp =
                 | ConditionOperator.NotEqual -> Some(ti,key,ConditionOperator.NotNull,None)
                 | _ -> Some(ti,key,op,Some(invokedResult))
 
-            if invokedResult = null then handleNullCompare()
+            if isNull invokedResult then handleNullCompare()
             else
             let retType = invokedResult.GetType()
             if retType.IsGenericType && (retType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpOption") ||
@@ -635,7 +774,7 @@ and (|SimpleCondition|_|) exp =
     | SqlCondOp(op,OptionalConvertOrTypeAs(OptionalFSharpOptionValue((((:? MemberExpression) | (:? MethodCallExpression) | (:? NewExpression)) as meth))),OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_)))
     | SqlNegativeCondOp(op,OptionalConvertOrTypeAs(OptionalFSharpOptionValue((((:? MemberExpression) | (:? MethodCallExpression) | (:? NewExpression)) as meth))),OptionalConvertOrTypeAs(SqlColumnGet(ti,key,_))) ->
         extractProperty (swapOp op) meth ti key
-    | SqlColumnGet(ti,key,ret) when exp.Type.FullName = "System.Boolean" || ret = typeof<bool> -> 
+    | SqlColumnGet(ti,key,ret) when exp.Type.FullName = "System.Boolean" || Type.(=)(ret, typeof<bool>) -> 
         Some(ti,key,ConditionOperator.Equal, Some(true |> box))
     | SqlNegativeBooleanColumn(ti,key,e,v) -> 
         Some(ti,key,e, v)
@@ -656,6 +795,7 @@ and (|SqlSpecialOpArr|_|) = function
     | MethodCall(None,MethodWithName("op_BarEqualsBar"), [SqlColumnGet(ti,key,_); SeqValues values]) -> Some(ti, ConditionOperator.In, key, values)
     | MethodCall(None,MethodWithName("op_BarLessGreaterBar"),[SqlColumnGet(ti,key,_); SeqValues values]) -> Some(ti, ConditionOperator.NotIn, key, values)
     | MethodCall(None,MethodWithName("Contains"), [SeqValues values; SqlColumnGet(ti,key,_)]) -> Some(ti, ConditionOperator.In, key, values)
+    | MethodCall(Some((SeqValues values) as setVals),MethodWithName("Contains"), [SqlColumnGet(ti,key,_)]) when setVals.Type.IsGenericType -> Some(ti, ConditionOperator.In, key, values)
     | _ -> None
 
 and (|SqlSpecialOpArrQueryable|_|) = function
@@ -665,26 +805,27 @@ and (|SqlSpecialOpArrQueryable|_|) = function
     | MethodCall(None,MethodWithName("Contains"), [SeqValuesQueryable values; SqlColumnGet(ti,key,_)]) -> Some(ti, ConditionOperator.NestedIn, key, values)
     | _ -> None
     
-and (|SqlSpecialOp|_|) : Expression -> _ = function
-    | MethodCall(None,MethodWithName("op_EqualsPercent"), [SqlColumnGet(ti,key,_); right]) -> Some(ti,ConditionOperator.Like,   key,Expression.Lambda(right).Compile().DynamicInvoke())
-    | MethodCall(None,MethodWithName("op_LessGreaterPercent"),[SqlColumnGet(ti,key,_); right]) -> Some(ti,ConditionOperator.NotLike,key,Expression.Lambda(right).Compile().DynamicInvoke())
+and (|SqlSpecialOp|_|) e =
+    match e with
+    | MethodCall(None,MethodWithName("op_EqualsPercent"), [SqlColumnGet(ti,key,_); right]) -> Some(ti,ConditionOperator.Like,   key,getRightFromOp right)
+    | MethodCall(None,MethodWithName("op_LessGreaterPercent"),[SqlColumnGet(ti,key,_); right]) -> Some(ti,ConditionOperator.NotLike,key,getRightFromOp right)
     // String  methods
-    | MethodCall(Some(OptionalFSharpOptionValue(SqlColumnGet(ti,key,t))), MethodWithName "Contains", [right]) when t = typeof<string> || t = typeof<Option<string>> || t = typeof<ValueOption<string>> -> 
-        Some(ti,ConditionOperator.Like,key,box (sprintf "%%%O%%" (Expression.Lambda(right).Compile().DynamicInvoke())))
-    | MethodCall(Some(OptionalFSharpOptionValue(SqlColumnGet(ti,key,t))), MethodWithName "StartsWith", [right]) when t = typeof<string> || t = typeof<Option<string>> || t = typeof<ValueOption<string>> -> 
-        Some(ti,ConditionOperator.Like,key,box (sprintf "%O%%" (Expression.Lambda(right).Compile().DynamicInvoke())))
-    | MethodCall(Some(OptionalFSharpOptionValue(SqlColumnGet(ti,key,t))), MethodWithName "EndsWith", [right]) when t = typeof<string> || t = typeof<Option<string>> || t = typeof<ValueOption<string>> -> 
-        Some(ti,ConditionOperator.Like,key,box (sprintf "%%%O" (Expression.Lambda(right).Compile().DynamicInvoke())))
+    | MethodCall(Some(OptionalFSharpOptionValue(SqlColumnGet(ti,key,t))), MethodWithName "Contains", [right]) when Type.(=)(t, typeof<string>) || Type.(=)(t, typeof<Option<string>>) || Type.(=)(t, typeof<ValueOption<string>>) -> 
+        Some(ti,ConditionOperator.Like,key,box (sprintf "%%%O%%" (getRightFromOp right)))
+    | MethodCall(Some(OptionalFSharpOptionValue(SqlColumnGet(ti,key,t))), MethodWithName "StartsWith", [right]) when Type.(=)(t, typeof<string>) || Type.(=)(t, typeof<Option<string>>) || Type.(=)(t, typeof<ValueOption<string>>) -> 
+        Some(ti,ConditionOperator.Like,key,box (sprintf "%O%%" (getRightFromOp right)))
+    | MethodCall(Some(OptionalFSharpOptionValue(SqlColumnGet(ti,key,t))), MethodWithName "EndsWith", [right]) when Type.(=)(t, typeof<string>) || Type.(=)(t, typeof<Option<string>>) || Type.(=)(t, typeof<ValueOption<string>>) -> 
+        Some(ti,ConditionOperator.Like,key,box (sprintf "%%%O" (getRightFromOp right)))
     
     // not (String  methods)
     | :? UnaryExpression as ue when ue.NodeType = ExpressionType.Not -> 
         match ue.Operand with
-        | MethodCall(Some(OptionalFSharpOptionValue(SqlColumnGet(ti,key,t))), MethodWithName "Contains", [right]) when t = typeof<string> || t = typeof<Option<string>> || t = typeof<ValueOption<string>> -> 
-            Some(ti,ConditionOperator.NotLike,key,box (sprintf "%%%O%%" (Expression.Lambda(right).Compile().DynamicInvoke())))
-        | MethodCall(Some(OptionalFSharpOptionValue(SqlColumnGet(ti,key,t))), MethodWithName "StartsWith", [right]) when t = typeof<string> || t = typeof<Option<string>> || t = typeof<ValueOption<string>> -> 
-            Some(ti,ConditionOperator.NotLike,key,box (sprintf "%O%%" (Expression.Lambda(right).Compile().DynamicInvoke())))
-        | MethodCall(Some(OptionalFSharpOptionValue(SqlColumnGet(ti,key,t))), MethodWithName "EndsWith", [right]) when t = typeof<string> || t = typeof<Option<string>> || t = typeof<ValueOption<string>> -> 
-            Some(ti,ConditionOperator.NotLike,key,box (sprintf "%%%O" (Expression.Lambda(right).Compile().DynamicInvoke())))
+        | MethodCall(Some(OptionalFSharpOptionValue(SqlColumnGet(ti,key,t))), MethodWithName "Contains", [right]) when Type.(=)(t, typeof<string>) || Type.(=)(t, typeof<Option<string>>) || Type.(=)(t, typeof<ValueOption<string>>) -> 
+            Some(ti,ConditionOperator.NotLike,key,box (sprintf "%%%O%%" (getRightFromOp right)))
+        | MethodCall(Some(OptionalFSharpOptionValue(SqlColumnGet(ti,key,t))), MethodWithName "StartsWith", [right]) when Type.(=)(t, typeof<string>) || Type.(=)(t, typeof<Option<string>>) || Type.(=)(t, typeof<ValueOption<string>>) -> 
+            Some(ti,ConditionOperator.NotLike,key,box (sprintf "%O%%" (getRightFromOp right)))
+        | MethodCall(Some(OptionalFSharpOptionValue(SqlColumnGet(ti,key,t))), MethodWithName "EndsWith", [right]) when Type.(=)(t, typeof<string>) || Type.(=)(t, typeof<Option<string>>) || Type.(=)(t, typeof<ValueOption<string>>) -> 
+            Some(ti,ConditionOperator.NotLike,key,box (sprintf "%%%O" (getRightFromOp right)))
         | _ -> None
     | _ -> None
                 
@@ -694,6 +835,7 @@ and (|SqlSpecialNegativeOpArr|_|) (e:Expression) =
     | ExpressionType.Not, (:? UnaryExpression as ue) ->
         match ue.Operand with
         | MethodCall(None,MethodWithName("Contains"), [SeqValues values; SqlColumnGet(ti,key,_)]) -> Some(ti, ConditionOperator.NotIn, key, values)
+        | MethodCall(Some((SeqValues values) as setVals),MethodWithName("Contains"), [SqlColumnGet(ti,key,_)]) when setVals.Type.IsGenericType -> Some(ti, ConditionOperator.NotIn, key, values)
         | _ -> None
     | _ -> None
 

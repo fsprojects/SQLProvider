@@ -1,3 +1,186 @@
+### 1.4.12 - 12.03.2025
+* Some performance updates
+* Memory consumption reduced
+
+### 1.4.9 - 23.02.2025
+* PostgreSQL primary key uppercase fix, PR #842
+
+### 1.4.8 - 13.02.2025
+* Dependency updates
+
+### 1.4.7 - 07.02.2025
+* Postgres 8 TimestampTz fix part 2
+
+### 1.4.6 - 07.02.2025
+* More design-time refactorings
+* Assembly loading improvement
+* Postgres 8 TimestampTz fix
+
+### 1.4.5 - 04.02.2025
+* Design-time refactorings
+
+### 1.4.4 - 04.02.2025
+* Update to support segregation of read and read+write operations on type-level (via dataContext and readDataContext)
+
+### 1.4.3 - 15.01.2025
+* TypeProviders SDK update
+
+### 1.4.2 - 07.11.2024
+* Performance optimization: Faster type-checks
+
+### 1.4.1 - 18.10.2024
+* Fixed navigation propery parameter names on async aggregate operations
+* Better ConditionalExpression with ConstantExpression evaluation
+
+### 1.4.0 - 27.09.2024
+* F# dependency from 6.0.7 to 8.0.301
+* Build with .NET 8.0 compiler
+* .NET Framework 4.7.2 to 4.8
+
+### 1.3.54 - 13.02.2025
+* Dependency updates
+
+### 1.3.53 - 07.02.2025
+* More design-time refactorings
+* Assembly loading improvement
+
+### 1.3.52 - 04.02.2025
+* Design-time refactorings
+
+### 1.3.51 - 04.02.2025
+* Update to support segregation of read and read+write operations on type-level (via dataContext and readDataContext)
+
+### 1.3.50 - 15.01.2025
+* TypeProviders SDK update
+
+### 1.3.49 - 18.10.2024
+* Performance optimization: Faster type-checks
+
+### 1.3.48 - 18.10.2024
+* Fixed navigation propery parameter names on async aggregate operations
+
+### 1.3.47 - 09.10.2024
+* Better ConditionalExpression with ConstantExpression evaluation
+
+### 1.3.46 - 16.09.2024
+* Ssdt performance optimisations, and some lists to arrays to reduce memory footprint, PR#832
+* May need refresh for saved SchemaCache due to list to array change.
+
+### 1.3.45 - 09.09.2024
+* Fix cached return columns for function, PR#830
+* Support for more complex sortBys
+* More efficient async-head queries, PR#831
+
+### 1.3.43 - 08.07.2024
+* Fixed potential regression issue of 1.3.42
+
+### 1.3.42 - 04.07.2024
+* Minor performance improvements
+
+### 1.3.41 - 29.06.2024
+* More improvements on group-by queries support
+
+### 1.3.40 - 27.06.2024
+* Improvements on group-by queries
+
+### 1.3.39 - 21.06.2024
+* Small performance optimisations
+
+### 1.3.38 - 05.06.2024
+* Oracle, Postges and Firebird: Support computed columns, PR #824
+
+### 1.3.37 - 25.05.2024
+* Initial support for DuckDB, PR #823
+
+### 1.3.36 - 19.04.2024
+* ResolutionPath assembly load fix, fix for #818
+
+### 1.3.35 - 09.04.2024
+* Support navigation property queries in mocks
+
+### 1.3.34 - 04.04.2024
+* Minor performance improvement
+
+### 1.3.33 - 01.04.2024
+* Small memory footprint reduction
+
+### 1.3.32 - 27.03.2024
+* Postgres error message improvement
+
+### 1.3.31 - 25.03.2024
+* Trim paths in semicolon separator in ResolutionPath static parameter
+
+### 1.3.30 - 18.03.2024
+* IWithDataContext moved from FSharp.Data.Sql.Runtime to FSharp.Data.Sql.Common
+* Support Create(...) in unit-tests
+
+### 1.3.29 - 12.03.2024
+* SQLite transactions support for Microsoft.Data.Sqlite driver, PR #817
+
+### 1.3.28 - 11.03.2024
+* Support for semicolon separator in ResolutionPath static parameter
+* Expression optimization update
+
+### 1.3.27 - 29.02.2024
+* Mock context improved
+
+### 1.3.26 - 27.02.2024
+* Helper method for unit-testing SQL: way to mock data-context
+
+### 1.3.25 - 27.02.2024
+* Helper method for unit-testing SQL: way to mock data-tables
+
+### 1.3.24 - 23.02.2024
+* Support implicit converts from AddDays, AddHours, AddMinutes and AddSeconds int to float
+
+### 1.3.23 - 11.01.2024
+* PostgreSQL fixed invalid cast on array_dimensions on new npgsql driver.
+* Microsoft SQL Database reference driver update
+
+### 1.3.22 - 13.11.2023
+* Minor performance improvements via ProvidedTypes update
+
+### 1.3.21 - 10.11.2023
+* Support Set in LINQ queries
+
+### 1.3.19 - 30.10.2023
+* Fixed param picking from nested SQL with navigation properties
+* Added Int32.Parse to SQL translations
+
+### 1.3.18 - 22.10.2023
+* SqlEventData rendering improved
+
+### 1.3.17 - 21.10.2023
+* More performance optimizations of non-trivial queries
+
+### 1.3.16 - 21.10.2023
+* Individuals added to ContextSchemaCache
+* Better parameter type instantiation 
+* Fixed null-refernce exception on some database drivers
+
+### 1.3.15 - 19.10.2023
+* Less type-loading requirements 
+* Better parameter type instantiation
+
+### 1.3.14 - 10.10.2023
+* More performance updates
+* Support FSharp built-in isNull function
+
+### 1.3.12 - 07.10.2023
+* Some performance updates PR #802
+
+### 1.3.11 - 13.07.2023
+* SubmitUpdates time-based ordering PR #797
+
+### 1.3.10 - 19.06.2023
+* Even better way of updating thousands of entities
+
+### 1.3.9 - 15.06.2023
+* Avoid stackoverflow when updating thousands of entities
+
+### 1.3.8 - 12.05.2023
+* MySql support for OnConnflict, PR #790
+
 ### 1.3.7 - 08.03.2023
 * ODBC: Support for views, PR #788
 * SQLite: Support for columns outside pragma info PR #787
@@ -67,6 +250,11 @@
 ### 1.2.0 - 05.03.2021
 * Packaged from the .NET Standard branch (merged to master).
 * Removed support from .NET 3.5 and .NET 4.6.1: The least is .NET 4.7.2.
+
+### 1.1.102 - 03.04.2022
+* Service release due to NuGet downloads of old 1.1.101
+* Taken some of 1.3.x SQL and performance improvements and memory reductions to 1.1.x.
+* No dependencies updates, no still using old async, etc.
 
 ### 1.1.101 - 07.02.2021
 * Minor SSDT improvements

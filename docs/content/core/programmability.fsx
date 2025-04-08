@@ -1,7 +1,7 @@
 (*** hide ***)
-#I @"../../../bin/netstandard2.0"
+#I @"../../../bin/lib/netstandard2.0"
 (*** hide ***)
-#r @"../../../bin/netstandard2.0/FSharp.Data.SqlProvider.dll"
+#r @"../../../bin/lib/netstandard2.0/FSharp.Data.SqlProvider.dll"
 (*** hide ***)
 open System
 (*** hide ***)
@@ -44,7 +44,7 @@ let uspGetManagerEmployees =
     async {
         let! res = ctx.Procedures.UspGetManagerEmployees.InvokeAsync 2
         let mapped = res.ResultSet |> Array.map(fun i -> i.ColumnValues |> Map.ofSeq)
-        mapped |> Array.iter(fun i -> 
+        mapped |> Array.iter(fun i ->
             printfn "Name: %O, Level: %O" i.["FirstName"] i.["RecursionLevel"]
         )
     } |> Async.StartAsTask

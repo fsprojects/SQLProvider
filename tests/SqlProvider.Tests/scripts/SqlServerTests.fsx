@@ -1,18 +1,19 @@
+#r "nuget: System.Data.SqlClient"
+#r "nuget: Microsoft.Data.SqlClient"
 
 // This is with classic FSI:
-#I @"../../../bin/net472"
-#r @"../../../bin/net472/FSharp.Data.SqlProvider.dll"
+#I @"../../../bin/lib/net48"
+#r @"../../../bin/lib/net48/FSharp.Data.SqlProvider.dll"
 // This is with dotnet.exe fsi:
-#I @"../../../bin/netstandard2.0"
-#r @"../../../bin/netstandard2.0/FSharp.Data.SqlProvider.dll"
-
+#I @"../../../bin/lib/netstandard2.1"
+#r @"../../../bin/lib/netstandard2.1/FSharp.Data.SqlProvider.dll"
 
 open System
 open FSharp.Data.Sql
 
 [<Literal>]
-let connStr = @"Data Source=localhost;Initial Catalog=HR; Integrated Security=True"
-//let connStr = "Data Source=SQLSERVER;Initial Catalog=HR;User Id=sa;Password=password"
+let connStr = @"Data Source=localhost;Initial Catalog=HR; Integrated Security=True; TrustServerCertificate=true"
+//let connStr = "Data Source=SQLSERVER;Initial Catalog=HR;User Id=sa;Password=password; TrustServerCertificate=true"
 
 [<Literal>]
 let resolutionFolder = __SOURCE_DIRECTORY__ + "/../libs"
@@ -34,18 +35,17 @@ type Employee = {
 
 //***************** Individuals ***********************//
 let indv = ctx.Dbo.Employees.Individuals.``As FirstName``.``100, Steven``
-
 indv.FirstName + " " + indv.LastName + " " + indv.Email
 
 
 //*************** QUERY ************************//
-let employeesFirstName = 
+let employeesFirstName =
     query {
         for emp in ctx.Dbo.Employees do
         select emp.FirstName
     } |> Seq.toList
 
-let employeesFirstNameAsync = 
+let employeesFirstNameAsync =
     query {
         for emp in ctx.Dbo.Employees do
         select emp.FirstName
@@ -55,20 +55,20 @@ let employeesFirstNameAsync =
 // Column-level descriptions work also, but they are not included to exported SQL-scripts by SQL-server.
 
 //Ref issue #92
-let employeesFirstNameEmptyList = 
+let employeesFirstNameEmptyList =
     query {
         for emp in ctx.Dbo.Employees do
         where (emp.EmployeeId > 10000)
         select emp
     } |> Seq.toList
 
-let regionsEmptyTable = 
+let regionsEmptyTable =
     query {
         for r in ctx.Dbo.Regions do
         select r
     } |> Seq.toList
 
-//let tableWithNoKey = 
+//let tableWithNoKey =
 //    query {
 //        for r in ctx.Dbo.Table1 do
 //        select r.Col
@@ -78,16 +78,16 @@ let regionsEmptyTable =
 //entity.Col <- 123uy
 //ctx.SubmitUpdates()
 
-let salesNamedDavid = 
+let salesNamedDavid =
     query {
             for emp in ctx.Dbo.Employees do
             join d in ctx.Dbo.Departments on (emp.DepartmentId = d.DepartmentId)
             where (d.DepartmentName |=| [|"Sales";"IT"|] && emp.FirstName =% "David")
             select (d.DepartmentName, emp.FirstName, emp.LastName)
-            
+
     } |> Seq.toList
 
-let employeesJob = 
+let employeesJob =
     let dbo = ctx.Dbo
     query {
             for emp in dbo.Employees do
@@ -98,24 +98,24 @@ let employeesJob =
     } |> Seq.toList
 
 //Can map SQLEntities to a domain type
-let topSales5ByCommission = 
+let topSales5ByCommission =
     query {
         for emp in ctx.Dbo.Employees do
         sortByDescending emp.CommissionPct
         select emp
         take 5
-    } 
+    }
     |> Seq.map (fun e -> e.MapTo<Employee>())
     |> Seq.toList
 
-let pagingTest = 
+let pagingTest =
     query {
         for emp in ctx.Dbo.Employees do
         sortByDescending emp.CommissionPct
         select emp
         skip 2
         take 5
-    } 
+    }
     |> Seq.map (fun e -> e.MapTo<Employee>())
     |> Seq.toList
 
@@ -136,14 +136,14 @@ type Country = {
 }
 
 //Can customise SQLEntity mapping
-let countries = 
+let countries =
     query {
         for emp in ctx.Dbo.Countries do
         select emp
-    } 
-    |> Seq.map (fun e -> e.MapTo<Country>(fun (prop,value) -> 
+    }
+    |> Seq.map (fun e -> e.MapTo<Country>(fun (prop,value) ->
                                                match prop with
-                                               | "Other" -> 
+                                               | "Other" ->
                                                     if value <> null
                                                     then JsonConvert.DeserializeObject<OtherCountryInformation>(value :?> string) |> box
                                                     else Unchecked.defaultof<OtherCountryInformation> |> box
@@ -155,7 +155,7 @@ let countries =
 
 open System.Linq
 
-let nestedQueryTest = 
+let nestedQueryTest =
     let qry1 = query {
         for emp in ctx.Dbo.Employees do
         where (emp.FirstName.StartsWith("S"))
@@ -169,24 +169,24 @@ let nestedQueryTest =
 
 
 let ``simple math operationsquery``() =
-    let itemOf90 = 
+    let itemOf90 =
         query {
             for p in ctx.Dbo.Departments do
             where (p.DepartmentId - 85 = 5)
-            select p.DepartmentId 
+            select p.DepartmentId
         } |> Seq.toList
 
-    let ``should be empty`` = 
+    let ``should be empty`` =
         query {
             for p in ctx.Dbo.Departments do
             where (p.DepartmentId <> 100 &&  (p.DepartmentId - 100 = 100 - p.DepartmentId))
-            select p.DepartmentId 
+            select p.DepartmentId
         } |> Seq.toList
     itemOf90, ``should be empty``
 
 
-let ``simplest select query with groupBy key aggregate``() = 
-    let qry = 
+let ``simplest select query with groupBy key aggregate``() =
+    let qry =
         query {
             for cust in ctx.Dbo.Employees do
             groupBy (cust.LastName+"1") into g
@@ -195,14 +195,14 @@ let ``simplest select query with groupBy key aggregate``() =
 
     qry
 
-let canoncicalOpTest = 
+let canoncicalOpTest =
     query {
         // Silly query not hitting indexes, so testing purposes only...
         for job in ctx.Dbo.Jobs do
         join emp in ctx.Dbo.Employees on (job.JobId.Trim() + "z" = emp.JobId.Trim() + "z")
         where (
             floor(job.MaxSalary)+1m > 4m
-            && emp.Email.Length > 1  
+            && emp.Email.Length > 1
             && emp.HireDate.Date.AddYears(-3).Year + 1 > 1997
             && emp.HireDate.AddDays(1.).Subtract(emp.HireDate).Days = 1
         )
@@ -222,8 +222,8 @@ let antartica =
         } |> Seq.toList
     match result with
     | [ant] -> ant
-    | _ -> 
-        let newRegion = ctx.Dbo.Regions.Create() 
+    | _ ->
+        let newRegion = ctx.Dbo.Regions.Create()
         newRegion.RegionName <- "Antartica"
         newRegion.RegionId <- 5
         ctx.SubmitUpdates()
@@ -266,7 +266,7 @@ let locations_and_regions =
     [
       for e in results.ResultSet do
         yield e.ColumnValues |> Seq.toList |> box
-              
+
       for e in results.ResultSet_1 do
         yield e.MapTo<Region>() |> box
     ]
@@ -284,7 +284,7 @@ getemployees (new System.DateTime(1999,4,1))
 
 
 // Distinct alias test
-let employeesFirstNameSort = 
+let employeesFirstNameSort =
     query {
         for emp in ctx.Dbo.Employees do
         sortBy (emp.FirstName)
@@ -292,7 +292,7 @@ let employeesFirstNameSort =
     } |> Seq.toList
 
 // Standard deviation test
-let stdDevTest = 
+let stdDevTest =
     query {
         for emp in ctx.Dbo.Employees do
         select (float emp.Salary)
@@ -304,7 +304,7 @@ let stdDevTest =
 query {
     for c in ctx.Dbo.Employees do
     where (c.FirstName = "Tuomas")
-} |> Seq.``delete all items from single table`` 
+} |> Seq.``delete all items from single table``
 |> Async.AwaitTask
 |> Async.RunSynchronously
 
@@ -313,13 +313,13 @@ query {
 type HR2 = SqlDataProvider<Common.DatabaseProviderTypes.MSSQLSERVER, connStr, ResolutionPath = resolutionFolder, UseOptionTypes = FSharp.Data.Sql.Common.NullableColumnType.OPTION>
 let ctxOpt = HR2.GetDataContext()
 
-let getOptionFilter (postcode : string option) = 
+let getOptionFilter (postcode : string option) =
     query {
         for loc in ctxOpt.Dbo.Locations do
         where (loc.PostalCode = postcode)
         select (loc.LocationId)
         headOrDefault
-    } 
+    }
 
 getOptionFilter None
 getOptionFilter (Some "E145AB")

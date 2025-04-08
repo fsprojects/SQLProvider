@@ -7,11 +7,12 @@ System.IO
 System.Console
 System.Reflection
 System.Reflection.TypeExtensions
-System.Data.SqlClient framework: net461, net472, net480, netstandard2.0, netstandard2.1, netcoreapp2.1, netcoreapp3.1
+System.Data.SqlClient
 System.Data.Common
 System.Data.Odbc
 System.Data.OleDb
-Microsoft.Data.SqlClient framework: net6.0, netstandard2.1
+Microsoft.Data.SqlClient framework: net8.0, net6.0, netstandard2.1
+System.Memory
 group SourceFiles
 File:ProvidedTypes.fsi
 File:ProvidedTypes.fs

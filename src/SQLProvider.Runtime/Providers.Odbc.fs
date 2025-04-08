@@ -41,7 +41,7 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
         let dt = con.GetSchema("DataTypes")
 
         let getDbType(providerType:int) =
-            let p = new OdbcParameter()
+            let p = OdbcParameter()
             p.OdbcType <- (Enum.ToObject(typeof<OdbcType>, providerType) :?> OdbcType)
             p.DbType
 
@@ -58,7 +58,7 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
                         let dbType = getDbType providerType
                         yield { ProviderTypeName = ValueSome oleDbType; ClrType = clrType; DbType = dbType; ProviderType = ValueSome providerType; }
                     
-                    if r.Table <> null && r.Table.Columns.Contains("DataType")  && r.Table.Columns.Contains("TypeName")  && r.Table.Columns.Contains("ProviderDbType") then
+                    if (not(isNull r.Table)) && r.Table.Columns.Contains("DataType")  && r.Table.Columns.Contains("TypeName")  && r.Table.Columns.Contains("ProviderDbType") then
                         let clrType = getClrType (r.Table.Columns.["DataType"].DataType.ToString())
                         let oleDbType = r.Table.Columns.["TypeName"].DataType.ToString()
                         let providerType = unbox<int> r.Table.Columns.["ProviderDbType"].Ordinal
@@ -115,8 +115,10 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
         let (~~) (t:string) = sb.Append t |> ignore
         let cmd = new OdbcCommand()
         cmd.Connection <- con :?> OdbcConnection
-        let haspk = schemaCache.PrimaryKeys.ContainsKey(entity.Table.FullName)
-        let pk = if haspk then schemaCache.PrimaryKeys.[entity.Table.FullName] else []
+        let pk =
+            match schemaCache.PrimaryKeys.TryGetValue entity.Table.FullName with
+            | true, pk -> pk
+            | false, _ -> []
         sb.Clear() |> ignore
 
         match pk with
@@ -146,7 +148,7 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
         | [x] ->
             ~~(sprintf "UPDATE %c%s%c SET %s WHERE %s = ?;"
                 cOpen entity.Table.Name cClose
-                (String.Join(",", data |> Array.map(fun (c,_) -> sprintf "%c%s%c = %s" cOpen c cClose "?" ) ))
+                (String.concat "," (data |> Array.map(fun (c,_) -> sprintf "%c%s%c = %s" cOpen c cClose "?" ) ))
                 x)
         | ks -> 
             // TODO: What is the ?-mark parameter? Look from other providers how this is done.
@@ -166,8 +168,10 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
         let cmd = new OdbcCommand()
         cmd.Connection <- con :?> OdbcConnection
         sb.Clear() |> ignore
-        let haspk = schemaCache.PrimaryKeys.ContainsKey(entity.Table.FullName)
-        let pk = if haspk then schemaCache.PrimaryKeys.[entity.Table.FullName] else []
+        let pk =
+            match schemaCache.PrimaryKeys.TryGetValue entity.Table.FullName with
+            | true, pk -> pk
+            | false, _ -> []
         sb.Clear() |> ignore
         let pkValues =
             match entity.GetPkColumnOption<obj> pk with
@@ -187,9 +191,12 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
         cmd
 
     interface ISqlProvider with
+        member __.CloseConnectionAfterQuery = true
+        member __.DesignConnection = true
+        member __.StoredProcedures = true
         member __.GetLockObject() = myLock
         member __.GetTableDescription(con,tableName) = 
-            let t = tableName.Substring(tableName.LastIndexOf(".")+1)
+            let t = tableName.Substring(tableName.LastIndexOf('.')+1)
             let table = (con:?>OdbcConnection).GetSchema("Tables",[|null;null;t.Replace("\"", "")|]).AsEnumerable()
             let view = (con:?>OdbcConnection).GetSchema("Views",[|null;null;t.Replace("\"", "")|]).AsEnumerable() 
             let desc = 
@@ -208,7 +215,7 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
             | _ -> ""
 
         member __.GetColumnDescription(con,tableName,columnName) = 
-            let t = tableName.Substring(tableName.LastIndexOf(".")+1) 
+            let t = tableName.Substring(tableName.LastIndexOf('.')+1) 
             let desc = 
                 (con:?>OdbcConnection).GetSchema("Columns",[|null;null;t.Replace("\"", "");columnName|]).AsEnumerable() 
                 |> Seq.map(fun row ->
@@ -241,7 +248,7 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
             let odbcCommand = new OdbcCommand("{call " + com.CommandText + " (?)}")
             let inputParameters = inputParams |> Array.filter (fun p -> p.Direction = ParameterDirection.Input)
             odbcCommand.CommandType <- CommandType.StoredProcedure;
-            inputParameters |> Array.iter (fun (p) -> odbcCommand.Parameters.Add(p) |> ignore)
+            inputParameters |> Array.iter (odbcCommand.Parameters.Add >> ignore)
             odbcCommand.ExecuteNonQuery() |> ignore
             ReturnValueType.Unit
 
@@ -251,7 +258,7 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
                 let odbcCommand = new OdbcCommand("{call " + com.CommandText + " (?)}")
                 let inputParameters = inputParams |> Array.filter (fun p -> p.Direction = ParameterDirection.Input)
                 odbcCommand.CommandType <- CommandType.StoredProcedure;
-                inputParameters |> Array.iter (fun (p) -> odbcCommand.Parameters.Add(p) |> ignore)
+                inputParameters |> Array.iter (odbcCommand.Parameters.Add >> ignore)
                 let! r = odbcCommand.ExecuteNonQueryAsync()
                 return ReturnValueType.Unit
             }
@@ -272,7 +279,7 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
 
                 let table ={ Schema = schema ; Name = string dataTable.[2] ; Type=(string dataTable.[3]).ToLower() }
                 yield schemaCache.Tables.GetOrAdd(table.FullName,table)
-                ]
+                ] |> List.toArray
 
         member __.GetPrimaryKey(table) =
             match schemaCache.PrimaryKeys.TryGetValue table.FullName with
@@ -298,11 +305,11 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
                             let name = i.[3] :?> string
                             let maxlen = if i.[6] = box(DBNull.Value) then 0 else i.[6] :?> int
                             
-                            let pkColumn = if primaryKey.Length > 0 && primaryKey.[0].[8] = box name then true else false
+                            let pkColumn = (Array.isEmpty primaryKey |> not) && primaryKey.[0].[8] = box name
                             let col =
                                 { Column.Name = name
                                   TypeMapping = m
-                                  IsNullable = let b = i.[17] :?> string in if b = "YES" then true else false
+                                  IsNullable = let b = i.[17] :?> string in b = "YES"
                                   IsPrimaryKey = pkColumn
                                   IsAutonumber = pkColumn
                                   HasDefault = false
@@ -324,7 +331,7 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
                     |> Map.ofList
                 schemaCache.Columns.AddOrUpdate(table.FullName, columns, fun x old -> match columns.Count with 0 -> old | x -> columns)
 
-        member __.GetRelationships(_,_) = ([],[]) // The ODBC type provider does not currently support GetRelationships operations.
+        member __.GetRelationships(_,_) = ([||],[||]) // The ODBC type provider does not currently support GetRelationships operations.
         member __.GetSprocs(_) = []
 
         member __.GetIndividualsQueryText(table,_) =
@@ -335,14 +342,17 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
             sprintf "SELECT * FROM %c%s%c WHERE %c%s%s%s%c = ?" 
                         cOpen table.Name cClose cOpen table.Name separator column cClose
 
-        member __.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript, _) =
+        member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript, con) =
             let separator = (sprintf "%c.%c" cClose cOpen).Trim()
 
             let parameters = ResizeArray<_>()
-            // NOTE: really need to assign the parameters their correct sql types
-            let createParam (value:obj) =
+            let createParam (columnDataType:DbType voption) (value:obj) =
                 let paramName = "?"
-                OdbcParameter(paramName,value):> IDbDataParameter
+                let p = OdbcParameter(paramName,value):> IDbDataParameter
+                match columnDataType with
+                | ValueNone -> ()
+                | ValueSome colType -> p.DbType <- colType
+                p
 
             let rec fieldNotation (al:alias) (c:SqlColumnType) =
                 let buildf (c:Condition)= 
@@ -382,6 +392,7 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
                     | ToUpper -> sprintf "UCASE(%s)" column
                     | ToLower -> sprintf "LCASE(%s)" column
                     | CastVarchar -> sprintf "CONVERT(%s, SQL_VARCHAR)" column
+                    | CastInt -> sprintf "CONVERT(%s, INT)" column
                     // Date functions
                     | Date -> sprintf "CONVERT(%s, SQL_DATE)" column
                     | Year -> sprintf "YEAR(%s)" column
@@ -412,6 +423,8 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
                     | CaseSql(f, SqlCol(al2, col2)) -> sprintf "CASE WHEN %s THEN %s ELSE %s END " (buildf f) column (fieldNotation al2 col2)
                     | CaseSql(f, SqlConstant itm) -> sprintf "CASE WHEN %s THEN %s ELSE %s END " (buildf f) column (Utilities.fieldConstant itm)
                     | CaseNotSql(f, SqlConstant itm) -> sprintf "CASE WHEN %s THEN %s ELSE %s END " (buildf f) (Utilities.fieldConstant itm) column
+                    | CaseSqlPlain(Condition.ConstantTrue, itm, _) -> sprintf " %s " (Utilities.fieldConstant itm)
+                    | CaseSqlPlain(Condition.ConstantFalse, _, itm2) -> sprintf " %s " (Utilities.fieldConstant itm2)
                     | CaseSqlPlain(f, itm, itm2) -> sprintf "CASE WHEN %s THEN %s ELSE %s END " (buildf f) (Utilities.fieldConstant itm) (Utilities.fieldConstant itm2)
                     | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
                 | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
@@ -425,6 +438,7 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
                         let build op preds (rest:Condition list option) =
                             ~~ "("
                             preds |> List.iteri( fun i (alias,col,operator,data) ->
+                                    let columnDataType = CommonTasks.searchDataTypeFromCache (this:>ISqlProvider) con sqlQuery baseAlias baseTable alias col
                                     let column = fieldNotation alias col
                                     let extractData data =
                                             match data with
@@ -432,9 +446,9 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
                                             | Some(x) when (box x :? obj array) ->
                                                 // in and not in operators pass an array
                                                 let strings = box x :?> obj array
-                                                strings |> Array.map createParam
-                                            | Some(x) -> [|createParam (box x)|]
-                                            | None ->    [|createParam DBNull.Value|]
+                                                strings |> Array.map (createParam columnDataType)
+                                            | Some(x) -> [|createParam columnDataType (box x)|]
+                                            | None ->    [|createParam columnDataType DBNull.Value|]
 
                                     let prefix = if i>0 then (sprintf " %s " op) else ""
                                     let paras = extractData data
@@ -479,10 +493,10 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
                             ))
                             // there's probably a nicer way to do this
                             let rec aux = function
-                                | x::[] when preds.Length > 0 ->
+                                | [x] when preds.Length > 0 ->
                                     ~~ (sprintf " %s " op)
                                     filterBuilder' [x]
-                                | x::[] -> filterBuilder' [x]
+                                | [x] -> filterBuilder' [x]
                                 | x::xs when preds.Length > 0 ->
                                     ~~ (sprintf " %s " op)
                                     filterBuilder' [x]
@@ -525,7 +539,7 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
 
             let selectcolumns =
                 if projectionColumns |> Seq.isEmpty then "1" else
-                String.Join(",",
+                (String.concat ","
                     [|for KeyValue(k,v) in projectionColumns do
                         let cols = (getTable k).FullName
                         let k = if k <> "" then k elif baseAlias <> "" then baseAlias else baseTable.Name
@@ -553,13 +567,13 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
                     match sqlQuery.Grouping with
                     | [] -> FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias sqlQuery.AggregateOp
                     | g  -> 
-                        let keys = g |> List.map(fst) |> List.concat |> List.map(fun (a,c) ->
+                        let keys = g |> List.collect fst |> List.map(fun (a,c) ->
                             let fn = fieldNotation a c
                             if not (tmpGrpParams.ContainsKey (a,c)) then
                                 tmpGrpParams.Add((a,c), fn)
                             if sqlQuery.Aliases.Count < 2 then fn
                             else sprintf "%s as '%s'" fn fn)
-                        let aggs = g |> List.map(snd) |> List.concat
+                        let aggs = g |> List.collect snd
                         let res2 = FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias aggs |> List.toSeq
                         [String.Join(", ", keys) + (if List.isEmpty aggs || List.isEmpty keys then ""  else ", ") + String.Join(", ", res2)] 
                 match extracolumns with
@@ -574,7 +588,7 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
                     let destTable = getTable destAlias
                     ~~  (sprintf "%s %c%s%c as %c%s%c on "
                             joinType cOpen destTable.Name cClose cOpen destAlias cClose)
-                    ~~  (String.Join(" AND ", (List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
+                    ~~  (String.concat " AND " ((List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
                         sprintf "%s = %s "
                             (fieldNotation (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias) foreignKey)
                             (fieldNotation (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias) primaryKey)
@@ -584,8 +598,9 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
                 groupkeys
                 |> List.iteri(fun i (alias,column) ->
                     let cname =
-                        if tmpGrpParams.ContainsKey(alias,column) then tmpGrpParams.[alias,column]
-                        else fieldNotation alias column
+                        match tmpGrpParams.TryGetValue((alias,column)) with
+                        | true, x -> x
+                        | false, _ -> fieldNotation alias column
                     if i > 0 then ~~ ", "
                     ~~ cname)
 
@@ -615,7 +630,7 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
                                 | [] -> h1
                                 | h::t -> sprintf "CONCAT(%s,%s)" h1 (concats h t)
 
-                            let rest = colsAggrs |> Seq.filter(fun c -> c.Contains ",") |> Seq.map(fun c -> c.Substring(c.IndexOf(",")+1)) |> Seq.toList
+                            let rest = colsAggrs |> Seq.filter(fun c -> c.Contains ",") |> Seq.map(fun c -> c.Substring(c.IndexOf(',')+1)) |> Seq.toList
                             concats colsAggrs.[0] rest
                     ~~(sprintf "SELECT COUNT(DISTINCT %s) " distColumns)
                 elif sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columnsFixed)
@@ -637,13 +652,13 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
 
             // GROUP BY
             if sqlQuery.Grouping.Length > 0 then
-                let groupkeys = sqlQuery.Grouping |> List.map(fst) |> List.concat
+                let groupkeys = sqlQuery.Grouping |> List.collect fst
                 if groupkeys.Length > 0 then
                     ~~" GROUP BY "
                     groupByBuilder groupkeys
 
             if sqlQuery.HavingFilters.Length > 0 then
-                let keys = sqlQuery.Grouping |> List.map(fst) |> List.concat
+                let keys = sqlQuery.Grouping |> List.collect fst
 
                 let f = [And([],Some (sqlQuery.HavingFilters |> CommonTasks.parseHaving fieldNotation keys))]
                 ~~" HAVING "
@@ -689,8 +704,7 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
                 if con.State = ConnectionState.Open then con.Close()
                 con.Open()
                 // initially supporting update/create/delete of single entities, no hierarchies yet
-                let keyLst = entities.Keys
-                keyLst
+                CommonTasks.sortEntities entities
                 |> Seq.iter(fun e ->
                     match e._State with
                     | Created ->
@@ -718,8 +732,8 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
                         // remove the pk to prevent this attempting to be used again
                         e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
                         e._State <- Deleted
-                    | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
-                if scope<>null then scope.Complete()
+                    | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e)
+                if not(isNull scope) then scope.Complete()
 
             finally
                 con.Close()
@@ -774,9 +788,9 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
                                 e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
                                 e._State <- Deleted
                             }
-                        | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
-                    do! Utilities.executeOneByOne handleEntity (entities.Keys|>Seq.toList)
-                    if scope<>null then scope.Complete()
+                        | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e
+                    let! _ = Sql.evaluateOneByOne handleEntity (CommonTasks.sortEntities entities |>Seq.toList)
+                    if not(isNull scope) then scope.Complete()
 
                 finally
                     con.Close()

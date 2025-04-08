@@ -23,16 +23,23 @@ module MSSqlServerDynamic =
     let findType name =
         match assembly.Value with
         | Choice1Of2(assembly) -> 
-            let types = 
-                try assembly.GetTypes() 
+            let types, err = 
+                try assembly.GetTypes(), None
                 with | :? System.Reflection.ReflectionTypeLoadException as e ->
                     let msgs = e.LoaderExceptions |> Seq.map(fun e -> e.GetBaseException().Message) |> Seq.distinct
                     let details = "Details: " + Environment.NewLine + String.Join(Environment.NewLine, msgs)
-                    let platform = Reflection.getPlatform(System.Reflection.Assembly.GetExecutingAssembly())
-                    failwith (e.Message + Environment.NewLine + details + (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else ""))
-            match types |> Array.tryFind(fun t -> t.Name = name) with
+                    let platform = Reflection.getPlatform(Reflection.execAssembly.Force())
+                    let errmsg = (e.Message + Environment.NewLine + details + (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else ""))
+                    if e.Types.Length = 0 then
+                        failwith errmsg
+                    else e.Types, Some errmsg
+            match types |> Array.tryFind(fun t -> (not (isNull t)) && t.Name = name) with
             | Some t -> t
-            | None -> failwith ("Assembly " + assembly.FullName + " found, but it didn't contain expected type " + name +
+            | None ->
+                match err with
+                | Some msg -> failwith msg
+                | None ->
+                    failwith ("Assembly " + assembly.FullName + " found, but it didn't contain expected type " + name +
                                  Environment.NewLine + "Tired to load a dll: " + assembly.CodeBase)
 
         | Choice2Of2(paths, errors) ->
@@ -43,7 +50,7 @@ module MSSqlServerDynamic =
            failwithf "Unable to resolve assemblies. One of %s (e.g. from Nuget package Microsoft.Data.SqlClient) must exist in the paths: %s %s %s"
                 (String.Join(", ", assemblyNames |> List.toArray))
                 Environment.NewLine
-                (String.Join(Environment.NewLine, paths |> Seq.filter(fun p -> not(String.IsNullOrEmpty p))))
+                (String.Join(Environment.NewLine, paths |> Seq.filter(String.IsNullOrEmpty >> not)))
                 details
 
     let connectionType =  lazy (findType "SqlConnection")
@@ -52,11 +59,14 @@ module MSSqlServerDynamic =
     let enumType =        lazy (
                             try findType "SqlDbType"
                             with | _ -> typeof<System.Data.SqlDbType>)
-    let getSchemaMethod = lazy (connectionType.Value.GetMethod("GetSchema",[|typeof<string>; typeof<string[]>|]))
+    let getSchemaMethod = lazy (connectionType.Force().GetMethod("GetSchema",[|typeof<string>; typeof<string[]>|]))
 
     let getSchema name (args:string[]) (con:IDbConnection) =
-        if con.State <> ConnectionState.Open then con.Open()
-        let res = getSchemaMethod.Value.Invoke(con,[|name; args|]) :?> DataTable
+        try
+            if con.State <> ConnectionState.Open then con.Open()
+        with
+        | :? NullReferenceException -> ()
+        let res = getSchemaMethod.Force().Invoke(con,[|name; args|]) :?> DataTable
         con.Close()
         res
 
@@ -88,7 +98,7 @@ module MSSqlServerDynamic =
 
         let getClrType (input:string) =
             let t = Type.GetType input
-            if t <> null then t.ToString() else typeof<String>.ToString()
+            if isNull t then typeof<String>.ToString() else t.ToString()
 
         let mappings =
             [
@@ -133,20 +143,27 @@ module MSSqlServerDynamic =
         with
         | :? System.Reflection.ReflectionTypeLoadException as ex ->
             let errorfiles = ex.LoaderExceptions |> Array.map(fun e -> e.GetBaseException().Message) |> Seq.distinct |> Seq.toArray
-            let msg = ex.GetBaseException().Message + "\r\n" + String.Join("\r\n", errorfiles)
-            raise(new System.Reflection.TargetInvocationException(msg, ex))
-        | :? System.Reflection.TargetInvocationException as ex when (ex.InnerException <> null && ex.InnerException :? DllNotFoundException) ->
-            let platform = Reflection.getPlatform(System.Reflection.Assembly.GetExecutingAssembly())
-            let msg = ex.GetBaseException().Message + ", Path: " + (System.IO.Path.GetFullPath resolutionPath)+
+            let platform = Reflection.getPlatform(Reflection.execAssembly.Force())
+            let msg = ex.GetBaseException().Message + "\r\n" + String.Join("\r\n", errorfiles) +
                         (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else "")
-            raise(new System.Reflection.TargetInvocationException(msg, ex))
+            raise (System.Reflection.TargetInvocationException(msg, ex))
+        | :? System.Reflection.TargetInvocationException as ex when ((not(isNull ex.InnerException)) && ex.InnerException :? DllNotFoundException) ->
+            let platform = Reflection.getPlatform(Reflection.execAssembly.Force())
+            let msg = ex.GetBaseException().Message + ", Path: " + (Reflection.listResolutionFullPaths resolutionPath)+
+                        (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else "")
+            raise (System.Reflection.TargetInvocationException(msg, ex))
         | :? System.TypeInitializationException as te when (te.InnerException :? System.Reflection.TargetInvocationException) ->
             let ex = te.InnerException :?> System.Reflection.TargetInvocationException
-            let platform = Reflection.getPlatform(System.Reflection.Assembly.GetExecutingAssembly())
-            let msg = ex.GetBaseException().Message + ", Path: " + (System.IO.Path.GetFullPath resolutionPath) +
+            let platform = Reflection.getPlatform(Reflection.execAssembly.Force())
+            let msg = ex.GetBaseException().Message + ", Path: " + (Reflection.listResolutionFullPaths resolutionPath) +
                       (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else "")
-            raise (System.Reflection.TargetInvocationException(msg+platform, ex.GetBaseException()))
-        | :? System.TypeInitializationException as te when (te.InnerException <> null) -> raise (te.GetBaseException())
+            raise (System.Reflection.TargetInvocationException(msg, ex.GetBaseException()))
+        | :? System.TypeInitializationException as te when not(isNull te.InnerException) -> raise (te.GetBaseException())
+        | se when not (isNull se.InnerException) ->
+            let platform = Reflection.getPlatform(Reflection.execAssembly.Force())
+            let msg = se.GetBaseException().Message + ", Path: " + (Reflection.listResolutionFullPaths resolutionPath) +
+                      (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else "")
+            raise (System.Reflection.TargetInvocationException(msg, se.GetBaseException()))
 
     let createCommand commandText (connection:IDbConnection) =
         Activator.CreateInstance(commandType.Value,[|box commandText;box connection|]) :?> IDbCommand
@@ -167,9 +184,8 @@ module MSSqlServerDynamic =
         com.ExecuteReader()
 
     let readParameter (parameter:IDbDataParameter) =
-        if parameter <> null then
+        if isNull parameter then null else
             parameter.Value
-        else null
         
     let readInOutParameterFromCommand name (com:IDbCommand) = 
         if not (com.Parameters.Contains name) then 
@@ -184,7 +200,7 @@ module MSSqlServerDynamic =
             parameterType.GetProperty("UdtTypeName").GetSetMethod()
 
         let p = Activator.CreateInstance(parameterType,[|box name;v|]) :?> IDbDataParameter
-        if v = null then p
+        if isNull v then p
         else
         match v.GetType().FullName with
         | "Microsoft.SqlServer.Types.SqlGeometry" -> udtTypeSetter.Invoke(p, [| "Geometry" |]) |> ignore
@@ -441,8 +457,10 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
 
         let cmd = (this :> ISqlProvider).CreateCommand(con,"")
         cmd.Connection <- con
-        let haspk = schemaCache.PrimaryKeys.ContainsKey(entity.Table.FullName)
-        let pk = if haspk then schemaCache.PrimaryKeys.[entity.Table.FullName] else []
+        let haspk, pk =
+            match schemaCache.PrimaryKeys.TryGetValue entity.Table.FullName with
+            | true, pk -> true, pk
+            | false, _ -> false, []
         let columnNames, values =
             (([],0),entity.ColumnValues)
             ||> Seq.fold(fun (out,i) (k,v) ->
@@ -474,7 +492,7 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
                     (String.Join(",",columnNames))
                     (String.Join(",",values |> Array.map(fun p -> p.ParameterName))))
 
-        values |> Array.iter(fun v -> cmd.Parameters.Add v |> ignore)
+        values |> Array.iter(cmd.Parameters.Add >> ignore)
         cmd.CommandText <- sb.ToString()
         cmd
 
@@ -483,8 +501,10 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
 
         let cmd = (this :> ISqlProvider).CreateCommand(con,"")
         cmd.Connection <- con
-        let haspk = schemaCache.PrimaryKeys.ContainsKey(entity.Table.FullName)
-        let pk = if haspk then schemaCache.PrimaryKeys.[entity.Table.FullName] else []
+        let pk =
+            match schemaCache.PrimaryKeys.TryGetValue entity.Table.FullName with
+            | true, pk -> pk
+            | false, _ -> []
 
         sb.Clear() |> ignore
         match pk with
@@ -517,10 +537,10 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
         | ks -> 
             ~~(sprintf "UPDATE [%s].[%s] SET %s WHERE "
                 entity.Table.Schema entity.Table.Name
-                (String.Join(",", data |> Array.map(fun (c,p) -> sprintf "[%s] = %s" c p.ParameterName ) )))
-            ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "[%s] = @pk%i" k i))))
+                ((String.concat "," (data |> Array.map(fun (c,p) -> sprintf "[%s] = %s" c p.ParameterName ) ))))
+            ~~(String.concat " AND " (ks |> List.mapi(fun i k -> (sprintf "[%s] = @pk%i" k i))))
 
-        data |> Array.map snd |> Array.iter(fun v ->cmd.Parameters.Add v |> ignore)
+        data |> Array.map snd |> Array.iter(cmd.Parameters.Add >> ignore)
         pkValues |> List.iteri(fun i pkValue ->
             let pkParam = createOpenParameter("@pk"+i.ToString(),pkValue)
             cmd.Parameters.Add pkParam |> ignore)
@@ -533,8 +553,11 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
         let cmd = (this :> ISqlProvider).CreateCommand(con,"")
         cmd.Connection <- con 
         sb.Clear() |> ignore
-        let haspk = schemaCache.PrimaryKeys.ContainsKey(entity.Table.FullName)
-        let pk = if haspk then schemaCache.PrimaryKeys.[entity.Table.FullName] else []
+        let pk =
+            match schemaCache.PrimaryKeys.TryGetValue entity.Table.FullName with
+            | true, pk -> pk
+            | false, _ -> []
+
         sb.Clear() |> ignore
         let pkValues =
             match entity.GetPkColumnOption<obj> pk with
@@ -549,7 +572,7 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
         | [] -> ()
         | ks -> 
             ~~(sprintf "DELETE FROM [%s].[%s] WHERE " entity.Table.Schema entity.Table.Name)
-            ~~(String.Join(" AND ", ks |> List.mapi(fun i k -> (sprintf "[%s] = @id%i" k i))))
+            ~~(String.concat " AND " (ks |> List.mapi(fun i k -> (sprintf "[%s] = @id%i" k i))))
 
         cmd.CommandText <- sb.ToString()
         cmd
@@ -559,9 +582,12 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
         MSSqlServerDynamic.referencedAssemblies <- referencedAssemblies
 
     interface ISqlProvider with
+        member __.CloseConnectionAfterQuery = true
+        member __.DesignConnection = true
+        member __.StoredProcedures = true
         member __.GetLockObject() = myLock
         member __.GetTableDescription(con,tableName) = 
-            let tn = tableName.Substring(tableName.LastIndexOf(".")+1) 
+            let tn = tableName.Substring(tableName.LastIndexOf('.')+1) 
             let baseq =
                 """select sep.value
                 from sys.tables st
@@ -576,13 +602,12 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
             use reader = com.ExecuteReader()
             if reader.Read() then
                 let itm = reader.GetValue(0)
-                if itm <> null then
+                if isNull itm then "" else
                     reader.GetValue(0).ToString()
-                else ""
             else ""
 
         member __.GetColumnDescription(con,tableName,columnName) =
-            let tn = tableName.Substring(tableName.LastIndexOf(".")+1) 
+            let tn = tableName.Substring(tableName.LastIndexOf('.')+1) 
             let baseq =
                 """select sep.value
                 from sys.tables st
@@ -621,7 +646,7 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
             [ while reader.Read() do
                 let table ={ Schema = reader.GetString(0) ; Name = reader.GetString(1) ; Type=reader.GetString(2).ToLower() }
                 yield schemaCache.Tables.GetOrAdd(table.FullName,table)
-                ])
+                ]) |> List.toArray
 
         member __.GetPrimaryKey(table) =
             match schemaCache.PrimaryKeys.TryGetValue table.FullName with
@@ -636,7 +661,7 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
                 lazy
                     if con.State <> ConnectionState.Open then con.Open()
                     let ver = con.GetType().GetProperty("ServerVersion").GetValue(con,null)
-                    if ver = null then Version("12.0")
+                    if isNull ver then Version("12.0")
                     else
                     let success, version = ver.ToString() |> Version.TryParse
                     if success then version else Version("12.0")
@@ -688,8 +713,8 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
                            let col =
                              { Column.Name = reader.GetString(0);
                                TypeMapping = m
-                               IsNullable = let b = reader.GetString(4) in if b = "YES" then true else false
-                               IsPrimaryKey = if reader.GetString(5) = "PRIMARY KEY" then true else false
+                               IsNullable = let b = reader.GetString(4) in b = "YES"
+                               IsPrimaryKey = reader.GetString(5) = "PRIMARY KEY"
                                IsAutonumber = reader.GetInt32(6) = 1
                                HasDefault = reader.GetInt32(7) = 1
                                IsComputed = reader.GetInt32(8) = 1
@@ -745,7 +770,7 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
                 let children =
                     [ while reader.Read() do
                         yield { Name = reader.GetString(0); PrimaryTable=Table.CreateFullName(reader.GetString(9), reader.GetString(5)); PrimaryKey=reader.GetString(6)
-                                ForeignTable= Table.CreateFullName(reader.GetString(8), reader.GetString(1)); ForeignKey=reader.GetString(2) } ]
+                                ForeignTable= Table.CreateFullName(reader.GetString(8), reader.GetString(1)); ForeignKey=reader.GetString(2) } ] |> List.toArray
                 reader.Dispose()
                 let baseq2 = sprintf "%s WHERE KCU1.TABLE_NAME = @tblName" baseQuery
                 use com2 = (this:>ISqlProvider).CreateCommand(con,baseq2)
@@ -756,7 +781,7 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
                 let parents =
                     [ while reader.Read() do
                         yield { Name = reader.GetString(0); PrimaryTable=Table.CreateFullName(reader.GetString(9), reader.GetString(5)); PrimaryKey=reader.GetString(6)
-                                ForeignTable=Table.CreateFullName(reader.GetString(8), reader.GetString(1)); ForeignKey=reader.GetString(2) } ]
+                                ForeignTable=Table.CreateFullName(reader.GetString(8), reader.GetString(1)); ForeignKey=reader.GetString(2) } ] |> List.toArray
                 (children,parents))
             res)
 
@@ -764,7 +789,7 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
         member __.GetIndividualsQueryText(table,amount) = sprintf "SELECT TOP %i * FROM %s" amount table.FullName
         member __.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM [%s].[%s] WHERE [%s].[%s].[%s] = @id" table.Schema table.Name table.Schema table.Name column
 
-        member __.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript, con) =
+        member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript, con) =
             let parameters = ResizeArray<_>()
             // make this nicer later..
             let param = ref 0
@@ -772,9 +797,13 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
                 incr param
                 sprintf "@param%i" !param
 
-            let createParam (value:obj) =
+            let createParam (columnDataType:DbType voption) (value:obj) =
                 let paramName = nextParam()
-                createOpenParameter(paramName,value)
+                let p = createOpenParameter(paramName,value)
+                match columnDataType with
+                | ValueNone -> ()
+                | ValueSome colType -> p.DbType <- colType
+                p
 
             let fieldParam (value:obj) =
                 let paramName = nextParam()
@@ -824,6 +853,7 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
                     | IndexOfStart(SqlCol(al2, col2), SqlConstant startPos) -> sprintf "CHARINDEX(%s,%s,%s)" (fieldNotation al2 col2) column (fieldParam startPos)
                     | IndexOfStart(SqlCol(al2, col2), SqlCol(al3, col3)) -> sprintf "CHARINDEX(%s,%s,%s)" (fieldNotation al2 col2) column (fieldNotation al3 col3)
                     | CastVarchar -> sprintf "CAST(%s AS NVARCHAR(MAX))" column
+                    | CastInt -> sprintf "CAST(%s AS INT)" column
                     // Date functions
                     | Date -> sprintf "CAST(%s AS DATE)" column
                     | Year -> sprintf "YEAR(%s)" column
@@ -862,6 +892,8 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
                     | CaseSql(f, SqlCol(al2, col2)) -> sprintf "CASE WHEN %s THEN %s ELSE %s END " (buildf f) column (fieldNotation al2 col2)
                     | CaseSql(f, SqlConstant itm) -> sprintf "CASE WHEN %s THEN %s ELSE %s END " (buildf f) column (fieldParam itm)
                     | CaseNotSql(f, SqlConstant itm) -> sprintf "CASE WHEN %s THEN %s ELSE %s END " (buildf f) (fieldParam itm) column
+                    | CaseSqlPlain(Condition.ConstantTrue, itm, _) -> sprintf " (SELECT %s) " (fieldParam itm)
+                    | CaseSqlPlain(Condition.ConstantFalse, _, itm2) -> sprintf " (SELECT %s) " (fieldParam itm2)
                     | CaseSqlPlain(f, itm, itm2) -> sprintf "CASE WHEN %s THEN %s ELSE %s END " (buildf f) (fieldParam itm) (fieldParam itm2)
                     | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
                 | GroupColumn (StdDevOp key, KeyColumn _) -> sprintf "STDEV(%s)" (colSprint key)
@@ -879,6 +911,7 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
                         let build op preds (rest:Condition list option) =
                             ~~ "("
                             preds |> List.iteri( fun i (alias,col,operator,data) ->
+                                    let columnDataType = CommonTasks.searchDataTypeFromCache (this:>ISqlProvider) con sqlQuery baseAlias baseTable alias col
                                     let column = fieldNotation alias col
                                     let extractData data =
                                             match data with
@@ -886,23 +919,23 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
                                             | Some(x) when (box x :? obj array) ->
                                                 // in and not in operators pass an array
                                                 let elements = box x :?> obj array
-                                                Array.init (elements.Length) (fun i -> createParam (elements.GetValue(i)))
-                                            | Some(x) -> [|createParam (box x)|]
-                                            | None ->    [|createParam DBNull.Value|]
+                                                Array.init (elements.Length) (elements.GetValue >> createParam columnDataType)
+                                            | Some(x) -> [|createParam columnDataType (box x)|]
+                                            | None ->    [|createParam columnDataType DBNull.Value|]
 
                                     let operatorIn operator (array : IDbDataParameter[]) =
                                         if Array.isEmpty array then
                                             match operator with
                                             | FSharp.Data.Sql.In -> "1=0" // nothing is in the empty set
                                             | FSharp.Data.Sql.NotIn -> "1=1" // anything is not in the empty set
-                                            | _ -> failwith "Should not be called with any other operator"
+                                            | _ -> failwithf "Should not be called with any other operator (%O)" operator
                                         else
-                                            let text = String.Join(",", array |> Array.map (fun p -> p.ParameterName))
+                                            let text = String.concat "," (array |> Array.map (fun p -> p.ParameterName))
                                             Array.iter parameters.Add array
                                             match operator with
                                             | FSharp.Data.Sql.In -> sprintf "%s IN (%s)" column text
                                             | FSharp.Data.Sql.NotIn -> sprintf "%s NOT IN (%s)" column text
-                                            | _ -> failwith "Should not be called with any other operator"
+                                            | _ -> failwithf "Should not be called with any other operator (%O)" operator
 
                                     let prefix = if i>0 then (sprintf " %s " op) else ""
                                     let paras = extractData data
@@ -915,7 +948,7 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
                                         | FSharp.Data.Sql.NestedNotExists -> sprintf "NOT EXISTS (%s)" innersql
                                         | FSharp.Data.Sql.NestedIn -> sprintf "%s IN (%s)" column innersql
                                         | FSharp.Data.Sql.NestedNotIn -> sprintf "%s NOT IN (%s)" column innersql
-                                        | _ -> failwith "Should not be called with any other operator"
+                                        | _ -> failwithf "Should not be called with any other operator (%O)" operator
 
                                     ~~(sprintf "%s%s" prefix <|
                                         match operator with
@@ -940,10 +973,10 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
                             ))
                             // there's probably a nicer way to do this
                             let rec aux = function
-                                | x::[] when preds.Length > 0 ->
+                                | [x] when preds.Length > 0 ->
                                     ~~ (sprintf " %s " op)
                                     filterBuilder' [x]
-                                | x::[] -> filterBuilder' [x]
+                                | [x] -> filterBuilder' [x]
                                 | x::xs when preds.Length > 0 ->
                                     ~~ (sprintf " %s " op)
                                     filterBuilder' [x]
@@ -972,7 +1005,7 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
             let (~~) (t:string) = sb.Append t |> ignore
 
             match sqlQuery.Take, sqlQuery.Skip, sqlQuery.Ordering with
-            | Some _, Some _, [] -> failwith "skip and take paging requires an orderBy clause."
+            | ValueSome _, ValueSome _, [] -> failwith "skip and take paging requires an orderBy clause."
             | _ -> ()
 
             let getTable x =
@@ -985,7 +1018,7 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
             // build  the select statement, this is easy ...
             let selectcolumns =
                 if projectionColumns |> Seq.isEmpty then "1" else
-                String.Join(",",
+                (String.concat ","
                     [|for KeyValue(k,v) in projectionColumns do
                         let cols = (getTable k).FullName
                         let k = if k <> "" then k elif baseAlias <> "" then baseAlias else baseTable.Name
@@ -1011,13 +1044,13 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
                     match sqlQuery.Grouping with
                     | [] -> FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias sqlQuery.AggregateOp
                     | g  -> 
-                        let keys = g |> List.map(fst) |> List.concat |> List.map(fun (a,c) ->
+                        let keys = g |> List.collect fst |> List.map(fun (a,c) ->
                             let fn = fieldNotation a c
                             if not (tmpGrpParams.ContainsKey (a,c)) then
                                 tmpGrpParams.Add((a,c), fn)
                             if sqlQuery.Aliases.Count < 2 then fn
                             else sprintf "%s as '%s'" fn fn)
-                        let aggs = g |> List.map(snd) |> List.concat
+                        let aggs = g |> List.collect snd
                         let res2 = FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias aggs |> List.toSeq
                         [String.Join(", ", keys) + (if List.isEmpty aggs || List.isEmpty keys then ""  else ", ") + String.Join(", ", res2)] 
                 match extracolumns with
@@ -1032,7 +1065,7 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
                     let destTable = getTable destAlias
                     ~~  (sprintf "%s [%s].[%s] as [%s] on "
                             joinType destTable.Schema destTable.Name destAlias)
-                    ~~  (String.Join(" AND ", (List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
+                    ~~  (String.concat " AND " ((List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
                         sprintf "%s = %s"
                             (fieldNotation (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias) foreignKey)
                             (fieldNotation (if data.RelDirection = RelationshipDirection.Parents then destAlias else fromAlias) primaryKey)
@@ -1042,8 +1075,9 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
                 groupkeys
                 |> List.iteri(fun i (alias,column) ->
                     let cname =
-                        if tmpGrpParams.ContainsKey(alias,column) then tmpGrpParams.[alias,column]
-                        else fieldNotation alias column
+                        match tmpGrpParams.TryGetValue((alias,column)) with
+                        | true, x -> x
+                        | false, _ -> fieldNotation alias column
                     if i > 0 then ~~ ", "
                     ~~ cname)
 
@@ -1059,17 +1093,17 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
                 // SELECT
                 if sqlQuery.Distinct && sqlQuery.Count then
                     let colsAggrs = columns.Split([|" as "|], StringSplitOptions.None)
-                    let distColumns = colsAggrs.[0] + (if colsAggrs.Length = 2 then "" else " + ',' + " + String.Join(" + ',' + ", colsAggrs |> Seq.filter(fun c -> c.Contains ",") |> Seq.map(fun c -> c.Substring(c.IndexOf(",")+1))))
+                    let distColumns = colsAggrs.[0] + (if colsAggrs.Length = 2 then "" else " + ',' + " + String.Join(" + ',' + ", colsAggrs |> Seq.filter(fun c -> c.Contains ",") |> Seq.map(fun c -> c.Substring(c.IndexOf(',')+1))))
                     ~~(sprintf "SELECT COUNT(DISTINCT %s) " distColumns)
                 elif sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s%s " (if sqlQuery.Take.IsSome then sprintf "TOP %i " sqlQuery.Take.Value else "")   columns)
                 elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
                 else
                     match sqlQuery.Skip, sqlQuery.Take with
-                    | None, Some take -> ~~(sprintf "SELECT TOP %i %s " take columns)
+                    | ValueNone, ValueSome take -> ~~(sprintf "SELECT TOP %i %s " take columns)
                     | _ -> ~~(sprintf "SELECT %s " columns)
                 //ROW_NUMBER
                 match mssqlPaging,sqlQuery.Skip, sqlQuery.Take with
-                | MSSQLPagingCompatibility.RowNumber, Some _, _ -> 
+                | MSSQLPagingCompatibility.RowNumber, ValueSome _, _ -> 
                     //INCLUDE order by clause in ROW_NUMBER () OVER() of CTE
                     if sqlQuery.Ordering.Length > 0 then
                         ~~", ROW_NUMBER() OVER(ORDER BY  "
@@ -1092,13 +1126,13 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
 
             // GROUP BY
             if sqlQuery.Grouping.Length > 0 then
-                let groupkeys = sqlQuery.Grouping |> List.map(fst) |> List.concat
+                let groupkeys = sqlQuery.Grouping |> List.collect fst
                 if groupkeys.Length > 0 then
                     ~~" GROUP BY "
                     groupByBuilder groupkeys
 
             if sqlQuery.HavingFilters.Length > 0 then
-                let keys = sqlQuery.Grouping |> List.map(fst) |> List.concat
+                let keys = sqlQuery.Grouping |> List.collect fst
 
                 let f = [And([],Some (sqlQuery.HavingFilters |> CommonTasks.parseHaving fieldNotation keys))]
                 ~~" HAVING "
@@ -1107,7 +1141,7 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
             // ORDER BY
             match mssqlPaging, sqlQuery.Skip, sqlQuery.Take with
             | MSSQLPagingCompatibility.Offset, _, _
-            | MSSQLPagingCompatibility.RowNumber, None, _ ->
+            | MSSQLPagingCompatibility.RowNumber, ValueNone, _ ->
               if sqlQuery.Ordering.Length > 0 then
                   ~~"ORDER BY "
                   orderByBuilder()
@@ -1136,12 +1170,12 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
                     let outerSb = System.Text.StringBuilder()
                     outerSb.Append "WITH CTE AS ( "  |> ignore
                     match sqlQuery.Skip, sqlQuery.Take with
-                    | Some skip, Some take ->
+                    | ValueSome skip, ValueSome take ->
                         outerSb.Append (sb.ToString()) |> ignore
                         outerSb.Append ")" |> ignore
                         outerSb.Append (sprintf "SELECT %s FROM CTE [%s] WHERE RN BETWEEN %i AND %i" columns (if baseAlias = "" then baseTable.Name else baseAlias) (skip+1) (skip+take))  |> ignore
                         outerSb.ToString()
-                    | Some skip, None ->
+                    | ValueSome skip, ValueNone ->
                         outerSb.Append (sb.ToString()) |> ignore
                         outerSb.Append ")" |> ignore
                         outerSb.Append (sprintf "SELECT %s FROM CTE [%s] WHERE RN > %i " columns (if baseAlias = "" then baseTable.Name else baseAlias) skip)  |> ignore
@@ -1150,10 +1184,10 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
                       sb.ToString()
                 | _ ->
                     match sqlQuery.Skip, sqlQuery.Take with
-                    | Some skip, Some take ->
+                    | ValueSome skip, ValueSome take ->
                         // Note: this only works in >=SQL2012
                         ~~ (sprintf "OFFSET %i ROWS FETCH NEXT %i ROWS ONLY" skip take)
-                    | Some skip, None ->
+                    | ValueSome skip, ValueNone ->
                         // Note: this only works in >=SQL2012
                         ~~ (sprintf "OFFSET %i ROWS FETCH NEXT %i ROWS ONLY" skip System.UInt32.MaxValue)
                     | _ -> ()
@@ -1175,7 +1209,7 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
                 if con.State = ConnectionState.Open then con.Close()
                 con.Open()
                 // initially supporting update/create/delete of single entities, no hierarchies yet
-                entities.Keys
+                CommonTasks.sortEntities entities
                 |> Seq.iter(fun e ->
                     match e._State with
                     | Created ->
@@ -1202,9 +1236,9 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
                         // remove the pk to prevent this attempting to be used again
                         e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
                         e._State <- Deleted
-                    | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!")
+                    | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e)
                                    // but is possible if you try to use same context on multiple threads. Don't do that.
-                if scope<>null then scope.Complete()
+                if not(isNull scope) then scope.Complete()
 
             finally
                 con.Close()
@@ -1257,10 +1291,10 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
                                 e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
                                 e._State <- Deleted
                             }
-                        | Deleted | Unchanged -> failwith "Unchanged entity encountered in update list - this should not be possible!"
+                        | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e
 
-                    do! Utilities.executeOneByOne handleEntity (entities.Keys|>Seq.toList)
-                    if scope<>null then scope.Complete()
+                    let! _ = Sql.evaluateOneByOne handleEntity (CommonTasks.sortEntities entities |> Seq.toList)
+                    if not(isNull scope) then scope.Complete()
 
                 finally
                     con.Close()

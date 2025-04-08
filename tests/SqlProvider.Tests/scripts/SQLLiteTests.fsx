@@ -1,4 +1,4 @@
-﻿#r @"../../../bin/net472/FSharp.Data.SqlProvider.dll"
+﻿#r @"../../../bin/lib/net48/FSharp.Data.SqlProvider.dll"
 
 open System
 open FSharp.Data.Sql
@@ -104,13 +104,13 @@ let mapEmployee (dbRecord:sql.dataContext.``main.EmployeesEntity``) : Employee =
 // Composable Query Example
 
 // Notice that there is only one query with two filters created here:
-// SELECT [customers].[CompanyName] as 'CompanyName' FROM main.Customers as [customers] WHERE (([customers].[ContactTitle]= @param1) AND ([customers].[CompanyName]= @param2)) - params @param1 - "Marketing Manager"; @param2 - "The Big Cheese"; 
+// SELECT [customers].[CompanyName] as 'CompanyName' FROM main.Customers as [customers] WHERE (([customers].[ContactTitle]= @param1) AND ([customers].[CompanyName]= @param2)) - params @param1 - "Marketing Manager"; @param2 - "The Big Cheese";
 
 let query1 =
     query {
       for customers in ctx.Main.Customers do
       where (customers.ContactTitle = "Marketing Manager")
-      select customers} 
+      select customers}
 
 let query2 =
     query {
@@ -123,10 +123,10 @@ let query2 =
 type sqlOpt = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, ResolutionPath = resolutionPath, CaseSensitivityChange = Common.CaseSensitivityChange.ORIGINAL, UseOptionTypes=FSharp.Data.Sql.Common.NullableColumnType.OPTION>
 let ctxOpt = sqlOpt.GetDataContext()
 let ``none option in left join`` =
-        query { 
+        query {
             for od in ctxOpt.Main.OrderDetails do
             //  the (!!) operator will perform an outer join on a relationship
-            for prod in (!!) od.``main.Products by ProductID`` do 
+            for prod in (!!) od.``main.Products by ProductID`` do
             // standard operators will work as expected; the following shows the like operator and IN operator
             select (prod.DiscontinuedDate)
             // arbitrarily complex projections are supported

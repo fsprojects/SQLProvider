@@ -1,7 +1,7 @@
 (*** hide ***)
-#r "../../../bin/netstandard2.0/FSharp.Data.SqlProvider.dll"
+#r "../../../bin/lib/netstandard2.0/FSharp.Data.SqlProvider.dll"
 (*** hide ***)
-let [<Literal>] resolutionPath = __SOURCE_DIRECTORY__ + @"/../../files/sqlite" 
+let [<Literal>] resolutionPath = __SOURCE_DIRECTORY__ + @"/../../files/sqlite"
 (*** hide ***)
 let [<Literal>] connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"\..\northwindEF.db;Version=3;Read Only=false;FailIfMissing=True;"
 
@@ -27,7 +27,7 @@ let ctx = sql.GetDataContext()
 let orders = ctx.Main.Orders
 let employees = ctx.Main.Employees
 
-let customer = ctx.Main.Customers |> Seq.head 
+let customer = ctx.Main.Customers |> Seq.head
 let employee = ctx.Main.Employees |> Seq.head
 let now = DateTime.Now
 
@@ -58,7 +58,7 @@ Submit updates to the database
 ctx.SubmitUpdates()
 
 (**
-After updating your item (row) will have the Id property.
+After updating, your item (row) will have the Id property.
 
 
 
@@ -94,7 +94,7 @@ let mvps1 = [
     {FirstName="Martin";LastName="Odersky"};
 ]
 
-mvps1 
+mvps1
     |> List.map (fun x ->
                     let row = employees.Create()
                     row.FirstName <- x.FirstName
@@ -112,8 +112,8 @@ let mvps2 = [
 ]
 
 mvps2
-    |> List.map (fun x ->                                 
-                   employees.Create(x.FirstName, x.LastName)                  
+    |> List.map (fun x ->
+                   employees.Create(x.FirstName, x.LastName)
                     )
 
 ctx.SubmitUpdates()
@@ -162,11 +162,11 @@ updateEmployee john
 updateEmployee' john
 
 
-(**Finally it is also possible to specify a seq of `string * obj` which is exactly the 
+(**Finally it is also possible to specify a seq of `string * obj`, which is precisely the
 output of .ColumnValues:
 *)
 
-employees 
+employees
     |> Seq.map (fun x ->
                 employee.Create(x.ColumnValues)) // create twins
     |>  Seq.toList
@@ -177,25 +177,25 @@ ctx.ClearUpdates() // delete the updates
 ctx.GetUpdates() // Get the updates
 ctx.SubmitUpdates() // no record is added
 
-(** 
+(**
 
-Inside SubmitUpdate the transaction is created by default TransactionOption, which is Required: Shares a transaction, if one exists, and creates a new transaction if necessary. So e.g. if you have query-operation before SubmitUpdates, you may want to create your own transaction to wrap these to the same transaction.
+Inside SubmitUpdate the transaction is created by default TransactionOption, which is Required: Shares a transaction, if one exists, and creates a new transaction if necessary. So, if you have query-operation before SubmitUpdates, you should create your own transaction to wrap these into the same transaction.
 
-SQLProvider also supports async database operations: 
+SQLProvider also supports async database operations:
 
 *)
 
 ctx.SubmitUpdatesAsync() // |> Async.AwaitTask
-        
+
 (**
 ### OnConflict
 
-The [SQLite](http://sqlite.org/lang_conflict.html) and [PostgreSQL 9.5+](https://www.postgresql.org/docs/current/static/sql-insert.html#SQL-ON-CONFLICT) providers support conflict resolution for INSERT statements.
+The [SQLite](http://sqlite.org/lang_conflict.html), [PostgreSQL 9.5+](https://www.postgresql.org/docs/current/static/sql-insert.html#SQL-ON-CONFLICT) and [MySQL 8.0+](https://dev.mysql.com/doc/refman/8.0/en/insert-on-duplicate.html) providers support conflict resolution for INSERT statements.
 
 They allow the user to specify if a unique constraint violation should be solved by ignoring the statement (DO NOTHING) or updating existing rows (DO UPDATE).
 
 You can leverage this feature by setting the `OnConflict` property on a row object:
- * Setting it to `DoNothing` will add the DO NOTHING clause (PostgreSQL) or the OR IGNORE clause (SQLite). 
+ * Setting it to `DoNothing` will add the DO NOTHING clause (PostgreSQL) or the OR IGNORE clause (SQLite).
  * Setting it to `Update` will add a DO UPDATE clause on the primary key constraint for all columns (PostgreSQL) or a OR REPLACE clause (SQLite).
 
 Sql Server has a similar feature in the form of the MERGE statement. This is not yet supported.
@@ -216,14 +216,16 @@ ctx.SubmitUpdates()
 
 ### Delete-query for multiple items
 
-If you want to delete many items from a database table, `DELETE FROM [dbo].[EMPLOYEES] WHERE (...)`, there is a way, although we don't recommend deleting items from a database. Instead you should consider a deletion-flag column. And you should backup your database before even trying this. Note that changes are immediately saved to the database even if you don't call `ctx.SubmitUpdates()`.
+To delete many items from a database table, `DELETE FROM [dbo].[EMPLOYEES] WHERE (...)`, there is a way, although we don't recommend deleting items from a database. Instead, you should consider a deletion-flag column. You should also back up your database before trying this. Note that changes are immediately saved to the database even if you don't call `ctx.SubmitUpdates()`.
 
 *)
+(*** hide ***)
+let conditions = true
 
 query {
-    for c in ctx.Dbo.Employees do
-    where (...)
-} |> Seq.``delete all items from single table``  |> Async.RunSynchronously
+    for c in ctx.Main.Employees do
+    where (conditions)
+} |> Seq.``delete all items from single table`` |> Async.AwaitTask |> Async.RunSynchronously
 
 (**
 
@@ -256,17 +258,17 @@ In the last case you'll be maintaining code like this:
 
 let employeeId = 123
 // Got some untyped array of data from the client
-let createSomeItem (data: seq<string*obj>)  = 
+let createSomeItem (data: seq<string*obj>)  =
     data
     |> Seq.map( // Some parsing and validation:
-        function 
+        function
         // Skip some fields
         | "EmployeeId", x
         | "PermissionLevel", x -> "", x
         // Convert and validate some fields
-        | "PostalCode", x -> 
+        | "PostalCode", x ->
             "PostalCode", x.ToString().ToUpper().Replace(" ", "") |> box
-        | "BirthDate", x -> 
+        | "BirthDate", x ->
             let bdate = x.ToString() |> DateTime.Parse
             if bdate.AddYears(18) > DateTime.UtcNow then
                 failwith "Too young!"
@@ -275,7 +277,7 @@ let createSomeItem (data: seq<string*obj>)  =
         | others -> others)
     |> Seq.filter (fun (key,_) -> key <> "")
                   // Add some fields:
-    |> Seq.append [|"EmployeeId", employeeId |> box; 
+    |> Seq.append [|"EmployeeId", employeeId |> box;
                     "Country", "UK" |> box |]
     |> ctx.Main.Employees.Create
 
@@ -302,6 +304,6 @@ ctx.SubmitUpdates()
 
 (**
 
-SetColumn takes object, so you have more control over the type serialization.
+SetColumn takes an object, giving you more control over the type serialization.
 
 *)

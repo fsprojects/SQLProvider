@@ -2,17 +2,22 @@ namespace FSharp.Data.Sql.Schema
 
 open System
 open System.Data
-open System.Data.SqlClient
 open System.Text.RegularExpressions
 open FSharp.Data.Sql.Common.Utilities
 open System.Reflection
 
 module internal Patterns =
-    let tablePattern = System.Text.RegularExpressions.Regex(@"^(.+)\.(.+)$")
+    let tablePattern = System.Text.RegularExpressions.Regex(@"^(.+)\.(.+)$", RegexOptions.Compiled)
+    [<return: Struct>]
     let (|MatchTable|_|) (inp:string) =
         let m = tablePattern.Match inp in
-        if m.Success then Some (List.tail [ for g in m.Groups -> g.Value ]) else None
+        if m.Success then
+            match (List.tail [ for g in m.Groups -> g.Value ]) with
+            | [schema;name] -> ValueSome struct(schema,name)
+            | _ -> ValueNone
+        else ValueNone
 
+[<Struct>]
 type TypeMapping =
     { ProviderTypeName: string voption
       ClrType: string
@@ -25,6 +30,7 @@ type TypeMapping =
               ProviderTypeName = match providerTypeName with Some x -> ValueSome x | None -> ValueNone
               ProviderType = match providerType with Some x -> ValueSome x | None -> ValueNone }
 
+[<Struct>]
 type QueryParameter =
     { Name: string
       TypeMapping: TypeMapping
@@ -39,6 +45,7 @@ type QueryParameter =
               Direction = defaultArg direction ParameterDirection.Input
               Length = match length with Some x -> ValueSome x | None -> ValueNone }
 
+[<Struct>]
 type Column =
     { Name: string
       TypeMapping: TypeMapping
@@ -61,6 +68,7 @@ type Column =
 
 type ColumnLookup = Map<string,Column>
 
+[<Struct>]
 type Relationship =
     { Name: string
       PrimaryTable: string
@@ -68,6 +76,7 @@ type Relationship =
       ForeignTable: string
       ForeignKey: string }
 
+[<Struct>]
 type SprocName =
     { ProcName: string
       Owner: string
@@ -76,9 +85,9 @@ type SprocName =
         member x.ToList() =
            if String.IsNullOrEmpty(x.PackageName) then [x.ProcName]
            else [x.PackageName; x.ProcName]
-        member x.DbName with get() = String.Join(".", x.ToList())
-        member x.FriendlyName with get() = String.Join(" ", x.ToList())
-        member x.FullName with get() = String.Join("_", x.ToList())
+        member x.DbName with get() = String.concat "." (x.ToList())
+        member x.FriendlyName with get() = String.concat " " (x.ToList())
+        member x.FullName with get() = String.concat "_" (x.ToList())
         override x.ToString() = x.FullName.ToString()
 
 type CompileTimeSprocDefinition =
@@ -93,6 +102,12 @@ type RunTimeSprocDefinition =
     { Name: SprocName
       Params: QueryParameter list }
 
+type CompileTimePackageDefinition =
+    { Name : string
+      [<NonSerialized>] // Todo: Serialize for ContextSchemaPath...
+      Sprocs : (IDbConnection -> CompileTimeSprocDefinition list)
+    }
+
 [<System.Runtime.Serialization.KnownType("GetKnownTypes")>]
 type Sproc =
     | Root of string * Sproc
@@ -103,12 +118,7 @@ type Sproc =
         typedefof<Sproc>.GetNestedTypes(BindingFlags.Public ||| BindingFlags.NonPublic)
         |> Array.filter Microsoft.FSharp.Reflection.FSharpType.IsUnion
 
-and CompileTimePackageDefinition =
-    { Name : string
-      [<NonSerialized>] // Todo: Serialize for ContextSchemaPath...
-      Sprocs : (IDbConnection -> CompileTimeSprocDefinition list)
-    }
-
+[<Struct>]
 type Table =
     { Schema: string
       Name: string
@@ -128,7 +138,7 @@ type Table =
         member x.FullName = x.QuotedFullName ("", "")
         static member FromFullName(fullName:string) =
             match fullName with
-            | Patterns.MatchTable [schema;name] -> { Schema = schema; Name = name; Type="" }
+            | Patterns.MatchTable (schema, name) -> { Schema = schema; Name = name; Type="" }
             | _ -> { Schema = ""; Name = fullName; Type="" }
         static member CreateFullName(schema, name) =
             Table.CreateQuotedFullName(schema, name, "", "")
