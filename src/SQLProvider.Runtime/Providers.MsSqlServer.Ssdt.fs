@@ -285,7 +285,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
             p :> IDbDataParameter
         member __.ExecuteSprocCommand(com, inputParameters, returnCols, values:obj array) =
                 let returnCols2 =
-                    match returnCols |> Array.filter(fun p -> p.Name = "ReturnValue") with
+                    match returnCols |> Array.filter(fun p -> p.Direction = ParameterDirection.ReturnValue && p.Name = "ReturnValue") with
                     | [||] ->
                         try getSprocReturnParams com.Connection com.CommandText (inputParameters |> Seq.toList)
                         with _ -> returnCols
@@ -296,7 +296,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
         member __.ExecuteSprocCommandAsync(com, inputParameters, returnCols, values:obj array) =
             task {
                 let returnCols2 =
-                    match returnCols |> Array.filter(fun p -> p.Name = "ReturnValue") with
+                    match returnCols |> Array.filter(fun p -> p.Direction = ParameterDirection.ReturnValue && p.Name = "ReturnValue") with
                     | [||] ->
                         try getSprocReturnParams com.Connection com.CommandText (inputParameters |> Seq.toList)
                         with _ -> returnCols
