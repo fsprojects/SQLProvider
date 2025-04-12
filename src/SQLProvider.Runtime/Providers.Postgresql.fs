@@ -789,7 +789,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                                                 // .MakeArrayType() would be more elegant, but on Mono it causes
                                                 // issues due to Npgsql producing Foo[*] arrays (variable lower bound)
                                                 // instead of Foo[]
-                                                let sampleArrayOfCorrectRank = Array.CreateInstance(Type.GetType(m.ClrType), lengths = Array.zeroCreate<int> dimensions)
+                                                let sampleArrayOfCorrectRank = Array.CreateInstance(Utilities.getType(m.ClrType), lengths = Array.zeroCreate<int> dimensions)
 
                                                 Some { ProviderTypeName = ValueSome "array"
                                                        ClrType = sampleArrayOfCorrectRank.GetType().AssemblyQualifiedName

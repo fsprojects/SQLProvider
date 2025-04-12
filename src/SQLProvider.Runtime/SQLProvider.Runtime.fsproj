@@ -39,7 +39,7 @@
     <Tailcalls>true</Tailcalls>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(TargetFramework)' == 'net8.0' Or '$(TargetFramework)' == 'net6.0' Or '$(TargetFramework)' == 'netstandard2.1' ">
-      <DefineConstants>$(DefineConstants);MICROSOFTSQL;NETSTANDARD21</DefineConstants>
+    <DefineConstants>$(DefineConstants);MICROSOFTSQL;NETSTANDARD21</DefineConstants>
   </PropertyGroup>
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
   <ItemGroup>
@@ -50,18 +50,9 @@
       <Paket>True</Paket>
       <Link>paket-files/ExpressionOptimizer.fs</Link>
     </Compile>
-    <Compile Include="Operators.fs" />
-    <Compile Include="Utils.fs" />
-    <Compile Include="SqlSchema.fs" />
-    <Compile Include="DataTable.fs" />
-    <Compile Include="SqlRuntime.Patterns.fs" />
-    <Compile Include="QuotationHelpers.fs" />
-    <Compile Include="SqlRuntime.Transactions.fs" />
-    <Compile Include="SqlRuntime.Common.fs" />
-    <Compile Include="Ssdt.DacpacParser.fs" />
-    <Compile Include="SqlRuntime.QueryExpression.fs" />
-    <Compile Include="SqlRuntime.Linq.fs" />
-    <Compile Include="SqlRuntime.Async.fs" />
+    <Compile Include="..\SQLProvider.Common\AssemblyInfo.fs">
+      <Link>AssemblyInfo.fs</Link>
+    </Compile>
     <Compile Include="Providers.MsSqlServer.fs" />
     <Compile Include="Providers.MsSqlServer.Dynamic.fs" />
     <Compile Include="Providers.MsSqlServer.Ssdt.fs" />
@@ -77,6 +68,7 @@
     <None Include="..\..\README.md" Link="README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\SQLProvider.Common\SQLProvider.Common.fsproj" />
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net472" Version="1.0.3" Condition=" '$(TargetFramework)' == 'net472'">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
@@ -95,13 +87,13 @@
     <MSBuild Projects="..\SQLProvider.DesignTime\SQLProvider.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=net48" Condition=" '$(TargetFramework)' == 'net48'" />
   </Target>
   <Target Name="BeforeBuild" Condition=" '$(TargetFramework)' == 'netstandard2.1' ">
-        <MSBuild Projects="..\SQLProvider.DesignTime\SQLProvider.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=netstandard2.1" />
+    <MSBuild Projects="..\SQLProvider.DesignTime\SQLProvider.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=netstandard2.1" />
   </Target>
   <Target Name="BeforeBuild" Condition=" '$(TargetFramework)' == 'net6.0' ">
-        <MSBuild Projects="..\SQLProvider.DesignTime\SQLProvider.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=net6.0" />
+    <MSBuild Projects="..\SQLProvider.DesignTime\SQLProvider.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=net6.0" />
   </Target>
   <Target Name="BeforeBuild" Condition=" '$(TargetFramework)' == 'net8.0' ">
-      <MSBuild Projects="..\SQLProvider.DesignTime\SQLProvider.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=net8.0" />
+    <MSBuild Projects="..\SQLProvider.DesignTime\SQLProvider.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=net8.0" />
   </Target>
   <Target Name="AfterBuild">
   </Target>

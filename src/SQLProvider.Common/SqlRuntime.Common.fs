@@ -134,7 +134,7 @@ module public QueryEvents =
    let PublishSqlQueryCol connStr qry (spc:DbParameterCollection) = 
       publishSqlQuery connStr qry [ for p in spc -> (p.ParameterName, p.Value) ]
 
-   let internal PublishSqlQueryICol connStr qry (spc:IDataParameterCollection) = 
+   let PublishSqlQueryICol connStr qry (spc:IDataParameterCollection) = 
       publishSqlQuery connStr qry [ for op in spc do
                                       let p = op :?> IDataParameter
                                       yield (p.ParameterName, p.Value)]

@@ -134,13 +134,13 @@ let release = ReleaseNotes.load "docs/RELEASE_NOTES.md"
 
 // Generate assembly info files with the right version & up-to-date information
 Target.create "AssemblyInfo" (fun _ ->
-  let fileName = "src/Common/AssemblyInfo.fs"
   Fake.DotNet.AssemblyInfoFile.createFSharp fileName
       [ Fake.DotNet.AssemblyInfo.Title project
         Fake.DotNet.AssemblyInfo.Product project
         Fake.DotNet.AssemblyInfo.Description summary
         Fake.DotNet.AssemblyInfo.Version release.AssemblyVersion
         Fake.DotNet.AssemblyInfo.FileVersion release.AssemblyVersion ] 
+  let fileName = "src/SQLProvider.Common/AssemblyInfo.fs"
 )
 
 // --------------------------------------------------------------------------------------

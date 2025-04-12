@@ -150,7 +150,7 @@ module MySql =
             oracleDbTypeSetter.Invoke(p, [|providerType|]) |> ignore
             dbTypeGetter.Invoke(p, [||]) :?> DbType
 
-        let getClrType (input:string) = Type.GetType(input).ToString()
+        let getClrType (input:string) = Utilities.getType(input).ToString()
 
         let mappings =
             [

@@ -97,7 +97,7 @@ module MSSqlServerDynamic =
             dbTypeGetter.Invoke(p, [||]) :?> DbType
 
         let getClrType (input:string) =
-            let t = Type.GetType input
+            let t = Utilities.getType input
             if isNull t then typeof<String>.ToString() else t.ToString()
 
         let mappings =
