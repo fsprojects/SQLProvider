@@ -273,6 +273,10 @@ module DesignTimeUtils =
                                 |> Array.iter(fun col ->
                                     let name = col.Name
                                     let ty = Utilities.getType col.TypeMapping.ClrType
+                                    let ty =
+                                        if isNull ty then
+                                            Utilities.getType (col.TypeMapping.ClrType+",FSharp.Data.SqlProvider.Common")
+                                        else ty
                                     let prop =
                                         ProvidedProperty(
                                             name, ty,

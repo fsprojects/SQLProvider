@@ -95,15 +95,22 @@ let environVarOrDefault varName defaultValue =
 // The name of the project
 // (used by attributes in AssemblyInfo, name of a NuGet package and directory in 'src')
 
-let project = "SQLProvider"
+type Project = { 
+    name:string; 
+    /// Short summary of the project
+    /// (used as description in AssemblyInfo and as a short summary for NuGet package)
+    summary:string; 
+    /// Longer description of the project
+    /// (used as a description for NuGet package; line breaks are automatically cleaned up)
+    description:string; 
+    /// List of dependencies
+    dependencies:(string * string) list }
 
-// Short summary of the project
-// (used as description in AssemblyInfo and as a short summary for NuGet package)
-let summary = "Type providers for SQL database access."
-
-// Longer description of the project
-// (used as a description for NuGet package; line breaks are automatically cleaned up)
-let description = "Type providers for SQL database access."
+let projects =
+    [{name="SQLProvider.Common";summary="Type provider for SQL database access, common library";description="Common functionality to all SQL type-providers";dependencies=[]};
+     {name="SQLProvider.DesignTime";summary="Type providers for any SQL database access.";description="Type providers for SQL database access.";dependencies=[]};
+     {name="SQLProvider.Runtime";summary="Type providers for any SQL database access.";description="Type providers for SQL database access.";dependencies=[]};
+    ]
 
 // List of author names (for NuGet package)
 let authors = [ "Ross McKinlay, Colin Bull, Tuomas Hietanen" ]
@@ -134,13 +141,15 @@ let release = ReleaseNotes.load "docs/RELEASE_NOTES.md"
 
 // Generate assembly info files with the right version & up-to-date information
 Target.create "AssemblyInfo" (fun _ ->
-  Fake.DotNet.AssemblyInfoFile.createFSharp fileName
-      [ Fake.DotNet.AssemblyInfo.Title project
-        Fake.DotNet.AssemblyInfo.Product project
-        Fake.DotNet.AssemblyInfo.Description summary
-        Fake.DotNet.AssemblyInfo.Version release.AssemblyVersion
-        Fake.DotNet.AssemblyInfo.FileVersion release.AssemblyVersion ] 
-  let fileName = "src/SQLProvider.Common/AssemblyInfo.fs"
+  projects
+  |> Seq.iter (fun project ->
+      let fileName = "src/" + project.name + "/AssemblyInfo.fs"
+      Fake.DotNet.AssemblyInfoFile.createFSharp fileName
+          [ Fake.DotNet.AssemblyInfo.Title project.name
+            Fake.DotNet.AssemblyInfo.Product "SQLProvider"
+            Fake.DotNet.AssemblyInfo.Description project.summary
+            Fake.DotNet.AssemblyInfo.Version release.AssemblyVersion
+            Fake.DotNet.AssemblyInfo.FileVersion release.AssemblyVersion ])
 )
 
 // --------------------------------------------------------------------------------------

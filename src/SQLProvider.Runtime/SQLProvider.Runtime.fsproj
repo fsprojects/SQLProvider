@@ -43,15 +43,10 @@
   </PropertyGroup>
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
   <ItemGroup>
-    <Compile Include="..\Common\AssemblyInfo.fs">
-      <Link>AssemblyInfo.fs</Link>
-    </Compile>
+    <Compile Include="AssemblyInfo.fs" />
     <Compile Include="..\..\paket-files\sourcefiles\Thorium\Linq.Expression.Optimizer\src\Code\ExpressionOptimizer.fs">
       <Paket>True</Paket>
       <Link>paket-files/ExpressionOptimizer.fs</Link>
-    </Compile>
-    <Compile Include="..\SQLProvider.Common\AssemblyInfo.fs">
-      <Link>AssemblyInfo.fs</Link>
     </Compile>
     <Compile Include="Providers.MsSqlServer.fs" />
     <Compile Include="Providers.MsSqlServer.Dynamic.fs" />
