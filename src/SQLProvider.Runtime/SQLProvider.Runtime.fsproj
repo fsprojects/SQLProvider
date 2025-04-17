@@ -8,7 +8,7 @@
     <TargetFrameworks>netstandard2.0;netstandard2.1;net472;net48;net6.0;net8.0</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
-    <DefineConstants>TP_RUNTIME;NETSTANDARD;NO_GENERATIVE</DefineConstants>
+    <DefineConstants>TP_RUNTIME;NETSTANDARD;NO_GENERATIVE;REFLECTIONLOAD</DefineConstants>
     <AssemblyName>FSharp.Data.SqlProvider</AssemblyName>
     <Name>FSharp.Data.SqlProvider</Name>
     <DocumentationFile>..\..\bin\lib\$(TargetFramework)\FSharp.Data.SqlProvider.XML</DocumentationFile>

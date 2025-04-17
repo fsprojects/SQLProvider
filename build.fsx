@@ -110,6 +110,31 @@ let projects =
     [{name="SQLProvider.Common";summary="Type provider for SQL database access, common library";description="Common functionality to all SQL type-providers";dependencies=[]};
      {name="SQLProvider.DesignTime";summary="Type providers for any SQL database access.";description="Type providers for SQL database access.";dependencies=[]};
      {name="SQLProvider.Runtime";summary="Type providers for any SQL database access.";description="Type providers for SQL database access.";dependencies=[]};
+
+     {name="SQLProvider.DuckDb.DesignTime";summary="Type providers for DuckDb database access.";description="Type providers for DuckDb database access.";dependencies=[]};
+     {name="SQLProvider.DuckDb.Runtime";summary="Type providers for DuckDb database access.";description="Type providers for DuckDb database access.";dependencies=[]};
+
+     {name="SQLProvider.FireBird.DesignTime";summary="Type providers for FireBird database access.";description="Type providers for FireBird database access.";dependencies=[]};
+     {name="SQLProvider.FireBird.Runtime";summary="Type providers for FireBird database access.";description="Type providers for FireBird database access.";dependencies=[]};
+
+     {name="SQLProvider.MsSql.DesignTime";summary="Type providers for Microsoft SQL Server database access.";description="Type providers for Microsoft SQL Server database access.";dependencies=[]};
+     {name="SQLProvider.MsSql.Runtime";summary="Type providers for Microsoft SQL Server database access.";description="Type providers for Microsoft SQL Server database access.";dependencies=[]};
+
+     {name="SQLProvider.MySql.DesignTime";summary="Type providers for MySSQL database and MariaDB database access.";description="Type providers for MySSQL database and MariaDB database access.";dependencies=[]};
+     {name="SQLProvider.MySql.Runtime";summary="Type providers for MySSQL database and MariaDB database access.";description="Type providers for MySSQL database and MariaDB database access.";dependencies=[]};
+
+     {name="SQLProvider.Odbc.DesignTime";summary="Type providers for any ODBC connection database access.";description="Type providers for any ODBC connection database access.";dependencies=[]};
+     {name="SQLProvider.Odbc.Runtime";summary="Type providers for any ODBC connection database access.";description="Type providers for any ODBC connection database access.";dependencies=[]};
+
+     {name="SQLProvider.Oracle.DesignTime";summary="Type providers for Oracle database access.";description="Type providers for Oracle database access.";dependencies=[]};
+     {name="SQLProvider.Oracle.Runtime";summary="Type providers for Oracle database access.";description="Type providers for Oracle database access.";dependencies=[]};
+
+     {name="SQLProvider.Postgresql.DesignTime";summary="Type providers for PostgreSql database access.";description="Type providers for PostgreSql database access.";dependencies=[]};
+     {name="SQLProvider.Postgresql.Runtime";summary="Type providers for PostgreSql database access.";description="Type providers for PostgreSql database access.";dependencies=[]};
+
+     {name="SQLProvider.SQLite.DesignTime";summary="Type providers for SQLite database access.";description="Type providers for SQLite database access.";dependencies=[]};
+     {name="SQLProvider.SQLite.Runtime";summary="Type providers for SQLite database access.";description="Type providers for SQLite database access.";dependencies=[]};
+
     ]
 
 // List of author names (for NuGet package)

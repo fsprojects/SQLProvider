@@ -16,13 +16,13 @@ open FSharp.Data.Sql.Common
 module PostgreSQL =
     let mutable resolutionPath = String.Empty
     let mutable schemas = [| "public" |]
+    let [<Literal>] ANONYMOUS_PARAMETER_NAME = "param"
+#if REFLECTIONLOAD
     let mutable referencedAssemblies = [| |]
 
     let assemblyNames = [
         "Npgsql.dll"
     ]
-
-    let [<Literal>] ANONYMOUS_PARAMETER_NAME = "param"
 
     let assembly =
         lazy
@@ -42,6 +42,7 @@ module PostgreSQL =
             let av = assembly.Value.GetName().Version.Major
             av < 3, av < 4
         )
+
     let findType name = 
         let types, err = 
             try assembly.Value.GetTypes(), None
@@ -68,17 +69,31 @@ module PostgreSQL =
     let dbType = lazy (getType "NpgsqlDbType")
     let dbTypeGetter = lazy (parameterType.Value.GetProperty("NpgsqlDbType").GetGetMethod())
     let dbTypeSetter = lazy (parameterType.Value.GetProperty("NpgsqlDbType").GetSetMethod())
+#else
+    let isLegacyVersion = lazy(false, false)
+#endif
 
     let getDbType(providerType : int) =
+#if REFLECTIONLOAD
         let parameterType = parameterType.Value
         let p = Activator.CreateInstance(parameterType, [| |]) :?> IDbDataParameter
         dbTypeSetter.Value.Invoke(p, [|providerType|]) |> ignore
         p.DbType
+#else
+        let p = Npgsql.NpgsqlParameter()
+        p.NpgsqlDbType <- enum<NpgsqlTypes.NpgsqlDbType> providerType
+        p.DbType
+#endif
 
     let mutable findDbType : (string -> TypeMapping option)  = fun _ -> failwith "!"
 
     let parseDbType (dbTypeName:string) =
-        try Some(Enum.Parse(dbType.Value, dbTypeName) |> unbox<int>)
+        try
+#if REFLECTIONLOAD
+            Some(Enum.Parse(dbType.Value, dbTypeName) |> unbox<int>)
+#else
+            Some(Enum.Parse(typeof<NpgsqlTypes.NpgsqlDbType>, dbTypeName) |> unbox<int>)
+#endif
         with _ -> None
 
     let tryReadValueProperty instance =
@@ -97,15 +112,25 @@ module PostgreSQL =
         let normalizedValue =
             if not (isOptionValue value) then (if isNull value || (Type.(=) (value.GetType(), typeof<DBNull>)) then box DBNull.Value else value) else
             match tryReadValueProperty value with Some(v) -> v | None -> box DBNull.Value
-        let p = Activator.CreateInstance(parameterType.Value, [||]) :?> IDbDataParameter
-        p.ParameterName <- 
-          let isAnonymousParam =
+
+        let isAnonymousParam =
             param.Direction <> ParameterDirection.Output &&
             param.Name.StartsWith ANONYMOUS_PARAMETER_NAME &&
             Int32.TryParse(param.Name.Substring (ANONYMOUS_PARAMETER_NAME.Length), ref 0)
+#if REFLECTIONLOAD
+        let p = Activator.CreateInstance(parameterType.Value, [||]) :?> IDbDataParameter
+        p.ParameterName <- 
           if isAnonymousParam then "" else param.Name
 
         ValueOption.iter (fun dbt -> dbTypeSetter.Value.Invoke(p, [| dbt |]) |> ignore) param.TypeMapping.ProviderType
+#else
+        let p = Npgsql.NpgsqlParameter()
+        p.ParameterName <- 
+          if isAnonymousParam then "" else param.Name
+
+        ValueOption.iter (fun dbt -> p.NpgsqlDbType <- enum<NpgsqlTypes.NpgsqlDbType> dbt) param.TypeMapping.ProviderType
+        let p = p :> IDbDataParameter
+#endif
         p.Value <- normalizedValue
         p.Direction <- param.Direction
         ValueOption.iter (fun l -> p.Size <- l) param.Length
@@ -128,7 +153,25 @@ module PostgreSQL =
     let typemap<'t> = typemap' typeof<'t>
     
     /// Pairs a CLR type by name with a value of Npgsql's type enumeration
-    let namemap name dbTypes = findType name |> Option.bind (fun ty -> typemap' ty dbTypes)
+    let namemap name (dbTypes:string list) =
+#if REFLECTIONLOAD
+        findType name |> Option.bind (fun ty -> typemap' ty dbTypes)
+#else
+        match name with
+        | "NpgsqlBox" -> typemap<NpgsqlTypes.NpgsqlBox> dbTypes
+        | "NpgsqlInet" -> typemap<NpgsqlTypes.NpgsqlInet> dbTypes
+        | "NpgsqlCircle" -> typemap<NpgsqlTypes.NpgsqlCircle> dbTypes
+        | "IGeometry" -> None // Where is IGeometry?
+        | "NpgsqlLine" -> typemap<NpgsqlTypes.NpgsqlLine> dbTypes
+        | "NpgsqlLSeg" -> typemap<NpgsqlTypes.NpgsqlLSeg> dbTypes
+        | "NpgsqlPath" -> typemap<NpgsqlTypes.NpgsqlPath> dbTypes
+        | "NpgsqlPoint" -> typemap<NpgsqlTypes.NpgsqlPoint> dbTypes
+        | "NpgsqlPolygon" -> typemap<NpgsqlTypes.NpgsqlPolygon> dbTypes
+        | "NpgsqlTid" -> typemap<NpgsqlTypes.NpgsqlTid> dbTypes
+        | "NpgsqlTsQuery" -> typemap<NpgsqlTypes.NpgsqlTsQuery> dbTypes
+        | "NpgsqlTsVector" -> typemap<NpgsqlTypes.NpgsqlTsVector> dbTypes
+        | _ -> None
+#endif
 
     let createTypeMappings () =            
         // http://www.npgsql.org/doc/2.2/
@@ -235,6 +278,7 @@ module PostgreSQL =
         findDbType <- resolveAlias >> mappings.TryFind
 
     let createConnection connectionString =
+#if REFLECTIONLOAD
         try
             Activator.CreateInstance(connectionType.Value,[|box connectionString|]) :?> IDbConnection
         with
@@ -265,16 +309,27 @@ module PostgreSQL =
                         (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else "")
             raise(System.Reflection.TargetInvocationException(msg, ex.InnerException)) 
         | :? System.TypeInitializationException as te when not(isNull te.InnerException) -> raise (te.GetBaseException())
+#else
+        new Npgsql.NpgsqlConnection(connectionString) :> IDbConnection
+#endif
 
-    let createCommand commandText connection =
+    let createCommand commandText (connection:IDbConnection) =
+#if REFLECTIONLOAD
         try
             Activator.CreateInstance(commandType.Value,[|box commandText;box connection|]) :?> IDbCommand
         with
           | :? System.Reflection.TargetInvocationException as e ->
             failwithf "Could not create the command, error from Npgsql %s" e.InnerException.Message
+#else
+        new Npgsql.NpgsqlCommand(commandText, connection :?> Npgsql.NpgsqlConnection) :> IDbCommand
+#endif
 
     let readParameter (parameter:IDbDataParameter) =
+#if REFLECTIONLOAD
         match parameter.DbType, (dbTypeGetter.Value.Invoke(parameter, [||]) :?> int) with
+#else
+        match parameter.DbType, (int (parameter :?> Npgsql.NpgsqlParameter).NpgsqlDbType) with
+#endif
         | DbType.Object, 23 ->
             match parameter.Value with
             | null -> null
@@ -647,8 +702,9 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
 
     do
         PostgreSQL.resolutionPath <- resolutionPath
+#if REFLECTIONLOAD
         PostgreSQL.referencedAssemblies <- referencedAssemblies
-
+#endif
         if not(String.IsNullOrEmpty owner) then
             PostgreSQL.schemas <- 
               owner.Split(';', ',', ' ', '\n', '\r')

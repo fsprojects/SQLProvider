@@ -52,6 +52,56 @@ module DesignTimeUtils =
         let [<Literal>] runtime2 = "SQLProvider.MsSql.Runtime"
         let [<Literal>] FSHARP_DATA_SQL = "FSharp.Data.Sql.MsSql"
 #endif
+#if POSTGRESQL
+        let [<Literal>] design1 = "FSharp.Data.SqlProvider.PostgreSql.DesignTime"
+        let [<Literal>] runtime1 = "FSharp.Data.SqlProvider.PostgreSql"
+        let [<Literal>] design2 = "SQLProvider.PostgreSql.DesignTime"
+        let [<Literal>] runtime2 = "SQLProvider.PostgreSql.Runtime"
+        let [<Literal>] FSHARP_DATA_SQL = "FSharp.Data.Sql.PostgreSql"
+#endif
+#if MYSQL
+        let [<Literal>] design1 = "FSharp.Data.SqlProvider.MySql.DesignTime"
+        let [<Literal>] runtime1 = "FSharp.Data.SqlProvider.MySql"
+        let [<Literal>] design2 = "SQLProvider.MySql.DesignTime"
+        let [<Literal>] runtime2 = "SQLProvider.MySql.Runtime"
+        let [<Literal>] FSHARP_DATA_SQL = "FSharp.Data.Sql.MySql"
+#endif
+#if SQLITE
+        let [<Literal>] design1 = "FSharp.Data.SqlProvider.SQLite.DesignTime"
+        let [<Literal>] runtime1 = "FSharp.Data.SqlProvider.SQLite"
+        let [<Literal>] design2 = "SQLProvider.SQLite.DesignTime"
+        let [<Literal>] runtime2 = "SQLProvider.SQLite.Runtime"
+        let [<Literal>] FSHARP_DATA_SQL = "FSharp.Data.Sql.SQLite"
+#endif
+#if FIREBIRD
+        let [<Literal>] design1 = "FSharp.Data.SqlProvider.FireBird.DesignTime"
+        let [<Literal>] runtime1 = "FSharp.Data.SqlProvider.FireBird"
+        let [<Literal>] design2 = "SQLProvider.FireBird.DesignTime"
+        let [<Literal>] runtime2 = "SQLProvider.FireBird.Runtime"
+        let [<Literal>] FSHARP_DATA_SQL = "FSharp.Data.Sql.FireBird"
+#endif
+#if ODBC
+        let [<Literal>] design1 = "FSharp.Data.SqlProvider.Odbc.DesignTime"
+        let [<Literal>] runtime1 = "FSharp.Data.SqlProvider.Odbc"
+        let [<Literal>] design2 = "SQLProvider.Odbc.DesignTime"
+        let [<Literal>] runtime2 = "SQLProvider.Odbc.Runtime"
+        let [<Literal>] FSHARP_DATA_SQL = "FSharp.Data.Sql.Odbc"
+#endif
+#if ORACLE
+        let [<Literal>] design1 = "FSharp.Data.SqlProvider.Oracle.DesignTime"
+        let [<Literal>] runtime1 = "FSharp.Data.SqlProvider.Oracle"
+        let [<Literal>] design2 = "SQLProvider.Oracle.DesignTime"
+        let [<Literal>] runtime2 = "SQLProvider.Oracle.Runtime"
+        let [<Literal>] FSHARP_DATA_SQL = "FSharp.Data.Sql.Oracle"
+#endif
+#if DUCKDB
+        let [<Literal>] design1 = "FSharp.Data.SqlProvider.DuckDb.DesignTime"
+        let [<Literal>] runtime1 = "FSharp.Data.SqlProvider.DuckDb"
+        let [<Literal>] design2 = "SQLProvider.DuckDb.DesignTime"
+        let [<Literal>] runtime2 = "SQLProvider.DuckDb.Runtime"
+        let [<Literal>] FSHARP_DATA_SQL = "FSharp.Data.Sql.DuckDb"
+#endif
+
         let mySaveLock = new Object();
         let mutable saveInProcess = false
 

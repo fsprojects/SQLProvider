@@ -4,7 +4,7 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFrameworks>netstandard2.0;netstandard2.1;net472;net48;net6.0;net8.0</TargetFrameworks>
-    <DefineConstants>NETSTANDARD;NO_GENERATIVE;DESIGNTIME;COMMON</DefineConstants>
+    <DefineConstants>NETSTANDARD;NO_GENERATIVE;DESIGNTIME;COMMON;REFLECTIONLOAD</DefineConstants>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>

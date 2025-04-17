@@ -69,3 +69,14 @@ your program or the program using your library: http://msdn.microsoft.com/en-us/
 
 The default maintainer account for projects under "fsprojects" is [@fsprojectsgit](https://github.com/fsprojectsgit) - F# Community Project Incubation Space (repo management)
 
+## Nuget Packages
+- [SQLProvider](https://www.nuget.org/packages/SQLProvider) - Generic provider supports all databases, but needs some manual setup of reference assemblies
+- [SQLProvider.MsSql](https://www.nuget.org/packages/SQLProvider.MsSql) - Microsoft SQL Server (and SSDT) only, using Microsoft.Data.SqlClient
+- [SQLProvider.PostgreSql](https://www.nuget.org/packages/SQLProvider.PostgreSql) - PostgreSQL only
+- [SQLProvider.MySql](https://www.nuget.org/packages/SQLProvider.MySql) - MySQL and MariaDB only
+- [SQLProvider.FireBirdl](https://www.nuget.org/packages/SQLProvider.FireBird) - FireBird only 
+- [SQLProvider.SQLite](https://www.nuget.org/packages/SQLProvider.SQLite) - SQLite only 
+- [SQLProvider.Oracle](https://www.nuget.org/packages/SQLProvider.Oracle) - Oracle only 
+- [SQLProvider.Odbc](https://www.nuget.org/packages/SQLProvider.Odbc) - ODBC connections only 
+- [SQLProvider.DuckDb](https://www.nuget.org/packages/SQLProvider.DuckDb) - DuckDB only 
+

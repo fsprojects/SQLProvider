@@ -11,7 +11,7 @@ System.Data.SqlClient
 System.Data.Common
 System.Data.Odbc
 System.Data.OleDb
-Microsoft.Data.SqlClient framework: net8.0, net6.0, netstandard2.1
+Microsoft.Data.SqlClient restriction: || (== net6.0) (== net8.0) (== netstandard2.1)
 System.Memory
 
 group SourceFiles

@@ -12,6 +12,7 @@ open FSharp.Data.Sql.Common
 module DuckDb =
     let mutable resolutionPath = String.Empty
     let mutable schemas : string[] = [||]
+#if REFLECTIONLOAD
     let mutable referencedAssemblies = [||]
 
     let assemblyNames = [
@@ -59,6 +60,7 @@ module DuckDb =
     let parameterType =   lazy (findType "DuckDBParameter")
     let getSchemaMethod = lazy (connectionType.Value.GetMethod("GetSchema",[|typeof<string>; typeof<string[]>|]))
     //let paramObjectCtor = lazy parameterType.Value.GetConstructor([|typeof<string>;typeof<obj>|])
+#endif
 
     let getSchema (name:string) (args:string[]) (conn:IDbConnection) =
         match name with
@@ -116,8 +118,11 @@ module DuckDb =
                 "System.Guid","UUID",4,false ] |> List.iter(addrow)
             dt
         | name ->
+#if REFLECTIONLOAD
             getSchemaMethod.Value.Invoke(conn,[|name; args|]) :?> DataTable
-
+#else
+            (conn :?> DuckDB.NET.Data.DuckDBConnection).GetSchema(name, args)
+#endif
     let mutable typeMappings = []
     let mutable findClrType : (string -> TypeMapping option)  = fun _ -> failwith "!"
     let mutable findDbType : (string -> TypeMapping option)  = fun _ -> failwith "!"
@@ -126,9 +131,13 @@ module DuckDb =
         let mapping = if (not(isNull value)) && (not sprocCommand) then (findClrType (value.GetType().ToString())) else None
         let value = if isNull value then (box System.DBNull.Value) else value
 
+#if REFLECTIONLOAD
         let parameterType = parameterType.Value
 
         let p = Activator.CreateInstance(parameterType,[|box param.Name;value|]) :?> IDbDataParameter
+#else
+        let p = DuckDB.NET.Data.DuckDBParameter(param.Name, value) :> IDbDataParameter
+#endif
 
         p.Direction <-  param.Direction
 
@@ -159,13 +168,17 @@ module DuckDb =
         let dt = getSchema "DataTypes" [||] con
 
         let getDbType(providerType:int) =
+            // TODO: FIX: Now it seems to always return DuckDBParameter().DbType, it should set the parameter value, or get the proper type via dt
+#if REFLECTIONLOAD
             let parameterType = parameterType.Value
             let p = Activator.CreateInstance(parameterType,[||]) :?> IDbDataParameter
 
             let dbTypeGetter = parameterType.GetProperty("DbType").GetGetMethod()
 
             dbTypeGetter.Invoke(p, [||]) :?> DbType
-
+#else
+            DuckDB.NET.Data.DuckDBParameter().DbType
+#endif
         let getClrType (input:string) = Utilities.getType(input).ToString()
 
         let mappings =
@@ -197,6 +210,7 @@ module DuckDb =
         findDbType <- dbMappings.TryFind
 
     let createConnection connectionString =
+#if REFLECTIONLOAD
         try
             Activator.CreateInstance(connectionType.Value,[|box connectionString|]) :?> IDbConnection
         with
@@ -216,9 +230,15 @@ module DuckDb =
                         (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else "")
             raise(System.Reflection.TargetInvocationException(msg, ex.InnerException))
         | :? System.TypeInitializationException as te when not(isNull te.InnerException) -> raise (te.GetBaseException())
-
-    let createCommand commandText connection =
+#else
+        new DuckDB.NET.Data.DuckDBConnection(connectionString) :> IDbConnection
+#endif
+    let createCommand commandText (connection:IDbConnection) =
+#if REFLECTIONLOAD
         Activator.CreateInstance(commandType.Value,[|box commandText;box connection|]) :?> IDbCommand
+#else
+        new DuckDB.NET.Data.DuckDBCommand(commandText, connection :?> DuckDB.NET.Data.DuckDBConnection) :> IDbCommand
+#endif
 
     let getSprocReturnCols (sparams: QueryParameter list) =
         match sparams |> List.filter (fun p -> p.Direction <> ParameterDirection.Input) with
@@ -473,8 +493,9 @@ type internal DuckDbProvider(resolutionPath, contextSchemaPath, owner:string, re
     do
         DuckDb.resolutionPath <- resolutionPath
         DuckDb.schemas <- owner.Split(';', ',', ' ', '\n', '\r') |> Array.filter (not << String.IsNullOrWhiteSpace)
+#if REFLECTIONLOAD
         DuckDb.referencedAssemblies <- referencedAssemblies
-
+#endif
     interface ISqlProvider with
         member __.CloseConnectionAfterQuery = true
         member __.DesignConnection = true

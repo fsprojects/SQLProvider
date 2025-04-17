@@ -12,6 +12,7 @@ open FSharp.Data.Sql.Transactions
 module Firebird =
     let mutable resolutionPath = String.Empty
     let mutable owner = String.Empty
+#if REFLECTIONLOAD
     let mutable referencedAssemblies = [||]
 
     let assemblyNames = [
@@ -20,7 +21,7 @@ module Firebird =
 
     let assembly =
         lazy Reflection.tryLoadAssemblyFrom resolutionPath referencedAssemblies assemblyNames
-        
+#endif
     type DataReaderWithCommand(dataReader: IDataReader, command : IDbCommand) = 
         member x.DataReader = dataReader
         member x.Command = command
@@ -90,6 +91,7 @@ module Firebird =
             return dt
         }
 
+#if REFLECTIONLOAD
     let findType name =
         match assembly.Value with
         | Choice1Of2(assembly) -> 
@@ -129,10 +131,13 @@ module Firebird =
     let getSchemaMethod = lazy (connectionType.Value.GetMethod("GetSchema",[|typeof<string>; typeof<string[]>|]))
     let paramEnumCtor   = lazy parameterType.Value.GetConstructor([|typeof<string>;enumType.Value|])
     let paramObjectCtor = lazy parameterType.Value.GetConstructor([|typeof<string>;typeof<obj>|])
-
+#endif
     let getSchema name (args:string[]) (conn:IDbConnection) =
+#if REFLECTIONLOAD
         getSchemaMethod.Value.Invoke(conn,[|name; args|]) :?> DataTable
-
+#else
+        (conn :?> FirebirdSql.Data.FirebirdClient.FbConnection).GetSchema(name, args)
+#endif
     let mutable typeMappings = []
     let mutable findClrType : (string -> TypeMapping option)  = fun _ -> failwith "!"
     let mutable findDbType : (string -> TypeMapping option)  = fun _ -> failwith "!"
@@ -141,6 +146,7 @@ module Firebird =
         let mapping = if (not(isNull value)) && (not sprocCommand) then (findClrType (value.GetType().ToString())) else None
         let value = if isNull value then (box System.DBNull.Value) else value
 
+#if REFLECTIONLOAD
         let parameterType = parameterType.Value
         let firebirdDbTypeSetter =
             parameterType.GetProperty("FbDbType").GetSetMethod()
@@ -151,9 +157,18 @@ module Firebird =
 
         p.DbType <- (defaultArg mapping param.TypeMapping).DbType
         param.TypeMapping.ProviderType |> ValueOption.iter (fun pt -> firebirdDbTypeSetter.Invoke(p, [|pt|]) |> ignore)
-
         ValueOption.iter (fun l -> p.Size <- l) param.Length
         p
+#else
+        let p = FirebirdSql.Data.FirebirdClient.FbParameter(param.Name, value)
+        p.Direction <-  param.Direction
+        p.DbType <- (defaultArg mapping param.TypeMapping).DbType
+
+        param.TypeMapping.ProviderType |> ValueOption.iter (fun pt -> p.FbDbType <- enum<FirebirdSql.Data.FirebirdClient.FbDbType> pt)
+
+        ValueOption.iter (fun l -> p.Size <- l) param.Length
+        p :> IDbDataParameter
+#endif
 
     let createParam name i v = 
         match v with
@@ -177,12 +192,18 @@ module Firebird =
         let dt = getSchema "DataTypes" [||] con
 
         let getDbType(providerType:int) =
+#if REFLECTIONLOAD
             let parameterType = parameterType.Value
             let p = Activator.CreateInstance(parameterType,[||]) :?> IDbDataParameter
             let oracleDbTypeSetter = parameterType.GetProperty("FbDbType").GetSetMethod()
             let dbTypeGetter = parameterType.GetProperty("DbType").GetGetMethod()
             oracleDbTypeSetter.Invoke(p, [|providerType|]) |> ignore
             dbTypeGetter.Invoke(p, [||]) :?> DbType
+#else
+            let p = FirebirdSql.Data.FirebirdClient.FbParameter()
+            p.FbDbType <- enum<FirebirdSql.Data.FirebirdClient.FbDbType> providerType
+            p.DbType
+#endif
 
         let getClrType (input:string) = Utilities.getType(input).ToString()
 
@@ -212,6 +233,7 @@ module Firebird =
         findDbType <- dbMappings.TryFind
 
     let createConnection connectionString =
+#if REFLECTIONLOAD
         try
             Activator.CreateInstance(connectionType.Value,[|box connectionString|]) :?> IDbConnection
         with
@@ -231,9 +253,16 @@ module Firebird =
                       (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else "")
             raise(System.Reflection.TargetInvocationException(msg, ex.InnerException)) 
         | :? System.TypeInitializationException as te when not(isNull te.InnerException) -> raise (te.GetBaseException())
+#else
+        new FirebirdSql.Data.FirebirdClient.FbConnection(connectionString) :> IDbConnection
+#endif
 
-    let createCommand commandText connection =
+    let createCommand commandText (connection:IDbConnection) =
+#if REFLECTIONLOAD
         Activator.CreateInstance(commandType.Value,[|box commandText;box connection|]) :?> IDbCommand
+#else
+        new FirebirdSql.Data.FirebirdClient.FbCommand(commandText, (connection :?> FirebirdSql.Data.FirebirdClient.FbConnection)) :> IDbCommand
+#endif
 
     let getSprocReturnCols (sparams: QueryParameter list) =
         match sparams |> List.filter (fun p -> p.Direction <> ParameterDirection.Input) with
@@ -550,8 +579,9 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
     do
         Firebird.resolutionPath <- resolutionPath
         Firebird.owner <- owner
+#if REFLECTIONLOAD
         Firebird.referencedAssemblies <- referencedAssemblies
-
+#endif
     interface ISqlProvider with
         member __.CloseConnectionAfterQuery = true
         member __.DesignConnection = true

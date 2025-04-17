@@ -37,9 +37,10 @@ files
     ../../bin/typeproviders/fsharp41/net48/*.dll ==> typeproviders/fsharp41/net48
     ../../bin/typeproviders/fsharp41/net8.0/*.dll ==> typeproviders/fsharp41/net8.0
 references
+    FSharp.Data.SqlProvider.Common.dll
     FSharp.Data.SqlProvider.dll
 dependencies
     FSharp.Core >= 8.0.301
     Newtonsoft.Json >= 13.0.1
-    System.Memory >= 4.5.5
+    System.Memory >= 4.6.3
 

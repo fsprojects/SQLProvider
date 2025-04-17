@@ -80,7 +80,7 @@ group Docs
 
 group Tests
     source https://api.nuget.org/v3/index.json
-    frameworks: netcoreapp3.1, net472, net48
+    frameworks: netcoreapp3.1, net472, net48, net8.0, net6.0, netstandard2.1, netstandard2.0
     storage: packages
 
     nuget MySql.Data < 7.0.0
@@ -88,12 +88,15 @@ group Tests
     nuget Microsoft.NET.Test.Sdk
     nuget NUnit3TestAdapter
     nuget Newtonsoft.Json
-    nuget Npgsql < 4.0
+    nuget Npgsql 8.0.7
     nuget NUnit 3.14.0
-    nuget Oracle.ManagedDataAccess 12.2.1100
-    nuget FirebirdSql.Data.FirebirdClient 5.12.1
-    nuget System.Data.SQLite.Core 1.0.105.2
-    nuget System.Data.SQLite.Linq 1.0.105.2
+    nuget Oracle.ManagedDataAccess 23.8.0
+    nuget Oracle.ManagedDataAccess.Core 23.8.0
+    nuget FirebirdSql.Data.FirebirdClient 10.3.2
+    nuget System.Data.SQLite.Core 1.0.119
+    nuget System.Data.SQLite.Linq 1.0.119
     nuget SQLitePCLRaw.bundle_green
     nuget Microsoft.Data.Sqlite.Core
+    nuget DuckDB.NET.Bindings.Full
+    nuget DuckDB.NET.Data.Full
     // nuget Microsoft.Data.Sqlite.Core.Backport // Needed if we want currently Core support on Linux.

@@ -494,8 +494,9 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
     do
         MySql.resolutionPath <- resolutionPath
         MySql.schemas <- owner.Split(';', ',', ' ', '\n', '\r') |> Array.filter (not << String.IsNullOrWhiteSpace)
+#if REFLECTIONLOAD
         MySql.referencedAssemblies <- referencedAssemblies
-
+#endif
     interface ISqlProvider with
         member __.CloseConnectionAfterQuery = true
         member __.DesignConnection = true

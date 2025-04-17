@@ -634,7 +634,9 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
 
     do
         Oracle.owner <- owner
+#if REFLECTIONLOAD
         Oracle.referencedAssemblies <- referencedAssemblies
+#endif
         Oracle.resolutionPath <- resolutionPath
 
     interface ISqlProvider with

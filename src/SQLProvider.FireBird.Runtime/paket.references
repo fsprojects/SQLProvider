@@ -1,0 +1,18 @@
+FSharp.Core
+System.Runtime
+System.Runtime.Loader
+System.Runtime.Serialization.Primitives
+System.Runtime.Serialization.Formatters
+System.IO
+System.Console
+System.Reflection
+System.Reflection.TypeExtensions
+System.Data.SqlClient
+System.Data.Common
+System.Memory
+
+group SourceFiles
+      File:ExpressionOptimizer.fs
+
+group Tests
+      FirebirdSql.Data.FirebirdClient
