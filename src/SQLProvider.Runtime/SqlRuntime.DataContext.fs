@@ -279,4 +279,39 @@ do ()
 [<assembly:CompilerServices.TypeProviderAssembly("FSharp.Data.SqlProvider.MsSql.DesignTime.dll")>]
 do ()
     #endif
+    #if MYSQL
+// Put the TypeProviderAssemblyAttribute in the runtime DLL, pointing to the design-time DLL
+[<assembly:CompilerServices.TypeProviderAssembly("FSharp.Data.SqlProvider.MySql.DesignTime.dll")>]
+do ()
+    #endif
+    #if POSTGRES
+// Put the TypeProviderAssemblyAttribute in the runtime DLL, pointing to the design-time DLL
+[<assembly:CompilerServices.TypeProviderAssembly("FSharp.Data.SqlProvider.Postgresql.DesignTime.dll")>]
+do ()
+    #endif
+    #if SQLITE
+// Put the TypeProviderAssemblyAttribute in the runtime DLL, pointing to the design-time DLL
+[<assembly:CompilerServices.TypeProviderAssembly("FSharp.Data.SqlProvider.SQLite.DesignTime.dll")>]
+do ()
+    #endif
+    #if DUCKDB
+// Put the TypeProviderAssemblyAttribute in the runtime DLL, pointing to the design-time DLL
+[<assembly:CompilerServices.TypeProviderAssembly("FSharp.Data.SqlProvider.DuckDb.DesignTime.dll")>]
+do ()
+    #endif
+    #if FIREBIRD
+// Put the TypeProviderAssemblyAttribute in the runtime DLL, pointing to the design-time DLL
+[<assembly:CompilerServices.TypeProviderAssembly("FSharp.Data.SqlProvider.FireBird.DesignTime.dll")>]
+do ()
+    #endif
+    #if ODBC
+// Put the TypeProviderAssemblyAttribute in the runtime DLL, pointing to the design-time DLL
+[<assembly:CompilerServices.TypeProviderAssembly("FSharp.Data.SqlProvider.Odbc.DesignTime.dll")>]
+do ()
+    #endif
+    #if ORACLE
+// Put the TypeProviderAssemblyAttribute in the runtime DLL, pointing to the design-time DLL
+[<assembly:CompilerServices.TypeProviderAssembly("FSharp.Data.SqlProvider.Oracle.DesignTime.dll")>]
+do ()
+    #endif
 #endif

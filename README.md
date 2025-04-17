@@ -70,6 +70,9 @@ your program or the program using your library: http://msdn.microsoft.com/en-us/
 The default maintainer account for projects under "fsprojects" is [@fsprojectsgit](https://github.com/fsprojectsgit) - F# Community Project Incubation Space (repo management)
 
 ## Nuget Packages
+
+Depending on the used provider, the namespace of SqlDataProvider type class may vary.
+
 - [SQLProvider](https://www.nuget.org/packages/SQLProvider) - Generic provider supports all databases, but needs some manual setup of reference assemblies
 - [SQLProvider.MsSql](https://www.nuget.org/packages/SQLProvider.MsSql) - Microsoft SQL Server (and SSDT) only, using Microsoft.Data.SqlClient
 - [SQLProvider.PostgreSql](https://www.nuget.org/packages/SQLProvider.PostgreSql) - PostgreSQL only

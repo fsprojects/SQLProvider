@@ -15,4 +15,5 @@ group SourceFiles
       File:ExpressionOptimizer.fs
 
 group Tests
-      Oracle.ManagedDataAccess
+      Oracle.ManagedDataAccess restriction: || (== net48) (== netstandard2.0)
+      Oracle.ManagedDataAccess.Core restriction: || (== net6.0) (== net8.0) (== netstandard2.1)

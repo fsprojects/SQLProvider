@@ -35,4 +35,5 @@ dependencies
     FSharp.Core >= 8.0.301
     Newtonsoft.Json >= 13.0.1
     System.Memory >= 4.6.3
-    Oracle.ManagedDataAccess >= 12.2.1100
+    Oracle.ManagedDataAccess >= 23.8.0
+    Oracle.ManagedDataAccess.Core >= 23.8.0
