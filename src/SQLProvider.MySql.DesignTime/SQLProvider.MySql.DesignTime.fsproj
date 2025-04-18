@@ -10,6 +10,7 @@
     <Name>FSharp.Data.SqlProvider.MySql</Name>
     <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
     <TargetFSharpCoreVersion>8.0.0.0</TargetFSharpCoreVersion>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <Optimize>true</Optimize>
