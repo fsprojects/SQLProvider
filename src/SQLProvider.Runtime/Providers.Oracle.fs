@@ -119,7 +119,7 @@ module internal Oracle =
         let getClrType (input:string) =
             (match input.ToLower() with
             | "system.long"  -> typeof<System.Int64>
-            | _ -> Type.GetType(input)).ToString()
+            | _ -> Utilities.getType(input)).ToString()
 
         let mappings =
             [
@@ -634,7 +634,9 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
 
     do
         Oracle.owner <- owner
+#if REFLECTIONLOAD
         Oracle.referencedAssemblies <- referencedAssemblies
+#endif
         Oracle.resolutionPath <- resolutionPath
 
     interface ISqlProvider with

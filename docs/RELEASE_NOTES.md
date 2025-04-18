@@ -1,3 +1,6 @@
+### 1.5.0-alpha3 - 18.04.2025
+* Packaging restructure
+
 ### 1.4.13 - 08.04.2025
 * SSDT: Initial support for SQL functions, PR #781
 * Expression.optimizer update

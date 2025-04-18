@@ -28,6 +28,31 @@ module internal ProviderBuilder =
         | DatabaseProviderTypes.FIREBIRD -> FirebirdProvider(resolutionPath, contextSchemaPath, owner, referencedAssemblies, odbcquote) :> ISqlProvider
         | DatabaseProviderTypes.DUCKDB -> DuckDbProvider(resolutionPath, contextSchemaPath, owner, referencedAssemblies) :> ISqlProvider
 #endif
+#if MSSQL
+        | DatabaseProviderTypes.MSSQLSERVER -> MSSqlServerProvider(contextSchemaPath, tableNames) :> ISqlProvider
+        | DatabaseProviderTypes.MSSQLSERVER_SSDT -> MSSqlServerProviderSsdt(tableNames, ssdtPath) :> ISqlProvider
+#endif
+#if SQLITE
+        | DatabaseProviderTypes.SQLITE -> SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemblies, runtimeAssembly, sqliteLibrary) :> ISqlProvider
+#endif
+#if POSTGRESQL
+        | DatabaseProviderTypes.POSTGRESQL -> PostgresqlProvider(resolutionPath, contextSchemaPath, owner, referencedAssemblies) :> ISqlProvider
+#endif
+#if MYSQL
+        | DatabaseProviderTypes.MYSQL -> MySqlProvider(resolutionPath, contextSchemaPath, owner, referencedAssemblies) :> ISqlProvider
+#endif
+#if ORACLE
+        | DatabaseProviderTypes.ORACLE -> OracleProvider(resolutionPath, contextSchemaPath, owner, referencedAssemblies, tableNames) :> ISqlProvider
+#endif
+#if ODBC
+        | DatabaseProviderTypes.ODBC -> OdbcProvider(contextSchemaPath, odbcquote) :> ISqlProvider
+#endif
+#if FIREBIRD
+        | DatabaseProviderTypes.FIREBIRD -> FirebirdProvider(resolutionPath, contextSchemaPath, owner, referencedAssemblies, odbcquote) :> ISqlProvider
+#endif
+#if DUCKDB
+        | DatabaseProviderTypes.DUCKDB -> DuckDbProvider(resolutionPath, contextSchemaPath, owner, referencedAssemblies) :> ISqlProvider
+#endif
         | DatabaseProviderTypes.EXTERNAL 
         | _ -> failwith ("Unsupported database provider: " + vendor.ToString())
 
@@ -244,7 +269,49 @@ type public SqlDataContext (typeName, connectionString:string, providerType:Data
             |> Seq.iter (fun prov -> prov.Value.Value.GetSchemaCache().Save(filePath))
 
 #if !DESIGNTIME
+    #if COMMON
 // Put the TypeProviderAssemblyAttribute in the runtime DLL, pointing to the design-time DLL
 [<assembly:CompilerServices.TypeProviderAssembly("FSharp.Data.SqlProvider.DesignTime.dll")>]
 do ()
+    #endif
+    #if MSSQL
+// Put the TypeProviderAssemblyAttribute in the runtime DLL, pointing to the design-time DLL
+[<assembly:CompilerServices.TypeProviderAssembly("FSharp.Data.SqlProvider.MsSql.DesignTime.dll")>]
+do ()
+    #endif
+    #if MYSQL
+// Put the TypeProviderAssemblyAttribute in the runtime DLL, pointing to the design-time DLL
+[<assembly:CompilerServices.TypeProviderAssembly("FSharp.Data.SqlProvider.MySql.DesignTime.dll")>]
+do ()
+    #endif
+    #if POSTGRES
+// Put the TypeProviderAssemblyAttribute in the runtime DLL, pointing to the design-time DLL
+[<assembly:CompilerServices.TypeProviderAssembly("FSharp.Data.SqlProvider.Postgresql.DesignTime.dll")>]
+do ()
+    #endif
+    #if SQLITE
+// Put the TypeProviderAssemblyAttribute in the runtime DLL, pointing to the design-time DLL
+[<assembly:CompilerServices.TypeProviderAssembly("FSharp.Data.SqlProvider.SQLite.DesignTime.dll")>]
+do ()
+    #endif
+    #if DUCKDB
+// Put the TypeProviderAssemblyAttribute in the runtime DLL, pointing to the design-time DLL
+[<assembly:CompilerServices.TypeProviderAssembly("FSharp.Data.SqlProvider.DuckDb.DesignTime.dll")>]
+do ()
+    #endif
+    #if FIREBIRD
+// Put the TypeProviderAssemblyAttribute in the runtime DLL, pointing to the design-time DLL
+[<assembly:CompilerServices.TypeProviderAssembly("FSharp.Data.SqlProvider.FireBird.DesignTime.dll")>]
+do ()
+    #endif
+    #if ODBC
+// Put the TypeProviderAssemblyAttribute in the runtime DLL, pointing to the design-time DLL
+[<assembly:CompilerServices.TypeProviderAssembly("FSharp.Data.SqlProvider.Odbc.DesignTime.dll")>]
+do ()
+    #endif
+    #if ORACLE
+// Put the TypeProviderAssemblyAttribute in the runtime DLL, pointing to the design-time DLL
+[<assembly:CompilerServices.TypeProviderAssembly("FSharp.Data.SqlProvider.Oracle.DesignTime.dll")>]
+do ()
+    #endif
 #endif

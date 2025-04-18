@@ -73,6 +73,10 @@ module Utilities =
                 parseAggregates' fieldNotation fieldNotationAlias tail parsed
         parseAggregates' fieldNotat fieldNotationAlias query []
 
+    // https://stackoverflow.com/questions/1825147/type-gettypenamespace-a-b-classname-returns-null
+    let getType typename =
+        Type.GetType typename
+
     let rec internal convertTypes (itm:obj) (returnType:Type) =
         if (returnType.Name.StartsWith("Option") || returnType.Name.StartsWith("FSharpOption")) && returnType.GenericTypeArguments.Length = 1 then
             if isNull itm then None |> box

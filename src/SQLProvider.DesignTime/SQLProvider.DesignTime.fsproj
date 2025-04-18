@@ -4,7 +4,7 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFrameworks>netstandard2.0;netstandard2.1;net472;net48;net6.0;net8.0</TargetFrameworks>
-    <DefineConstants>NETSTANDARD;NO_GENERATIVE;DESIGNTIME;COMMON</DefineConstants>
+    <DefineConstants>NETSTANDARD;NO_GENERATIVE;DESIGNTIME;COMMON;REFLECTIONLOAD</DefineConstants>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
@@ -12,7 +12,7 @@
     <Name>FSharp.Data.SqlProvider</Name>
     <OutputPath>..\..\bin\typeproviders\fsharp41\</OutputPath>
     <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
-	<TargetFSharpCoreVersion>8.0.0.0</TargetFSharpCoreVersion>
+    <TargetFSharpCoreVersion>8.0.0.0</TargetFSharpCoreVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <Optimize>true</Optimize>
@@ -22,6 +22,7 @@
     <DefineConstants>$(DefineConstants);MICROSOFTSQL;NETSTANDARD21</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="AssemblyInfo.fs" />
     <Compile Include="..\..\paket-files\sourcefiles\fsprojects\FSharp.TypeProviders.SDK\src\ProvidedTypes.fsi">
       <Paket>True</Paket>
       <Link>paket-files/ProvidedTypes.fsi</Link>
@@ -30,81 +31,42 @@
       <Paket>True</Paket>
       <Link>paket-files/ProvidedTypes.fs</Link>
     </Compile>
-    <Compile Include="..\Common\AssemblyInfo.fs">
-      <Link>AssemblyInfo.fs</Link>
-    </Compile>
     <Compile Include="..\..\paket-files\sourcefiles\Thorium\Linq.Expression.Optimizer\src\Code\ExpressionOptimizer.fs">
       <Paket>True</Paket>
       <Link>paket-files/ExpressionOptimizer.fs</Link>
     </Compile>
-    <Compile Include="..\SQLProvider.Runtime\Operators.fs">
-      <Link>Operators.fs</Link>
-    </Compile>
-    <Compile Include="..\SQLProvider.Runtime\Utils.fs">
-      <Link>Utils.fs</Link>
-    </Compile>
-    <Compile Include="..\SQLProvider.Runtime\SqlSchema.fs">
-      <Link>SqlSchema.fs</Link>
-    </Compile>
-    <Compile Include="..\SQLProvider.Runtime\DataTable.fs">
-      <Link>DataTable.fs</Link>
-    </Compile>
-    <Compile Include="..\SQLProvider.Runtime\SqlRuntime.Patterns.fs">
-      <Link>SqlRuntime.Patterns.fs</Link>
-    </Compile>
-    <Compile Include="..\SQLProvider.Runtime\QuotationHelpers.fs">
-      <Link>QuotationHelpers.fs</Link>
-    </Compile>
-    <Compile Include="..\SQLProvider.Runtime\SqlRuntime.Transactions.fs">
-      <Link>SqlRuntime.Transactions.fs</Link>
-    </Compile>
-    <Compile Include="..\SQLProvider.Runtime\SqlRuntime.Common.fs">
-      <Link>SqlRuntime.Common.fs</Link>
-    </Compile>
-    <Compile Include="..\SQLProvider.Runtime\Ssdt.DacpacParser.fs">
-      <Link>Ssdt.DacpacParser.fs</Link>
-    </Compile>    
-    <Compile Include="..\SQLProvider.Runtime\SqlRuntime.QueryExpression.fs">
-      <Link>SqlRuntime.QueryExpression.fs</Link>
-    </Compile>
-    <Compile Include="..\SQLProvider.Runtime\SqlRuntime.Linq.fs">
-      <Link>SqlRuntime.Linq.fs</Link>
-    </Compile>
-    <Compile Include="..\SQLProvider.Runtime\SqlRuntime.Async.fs">
-      <Link>SqlRuntime.Async.fs</Link>
-    </Compile>
     <Compile Include="..\SQLProvider.Runtime\Providers.MsSqlServer.fs">
-        <Link>Providers.MsSqlServer.fs</Link>
+      <Link>Providers.MsSqlServer.fs</Link>
     </Compile>
     <Compile Include="..\SQLProvider.Runtime\Providers.MsSqlServer.Dynamic.fs">
-        <Link>Providers.MsSqlServer.Dynamic.fs</Link>
+      <Link>Providers.MsSqlServer.Dynamic.fs</Link>
     </Compile>
     <Compile Include="..\SQLProvider.Runtime\Providers.MsSqlServer.Ssdt.fs">
-        <Link>Providers.MsSqlServer.Ssdt.fs</Link>
+      <Link>Providers.MsSqlServer.Ssdt.fs</Link>
     </Compile>
     <Compile Include="..\SQLProvider.Runtime\Providers.MSAccess.fs">
-        <Link>Providers.MSAccess.fs</Link>
+      <Link>Providers.MSAccess.fs</Link>
     </Compile>
     <Compile Include="..\SQLProvider.Runtime\Providers.MySql.fs">
-        <Link>Providers.MySql.fs</Link>
+      <Link>Providers.MySql.fs</Link>
     </Compile>
     <Compile Include="..\SQLProvider.Runtime\Providers.Odbc.fs">
-        <Link>Providers.Odbc.fs</Link>
+      <Link>Providers.Odbc.fs</Link>
     </Compile>
     <Compile Include="..\SQLProvider.Runtime\Providers.Oracle.fs">
-        <Link>Providers.Oracle.fs</Link>
+      <Link>Providers.Oracle.fs</Link>
     </Compile>
     <Compile Include="..\SQLProvider.Runtime\Providers.Postgresql.fs">
-        <Link>Providers.Postgresql.fs</Link>
+      <Link>Providers.Postgresql.fs</Link>
     </Compile>
     <Compile Include="..\SQLProvider.Runtime\Providers.SQLite.fs">
-        <Link>Providers.SQLite.fs</Link>
+      <Link>Providers.SQLite.fs</Link>
     </Compile>
     <Compile Include="..\SQLProvider.Runtime\Providers.Firebird.fs">
-        <Link>Providers.Firebird.fs</Link>
+      <Link>Providers.Firebird.fs</Link>
     </Compile>
     <Compile Include="..\SQLProvider.Runtime\Providers.DuckDb.fs">
-        <Link>Providers.DuckDb.fs</Link>
+      <Link>Providers.DuckDb.fs</Link>
     </Compile>
     <Compile Include="..\SQLProvider.Runtime\SqlRuntime.DataContext.fs">
       <Link>SqlRuntime.DataContext.fs</Link>
@@ -127,6 +89,7 @@
     <Reference Include="System.IO.Compression" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\SQLProvider.Common\SQLProvider.Common.fsproj" />
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net472" Version="1.0.3" Condition="'$(TargetFramework)' == 'net472'">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>

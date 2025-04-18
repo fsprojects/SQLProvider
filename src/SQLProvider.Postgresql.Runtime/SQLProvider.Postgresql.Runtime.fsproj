@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFrameworks>net8.0;netstandard2.0</TargetFrameworks>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <DefineConstants>$(DefineConstants);TP_RUNTIME;NO_GENERATIVE;POSTGRESQL;MICROSOFTSQL</DefineConstants>
+    <OutputPath>..\..\bin\postgresql\lib\</OutputPath>
+    <AssemblyName>FSharp.Data.SqlProvider.PostgreSql</AssemblyName>
+    <Name>FSharp.Data.SqlProvider.PostgreSql</Name>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\..\paket-files\sourcefiles\Thorium\Linq.Expression.Optimizer\src\Code\ExpressionOptimizer.fs">
+      <Paket>True</Paket>
+      <Link>paket-files/ExpressionOptimizer.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider.Runtime\Providers.Postgresql.fs" Link="Providers.Postgresql.fs" />
+    <Compile Include="..\SQLProvider.Runtime\SqlRuntime.DataContext.fs" Link="SqlRuntime.DataContext.fs" />
+  </ItemGroup>
+  <Target Name="BeforeBuild" Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
+    <MSBuild Projects="..\SQLProvider.PostgreSql.DesignTime\SQLProvider.PostgreSql.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=netstandard2.0" />
+  </Target>
+  <Target Name="BeforeBuild" Condition=" '$(TargetFramework)' == 'net8.0' ">
+    <MSBuild Projects="..\SQLProvider.PostgreSql.DesignTime\SQLProvider.PostgreSql.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=net8.0" />
+  </Target>
+  <ItemGroup>
+    <PackageReference Include="Npgsql" Version="8.0.7" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SQLProvider.Common\SQLProvider.Common.fsproj" />
+  </ItemGroup>
+  <Import Project="..\..\.paket\Paket.Restore.targets" />
+</Project>

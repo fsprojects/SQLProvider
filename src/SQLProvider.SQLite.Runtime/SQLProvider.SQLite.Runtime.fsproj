@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFrameworks>net8.0;netstandard2.0</TargetFrameworks>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <DefineConstants>$(DefineConstants);TP_RUNTIME;NO_GENERATIVE;SQLITE;MICROSOFTSQL</DefineConstants>
+    <OutputPath>..\..\bin\sqlite\lib\</OutputPath>
+    <AssemblyName>FSharp.Data.SqlProvider.SQLite</AssemblyName>
+    <Name>FSharp.Data.SqlProvider.SQLite</Name>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\..\paket-files\sourcefiles\Thorium\Linq.Expression.Optimizer\src\Code\ExpressionOptimizer.fs">
+      <Paket>True</Paket>
+      <Link>paket-files/ExpressionOptimizer.fs</Link>
+    </Compile>
+    <Compile Include="..\SQLProvider.Runtime\Providers.SQLite.fs" Link="Providers.SQLite.fs" />
+    <Compile Include="..\SQLProvider.Runtime\SqlRuntime.DataContext.fs" Link="SqlRuntime.DataContext.fs" />
+  </ItemGroup>
+  <Target Name="BeforeBuild" Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
+    <MSBuild Projects="..\SQLProvider.SQLite.DesignTime\SQLProvider.SQLite.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=netstandard2.0" />
+  </Target>
+  <Target Name="BeforeBuild" Condition=" '$(TargetFramework)' == 'net8.0' ">
+    <MSBuild Projects="..\SQLProvider.SQLite.DesignTime\SQLProvider.SQLite.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=net8.0" />
+  </Target>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite.Core" Version="9.0.4" />
+    <PackageReference Include="SQLitePCLRaw.bundle_green" Version="2.1.11" />
+    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.119" />
+    <PackageReference Include="System.Data.SQLite.Linq" Version="1.0.119" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SQLProvider.Common\SQLProvider.Common.fsproj" />
+  </ItemGroup>
+  <Import Project="..\..\.paket\Paket.Restore.targets" />
+</Project>

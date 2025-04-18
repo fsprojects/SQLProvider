@@ -150,7 +150,7 @@ module MySql =
             oracleDbTypeSetter.Invoke(p, [|providerType|]) |> ignore
             dbTypeGetter.Invoke(p, [||]) :?> DbType
 
-        let getClrType (input:string) = Type.GetType(input).ToString()
+        let getClrType (input:string) = Utilities.getType(input).ToString()
 
         let mappings =
             [
@@ -494,8 +494,9 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
     do
         MySql.resolutionPath <- resolutionPath
         MySql.schemas <- owner.Split(';', ',', ' ', '\n', '\r') |> Array.filter (not << String.IsNullOrWhiteSpace)
+#if REFLECTIONLOAD
         MySql.referencedAssemblies <- referencedAssemblies
-
+#endif
     interface ISqlProvider with
         member __.CloseConnectionAfterQuery = true
         member __.DesignConnection = true
