@@ -38,7 +38,7 @@ module internal ProviderBuilder =
 #if POSTGRESQL
         | DatabaseProviderTypes.POSTGRESQL -> PostgresqlProvider(resolutionPath, contextSchemaPath, owner, referencedAssemblies) :> ISqlProvider
 #endif
-#if MYSQL
+#if MYSQL || MYSQLCONNECTOR
         | DatabaseProviderTypes.MYSQL -> MySqlProvider(resolutionPath, contextSchemaPath, owner, referencedAssemblies) :> ISqlProvider
 #endif
 #if ORACLE
@@ -49,6 +49,9 @@ module internal ProviderBuilder =
 #endif
 #if FIREBIRD
         | DatabaseProviderTypes.FIREBIRD -> FirebirdProvider(resolutionPath, contextSchemaPath, owner, referencedAssemblies, odbcquote) :> ISqlProvider
+#endif
+#if MSACCESS
+        | DatabaseProviderTypes.MSACCESS -> MSAccessProvider(contextSchemaPath) :> ISqlProvider
 #endif
 #if DUCKDB
         | DatabaseProviderTypes.DUCKDB -> DuckDbProvider(resolutionPath, contextSchemaPath, owner, referencedAssemblies) :> ISqlProvider
@@ -284,6 +287,11 @@ do ()
 [<assembly:CompilerServices.TypeProviderAssembly("FSharp.Data.SqlProvider.MySql.DesignTime.dll")>]
 do ()
     #endif
+    #if MYSQLCONNECTOR
+// Put the TypeProviderAssemblyAttribute in the runtime DLL, pointing to the design-time DLL
+[<assembly:CompilerServices.TypeProviderAssembly("FSharp.Data.SqlProvider.MySqlConnector.DesignTime.dll")>]
+do ()
+    #endif
     #if POSTGRES
 // Put the TypeProviderAssemblyAttribute in the runtime DLL, pointing to the design-time DLL
 [<assembly:CompilerServices.TypeProviderAssembly("FSharp.Data.SqlProvider.Postgresql.DesignTime.dll")>]
@@ -307,6 +315,11 @@ do ()
     #if ODBC
 // Put the TypeProviderAssemblyAttribute in the runtime DLL, pointing to the design-time DLL
 [<assembly:CompilerServices.TypeProviderAssembly("FSharp.Data.SqlProvider.Odbc.DesignTime.dll")>]
+do ()
+    #endif
+    #if MSACCESS
+// Put the TypeProviderAssemblyAttribute in the runtime DLL, pointing to the design-time DLL
+[<assembly:CompilerServices.TypeProviderAssembly("FSharp.Data.SqlProvider.MsAccess.DesignTime.dll")>]
 do ()
     #endif
     #if ORACLE

@@ -66,6 +66,13 @@ module DesignTimeUtils =
         let [<Literal>] runtime2 = "SQLProvider.MySql.Runtime"
         let [<Literal>] FSHARP_DATA_SQL = "FSharp.Data.Sql.MySql"
 #endif
+#if MYSQLCONNECTOR
+        let [<Literal>] design1 = "FSharp.Data.SqlProvider.MySqlConnector.DesignTime"
+        let [<Literal>] runtime1 = "FSharp.Data.SqlProvider.MySqlConnector"
+        let [<Literal>] design2 = "SQLProvider.MySqlConnector.DesignTime"
+        let [<Literal>] runtime2 = "SQLProvider.MySqlConnector.Runtime"
+        let [<Literal>] FSHARP_DATA_SQL = "FSharp.Data.Sql.MySqlConnector"
+#endif
 #if SQLITE
         let [<Literal>] design1 = "FSharp.Data.SqlProvider.SQLite.DesignTime"
         let [<Literal>] runtime1 = "FSharp.Data.SqlProvider.SQLite"
@@ -93,6 +100,13 @@ module DesignTimeUtils =
         let [<Literal>] design2 = "SQLProvider.Oracle.DesignTime"
         let [<Literal>] runtime2 = "SQLProvider.Oracle.Runtime"
         let [<Literal>] FSHARP_DATA_SQL = "FSharp.Data.Sql.Oracle"
+#endif
+#if MSACCESS
+        let [<Literal>] design1 = "FSharp.Data.SqlProvider.MsAccess.DesignTime"
+        let [<Literal>] runtime1 = "FSharp.Data.SqlProvider.MsAccess"
+        let [<Literal>] design2 = "SQLProvider.MsAccess.DesignTime"
+        let [<Literal>] runtime2 = "SQLProvider.MsAccess.Runtime"
+        let [<Literal>] FSHARP_DATA_SQL = "FSharp.Data.Sql.MsAccess"
 #endif
 #if DUCKDB
         let [<Literal>] design1 = "FSharp.Data.SqlProvider.DuckDb.DesignTime"

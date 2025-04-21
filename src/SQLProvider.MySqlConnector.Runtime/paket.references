@@ -10,9 +10,9 @@ System.Reflection.TypeExtensions
 System.Data.SqlClient
 System.Data.Common
 System.Memory
+
 group SourceFiles
-File:ProvidedTypes.fsi
-File:ProvidedTypes.fs
-File:ExpressionOptimizer.fs
+      File:ExpressionOptimizer.fs
+
 group Tests
-MySql.Data
+      MySqlConnector

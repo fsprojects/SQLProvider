@@ -36,4 +36,3 @@ dependencies
     Newtonsoft.Json >= 13.0.1
     System.Memory >= 4.6.3
     MySql.Data >= 6.10.9
-    MySqlConnector >= 2.3.1

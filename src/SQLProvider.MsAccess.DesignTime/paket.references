@@ -9,10 +9,9 @@ System.Reflection
 System.Reflection.TypeExtensions
 System.Data.SqlClient
 System.Data.Common
+System.Data.OleDb
 System.Memory
 group SourceFiles
 File:ProvidedTypes.fsi
 File:ProvidedTypes.fs
 File:ExpressionOptimizer.fs
-group Tests
-MySql.Data

@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFrameworks>net8.0;netstandard2.0</TargetFrameworks>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <DefineConstants>$(DefineConstants);NO_GENERATIVE;DESIGNTIME;MYSQLCONNECTOR;MICROSOFTSQL</DefineConstants>
+    <OutputPath>..\..\bin\mysqlconnector\typeproviders\fsharp41\</OutputPath>
+    <AssemblyName>FSharp.Data.SqlProvider.MySqlConnector.DesignTime</AssemblyName>
+    <Name>FSharp.Data.SqlProvider.MySqlConnector</Name>
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+    <TargetFSharpCoreVersion>8.0.0.0</TargetFSharpCoreVersion>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <Optimize>true</Optimize>
+    <Tailcalls>true</Tailcalls>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="..\..\paket-files\sourcefiles\fsprojects\FSharp.TypeProviders.SDK\src\ProvidedTypes.fsi">
+      <Paket>True</Paket>
+      <Link>paket-files/ProvidedTypes.fsi</Link>
+    </Compile>
+    <Compile Include="..\..\paket-files\sourcefiles\fsprojects\FSharp.TypeProviders.SDK\src\ProvidedTypes.fs">
+      <Paket>True</Paket>
+      <Link>paket-files/ProvidedTypes.fs</Link>
+    </Compile>
+    <Compile Include="..\..\paket-files\sourcefiles\Thorium\Linq.Expression.Optimizer\src\Code\ExpressionOptimizer.fs">
+      <Paket>True</Paket>
+      <Link>paket-files/ExpressionOptimizer.fs</Link>
+    </Compile>
+      <Compile Include="..\SQLProvider.Runtime\Providers.MySql.fs" Link="Providers.MySql.fs" />
+      <Compile Include="..\SQLProvider.Runtime\SqlRuntime.DataContext.fs" Link="SqlRuntime.DataContext.fs" />
+      <Compile Include="..\SQLProvider.DesignTime\SqlDesignTime.fs" Link="SqlDesignTime.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SQLProvider.Common\SQLProvider.Common.fsproj" />
+  </ItemGroup>
+  <Import Project="..\..\.paket\Paket.Restore.targets" />
+</Project>

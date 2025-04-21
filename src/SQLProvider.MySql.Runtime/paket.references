@@ -16,4 +16,3 @@ group SourceFiles
 
 group Tests
       MySql.Data
-      MySqlConnector

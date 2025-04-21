@@ -120,14 +120,20 @@ let projects =
      {name="SQLProvider.MsSql.DesignTime";summary="Type providers for Microsoft SQL Server database access.";description="Type providers for Microsoft SQL Server database access.";dependencies=[]};
      {name="SQLProvider.MsSql.Runtime";summary="Type providers for Microsoft SQL Server database access.";description="Type providers for Microsoft SQL Server database access.";dependencies=[]};
 
-     {name="SQLProvider.MySql.DesignTime";summary="Type providers for MySSQL database and MariaDB database access.";description="Type providers for MySSQL database and MariaDB database access.";dependencies=[]};
-     {name="SQLProvider.MySql.Runtime";summary="Type providers for MySSQL database and MariaDB database access.";description="Type providers for MySSQL database and MariaDB database access.";dependencies=[]};
+     {name="SQLProvider.MySql.DesignTime";summary="Type providers for MySSQL database and MariaDB database access.";description="Type providers for MySSQL database and MariaDB database access with the official driver.";dependencies=[]};
+     {name="SQLProvider.MySql.Runtime";summary="Type providers for MySSQL database and MariaDB database access.";description="Type providers for MySSQL database and MariaDB database access with the official driver.";dependencies=[]};
+
+     {name="SQLProvider.MySqlConnector.DesignTime";summary="Type providers for MySSQL database and MariaDB database access via MySqlConnector.";description="Type providers for MySSQL database and MariaDB database access via MySqlConnector.";dependencies=[]};
+     {name="SQLProvider.MySqlConnector.Runtime";summary="Type providers for MySSQL database and MariaDB database access via MySqlConnector.";description="Type providers for MySSQL database and MariaDB database access via MySqlConnector.";dependencies=[]};
 
      {name="SQLProvider.Odbc.DesignTime";summary="Type providers for any ODBC connection database access.";description="Type providers for any ODBC connection database access.";dependencies=[]};
      {name="SQLProvider.Odbc.Runtime";summary="Type providers for any ODBC connection database access.";description="Type providers for any ODBC connection database access.";dependencies=[]};
 
      {name="SQLProvider.Oracle.DesignTime";summary="Type providers for Oracle database access.";description="Type providers for Oracle database access.";dependencies=[]};
      {name="SQLProvider.Oracle.Runtime";summary="Type providers for Oracle database access.";description="Type providers for Oracle database access.";dependencies=[]};
+
+     {name="SQLProvider.MsAccess.DesignTime";summary="Type providers for Microsoft Access database access.";description="Type providers for Microsoft Access database access.";dependencies=[]};
+     {name="SQLProvider.MsAccess.Runtime";summary="Type providers for Microsoft Access database access.";description="Type providers for Microsoft Access database access.";dependencies=[]};
 
      {name="SQLProvider.Postgresql.DesignTime";summary="Type providers for PostgreSql database access.";description="Type providers for PostgreSql database access.";dependencies=[]};
      {name="SQLProvider.Postgresql.Runtime";summary="Type providers for PostgreSql database access.";description="Type providers for PostgreSql database access.";dependencies=[]};
