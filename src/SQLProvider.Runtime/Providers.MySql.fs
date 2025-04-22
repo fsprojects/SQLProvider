@@ -173,7 +173,7 @@ module MySql =
 
         let dbMappings =
             mappings
-            |> List.map (fun m -> m.ProviderTypeName.Value.ToLower(), m)
+            |> List.map (fun m -> (match m.ProviderTypeName with ValueSome x -> x | ValueNone -> "").ToLower(), m)
             |> Map.ofList
 
         typeMappings <- mappings

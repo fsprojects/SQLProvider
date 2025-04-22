@@ -16,6 +16,7 @@ open FSharp.Data.Sql.Common
 #nowarn 0044
 
 module MSSqlServer =
+
     let getSchema name (args:string[]) (con:IDbConnection) =
         let con = (con :?> SqlConnection)
         if con.State <> ConnectionState.Open then con.Open()
@@ -68,7 +69,7 @@ module MSSqlServer =
 
         let dbMappings =
             mappings
-            |> List.map (fun m -> m.ProviderTypeName.Value, m)
+            |> List.map (fun m -> (match m.ProviderTypeName with ValueSome x -> x | ValueNone -> ""), m)
             |> Map.ofList
 
         let dbMappings =
@@ -1022,7 +1023,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                     let colsAggrs = columns.Split([|" as "|], StringSplitOptions.None)
                     let distColumns = colsAggrs.[0] + (if colsAggrs.Length = 2 then "" else " + ',' + " + String.Join(" + ',' + ", colsAggrs |> Seq.filter(fun c -> c.Contains ",") |> Seq.map(fun c -> c.Substring(c.IndexOf(',')+1))))
                     ~~(sprintf "SELECT COUNT(DISTINCT %s) " distColumns)
-                elif sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s%s " (if sqlQuery.Take.IsSome then sprintf "TOP %i " sqlQuery.Take.Value else "")   columns)
+                elif sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s%s " (match sqlQuery.Take with ValueSome v -> sprintf "TOP %i " v | ValueNone -> "")   columns)
                 elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
                 else
                     match sqlQuery.Skip, sqlQuery.Take with

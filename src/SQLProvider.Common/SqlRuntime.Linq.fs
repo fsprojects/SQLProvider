@@ -596,7 +596,7 @@ module internal QueryImplementation =
                         use con = svc.Provider.CreateConnection(svc.DataContext.ConnectionString)
                         let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression svc.SqlExpression svc.TupleIndex con svc.Provider false true
 
-                        let ``nested param names`` = "@param" + abs(query.GetHashCode()).ToString() + nestCount.ToString() + "nested"
+                        let ``nested param names`` = $"@param{abs(query.GetHashCode())}{nestCount}nested"
                         nestCount <- nestCount + 1
 
                         let modified = 
@@ -629,7 +629,7 @@ module internal QueryImplementation =
 
                         let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression svc.SqlExpression svc.TupleIndex con svc.Provider false true
 
-                        let ``nested param names`` = "@param" + abs(query.GetHashCode()).ToString() + nestCount.ToString() + "nested"
+                        let ``nested param names`` = $"@param{abs(query.GetHashCode())}{nestCount}nested"
                         nestCount <- nestCount + 1
 
                         let modified = 
@@ -1115,7 +1115,7 @@ module internal QueryImplementation =
                         use con = subquery.Provider.CreateConnection(source.DataContext.ConnectionString)
                         let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression subquery.SqlExpression subquery.TupleIndex con subquery.Provider false (source.DataContext.SqlOperationsInSelect=SelectOperations.DatabaseSide)
 
-                        let ``nested param names`` = "@param" + abs(query.GetHashCode()).ToString() + "nested"
+                        let ``nested param names`` = $"@param{abs(query.GetHashCode())}nested"
 
                         let modified = 
                             parameters

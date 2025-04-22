@@ -263,25 +263,36 @@ module DesignTimeUtils =
             let prop =
                 ProvidedProperty(
                     SchemaProjections.buildFieldName(name),propTy,
-                    getterCode = (fun (args:Expr list) ->
-                        let meth = match nullable with
-                                    | NullableColumnType.OPTION -> typeof<SqlEntity>.GetMethod("GetColumnOption").MakeGenericMethod([|ty|])
-                                    | NullableColumnType.VALUE_OPTION -> typeof<SqlEntity>.GetMethod("GetColumnValueOption").MakeGenericMethod([|ty|])
-                                    | _ ->  typeof<SqlEntity>.GetMethod("GetColumn").MakeGenericMethod([|ty|])
-                        Expr.Call(args.[0],meth,[Expr.Value name])
-                    ),
-                    setterCode = (fun (args:Expr list) ->
+                    getterCode =
                         match nullable with
                         | NullableColumnType.OPTION -> 
-                            let meth = typeof<SqlEntity>.GetMethod("SetColumnOption").MakeGenericMethod([|ty|])
-                            Expr.Call(args.[0],meth,[Expr.Value name;args.[1]])
+                           (fun (args:Expr list) ->
+                            let meth = typeof<SqlEntity>.GetMethod("GetColumnOption").MakeGenericMethod([|ty|])
+                            Expr.Call(args.[0],meth,[Expr.Value name]))
                         | NullableColumnType.VALUE_OPTION -> 
-                            let meth = typeof<SqlEntity>.GetMethod("SetColumnValueOption").MakeGenericMethod([|ty|])
-                            Expr.Call(args.[0],meth,[Expr.Value name;args.[1]])
+                           (fun (args:Expr list) ->
+                            let meth = typeof<SqlEntity>.GetMethod("GetColumnValueOption").MakeGenericMethod([|ty|])
+                            Expr.Call(args.[0],meth,[Expr.Value name]))
                         | _ ->
-                            let meth = typeof<SqlEntity>.GetMethod("SetColumn").MakeGenericMethod([|ty|])
+                           (fun (args:Expr list) ->
+                            let meth = typeof<SqlEntity>.GetMethod("GetColumn").MakeGenericMethod([|ty|])
+                            Expr.Call(args.[0],meth,[Expr.Value name]))
+                    ,
+                    setterCode = 
+                        match nullable with
+                        | NullableColumnType.OPTION -> 
+                           (fun (args:Expr list) ->
+                            let meth = typeof<SqlEntity>.GetMethod("SetColumnOption").MakeGenericMethod([|ty|])
                             Expr.Call(args.[0],meth,[Expr.Value name;args.[1]]))
-                        )
+                        | NullableColumnType.VALUE_OPTION -> 
+                           (fun (args:Expr list) ->
+                            let meth = typeof<SqlEntity>.GetMethod("SetColumnValueOption").MakeGenericMethod([|ty|])
+                            Expr.Call(args.[0],meth,[Expr.Value name;args.[1]]))
+                        | _ ->
+                           (fun (args:Expr list) ->
+                            let meth = typeof<SqlEntity>.GetMethod("SetColumn").MakeGenericMethod([|ty|])
+                            Expr.Call(args.[0],meth,[Expr.Value name;args.[1]])))
+
             let nfo = c.TypeInfo
             let typeInfo = match nfo with ValueNone -> "" | ValueSome x -> x.ToString()
             match con with
@@ -364,18 +375,24 @@ module DesignTimeUtils =
                             let a0 = args.[0]
                             let tail = args.Tail
                             <@@ (((%%a0 : obj):?>ISqlDataContext)).CallSproc(%%var, %%retColsExpr,  %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) tail)) @@>));
-                        ProvidedMethod("InvokeAsync", parameters, asyncRet, invokeCode = QuotationHelpers.quoteRecord runtimeSproc (fun args var ->
-                            let a0 = args.[0]
-                            let tail = args.Tail
+                        ProvidedMethod("InvokeAsync", parameters, asyncRet, invokeCode =
                             if isUnit then
-                                <@@ task {
-                                        let! r =
-                                            (((%%a0 : obj):?>ISqlDataContext)).CallSprocAsync(%%var, %%retColsExpr,  %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) tail))
-                                        return ()
-                                    } :> Task @@>
+                                QuotationHelpers.quoteRecord runtimeSproc (fun args var ->
+                                    let a0 = args.[0]
+                                    let tail = args.Tail
+                                    <@@ task {
+                                            let! r =
+                                                (((%%a0 : obj):?>ISqlDataContext)).CallSprocAsync(%%var, %%retColsExpr,  %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) tail))
+                                            return ()
+                                        } :> Task @@>
+                                )
                             else
-                                <@@ (((%%a0 : obj):?>ISqlDataContext)).CallSprocAsync(%%var, %%retColsExpr,  %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) tail))  @@>
-                        ))]
+                                QuotationHelpers.quoteRecord runtimeSproc (fun args var ->
+                                    let a0 = args.[0]
+                                    let tail = args.Tail
+                                    <@@ (((%%a0 : obj):?>ISqlDataContext)).CallSprocAsync(%%var, %%retColsExpr,  %%Expr.NewArray(typeof<obj>,List.map(fun e -> Expr.Coerce(e,typeof<obj>)) tail))  @@>
+                                )
+                            )]
             )
 
             let niceUniqueSprocName =
@@ -672,11 +689,11 @@ module DesignTimeUtils =
                                 let ty = ty.MakeGenericType tt
                                 let constraintName = r.Name
                                 let niceName = getRelationshipName (sprintf "%s by %s" r.ForeignTable r.PrimaryKey)
+                                let pt = r.PrimaryTable
+                                let pk = r.PrimaryKey
+                                let ft = r.ForeignTable
+                                let fk = r.ForeignKey
                                 let prop = ProvidedProperty(niceName,ty, getterCode = fun args ->
-                                    let pt = r.PrimaryTable
-                                    let pk = r.PrimaryKey
-                                    let ft = r.ForeignTable
-                                    let fk = r.ForeignKey
                                     let a0 = args.[0]
                                     <@@ (%%a0 : SqlEntity).DataContext.CreateRelated((%%a0 : SqlEntity),constraintName,pt,pk,ft,fk,RelationshipDirection.Children) @@> )
                                 prop.AddXmlDoc(sprintf "Related %s entities from the foreign side of the relationship, where the primary key is %s and the foreign key is %s. Constraint: %s" r.ForeignTable r.PrimaryKey r.ForeignKey constraintName)
@@ -689,11 +706,11 @@ module DesignTimeUtils =
                                 let ty = ty.MakeGenericType tt
                                 let constraintName = r.Name
                                 let niceName = getRelationshipName (sprintf "%s by %s" r.PrimaryTable r.PrimaryKey)
+                                let pt = r.PrimaryTable
+                                let pk = r.PrimaryKey
+                                let ft = r.ForeignTable
+                                let fk = r.ForeignKey
                                 let prop = ProvidedProperty(niceName,ty, getterCode = fun args ->
-                                    let pt = r.PrimaryTable
-                                    let pk = r.PrimaryKey
-                                    let ft = r.ForeignTable
-                                    let fk = r.ForeignKey
                                     let a0 = args.[0]
                                     <@@ (%%a0 : SqlEntity).DataContext.CreateRelated((%%a0 : SqlEntity),constraintName,pt, pk,ft, fk,RelationshipDirection.Parents) @@> )
                                 prop.AddXmlDoc(sprintf "Related %s entities from the primary side of the relationship, where the primary key is %s and the foreign key is %s. Constraint: %s" r.PrimaryTable r.PrimaryKey r.ForeignKey constraintName)

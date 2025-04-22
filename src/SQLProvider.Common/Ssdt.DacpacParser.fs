@@ -91,10 +91,12 @@ type SsdtSchema = {
     TryGetTableByName: string -> SsdtTable voption
     StoredProcs: SsdtStoredProc array
     Relationships: SsdtRelationship array
+    TryGetRelationshipsByTableName: string -> (SsdtRelationship array * SsdtRelationship array)
     Descriptions: SsdtDescriptionItem array
     UserDefinedDataTypes: SsdtUserDefinedDataType
     Functions: SsdtStoredProc array
 }
+
 
 module RegexParsers =
     open System.Text.RegularExpressions
@@ -510,12 +512,18 @@ let parseXml(xml: string) =
             )
         } : SsdtTable
 
-    let tablesAndViews = Array.concat [| tables ; (views |> Array.map viewToTable) |]
+    let tablesAndViews = Array.concat [| tables ; (views |> Array.map viewToTable) |] 
+    let tablesDict = tablesAndViews |> Array.distinctBy(fun t -> t.Name) |> Array.map(fun t -> t.Name, t) |> dict
+    let definingRelations = relationships |> Array.groupBy(fun r -> r.DefiningTable.Name) |> Map.ofArray
+    let foreignRelations = relationships |> Array.groupBy(fun r -> r.ForeignTable.Name) |> Map.ofArray
 
     { Tables = tablesAndViews
       StoredProcs = storedProcs
-      TryGetTableByName = fun nm -> tablesAndViews |> (Array.tryFind (fun t -> t.Name = nm) >> function Some x -> ValueSome x | None -> ValueNone)
+      TryGetTableByName = fun nm -> match tablesDict.TryGetValue nm with | true, v -> ValueSome v | false, _ -> ValueNone
       Relationships = relationships
+      TryGetRelationshipsByTableName = fun nm ->
+            (match definingRelations.TryGetValue nm with | true, v -> v | false, _ -> Array.empty),
+            (match foreignRelations.TryGetValue nm with | true, v -> v | false, _ -> Array.empty)
       Descriptions = descriptions
       UserDefinedDataTypes = userDefinedDataTypes
       Functions = functions } : SsdtSchema

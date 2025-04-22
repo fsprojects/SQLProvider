@@ -113,7 +113,7 @@ module internal QueryExpressionTransformer =
                 let foundMember, name = Int32.TryParse((e :?> MemberExpression).Member.Name.Replace("Item", ""))
                 if not foundMember then None
                 else
-                let alias = Utilities.resolveTuplePropertyName ("Item" + (7 + name).ToString()) tupleIndex
+                let alias = Utilities.resolveTuplePropertyName ("Item" + (string (7 + name))) tupleIndex
                 match aliasEntityDict.TryGetValue alias with
                 | true, aliasVal ->
                     Some (alias,aliasVal.FullName, None)
@@ -124,7 +124,7 @@ module internal QueryExpressionTransformer =
                 let foundMember, name = Int32.TryParse((getter :?> MemberExpression).Member.Name.Replace("Item", ""))
                 if not foundMember then None
                 else
-                let alias = Utilities.resolveTuplePropertyName ("Item" + (7 + name).ToString()) tupleIndex
+                let alias = Utilities.resolveTuplePropertyName ("Item" + (string (7 + name)) ) tupleIndex
                 match aliasEntityDict.TryGetValue alias with
                 | true, aliasVal ->
                     Some (alias,aliasVal.FullName, Some(key,mi))
@@ -300,7 +300,7 @@ module internal QueryExpressionTransformer =
                     elif alias="" && ultimateChild.IsSome then fst ultimateChild.Value
                     else alias
 
-                let name = "op"+abs(coltyp.GetHashCode()).ToString()
+                let name = $"op{abs(coltyp.GetHashCode())}"
                 let meth = 
                     if exp.Type.IsGenericType && exp.Type.GetGenericTypeDefinition() = typedefof<Option<_>> then
                         typeof<SqlEntity>.GetMethod("GetColumnOption").MakeGenericMethod([|exp.Type.GetGenericArguments().[0]|])

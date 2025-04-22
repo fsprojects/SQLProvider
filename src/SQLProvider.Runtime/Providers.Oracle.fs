@@ -140,7 +140,7 @@ module internal Oracle =
 
         let oracleMappings =
             mappings
-            |> List.map (fun m -> m.ProviderTypeName.Value, m)
+            |> List.map (fun m -> (match m.ProviderTypeName with ValueSome x -> x | ValueNone -> ""), m)
             |> Map.ofList
 
         typeMappings <- mappings
@@ -1060,11 +1060,11 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
             //I think on oracle this will potentially impact the ordering as the row num is generated before any
             //filters or ordering is applied hance why this produces a nested query. something like
             //select * from (select ....) where ROWNUM <= 5.
-            if sqlQuery.Take.IsSome
-            then
-                let sql = sprintf "select * from (%s) where ROWNUM <= %i" (sb.ToString()) sqlQuery.Take.Value
+            match sqlQuery.Take with
+            | ValueSome v ->
+                let sql = sprintf "select * from (%s) where ROWNUM <= %i" (sb.ToString()) v
                 (sql, parameters)
-            else
+            | ValueNone ->
                 let sql = sb.ToString()
                 (sql,parameters)
 

@@ -223,8 +223,8 @@ module Utilities =
     let rec getBaseColumnName x =
         match x with
         | KeyColumn k -> k
-        | CanonicalOperation(op, c) -> "c" + abs(op.GetHashCode()).ToString() + "c" + getBaseColumnName c
-        | GroupColumn(op, c) -> "g" + abs(op.GetHashCode()).ToString() + "g" + getBaseColumnName c
+        | CanonicalOperation(op, c) -> $"c{abs(op.GetHashCode())}c{getBaseColumnName c}"
+        | GroupColumn(op, c) -> $"g{abs(op.GetHashCode())}g{getBaseColumnName c}"
 
     let fieldConstant (value:obj) =
         //Can we create named parameters in ODBC, and how?
@@ -254,8 +254,8 @@ module Utilities =
         (fun (k:string,v) ->
             if k.StartsWith prefix then
                 let temp = replaceFirst k prefix ""
-                let temp = temp.AsSpan(1,temp.Length-2).ToString()
-                Some(temp,v)
+                let temp = temp.AsSpan(1,temp.Length-2)
+                Some(temp.ToString(),v)
             // this case is for PostgreSQL and other vendors that use " as whitespace qualifiers
             elif  k.StartsWith prefix2 then
                 let temp = replaceFirst k prefix2 ""
@@ -263,8 +263,8 @@ module Utilities =
             // this case is for MySQL and other vendors that use ` as whitespace qualifiers
             elif  k.StartsWith prefix3 then
                 let temp = replaceFirst k prefix3 ""
-                let temp = temp.AsSpan(1,temp.Length-2).ToString()
-                Some(temp,v)
+                let temp = temp.AsSpan(1,temp.Length-2)
+                Some(temp.ToString(),v)
             //this case for MSAccess, uses _ as whitespace qualifier
             elif  k.StartsWith prefix4 then
                 let temp = replaceFirst k prefix4 ""
@@ -276,8 +276,8 @@ module Utilities =
             //this case is for DuckDb
             elif k.StartsWith prefix6 then
                 let temp = replaceFirst k prefix6 ""
-                let temp = temp.AsSpan(1,temp.Length-2).ToString()
-                Some(temp,v)
+                let temp = temp.AsSpan(1,temp.Length-2)
+                Some(temp.ToString(),v)
             elif not(String.IsNullOrEmpty(k)) then // this is for dynamic alias columns: [a].[City] as City
                 Some(k,v)
             else None)
@@ -360,7 +360,7 @@ module SchemaProjections =
     /// Turns a given non-empty string into a nice 'PascalCase' identifier
     let nicePascalName (s:string) =
       let le = s.Length
-      if le = 1 then Char.ToUpperInvariant(s.[0]).ToString() else
+      if le = 1 then string (Char.ToUpperInvariant(s.[0])) else
       // Starting to parse a new segment 
 
       let rec restart i =
@@ -401,14 +401,14 @@ module SchemaProjections =
       seq { for i1, i2 in results do 
               let sub = s.AsSpan(i1, i2 - i1)
               if forall Char.IsLetterOrDigit sub then
-                Char.ToUpperInvariant(sub.[0]).ToString() + sub.Slice(1).ToString().ToLowerInvariant() }
+                (string (Char.ToUpperInvariant sub.[0])) + sub.Slice(1).ToString().ToLowerInvariant() }
       |> String.Concat
     
     /// Turns a given non-empty string into a nice 'camelCase' identifier
     let niceCamelName (s:string) = 
       let name = nicePascalName s
       if name.Length > 0 then
-        name.[0].ToString().ToLowerInvariant() + name.Substring(1)
+        (string name.[0]).ToLowerInvariant() + name.Substring(1)
       else name
     
     /// Add ' until the name is unique

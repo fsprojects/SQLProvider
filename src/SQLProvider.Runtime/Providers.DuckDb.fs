@@ -202,7 +202,7 @@ module DuckDb =
 
         let dbMappings =
             mappings
-            |> List.map (fun m -> m.ProviderTypeName.Value.ToUpper(), m)
+            |> List.map (fun m -> (match m.ProviderTypeName with ValueSome x -> x | ValueNone -> "").ToUpper(), m)
             |> Map.ofList
 
         typeMappings <- mappings

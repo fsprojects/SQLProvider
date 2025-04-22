@@ -190,23 +190,9 @@ module MSSqlServerSsdt =
           Column.TypeInfo = if col.DataType = "" then ValueNone else ValueSome col.DataType }
 
     let ssdtCache = ConcurrentDictionary<string,Lazy<SsdtSchema>>()
+    let sprocReturnCache = ConcurrentDictionary<string, QueryParameter[]>()
 
-type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
-    let schemaCache = SchemaCache.Empty
-    let createInsertCommand = MSSqlServer.createInsertCommand schemaCache
-    let createUpdateCommand = MSSqlServer.createUpdateCommand schemaCache
-    let createDeleteCommand = MSSqlServer.createDeleteCommand schemaCache
-    let myLock = new Object()
-    // Remembers the version of each instance it connects to
-    let mssqlVersionCache = ConcurrentDictionary<string, Lazy<Version>>()
-
-    let getSsdtSchema path = lazy (MSSqlServerSsdt.parseDacpac path)
-
-    let ssdtSchema = 
-        try MSSqlServerSsdt.ssdtCache.GetOrAdd(ssdtPath, fun _ -> getSsdtSchema ssdtPath).Value
-        with | ex ->
-            let x = MSSqlServerSsdt.ssdtCache.TryRemove ssdtPath
-            reraise()
+    let getSsdtSchema path = lazy (parseDacpac path)
 
     let sprocReturnParam i =
         { Name = "ResultSet" + (match i with | 0 -> "" | x -> "_" + x.ToString())
@@ -219,11 +205,71 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
           Length = ValueNone
           Ordinal = i }
 
+    let inline convertExecutable udts type' elems =
+        elems
+        |> Array.map (fun sp ->
+            let inParams =
+                sp.Parameters
+                |> Array.mapi (fun idx p ->
+                    { Name = p.Name
+                      TypeMapping = tryFindMappingOrVariant udts p.DataType
+                      Direction = if p.IsOutput then ParameterDirection.InputOutput else ParameterDirection.Input
+                      Length = p.Length
+                      Ordinal = idx }
+                )
+                |> Array.toList
+            let outParams =
+                sp.Parameters
+                |> Array.filter (fun p -> p.IsOutput)
+                |> Array.mapi (fun idx p ->
+                    { Name = p.Name
+                      TypeMapping = tryFindMappingOrVariant udts p.DataType
+                      Direction = ParameterDirection.InputOutput
+                      Length = p.Length
+                      Ordinal = idx }
+                )
+                |> Array.toList
 
-    let sprocReturnCache = ConcurrentDictionary<string, QueryParameter[]>()
+            let returnValue =
+                match sp.ReturnValueDataType with
+                | ValueNone -> []
+                | ValueSome dt ->
+                    [{ Name = "ReturnValue"
+                       TypeMapping = tryFindMappingOrVariant udts dt
+                       Direction = ParameterDirection.ReturnValue
+                       Length = ValueNone
+                       Ordinal = outParams.Length }]
+    
+            // If no outParams, add a "ResultSet" property (see issue #706)
+            let outParams =
+                match outParams with
+                | [] -> [ sprocReturnParam 0 ] @ returnValue
+                | _ -> outParams @ returnValue
+    
+            let spName = { ProcName = sp.Name; Owner = sp.Schema; PackageName = sp.Schema; }
+    
+            Root(type', Sproc({ Name = spName; Params = (fun con -> inParams); ReturnColumns = (fun con sparams -> outParams) }))
+        )
+
+type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
+    let schemaCache = SchemaCache.Empty
+    let createInsertCommand = MSSqlServer.createInsertCommand schemaCache
+    let createUpdateCommand = MSSqlServer.createUpdateCommand schemaCache
+    let createDeleteCommand = MSSqlServer.createDeleteCommand schemaCache
+    let myLock = new Object()
+    // Remembers the version of each instance it connects to
+    let mssqlVersionCache = ConcurrentDictionary<string, Lazy<Version>>()
+
+
+    let ssdtSchema = 
+        try MSSqlServerSsdt.ssdtCache.GetOrAdd(ssdtPath, MSSqlServerSsdt.getSsdtSchema).Value
+        with | ex ->
+            let x = MSSqlServerSsdt.ssdtCache.TryRemove ssdtPath
+            reraise()
+
     /// SSDT dacpac doesn't contain info about return parameters. A little hacky, but also SQL Server efficiently caches the query
     let getSprocReturnParams con sprocDbName inputParameters =
-        sprocReturnCache.GetOrAdd(sprocDbName,
+        MSSqlServerSsdt.sprocReturnCache.GetOrAdd(sprocDbName,
             fun _ ->
                 MSSqlServer.findDbType <- MSSqlServerSsdt.tryFindMapping
                 let r = MSSqlServer.getSprocReturnCols con {ProcName = sprocDbName; PackageName = ""; Owner = ""} inputParameters
@@ -310,16 +356,20 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
         member __.GetSchemaCache() = schemaCache
 
         member __.GetTables(con,_) =
+            if String.IsNullOrEmpty tableNames then
+                ssdtSchema.Tables
+                |> Array.map (MSSqlServerSsdt.ssdtTableToTable >> fun tbl -> schemaCache.Tables.GetOrAdd(tbl.FullName, tbl))
+            else
             let allowed = tableNames.Split([|','|], StringSplitOptions.RemoveEmptyEntries) |> Array.map (fun s -> s.Trim())
 
-            let filterByTableNames (tbl: Table) =
-                if allowed = [||] then true
-                else allowed |> Array.exists (fun tblName -> String.Compare(tbl.Name, tblName, true) = 0)
+            if allowed = [||] then 
+                ssdtSchema.Tables
+                |> Array.map (MSSqlServerSsdt.ssdtTableToTable >> fun tbl -> schemaCache.Tables.GetOrAdd(tbl.FullName, tbl))
+            else
+                ssdtSchema.Tables
+                |> Array.filter (fun tbl -> allowed |> Array.exists (fun tblName -> String.Compare(tbl.Name, tblName, true) = 0))
+                |> Array.map (MSSqlServerSsdt.ssdtTableToTable >> fun tbl -> schemaCache.Tables.GetOrAdd(tbl.FullName, tbl))
 
-            ssdtSchema.Tables
-            |> Array.map MSSqlServerSsdt.ssdtTableToTable
-            |> Array.filter filterByTableNames
-            |> Array.map (fun tbl -> schemaCache.Tables.GetOrAdd(tbl.FullName, tbl))
 
         member __.GetPrimaryKey(table) =
             match ssdtSchema.TryGetTableByName(table.Name) with
@@ -336,33 +386,32 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                     match ssdtSchema.TryGetTableByName(table.Name) with
                     | ValueSome ssdtTbl ->
                         ssdtTbl.Columns
-                        |> Array.map (MSSqlServerSsdt.ssdtColumnToColumn (ssdtSchema.UserDefinedDataTypes) ssdtTbl)
-                        |> Array.map (fun col -> col.Name, col)
+                        |> Array.map (MSSqlServerSsdt.ssdtColumnToColumn (ssdtSchema.UserDefinedDataTypes) ssdtTbl >> fun col ->
+
+                            // Add PKs to cache
+                            if col.IsPrimaryKey then
+                                schemaCache.PrimaryKeys.AddOrUpdate(table.FullName, [col.Name], fun key old ->
+                                     match col.Name with
+                                     | "" -> old
+                                     | x -> match old with
+                                            | [] -> [x]
+                                            | os -> x::os |> Seq.distinct |> Seq.toList |> List.sort
+                                ) |> ignore
+
+                            col.Name, col
+                        )
                     | ValueNone -> [||]
                     |> Map.ofArray
-
-                // Add PKs to cache
-                columns
-                |> Seq.map (fun kvp -> kvp.Value)
-                |> Seq.iter (fun col ->
-                    if col.IsPrimaryKey then
-                        schemaCache.PrimaryKeys.AddOrUpdate(table.FullName, [col.Name], fun key old ->
-                             match col.Name with
-                             | "" -> old
-                             | x -> match old with
-                                    | [] -> [x]
-                                    | os -> x::os |> Seq.distinct |> Seq.toList |> List.sort
-                        ) |> ignore
-                )
 
                 // Add columns to cache
                 schemaCache.Columns.AddOrUpdate(table.FullName, columns, fun x old -> match columns.Count with 0 -> old | x -> columns)
 
         member __.GetRelationships(con, table) =
             schemaCache.Relationships.GetOrAdd(table.FullName, fun name ->
+
+                let defining, foreign = ssdtSchema.TryGetRelationshipsByTableName(table.Name)
                 let children =
-                    ssdtSchema.Relationships
-                    |> Array.filter (fun r -> Table.CreateFullName(r.ForeignTable.Schema, r.ForeignTable.Name) = table.FullName)
+                    foreign
                     |> Array.map (fun r ->
                         { Name = r.Name
                           PrimaryTable = Table.CreateFullName(r.ForeignTable.Schema, r.ForeignTable.Name)
@@ -372,8 +421,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                     )
 
                 let parents =
-                    ssdtSchema.Relationships
-                    |> Array.filter (fun r -> Table.CreateFullName(r.DefiningTable.Schema, r.DefiningTable.Name) = table.FullName)
+                    defining
                     |> Array.map (fun r ->
                         { Name = r.Name
                           PrimaryTable = Table.CreateFullName(r.ForeignTable.Schema, r.ForeignTable.Name)
@@ -386,53 +434,9 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
             )
 
         member __.GetSprocs(con) =
-            let convertExecutable type' elems =
-                elems
-                |> Array.map (fun sp ->
-                    let inParams =
-                        sp.Parameters
-                        |> Array.mapi (fun idx p ->
-                            { Name = p.Name
-                              TypeMapping = MSSqlServerSsdt.tryFindMappingOrVariant (ssdtSchema.UserDefinedDataTypes) p.DataType
-                              Direction = if p.IsOutput then ParameterDirection.InputOutput else ParameterDirection.Input
-                              Length = p.Length
-                              Ordinal = idx }
-                        )
-                        |> Array.toList
-                    let outParams =
-                        sp.Parameters
-                        |> Array.filter (fun p -> p.IsOutput)
-                        |> Array.mapi (fun idx p ->
-                            { Name = p.Name
-                              TypeMapping = MSSqlServerSsdt.tryFindMappingOrVariant (ssdtSchema.UserDefinedDataTypes) p.DataType
-                              Direction = ParameterDirection.InputOutput
-                              Length = p.Length
-                              Ordinal = idx }
-                        )
-                        |> Array.toList
 
-                    let returnValue =
-                        match sp.ReturnValueDataType with
-                        | ValueNone -> []
-                        | ValueSome dt ->
-                            [{ Name = "ReturnValue"
-                               TypeMapping = MSSqlServerSsdt.tryFindMappingOrVariant (ssdtSchema.UserDefinedDataTypes) dt
-                               Direction = ParameterDirection.ReturnValue
-                               Length = ValueNone
-                               Ordinal = outParams.Length }]
-    
-                    // If no outParams, add a "ResultSet" property (see issue #706)
-                    let outParams =
-                        match outParams with
-                        | [] -> [ sprocReturnParam 0 ] @ returnValue
-                        | _ -> outParams @ returnValue
-    
-                    let spName = { ProcName = sp.Name; Owner = sp.Schema; PackageName = sp.Schema; }
-    
-                    Root(type', Sproc({ Name = spName; Params = (fun con -> inParams); ReturnColumns = (fun con sparams -> outParams) }))
-                )
-            let sprocs = convertExecutable "Procedures" ssdtSchema.StoredProcs
-            let funcs = convertExecutable "Functions" ssdtSchema.Functions
+            let sprocs = MSSqlServerSsdt.convertExecutable ssdtSchema.UserDefinedDataTypes "Procedures" ssdtSchema.StoredProcs
+            let funcs = MSSqlServerSsdt.convertExecutable ssdtSchema.UserDefinedDataTypes "Functions" ssdtSchema.Functions
             Array.append sprocs funcs |> Array.toList
             
         member __.GetIndividualsQueryText(table,amount) = String.Empty // Not implemented for SSDT
@@ -745,7 +749,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                     let colsAggrs = columns.Split([|" as "|], StringSplitOptions.None)
                     let distColumns = colsAggrs.[0] + (if colsAggrs.Length = 2 then "" else " + ',' + " + String.Join(" + ',' + ", colsAggrs |> Seq.filter(fun c -> c.Contains ",") |> Seq.map(fun c -> c.Substring(c.IndexOf(',')+1))))
                     ~~(sprintf "SELECT COUNT(DISTINCT %s) " distColumns)
-                elif sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s%s " (if sqlQuery.Take.IsSome then sprintf "TOP %i " sqlQuery.Take.Value else "")   columns)
+                elif sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s%s " (match sqlQuery.Take with ValueSome v -> sprintf "TOP %i " v | ValueNone -> "") columns)
                 elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
                 else
                     match sqlQuery.Skip, sqlQuery.Take with

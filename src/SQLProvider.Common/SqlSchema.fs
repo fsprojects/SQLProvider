@@ -76,7 +76,6 @@ type Relationship =
       ForeignTable: string
       ForeignKey: string }
 
-[<Struct>]
 type SprocName =
     { ProcName: string
       Owner: string
@@ -118,7 +117,6 @@ type Sproc =
         typedefof<Sproc>.GetNestedTypes(BindingFlags.Public ||| BindingFlags.NonPublic)
         |> Array.filter Microsoft.FSharp.Reflection.FSharpType.IsUnion
 
-[<Struct>]
 type Table =
     { Schema: string
       Name: string

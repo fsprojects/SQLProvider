@@ -74,7 +74,7 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
 
         let dbMappings =
             mappings
-            |> List.map (fun m -> m.ProviderTypeName.Value, m)
+            |> List.map (fun m -> (match m.ProviderTypeName with ValueSome x -> x | ValueNone -> ""), m)
             |> Map.ofList
 
         typeMappings <- mappings
