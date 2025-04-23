@@ -234,28 +234,24 @@ type public SqlDataContext (typeName, connectionString:string, providerType:Data
             [| while reader.Read() do
                  let e = SqlEntity(this, name, columns, reader.FieldCount)
                  for i = 0 to reader.FieldCount - 1 do
-                    match reader.GetValue(i) with
-                    | null | :? DBNull ->  e.SetColumnSilent(reader.GetName(i),null)
-                    | value -> e.SetColumnSilent(reader.GetName(i),value)
+                    match reader.GetValue i with
+                    | null | :? DBNull ->  e.SetColumnSilent(reader.GetName i,null)
+                    | value -> e.SetColumnSilent(reader.GetName i,value)
                  yield e
             |]
 
         member this.ReadEntitiesAsync(name: string, columns: ColumnLookup, reader: DbDataReader) =
             task {
                 let res = ResizeArray<_>()
-                let mutable hasNext = true
-                while hasNext do
-                    let! h = reader.ReadAsync()
-                    hasNext <- h
-                    if hasNext then
-                        let e = SqlEntity(this, name, columns, reader.FieldCount)
-                        for i = 0 to reader.FieldCount - 1 do
-                            let! valu = reader.GetFieldValueAsync(i)
-                            match valu with
-                            | null ->  e.SetColumnSilent(reader.GetName(i),null)
-                            | nullItm when System.Convert.IsDBNull nullItm -> e.SetColumnSilent(reader.GetName(i),null)
-                            | value -> e.SetColumnSilent(reader.GetName(i),value)
-                        res.Add e
+                while! reader.ReadAsync() do
+                    let e = SqlEntity(this, name, columns, reader.FieldCount)
+                    for i = 0 to reader.FieldCount - 1 do
+                        let! valu = reader.GetFieldValueAsync i
+                        match valu with
+                        | null ->  e.SetColumnSilent(reader.GetName i,null)
+                        | nullItm when System.Convert.IsDBNull nullItm -> e.SetColumnSilent(reader.GetName i,null)
+                        | value -> e.SetColumnSilent(reader.GetName i,value)
+                    res.Add e
                 return res |> Seq.toArray
             }
 

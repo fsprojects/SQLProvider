@@ -1,6 +1,7 @@
 FSharp.Core
 System.Data.SqlClient
 System.Data.Common
+System.Runtime
 Microsoft.Data.SqlClient
 System.Memory
 System.Text.Encodings.Web

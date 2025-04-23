@@ -35,5 +35,6 @@ dependencies
     FSharp.Core >= 8.0.301
     Newtonsoft.Json >= 13.0.1
     System.Memory >= 4.6.3
+    System.Data.SqlClient >= 4.9.0
     Microsoft.Data.SqlClient >= 5.2.2
     System.Text.Json >= 9.0.4

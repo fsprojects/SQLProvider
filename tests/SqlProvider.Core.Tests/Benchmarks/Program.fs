@@ -1,4 +1,5 @@
 
+//#r "../../../bin/lib/net6.0/FSharp.Data.SqlProvider.Common.dll"
 //#r "../../../bin/lib/net6.0/FSharp.Data.SqlProvider.dll"
 //#r "nuget: Microsoft.Data.SqlClient"
 //#r "nuget: BenchmarkDotNet"
@@ -11,6 +12,7 @@ open BenchmarkDotNet.Jobs
 
 open System
 open FSharp.Data.Sql
+//open FSharp.Data.Sql.MsSql
 
 [<Literal>]
 let connStr = @"Data Source=localhost;Initial Catalog=HR;Integrated Security=True;TrustServerCertificate=True"

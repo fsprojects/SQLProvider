@@ -36,3 +36,4 @@ dependencies
     Newtonsoft.Json >= 13.0.1
     System.Memory >= 4.6.3
     Npgsql >= 8.0.7
+    Microsoft.Extensions.Logging.Abstractions >= 8.0.3

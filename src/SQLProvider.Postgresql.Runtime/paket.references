@@ -1,5 +1,6 @@
 FSharp.Core
 System.Memory
+Microsoft.Extensions.Logging.Abstractions
 
 group SourceFiles
       File:ExpressionOptimizer.fs

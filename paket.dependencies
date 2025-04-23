@@ -5,6 +5,7 @@ storage: none
 nuget FSharp.Core == 8.0.301
 nuget System.Data.SqlClient framework: net461, net472, net48, netstandard2.0, netstandard2.1, netcoreapp2.1, netcoreapp3.1
 nuget NETStandard.Library.NETFramework storage: packages
+nuget System.Runtime
 nuget System.Data.Common
 nuget System.Data.OleDb
 nuget System.Data.Odbc
@@ -12,6 +13,8 @@ nuget Microsoft.Data.SQLite 2.0
 nuget Microsoft.Data.SqlClient framework: net462, netstandard2.0, net8.0, net6.0, netstandard2.1
 nuget System.Memory
 nuget System.Text.Encodings.Web 9.0.4
+nuget System.Threading.Tasks.Extensions
+nuget Microsoft.Extensions.Logging.Abstractions
 
 group Build
 

@@ -710,13 +710,9 @@ module Sql =
     let dataReaderToArrayAsync (reader:System.Data.Common.DbDataReader) =
         task {
             let res = ResizeArray<_>()
-            let mutable hasNext = true
-            while hasNext do
-                let! h = reader.ReadAsync()
-                hasNext <- h
-                if hasNext then
-                    let e = collectfunc reader
-                    res.Add e
+            while! reader.ReadAsync() do
+                let e = collectfunc reader
+                res.Add e
             return res |> Seq.toArray
         }
 
