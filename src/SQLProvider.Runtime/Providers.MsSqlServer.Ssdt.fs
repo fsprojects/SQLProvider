@@ -18,7 +18,6 @@ open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
 open FSharp.Data.Sql.Ssdt.DacpacParser
 
-#nowarn 0044
 module MSSqlServerSsdt =
 
     [<Literal>]
@@ -261,7 +260,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
     let mssqlVersionCache = ConcurrentDictionary<string, Lazy<Version>>()
 
 
-    let ssdtSchema = 
+    let ssdtSchema() = 
         try MSSqlServerSsdt.ssdtCache.GetOrAdd(ssdtPath, MSSqlServerSsdt.getSsdtSchema).Value
         with | ex ->
             let x = MSSqlServerSsdt.ssdtCache.TryRemove ssdtPath
@@ -282,7 +281,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
         member __.GetLockObject() = myLock
         member __.GetTableDescription(con,tableName) =
             tableName +
-            (ssdtSchema.Descriptions
+            (ssdtSchema().Descriptions
              |> Array.filter(fun d -> (d.DecriptionType = "SqlTableBase" || d.DecriptionType = "SqlView") && d.ColumnName.IsNone)
              |> Array.tryFind(fun d -> if tableName.Contains "." then d.Schema + "." + d.TableName = tableName else d.TableName = tableName)
              |> Option.map (fun d ->
@@ -294,8 +293,8 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
              )
         member __.GetColumnDescription(con,tableName,columnName) =
             let tableName = RegexParsers.splitFullName tableName |> Seq.last
-            (ssdtSchema.Tables
-             |> Array.tryFind (fun t -> if tableName.Contains "." then t.Schema + "." + t.Name = tableName else t.Name = tableName)
+            let schema = ssdtSchema()
+            (match schema.TryGetTableByName tableName with ValueSome v -> Some v | ValueNone -> None
              |> Option.bind (fun t -> t.Columns |> Array.tryFind (fun c -> c.Name = columnName))
              |> Option.map (fun c ->
                 if String.IsNullOrEmpty c.Description then ""
@@ -304,7 +303,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                 else " / " + c.Description)
              |> Option.defaultValue columnName)
             +
-            (ssdtSchema.Descriptions
+            (schema.Descriptions
              |> Array.filter(fun d -> d.DecriptionType = "SqlColumn" && d.ColumnName.IsSome && d.ColumnName.Value = columnName)
              |> Array.tryFind(fun d ->
                     if tableName.Contains "." then d.Schema + "." + d.TableName = tableName else d.TableName = tableName)
@@ -356,23 +355,24 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
         member __.GetSchemaCache() = schemaCache
 
         member __.GetTables(con,_) =
+            let tables = ssdtSchema().Tables
             if String.IsNullOrEmpty tableNames then
-                ssdtSchema.Tables
+                tables
                 |> Array.map (MSSqlServerSsdt.ssdtTableToTable >> fun tbl -> schemaCache.Tables.GetOrAdd(tbl.FullName, tbl))
             else
             let allowed = tableNames.Split([|','|], StringSplitOptions.RemoveEmptyEntries) |> Array.map (fun s -> s.Trim())
 
             if allowed = [||] then 
-                ssdtSchema.Tables
+                tables
                 |> Array.map (MSSqlServerSsdt.ssdtTableToTable >> fun tbl -> schemaCache.Tables.GetOrAdd(tbl.FullName, tbl))
             else
-                ssdtSchema.Tables
+                tables
                 |> Array.filter (fun tbl -> allowed |> Array.exists (fun tblName -> String.Compare(tbl.Name, tblName, true) = 0))
                 |> Array.map (MSSqlServerSsdt.ssdtTableToTable >> fun tbl -> schemaCache.Tables.GetOrAdd(tbl.FullName, tbl))
 
 
         member __.GetPrimaryKey(table) =
-            match ssdtSchema.TryGetTableByName(table.Name) with
+            match ssdtSchema().TryGetTableByName(table.Name) with
             |  ValueSome { PrimaryKey = ValueSome { Columns = [|c|] } } -> Some (c.Name)
             | _ -> None
 
@@ -381,12 +381,12 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
             match schemaCache.Columns.TryGetValue table.FullName with
             | (true,data) when data.Count > 0 -> data
             | _ ->
-
+                let schema = ssdtSchema()
                 let columns =
-                    match ssdtSchema.TryGetTableByName(table.Name) with
+                    match schema.TryGetTableByName(table.Name) with
                     | ValueSome ssdtTbl ->
                         ssdtTbl.Columns
-                        |> Array.map (MSSqlServerSsdt.ssdtColumnToColumn (ssdtSchema.UserDefinedDataTypes) ssdtTbl >> fun col ->
+                        |> Array.map (MSSqlServerSsdt.ssdtColumnToColumn (schema.UserDefinedDataTypes) ssdtTbl >> fun col ->
 
                             // Add PKs to cache
                             if col.IsPrimaryKey then
@@ -409,7 +409,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
         member __.GetRelationships(con, table) =
             schemaCache.Relationships.GetOrAdd(table.FullName, fun name ->
 
-                let defining, foreign = ssdtSchema.TryGetRelationshipsByTableName(table.Name)
+                let defining, foreign = ssdtSchema().TryGetRelationshipsByTableName(table.Name)
                 let children =
                     foreign
                     |> Array.map (fun r ->
@@ -434,9 +434,9 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
             )
 
         member __.GetSprocs(con) =
-
-            let sprocs = MSSqlServerSsdt.convertExecutable ssdtSchema.UserDefinedDataTypes "Procedures" ssdtSchema.StoredProcs
-            let funcs = MSSqlServerSsdt.convertExecutable ssdtSchema.UserDefinedDataTypes "Functions" ssdtSchema.Functions
+            let schema = ssdtSchema()
+            let sprocs = MSSqlServerSsdt.convertExecutable schema.UserDefinedDataTypes "Procedures" schema.StoredProcs
+            let funcs = MSSqlServerSsdt.convertExecutable schema.UserDefinedDataTypes "Functions" schema.Functions
             Array.append sprocs funcs |> Array.toList
             
         member __.GetIndividualsQueryText(table,amount) = String.Empty // Not implemented for SSDT

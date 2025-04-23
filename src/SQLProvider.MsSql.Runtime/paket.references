@@ -1,15 +1,7 @@
 FSharp.Core
-System.Runtime
-System.Runtime.Loader
-System.Runtime.Serialization.Primitives
-System.Runtime.Serialization.Formatters
-System.IO
-System.Console
-System.Reflection
-System.Reflection.TypeExtensions
 System.Data.SqlClient
 System.Data.Common
-Microsoft.Data.SqlClient framework: net8.0, net6.0, netstandard2.1
+Microsoft.Data.SqlClient
 System.Memory
 
 group SourceFiles

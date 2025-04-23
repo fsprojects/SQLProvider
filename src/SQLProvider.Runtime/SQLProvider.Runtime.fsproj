@@ -33,6 +33,7 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
     <DefineConstants>$(DefineConstants);COMMON</DefineConstants>
+    <NoWarn>0044</NoWarn>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <Optimize>true</Optimize>

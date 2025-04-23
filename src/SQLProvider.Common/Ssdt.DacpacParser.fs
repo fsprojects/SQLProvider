@@ -513,17 +513,35 @@ let parseXml(xml: string) =
         } : SsdtTable
 
     let tablesAndViews = Array.concat [| tables ; (views |> Array.map viewToTable) |] 
-    let tablesDict = tablesAndViews |> Array.distinctBy(fun t -> t.Name) |> Array.map(fun t -> t.Name, t) |> dict
+    let tablesDict = tablesAndViews |> Array.groupBy(fun t -> t.Name) |> Map.ofArray
     let definingRelations = relationships |> Array.groupBy(fun r -> r.DefiningTable.Name) |> Map.ofArray
     let foreignRelations = relationships |> Array.groupBy(fun r -> r.ForeignTable.Name) |> Map.ofArray
 
+    let inline findByName (tableName:string) (schemaFilter: string -> _ -> bool) (mappedData:Map<string,_>) =
+        if tableName.Contains "." then
+            let schema = tableName.Substring(0, tableName.LastIndexOf '.')
+            let name = tableName.Substring(tableName.LastIndexOf '.'+1)
+            match mappedData.TryGetValue name with
+            | true, foundItems -> foundItems |> Array.filter (schemaFilter schema)
+            | false, _ -> Array.empty
+        else
+            match mappedData.TryGetValue tableName with
+            | true, foundItems -> foundItems
+            | false, _ -> Array.empty
+
     { Tables = tablesAndViews
       StoredProcs = storedProcs
-      TryGetTableByName = fun nm -> match tablesDict.TryGetValue nm with | true, v -> ValueSome v | false, _ -> ValueNone
+      TryGetTableByName = fun tableName ->
+            let inline schemaFilter schema tbl = tbl.Schema = schema
+            match tablesDict |> findByName tableName schemaFilter with
+            | [| v |] -> ValueSome v
+            | _ -> ValueNone
       Relationships = relationships
-      TryGetRelationshipsByTableName = fun nm ->
-            (match definingRelations.TryGetValue nm with | true, v -> v | false, _ -> Array.empty),
-            (match foreignRelations.TryGetValue nm with | true, v -> v | false, _ -> Array.empty)
+      TryGetRelationshipsByTableName = fun tableName ->
+            let inline definingFilter schema rl = rl.DefiningTable.Schema = schema
+            let inline foreignFilter schema rl = rl.ForeignTable.Schema = schema
+            definingRelations  |> findByName tableName definingFilter,
+            foreignRelations  |> findByName tableName foreignFilter
       Descriptions = descriptions
       UserDefinedDataTypes = userDefinedDataTypes
       Functions = functions } : SsdtSchema

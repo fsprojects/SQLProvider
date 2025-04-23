@@ -13,6 +13,7 @@
     <OutputPath>..\..\bin\typeproviders\fsharp41\</OutputPath>
     <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
     <TargetFSharpCoreVersion>8.0.0.0</TargetFSharpCoreVersion>
+    <NoWarn>0044</NoWarn>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <Optimize>true</Optimize>

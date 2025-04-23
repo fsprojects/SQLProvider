@@ -1,19 +1,9 @@
 FSharp.Core
-System.Runtime
-System.Runtime.Loader
-System.Runtime.Serialization.Primitives
-System.Runtime.Serialization.Formatters
-System.IO
-System.Console
-System.Reflection
-System.Reflection.TypeExtensions
-System.Data.SqlClient
-System.Data.Common
 System.Memory
 group SourceFiles
 File:ProvidedTypes.fsi
 File:ProvidedTypes.fs
 File:ExpressionOptimizer.fs
 group Tests
-Oracle.ManagedDataAccess framework: net48, netstandard2.0
-Oracle.ManagedDataAccess.Core framework: net8.0, net6.0, netstandard2.1
+Oracle.ManagedDataAccess framework: net472, net48, netstandard2.0
+Oracle.ManagedDataAccess.Core framework: net8.0, netstandard2.1
