@@ -13,7 +13,6 @@ open FSharp.Data.Sql
 open FSharp.Data.Sql.Transactions
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
-#nowarn 0044
 
 module MSSqlServer =
 
