@@ -2,9 +2,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>net8.0;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net8.0;netstandard2.0;net461</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <DefineConstants>$(DefineConstants);NO_GENERATIVE;DESIGNTIME;ODBC;MICROSOFTSQL</DefineConstants>
+    <DefineConstants>$(DefineConstants);NO_GENERATIVE;DESIGNTIME;ODBC</DefineConstants>
     <OutputPath>..\..\bin\odbc\typeproviders\fsharp41\</OutputPath>
     <AssemblyName>FSharp.Data.SqlProvider.Odbc.DesignTime</AssemblyName>
     <Name>FSharp.Data.SqlProvider.Odbc</Name>
@@ -34,7 +34,18 @@
       <Compile Include="..\SQLProvider.Runtime\SqlRuntime.DataContext.fs" Link="SqlRuntime.DataContext.fs" />
       <Compile Include="..\SQLProvider.DesignTime\SqlDesignTime.fs" Link="SqlDesignTime.fs" />
   </ItemGroup>
+    <ItemGroup Condition="'$(TargetFramework)' == 'net461'">
+        <Reference Include="System.Configuration" />
+        <Reference Include="System.Data" />
+        <Reference Include="System.Data.DataSetExtensions" />
+        <Reference Include="System.IdentityModel" />
+        <Reference Include="System.ServiceModel" />
+        <Reference Include="System.Transactions" />
+        <Reference Include="System.Xml" />
+        <Reference Include="System.IO.Compression" />
+    </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="System.Data.Odbc" Version="6.0.2" />
     <ProjectReference Include="..\SQLProvider.Common\SQLProvider.Common.fsproj" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />

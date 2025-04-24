@@ -35,4 +35,4 @@ dependencies
     FSharp.Core >= 8.0.301
     Newtonsoft.Json >= 13.0.1
     System.Memory >= 4.6.3
-    System.Data.OleDb >= 9.0.4
+    System.Data.OleDb >= 6.0.1

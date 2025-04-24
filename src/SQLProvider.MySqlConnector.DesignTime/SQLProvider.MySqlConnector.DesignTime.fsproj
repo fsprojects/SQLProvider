@@ -2,9 +2,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>net8.0;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net8.0;netstandard2.0;net48</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <DefineConstants>$(DefineConstants);NO_GENERATIVE;DESIGNTIME;MYSQLCONNECTOR;MICROSOFTSQL</DefineConstants>
+    <DefineConstants>$(DefineConstants);NO_GENERATIVE;DESIGNTIME;MYSQLCONNECTOR</DefineConstants>
     <OutputPath>..\..\bin\mysqlconnector\typeproviders\fsharp41\</OutputPath>
     <AssemblyName>FSharp.Data.SqlProvider.MySqlConnector.DesignTime</AssemblyName>
     <Name>FSharp.Data.SqlProvider.MySqlConnector</Name>
@@ -35,6 +35,7 @@
       <Compile Include="..\SQLProvider.DesignTime\SqlDesignTime.fs" Link="SqlDesignTime.fs" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="MySqlConnector" Version="2.4.0" />
     <ProjectReference Include="..\SQLProvider.Common\SQLProvider.Common.fsproj" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />

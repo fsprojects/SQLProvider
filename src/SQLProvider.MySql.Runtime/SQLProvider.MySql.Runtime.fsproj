@@ -4,7 +4,7 @@
     <OutputType>Library</OutputType>
     <TargetFrameworks>net8.0;netstandard2.0</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <DefineConstants>$(DefineConstants);TP_RUNTIME;NO_GENERATIVE;MYSQL;MICROSOFTSQL</DefineConstants>
+    <DefineConstants>$(DefineConstants);TP_RUNTIME;NO_GENERATIVE;MYSQL</DefineConstants>
     <OutputPath>..\..\bin\mysql\lib\</OutputPath>
     <AssemblyName>FSharp.Data.SqlProvider.MySql</AssemblyName>
     <Name>FSharp.Data.SqlProvider.MySql</Name>
@@ -17,13 +17,11 @@
     <Compile Include="..\SQLProvider.Runtime\Providers.MySql.fs" Link="Providers.MySql.fs" />
     <Compile Include="..\SQLProvider.Runtime\SqlRuntime.DataContext.fs" Link="SqlRuntime.DataContext.fs" />
   </ItemGroup>
-  <Target Name="BeforeBuild" Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
-    <MSBuild Projects="..\SQLProvider.MySql.DesignTime\SQLProvider.MySql.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=netstandard2.0" />
-  </Target>
-  <Target Name="BeforeBuild" Condition=" '$(TargetFramework)' == 'net8.0' ">
-    <MSBuild Projects="..\SQLProvider.MySql.DesignTime\SQLProvider.MySql.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=net8.0" />
+  <Target Name="BeforeBuild">
+    <MSBuild Projects="..\SQLProvider.MySql.DesignTime\SQLProvider.MySql.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=$(TargetFramework)" />
   </Target>
   <ItemGroup>
+      <PackageReference Include="MySql.Data" Version="9.3.0" />
     <ProjectReference Include="..\SQLProvider.Common\SQLProvider.Common.fsproj" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />

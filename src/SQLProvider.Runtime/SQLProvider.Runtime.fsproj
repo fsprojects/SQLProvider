@@ -75,21 +75,8 @@
     </PackageReference>
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
   </ItemGroup>
-  <Target Name="BeforeBuild" Condition=" '$(TargetFramework)' != 'net8.0' And '$(TargetFramework)' != 'net6.0' And '$(TargetFramework)' != 'netstandard2.1' ">
-    <!--<MSBuild Projects="..\SQLProvider.DesignTime\SQLProvider.DesignTime.fsproj" Targets="Restore" />-->
-    <MSBuild Projects="..\SQLProvider.DesignTime\SQLProvider.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFrameworks=netcoreapp3.1" />
-    <MSBuild Projects="..\SQLProvider.DesignTime\SQLProvider.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=netstandard2.0" />
-    <MSBuild Projects="..\SQLProvider.DesignTime\SQLProvider.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=net472" Condition=" '$(TargetFramework)' == 'net472'" />
-    <MSBuild Projects="..\SQLProvider.DesignTime\SQLProvider.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=net48" Condition=" '$(TargetFramework)' == 'net48'" />
-  </Target>
-  <Target Name="BeforeBuild" Condition=" '$(TargetFramework)' == 'netstandard2.1' ">
-    <MSBuild Projects="..\SQLProvider.DesignTime\SQLProvider.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=netstandard2.1" />
-  </Target>
-  <Target Name="BeforeBuild" Condition=" '$(TargetFramework)' == 'net6.0' ">
-    <MSBuild Projects="..\SQLProvider.DesignTime\SQLProvider.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=net6.0" />
-  </Target>
-  <Target Name="BeforeBuild" Condition=" '$(TargetFramework)' == 'net8.0' ">
-    <MSBuild Projects="..\SQLProvider.DesignTime\SQLProvider.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=net8.0" />
+  <Target Name="BeforeBuild">
+    <MSBuild Projects="..\SQLProvider.DesignTime\SQLProvider.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=$(TargetFramework)" />
   </Target>
   <Target Name="AfterBuild">
   </Target>

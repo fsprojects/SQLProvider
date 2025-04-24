@@ -2,9 +2,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>net8.0;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net8.0;netstandard2.0;net48</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <DefineConstants>$(DefineConstants);TP_RUNTIME;NO_GENERATIVE;FIREBIRD;MICROSOFTSQL</DefineConstants>
+    <DefineConstants>$(DefineConstants);TP_RUNTIME;NO_GENERATIVE;FIREBIRD</DefineConstants>
     <OutputPath>..\..\bin\firebird\lib\</OutputPath>
     <AssemblyName>FSharp.Data.SqlProvider.FireBird</AssemblyName>
     <Name>FSharp.Data.SqlProvider.FireBird</Name>
@@ -17,11 +17,8 @@
     <Compile Include="..\SQLProvider.Runtime\Providers.FireBird.fs" Link="Providers.FireBird.fs" />
     <Compile Include="..\SQLProvider.Runtime\SqlRuntime.DataContext.fs" Link="SqlRuntime.DataContext.fs" />
   </ItemGroup>
-  <Target Name="BeforeBuild" Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
-    <MSBuild Projects="..\SQLProvider.FireBird.DesignTime\SQLProvider.FireBird.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=netstandard2.0" />
-  </Target>
-  <Target Name="BeforeBuild" Condition=" '$(TargetFramework)' == 'net8.0' ">
-    <MSBuild Projects="..\SQLProvider.FireBird.DesignTime\SQLProvider.FireBird.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=net8.0" />
+  <Target Name="BeforeBuild">
+      <MSBuild Projects="..\SQLProvider.FireBird.DesignTime\SQLProvider.FireBird.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);$(TargetFramework)" />
   </Target>
   <ItemGroup>
     <PackageReference Include="FirebirdSql.Data.FirebirdClient" Version="10.3.2" />

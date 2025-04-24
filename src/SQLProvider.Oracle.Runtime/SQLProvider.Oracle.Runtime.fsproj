@@ -2,9 +2,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>net8.0;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net8.0;netstandard2.0;net472</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <DefineConstants>$(DefineConstants);TP_RUNTIME;NO_GENERATIVE;ORACLE;MICROSOFTSQL</DefineConstants>
+    <DefineConstants>$(DefineConstants);TP_RUNTIME;NO_GENERATIVE;ORACLE</DefineConstants>
     <OutputPath>..\..\bin\oracle\lib\</OutputPath>
     <AssemblyName>FSharp.Data.SqlProvider.Oracle</AssemblyName>
     <Name>FSharp.Data.SqlProvider.Oracle</Name>
@@ -17,14 +17,30 @@
     <Compile Include="..\SQLProvider.Runtime\Providers.Oracle.fs" Link="Providers.Oracle.fs" />
     <Compile Include="..\SQLProvider.Runtime\SqlRuntime.DataContext.fs" Link="SqlRuntime.DataContext.fs" />
   </ItemGroup>
-  <Target Name="BeforeBuild" Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
-    <MSBuild Projects="..\SQLProvider.Oracle.DesignTime\SQLProvider.Oracle.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=netstandard2.0" />
-  </Target>
-  <Target Name="BeforeBuild" Condition=" '$(TargetFramework)' == 'net8.0' ">
-    <MSBuild Projects="..\SQLProvider.Oracle.DesignTime\SQLProvider.Oracle.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=net8.0" />
+  <Target Name="BeforeBuild">
+    <MSBuild Projects="..\SQLProvider.Oracle.DesignTime\SQLProvider.Oracle.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=$(TargetFramework)" />
   </Target>
   <ItemGroup>
     <ProjectReference Include="..\SQLProvider.Common\SQLProvider.Common.fsproj" />
   </ItemGroup>
-  <Import Project="..\..\.paket\Paket.Restore.targets" />
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0' Or '$(TargetFramework)' == 'net472'">
+    <PackageReference Include="Oracle.ManagedDataAccess" Version="23.8.0" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+    <PackageReference Include="Oracle.ManagedDataAccess.Core">
+      <Version>23.8.0</Version>
+    </PackageReference>
+  </ItemGroup>
+    <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
+        <Reference Include="System.Configuration" />
+        <Reference Include="System.Data" />
+        <Reference Include="System.Data.DataSetExtensions" />
+        <Reference Include="System.IdentityModel" />
+        <Reference Include="System.ServiceModel" />
+        <Reference Include="System.Transactions" />
+        <Reference Include="System.Xml" />
+        <Reference Include="System.IO.Compression" />
+    </ItemGroup>
+
+    <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

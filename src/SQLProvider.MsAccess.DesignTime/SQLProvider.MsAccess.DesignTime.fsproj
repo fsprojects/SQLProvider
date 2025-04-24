@@ -2,9 +2,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>net8.0;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net8.0;netstandard2.0;net462</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <DefineConstants>$(DefineConstants);NO_GENERATIVE;DESIGNTIME;MSACCESS;MICROSOFTSQL</DefineConstants>
+    <DefineConstants>$(DefineConstants);NO_GENERATIVE;DESIGNTIME;MSACCESS</DefineConstants>
     <OutputPath>..\..\bin\msaccess\typeproviders\fsharp41\</OutputPath>
     <AssemblyName>FSharp.Data.SqlProvider.MsAccess.DesignTime</AssemblyName>
     <Name>FSharp.Data.SqlProvider.MsAccess</Name>
@@ -35,10 +35,21 @@
       <Compile Include="..\SQLProvider.DesignTime\SqlDesignTime.fs" Link="SqlDesignTime.fs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="System.Data.OleDb" Version="9.0.4" />
+    <PackageReference Include="System.Data.OleDb" Version="6.0.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SQLProvider.Common\SQLProvider.Common.fsproj" />
   </ItemGroup>
-  <Import Project="..\..\.paket\Paket.Restore.targets" />
+    <ItemGroup Condition="'$(TargetFramework)' == 'net462' ">
+        <Reference Include="System.Configuration" />
+        <Reference Include="System.Data" />
+        <Reference Include="System.Data.DataSetExtensions" />
+        <Reference Include="System.IdentityModel" />
+        <Reference Include="System.ServiceModel" />
+        <Reference Include="System.Transactions" />
+        <Reference Include="System.Xml" />
+        <Reference Include="System.IO.Compression" />
+    </ItemGroup>
+
+    <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

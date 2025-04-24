@@ -12,6 +12,7 @@ nuget System.Data.Odbc
 nuget Microsoft.Data.SQLite 2.0
 nuget Microsoft.Data.SqlClient framework: net462, netstandard2.0, net8.0, net6.0, netstandard2.1
 nuget System.Memory
+nuget System.Runtime.Loader
 nuget System.Text.Encodings.Web 9.0.4
 nuget System.Threading.Tasks.Extensions
 nuget Microsoft.Extensions.Logging.Abstractions
@@ -76,11 +77,10 @@ group Docs
 
 group Tests
     source https://api.nuget.org/v3/index.json
-    frameworks: netcoreapp3.1, net472, net48, net8.0, net6.0, netstandard2.1, netstandard2.0
     storage: packages
 
-    nuget MySql.Data < 7.0.0
-    nuget MySqlConnector 2.3.1
+    nuget MySql.Data 9.3.0
+    nuget MySqlConnector 2.4.0
     nuget Microsoft.NET.Test.Sdk
     nuget NUnit3TestAdapter
     nuget Newtonsoft.Json

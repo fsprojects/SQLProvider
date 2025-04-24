@@ -4,7 +4,7 @@
     <OutputType>Library</OutputType>
     <TargetFrameworks>net8.0;netstandard2.0</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <DefineConstants>$(DefineConstants);NO_GENERATIVE;DESIGNTIME;POSTGRESQL;MICROSOFTSQL</DefineConstants>
+    <DefineConstants>$(DefineConstants);NO_GENERATIVE;DESIGNTIME;POSTGRESQL</DefineConstants>
     <OutputPath>..\..\bin\postgresql\typeproviders\fsharp41\</OutputPath>
     <AssemblyName>FSharp.Data.SqlProvider.PostgreSql.DesignTime</AssemblyName>
     <Name>FSharp.Data.SqlProvider.PostgreSql</Name>

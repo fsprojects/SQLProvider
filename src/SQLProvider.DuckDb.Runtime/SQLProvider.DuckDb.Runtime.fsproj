@@ -4,7 +4,7 @@
     <OutputType>Library</OutputType>
     <TargetFrameworks>net8.0;netstandard2.0</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <DefineConstants>$(DefineConstants);TP_RUNTIME;NO_GENERATIVE;DUCKDB;MICROSOFTSQL</DefineConstants>
+    <DefineConstants>$(DefineConstants);TP_RUNTIME;NO_GENERATIVE;DUCKDB</DefineConstants>
     <OutputPath>..\..\bin\duckdb\lib\</OutputPath>
     <AssemblyName>FSharp.Data.SqlProvider.DuckDb</AssemblyName>
     <Name>FSharp.Data.SqlProvider.DuckDb</Name>
@@ -17,11 +17,8 @@
     <Compile Include="..\SQLProvider.Runtime\Providers.DuckDb.fs" Link="Providers.DuckDb.fs" />
     <Compile Include="..\SQLProvider.Runtime\SqlRuntime.DataContext.fs" Link="SqlRuntime.DataContext.fs" />
   </ItemGroup>
-  <Target Name="BeforeBuild" Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
-    <MSBuild Projects="..\SQLProvider.DuckDb.DesignTime\SQLProvider.DuckDb.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=netstandard2.0" />
-  </Target>
-  <Target Name="BeforeBuild" Condition=" '$(TargetFramework)' == 'net8.0' ">
-    <MSBuild Projects="..\SQLProvider.DuckDb.DesignTime\SQLProvider.DuckDb.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=net8.0" />
+  <Target Name="BeforeBuild">
+    <MSBuild Projects="..\SQLProvider.DuckDb.DesignTime\SQLProvider.DuckDb.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=$(TargetFramework)" />
   </Target>
   <ItemGroup>
     <PackageReference Include="DuckDB.NET.Bindings.Full" Version="1.2.1" />

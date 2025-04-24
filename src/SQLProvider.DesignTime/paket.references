@@ -1,4 +1,6 @@
 FSharp.Core
+System.Reflection
+System.Runtime.Loader
 System.Data.SqlClient
 System.Data.Common
 System.Data.Odbc
