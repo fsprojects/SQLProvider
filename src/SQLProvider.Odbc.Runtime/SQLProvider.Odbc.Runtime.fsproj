@@ -5,9 +5,21 @@
     <TargetFrameworks>net8.0;netstandard2.0;net461</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <DefineConstants>$(DefineConstants);TP_RUNTIME;NO_GENERATIVE;ODBC</DefineConstants>
+    <PackageReleaseNotes>https://github.com/fsprojects/SQLProvider/blob/master/docs/RELEASE_NOTES.md</PackageReleaseNotes>
+    <PackageProjectUrl>https://fsprojects.github.io/SQLProvider</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/fsprojects/SQLProvider</RepositoryUrl>
     <OutputPath>..\..\bin\odbc\lib\</OutputPath>
     <AssemblyName>FSharp.Data.SqlProvider.Odbc</AssemblyName>
     <Name>FSharp.Data.SqlProvider.Odbc</Name>
+    <PackageTags>sql, sql-server, odbc, apache, excel, typeprovider, f#, fsharp, database, sqlserver, dotnet</PackageTags>
+    <PackageLicenseUrl>https://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt</PackageLicenseUrl>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <RepositoryType>git</RepositoryType>
+    <Authors>pezipink,colinbull,thorium</Authors>
+    <FsDocsReleaseNotesLink>https://github.com/fsprojects/SQLProvider/blob/master/docs/RELEASE_NOTES.md</FsDocsReleaseNotesLink>
+    <FsDocsNavbarPosition>fixed-right</FsDocsNavbarPosition>
+    <FsDocsWarnOnMissingDocs>false</FsDocsWarnOnMissingDocs>
+    <FsDocsTheme>default</FsDocsTheme>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\..\paket-files\sourcefiles\Thorium\Linq.Expression.Optimizer\src\Code\ExpressionOptimizer.fs">

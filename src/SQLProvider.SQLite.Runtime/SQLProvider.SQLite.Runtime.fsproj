@@ -5,9 +5,21 @@
     <TargetFrameworks>net8.0;netstandard2.0</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <DefineConstants>$(DefineConstants);TP_RUNTIME;NO_GENERATIVE;SQLITE</DefineConstants>
+    <PackageReleaseNotes>https://github.com/fsprojects/SQLProvider/blob/master/docs/RELEASE_NOTES.md</PackageReleaseNotes>
+    <PackageProjectUrl>https://fsprojects.github.io/SQLProvider</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/fsprojects/SQLProvider</RepositoryUrl>
     <OutputPath>..\..\bin\sqlite\lib\</OutputPath>
     <AssemblyName>FSharp.Data.SqlProvider.SQLite</AssemblyName>
     <Name>FSharp.Data.SqlProvider.SQLite</Name>
+    <PackageTags>sql, sqlite, typeprovider, f#, fsharp, database, dotnet</PackageTags>
+    <PackageLicenseUrl>https://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt</PackageLicenseUrl>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <RepositoryType>git</RepositoryType>
+    <Authors>pezipink,colinbull,thorium</Authors>
+    <FsDocsReleaseNotesLink>https://github.com/fsprojects/SQLProvider/blob/master/docs/RELEASE_NOTES.md</FsDocsReleaseNotesLink>
+    <FsDocsNavbarPosition>fixed-right</FsDocsNavbarPosition>
+    <FsDocsWarnOnMissingDocs>false</FsDocsWarnOnMissingDocs>
+    <FsDocsTheme>default</FsDocsTheme>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\..\paket-files\sourcefiles\Thorium\Linq.Expression.Optimizer\src\Code\ExpressionOptimizer.fs">

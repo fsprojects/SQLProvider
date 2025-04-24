@@ -106,6 +106,10 @@ type Project = {
     /// List of dependencies
     dependencies:(string * string) list }
 
+let project = "SQLProvider"
+let summary = "Type providers for SQL database access."
+let description = "Type providers for SQL database access."
+
 let projects =
     [{name="SQLProvider.Common";summary="Type provider for SQL database access, common library";description="Common functionality to all SQL type-providers";dependencies=[]};
      {name="SQLProvider.DesignTime";summary="Type providers for any SQL database access.";description="Type providers for SQL database access.";dependencies=[]};

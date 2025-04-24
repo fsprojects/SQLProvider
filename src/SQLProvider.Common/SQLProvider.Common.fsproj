@@ -12,6 +12,9 @@
     <Name>FSharp.Data.SqlProvider.Common</Name>
     <DocumentationFile>..\..\bin\lib\$(TargetFramework)\FSharp.Data.SqlProvider.Common.XML</DocumentationFile>
     <OutputPath>..\..\bin\lib\</OutputPath>
+    <PackageReleaseNotes>https://github.com/fsprojects/SQLProvider/blob/master/docs/RELEASE_NOTES.md</PackageReleaseNotes>
+    <PackageProjectUrl>https://fsprojects.github.io/SQLProvider</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/fsprojects/SQLProvider</RepositoryUrl>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
