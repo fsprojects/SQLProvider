@@ -24,15 +24,25 @@ Please provide a description of any known workarounds.
 
 ### Related information 
 
+* Database
+    - [ ] SQLite
+    - [ ] Micorosft SQL Server
+    - [ ] MySQL / MariaDB
+    - [ ] PostgreSQL
+    - [ ] Oracle
+    - [ ] Odbc
+    - [ ] Microsoft Access
+    - [ ] FireBird
+    - [ ] DuckDB
+    - [ ] Other
 * Operating system
-    - [ ] windows [insert version here]
-    - [ ] macOs [insert version]
-    - [ ] linux [insert flavor/version here]
+    - [ ] Windows [insert version here]
+    - [ ] MacOs [insert version]
+    - [ ] Linux [insert flavor/version here]
 * Platform
-    - [ ] dotnet core
-    - [ ] dotnet full
-    - [ ] mono
-* Branch or release version
+    - [ ] dotnet [insert version here]
+    - [ ] .NET Framework full
+    - [ ] Mono
+* Branch or release version, or nuget package name and version
 * Database versions and sample databases being used
 * Performance information, links to performance testing scripts
-
