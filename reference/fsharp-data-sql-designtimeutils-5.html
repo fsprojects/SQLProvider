@@ -1,0 +1,1913 @@
+<!DOCTYPE html>
+<html lang="en" data-root="https://www.nuget.org/packages/SQLProvider/">
+<head>
+    <meta charset="UTF-8">
+    <meta content="IE=edge" http-equiv="X-UA-Compatible">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="pezipink,colinbull,thorium" name="author">
+    <!-- Opengraph properties (https://ogp.me/) -->
+    <meta property="og:site_name" content="SQLProvider">
+    <meta property="og:title" content="DesignTimeUtils (SQLProvider)" />
+    <meta property="og:url" content="https://www.nuget.org/packages/SQLProvider/{{fsdocs-source-basename}}.html">
+    <meta property="og:type" content="website" />
+    <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="https://www.nuget.org/packages/SQLProvider/">
+    <meta name="twitter:title" content="DesignTimeUtils (SQLProvider)">
+    
+    <title>DesignTimeUtils (SQLProvider) | SQLProvider</title>
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link href="https://www.nuget.org/packages/SQLProvider/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="https://www.nuget.org/packages/SQLProvider/content/fsdocs-theme-set-dark.js"></script>
+    <link href="https://www.nuget.org/packages/SQLProvider/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="https://www.nuget.org/packages/SQLProvider/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <link href="https://www.nuget.org/packages/SQLProvider/content/fsdocs-custom.css" rel="stylesheet" type="text/css"/>
+    
+    
+</head>
+<body class="api-docs">
+<header>
+    <div class="start">
+        <div id="menu-toggle">
+            <iconify-icon class="icon closed" height="22" icon="eva:menu-fill" width="22"></iconify-icon>
+            <iconify-icon class="icon open" height="22" icon="mi:close" width="22"></iconify-icon>
+            <input type="checkbox" name="mobile-menu" />
+            <ul class="menu">
+                <li class="nav-header">Links</li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt">License</a>
+                </li>
+                <li class="nav-item"><a class="nav-link"
+                                        href="https://github.com/fsprojects/SQLProvider/blob/master/docs/RELEASE_NOTES.md">Release
+                    Notes</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider.git/">Source
+                    Repository</a></li>
+                <li class="nav-header">
+  Documentation
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://www.nuget.org/packages/SQLProvider/core/async.html">
+    Asynchronous Database Operation
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://www.nuget.org/packages/SQLProvider/core/composable.html">
+    Composable Queries
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://www.nuget.org/packages/SQLProvider/core/constraints-relationships.html">
+    Constraints &amp;amp; Relationships
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://www.nuget.org/packages/SQLProvider/core/contributing.html">
+    How to contribute
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://www.nuget.org/packages/SQLProvider/core/crud.html">
+    CRUD sample
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://www.nuget.org/packages/SQLProvider/core/general.html">
+    general
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://www.nuget.org/packages/SQLProvider/core/individuals.html">
+    Individuals
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://www.nuget.org/packages/SQLProvider/core/mappers.html">
+    mappers
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://www.nuget.org/packages/SQLProvider/core/msaccess.html">
+    SQL Provider for MSAccess
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://www.nuget.org/packages/SQLProvider/core/mssql.html">
+    MSSQL Provider
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://www.nuget.org/packages/SQLProvider/core/mssqlssdt.html">
+    MSSQL SSDT Provider
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://www.nuget.org/packages/SQLProvider/core/mysql.html">
+    MySQL Provider
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://www.nuget.org/packages/SQLProvider/core/netstandard.html">
+    .NET Standard / .NET Core support
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://www.nuget.org/packages/SQLProvider/core/odbc.html">
+    ODBC
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://www.nuget.org/packages/SQLProvider/core/oracle.html">
+    SQL Provider for Oracle
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://www.nuget.org/packages/SQLProvider/core/outline.html">
+    SQL Type Provider
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://www.nuget.org/packages/SQLProvider/core/parameters.html">
+    SQL Provider Static Parameters
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://www.nuget.org/packages/SQLProvider/core/postgresql.html">
+    PostgreSQL Provider
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://www.nuget.org/packages/SQLProvider/core/programmability.html">
+    Programmability
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://www.nuget.org/packages/SQLProvider/core/querying.html">
+    Querying
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://www.nuget.org/packages/SQLProvider/core/sqlite.html">
+    SQLite Provider
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://www.nuget.org/packages/SQLProvider/core/techdetails.html">
+    techdetails
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://www.nuget.org/packages/SQLProvider/core/unittest.html">
+    SQLProvider allows you to unit-test your SQL-logic
+
+  </a>
+</li>
+                <li class="nav-header">
+  API Reference
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://www.nuget.org/packages/SQLProvider/reference/index.html">
+    All Namespaces
+  </a>
+</li>
+            </ul>
+        </div>
+        <a href="https://www.nuget.org/packages/SQLProvider/">
+            <!-- <img alt="Header menu logo" src="https://www.nuget.org/packages/SQLProvider/img/logo.png"> -->
+            <H1 style="font-size: 24px;">SQLProvider</H1>
+        </a>
+    </div>
+    <div class="end">
+        <a href="https://github.com/fsprojects/SQLProvider.git/" target="_blank">
+            <iconify-icon icon="uil:github" width="26" height="26"></iconify-icon>
+        </a>
+        <iconify-icon id="search-btn" icon="carbon:search" class="search" width="24" height="24"></iconify-icon>
+        <fsdocs-theme-toggle></fsdocs-theme-toggle>
+    </div>
+</header>
+<aside id="fsdocs-main-menu">
+    <ul class="menu">
+        <li class="nav-header">Documentation</li>
+        <li class="nav-item"><a href="https://www.nuget.org/packages/SQLProvider//core/general.html" class="nav-link">General</a></li>
+        <li class="nav-item"><a href="https://www.nuget.org/packages/SQLProvider//core/parameters.html" class="nav-link">Static Parameters</a></li>
+        <li class="nav-item"><a href="https://www.nuget.org/packages/SQLProvider//core/querying.html" class="nav-link">Querying</a></li>
+        <li class="nav-item"><a href="https://www.nuget.org/packages/SQLProvider//core/constraints-relationships.html" class="nav-link">Constraints & Relationships</a></li>
+        <li class="nav-item"><a href="https://www.nuget.org/packages/SQLProvider//core/crud.html" class="nav-link">CRUD</a></li>
+        <li class="nav-item"><a href="https://www.nuget.org/packages/SQLProvider//core/programmability.html" class="nav-link">Programmability</a></li>
+        <li class="nav-item"><a href="https://www.nuget.org/packages/SQLProvider//core/individuals.html" class="nav-link">Individuals</a></li>
+        <li class="nav-item"><a href="https://www.nuget.org/packages/SQLProvider//core/composable.html" class="nav-link">Composable Query</a></li>
+        <li class="nav-item"><a href="https://www.nuget.org/packages/SQLProvider//core/mssql.html" class="nav-link">SQL Server</a></li>
+        <li class="nav-item"><a href="https://www.nuget.org/packages/SQLProvider//core/oracle.html" class="nav-link">Oracle</a></li>
+        <li class="nav-item"><a href="https://www.nuget.org/packages/SQLProvider//core/sqlite.html" class="nav-link">SQLite</a></li>
+        <li class="nav-item"><a href="https://www.nuget.org/packages/SQLProvider//core/postgresql.html" class="nav-link">PostgreSQL</a></li>
+        <li class="nav-item"><a href="https://www.nuget.org/packages/SQLProvider//core/mysql.html" class="nav-link">MySQL</a></li>
+        <li class="nav-item"><a href="https://www.nuget.org/packages/SQLProvider//core/odbc.html" class="nav-link">ODBC</a></li>
+        <li class="nav-item"><a href="https://www.nuget.org/packages/SQLProvider//core/unittest.html" class="nav-link">Unit-testing</a></li>
+        <li class="nav-item"><a href="https://www.nuget.org/packages/SQLProvider//reference/index.html" class="nav-link">Internal API Docs</a></li>
+
+        <li class="nav-item"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt">License</a>
+        </li>
+        <li class="nav-item"><a class="nav-link"
+                                href="https://github.com/fsprojects/SQLProvider/blob/master/docs/RELEASE_NOTES.md">Release
+            Notes</a></li>
+        <li class="nav-item"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider.git/">Source
+            Repository</a></li>
+        
+        <li class="nav-header">
+  API Reference
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://www.nuget.org/packages/SQLProvider/reference/index.html">
+    All Namespaces
+  </a>
+</li>
+    </ul>
+</aside>
+<main>
+    <div id="content">
+        <div>
+  <h2>
+    DesignTimeUtils Module
+  </h2>
+  <dl class="fsdocs-metadata">
+    <dt>
+      Namespace: 
+      <a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql.html">
+        FSharp.Data.Sql
+      </a>
+    </dt>
+    <dt>
+      Assembly: FSharp.Data.SqlProvider.Odbc.DesignTime.dll
+    </dt>
+  </dl>
+  <div class="fsdocs-xmldoc">
+    <div>
+      <p class="fsdocs-summary">
+        
+      </p>
+    </div>
+  </div>
+  <div>
+    <h3>
+      Functions and values
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Function or value
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '184', 184)" onmouseover="showTip(event, '184', 184)">
+                <p>
+                  <a id="FSHARP_DATA_SQL">
+                    <a href="#FSHARP_DATA_SQL">
+                      <code><span>FSHARP_DATA_SQL&#32;<span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="184">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>FSHARP_DATA_SQL&#32;<span></span></span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>string</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>string</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '185', 185)" onmouseover="showTip(event, '185', 185)">
+                <p>
+                  <a id="createColumnProperty">
+                    <a href="#createColumnProperty">
+                      <code><span>createColumnProperty&#32;<span>con&#32;prov&#32;useOptionTypes&#32;key&#32;c</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="185">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>createColumnProperty&#32;<span>con&#32;prov&#32;useOptionTypes&#32;key&#32;c</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        con
+                      </b>
+                      :
+                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a>&#32;option</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        prov
+                      </b>
+                      :
+                      <code><a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html">ISqlProvider</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        useOptionTypes
+                      </b>
+                      :
+                      <code><a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-common-nullablecolumntype.html">NullableColumnType</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        key
+                      </b>
+                      :
+                      <code>string</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        c
+                      </b>
+                      :
+                      <code><a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-schema-column.html">Column</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://www.nuget.org/packages/SQLProvider/reference/providerimplementation-providedtypes-providedproperty-5.html">ProvidedProperty</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  con
+                </span>
+                :
+                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a>&#32;option</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  prov
+                </span>
+                :
+                <code><a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html">ISqlProvider</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  useOptionTypes
+                </span>
+                :
+                <code><a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-common-nullablecolumntype.html">NullableColumnType</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  key
+                </span>
+                :
+                <code>string</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  c
+                </span>
+                :
+                <code><a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-schema-column.html">Column</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://www.nuget.org/packages/SQLProvider/reference/providerimplementation-providedtypes-providedproperty-5.html">ProvidedProperty</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '186', 186)" onmouseover="showTip(event, '186', 186)">
+                <p>
+                  <a id="createConstructors">
+                    <a href="#createConstructors">
+                      <code><span>createConstructors&#32;<span>config&#32;<span>(<span>rootType,&#32;serviceType,&#32;readServiceType,&#32;args</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="186">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>createConstructors&#32;<span>config&#32;<span>(<span>rootType,&#32;serviceType,&#32;readServiceType,&#32;args</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        config
+                      </b>
+                      :
+                      <code><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-compilerservices-typeproviderconfig">TypeProviderConfig</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        rootType
+                      </b>
+                      :
+                      <code><a href="https://www.nuget.org/packages/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-5.html">ProvidedTypeDefinition</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        serviceType
+                      </b>
+                      :
+                      <code><a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        readServiceType
+                      </b>
+                      :
+                      <code><a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        args
+                      </b>
+                      :
+                      <code><span>string&#32;*&#32;string&#32;*&#32;<a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html">DatabaseProviderTypes</a>&#32;*&#32;'a&#32;*&#32;'b&#32;*&#32;'c&#32;*&#32;string&#32;*&#32;<a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-common-casesensitivitychange.html">CaseSensitivityChange</a>&#32;*&#32;string&#32;*&#32;'d&#32;*&#32;<a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-common-odbcquotecharacter.html">OdbcQuoteCharacter</a>&#32;*&#32;<a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-common-sqlitelibrary.html">SQLiteLibrary</a>&#32;*&#32;string&#32;*&#32;string</span></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  config
+                </span>
+                :
+                <code><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-compilerservices-typeproviderconfig">TypeProviderConfig</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  rootType
+                </span>
+                :
+                <code><a href="https://www.nuget.org/packages/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-5.html">ProvidedTypeDefinition</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  serviceType
+                </span>
+                :
+                <code><a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  readServiceType
+                </span>
+                :
+                <code><a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  args
+                </span>
+                :
+                <code><span>string&#32;*&#32;string&#32;*&#32;<a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html">DatabaseProviderTypes</a>&#32;*&#32;'a&#32;*&#32;'b&#32;*&#32;'c&#32;*&#32;string&#32;*&#32;<a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-common-casesensitivitychange.html">CaseSensitivityChange</a>&#32;*&#32;string&#32;*&#32;'d&#32;*&#32;<a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-common-odbcquotecharacter.html">OdbcQuoteCharacter</a>&#32;*&#32;<a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-common-sqlitelibrary.html">SQLiteLibrary</a>&#32;*&#32;string&#32;*&#32;string</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '187', 187)" onmouseover="showTip(event, '187', 187)">
+                <p>
+                  <a id="createDesignTimeCommands">
+                    <a href="#createDesignTimeCommands">
+                      <code><span>createDesignTimeCommands&#32;<span>prov&#32;contextSchemaPath&#32;recreate&#32;invalidate</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="187">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>createDesignTimeCommands&#32;<span>prov&#32;contextSchemaPath&#32;recreate&#32;invalidate</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        prov
+                      </b>
+                      :
+                      <code><a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html">ISqlProvider</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        contextSchemaPath
+                      </b>
+                      :
+                      <code>string</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        recreate
+                      </b>
+                      :
+                      <code><span>unit&#32;->&#32;'a</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        invalidate
+                      </b>
+                      :
+                      <code><span>unit&#32;->&#32;<a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-unit">Unit</a></span></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://www.nuget.org/packages/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-5.html">ProvidedTypeDefinition</a>&#32;*&#32;<a href="https://www.nuget.org/packages/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-5.html">ProvidedTypeDefinition</a>&#32;*&#32;<a href="https://www.nuget.org/packages/SQLProvider/reference/providerimplementation-providedtypes-providedmethod-5.html">ProvidedMethod</a>&#32;*&#32;<a href="https://www.nuget.org/packages/SQLProvider/reference/providerimplementation-providedtypes-providedproperty-5.html">ProvidedProperty</a>&#32;*&#32;<span><a href="https://www.nuget.org/packages/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-5.html">ProvidedTypeDefinition</a>&#32;option</span></span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  prov
+                </span>
+                :
+                <code><a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html">ISqlProvider</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  contextSchemaPath
+                </span>
+                :
+                <code>string</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  recreate
+                </span>
+                :
+                <code><span>unit&#32;->&#32;'a</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  invalidate
+                </span>
+                :
+                <code><span>unit&#32;->&#32;<a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-unit">Unit</a></span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><a href="https://www.nuget.org/packages/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-5.html">ProvidedTypeDefinition</a>&#32;*&#32;<a href="https://www.nuget.org/packages/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-5.html">ProvidedTypeDefinition</a>&#32;*&#32;<a href="https://www.nuget.org/packages/SQLProvider/reference/providerimplementation-providedtypes-providedmethod-5.html">ProvidedMethod</a>&#32;*&#32;<a href="https://www.nuget.org/packages/SQLProvider/reference/providerimplementation-providedtypes-providedproperty-5.html">ProvidedProperty</a>&#32;*&#32;<span><a href="https://www.nuget.org/packages/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-5.html">ProvidedTypeDefinition</a>&#32;option</span></span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '188', 188)" onmouseover="showTip(event, '188', 188)">
+                <p>
+                  <a id="createIndividualsType">
+                    <a href="#createIndividualsType">
+                      <code><span>createIndividualsType&#32;<span>con&#32;prov&#32;table&#32;designTimeDc&#32;dbVendor&#32;individualsAmount&#32;tableTypeDef</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="188">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>createIndividualsType&#32;<span>con&#32;prov&#32;table&#32;designTimeDc&#32;dbVendor&#32;individualsAmount&#32;tableTypeDef</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        con
+                      </b>
+                      :
+                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a>&#32;option</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        prov
+                      </b>
+                      :
+                      <code><a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html">ISqlProvider</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        table
+                      </b>
+                      :
+                      <code><a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-schema-table.html">Table</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        designTimeDc
+                      </b>
+                      :
+                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.lazy-1">Lazy</a>&lt;'a&gt;</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        dbVendor
+                      </b>
+                      :
+                      <code><a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html">DatabaseProviderTypes</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        individualsAmount
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        tableTypeDef
+                      </b>
+                      :
+                      <code><a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://www.nuget.org/packages/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-5.html">ProvidedTypeDefinition</a>&#32;seq</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  con
+                </span>
+                :
+                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a>&#32;option</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  prov
+                </span>
+                :
+                <code><a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html">ISqlProvider</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  table
+                </span>
+                :
+                <code><a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-schema-table.html">Table</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  designTimeDc
+                </span>
+                :
+                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.lazy-1">Lazy</a>&lt;'a&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  dbVendor
+                </span>
+                :
+                <code><a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html">DatabaseProviderTypes</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  individualsAmount
+                </span>
+                :
+                <code>int</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  tableTypeDef
+                </span>
+                :
+                <code><a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><a href="https://www.nuget.org/packages/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-5.html">ProvidedTypeDefinition</a>&#32;seq</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '189', 189)" onmouseover="showTip(event, '189', 189)">
+                <p>
+                  <a id="createTypes">
+                    <a href="#createTypes">
+                      <code><span>createTypes&#32;<span>rootType&#32;serviceType&#32;readServiceType&#32;config&#32;sqlRuntimeInfo&#32;invalidate&#32;registerDispose&#32;args</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="189">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>createTypes&#32;<span>rootType&#32;serviceType&#32;readServiceType&#32;config&#32;sqlRuntimeInfo&#32;invalidate&#32;registerDispose&#32;args</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        rootType
+                      </b>
+                      :
+                      <code><a href="https://www.nuget.org/packages/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-5.html">ProvidedTypeDefinition</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        serviceType
+                      </b>
+                      :
+                      <code><a href="https://www.nuget.org/packages/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-5.html">ProvidedTypeDefinition</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        readServiceType
+                      </b>
+                      :
+                      <code><a href="https://www.nuget.org/packages/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-5.html">ProvidedTypeDefinition</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        config
+                      </b>
+                      :
+                      <code><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-compilerservices-typeproviderconfig">TypeProviderConfig</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        sqlRuntimeInfo
+                      </b>
+                      :
+                      <code>'a</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        invalidate
+                      </b>
+                      :
+                      <code><span>unit&#32;->&#32;unit</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        registerDispose
+                      </b>
+                      :
+                      <code><span><span><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a>&#32;*&#32;<a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html">DatabaseProviderTypes</a></span>&#32;->&#32;unit</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        args
+                      </b>
+                      :
+                      <code><span>string&#32;*&#32;string&#32;*&#32;<a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html">DatabaseProviderTypes</a>&#32;*&#32;string&#32;*&#32;int&#32;*&#32;<a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-common-nullablecolumntype.html">NullableColumnType</a>&#32;*&#32;string&#32;*&#32;<a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-common-casesensitivitychange.html">CaseSensitivityChange</a>&#32;*&#32;string&#32;*&#32;string&#32;*&#32;<a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-common-odbcquotecharacter.html">OdbcQuoteCharacter</a>&#32;*&#32;<a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-common-sqlitelibrary.html">SQLiteLibrary</a>&#32;*&#32;string&#32;*&#32;string</span></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  rootType
+                </span>
+                :
+                <code><a href="https://www.nuget.org/packages/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-5.html">ProvidedTypeDefinition</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  serviceType
+                </span>
+                :
+                <code><a href="https://www.nuget.org/packages/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-5.html">ProvidedTypeDefinition</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  readServiceType
+                </span>
+                :
+                <code><a href="https://www.nuget.org/packages/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-5.html">ProvidedTypeDefinition</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  config
+                </span>
+                :
+                <code><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-compilerservices-typeproviderconfig">TypeProviderConfig</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  sqlRuntimeInfo
+                </span>
+                :
+                <code>'a</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  invalidate
+                </span>
+                :
+                <code><span>unit&#32;->&#32;unit</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  registerDispose
+                </span>
+                :
+                <code><span><span><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a>&#32;*&#32;<a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html">DatabaseProviderTypes</a></span>&#32;->&#32;unit</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  args
+                </span>
+                :
+                <code><span>string&#32;*&#32;string&#32;*&#32;<a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html">DatabaseProviderTypes</a>&#32;*&#32;string&#32;*&#32;int&#32;*&#32;<a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-common-nullablecolumntype.html">NullableColumnType</a>&#32;*&#32;string&#32;*&#32;<a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-common-casesensitivitychange.html">CaseSensitivityChange</a>&#32;*&#32;string&#32;*&#32;string&#32;*&#32;<a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-common-odbcquotecharacter.html">OdbcQuoteCharacter</a>&#32;*&#32;<a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-common-sqlitelibrary.html">SQLiteLibrary</a>&#32;*&#32;string&#32;*&#32;string</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '190', 190)" onmouseover="showTip(event, '190', 190)">
+                <p>
+                  <a id="design1">
+                    <a href="#design1">
+                      <code><span>design1&#32;<span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="190">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>design1&#32;<span></span></span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>string</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>string</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '191', 191)" onmouseover="showTip(event, '191', 191)">
+                <p>
+                  <a id="design2">
+                    <a href="#design2">
+                      <code><span>design2&#32;<span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="191">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>design2&#32;<span></span></span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>string</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>string</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '192', 192)" onmouseover="showTip(event, '192', 192)">
+                <p>
+                  <a id="empty">
+                    <a href="#empty">
+                      <code><span>empty&#32;<span>arg1</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="192">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>empty&#32;<span>arg1</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        arg0
+                      </b>
+                      :
+                      <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-quotations-fsharpexpr">Expr</a>&#32;list</span></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-quotations-fsharpexpr">Expr</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  arg0
+                </span>
+                :
+                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-quotations-fsharpexpr">Expr</a>&#32;list</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-quotations-fsharpexpr">Expr</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '193', 193)" onmouseover="showTip(event, '193', 193)">
+                <p>
+                  <a id="generateSprocMethod">
+                    <a href="#generateSprocMethod">
+                      <code><span>generateSprocMethod&#32;<span>container&#32;con&#32;prov&#32;sproc</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="193">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>generateSprocMethod&#32;<span>container&#32;con&#32;prov&#32;sproc</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        container
+                      </b>
+                      :
+                      <code><a href="https://www.nuget.org/packages/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-5.html">ProvidedTypeDefinition</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        con
+                      </b>
+                      :
+                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a>&#32;option</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        prov
+                      </b>
+                      :
+                      <code><a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html">ISqlProvider</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        sproc
+                      </b>
+                      :
+                      <code><a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-schema-compiletimesprocdefinition.html">CompileTimeSprocDefinition</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://www.nuget.org/packages/SQLProvider/reference/providerimplementation-providedtypes-providedproperty-5.html">ProvidedProperty</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  container
+                </span>
+                :
+                <code><a href="https://www.nuget.org/packages/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-5.html">ProvidedTypeDefinition</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  con
+                </span>
+                :
+                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a>&#32;option</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  prov
+                </span>
+                :
+                <code><a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html">ISqlProvider</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  sproc
+                </span>
+                :
+                <code><a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-schema-compiletimesprocdefinition.html">CompileTimeSprocDefinition</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://www.nuget.org/packages/SQLProvider/reference/providerimplementation-providedtypes-providedproperty-5.html">ProvidedProperty</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '194', 194)" onmouseover="showTip(event, '194', 194)">
+                <p>
+                  <a id="generateTypeTree">
+                    <a href="#generateTypeTree">
+                      <code><span>generateTypeTree&#32;<span>con&#32;prov&#32;createdTypes&#32;sprocs</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="194">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>generateTypeTree&#32;<span>con&#32;prov&#32;createdTypes&#32;sprocs</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        con
+                      </b>
+                      :
+                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a>&#32;option</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        prov
+                      </b>
+                      :
+                      <code><a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html">ISqlProvider</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        createdTypes
+                      </b>
+                      :
+                      <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span><span>string&#32;list</span>,&#32;<a href="https://www.nuget.org/packages/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-5.html">ProvidedTypeDefinition</a></span>&gt;</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        sprocs
+                      </b>
+                      :
+                      <code><span><a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-schema-sproc.html">Sproc</a>&#32;list</span></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://www.nuget.org/packages/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-5.html">ProvidedTypeDefinition</a>&#32;seq</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  con
+                </span>
+                :
+                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a>&#32;option</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  prov
+                </span>
+                :
+                <code><a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html">ISqlProvider</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  createdTypes
+                </span>
+                :
+                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span><span>string&#32;list</span>,&#32;<a href="https://www.nuget.org/packages/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-5.html">ProvidedTypeDefinition</a></span>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  sprocs
+                </span>
+                :
+                <code><span><a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-schema-sproc.html">Sproc</a>&#32;list</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><a href="https://www.nuget.org/packages/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-5.html">ProvidedTypeDefinition</a>&#32;seq</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '195', 195)" onmouseover="showTip(event, '195', 195)">
+                <p>
+                  <a id="getOrAddSchema">
+                    <a href="#getOrAddSchema">
+                      <code><span>getOrAddSchema&#32;<span>args&#32;name</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="195">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>getOrAddSchema&#32;<span>args&#32;name</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        args
+                      </b>
+                      :
+                      <code><a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-designcachekey-5.html">DesignCacheKey</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        name
+                      </b>
+                      :
+                      <code>string</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://www.nuget.org/packages/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-5.html">ProvidedTypeDefinition</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  args
+                </span>
+                :
+                <code><a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-designcachekey-5.html">DesignCacheKey</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  name
+                </span>
+                :
+                <code>string</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://www.nuget.org/packages/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-5.html">ProvidedTypeDefinition</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '196', 196)" onmouseover="showTip(event, '196', 196)">
+                <p>
+                  <a id="getSprocReturnColumns">
+                    <a href="#getSprocReturnColumns">
+                      <code><span>getSprocReturnColumns&#32;<span>con&#32;prov&#32;sprocname&#32;sprocDefinition&#32;param</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="196">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>getSprocReturnColumns&#32;<span>con&#32;prov&#32;sprocname&#32;sprocDefinition&#32;param</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        con
+                      </b>
+                      :
+                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a>&#32;option</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        prov
+                      </b>
+                      :
+                      <code><a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html">ISqlProvider</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        sprocname
+                      </b>
+                      :
+                      <code>string</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        sprocDefinition
+                      </b>
+                      :
+                      <code><a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-schema-compiletimesprocdefinition.html">CompileTimeSprocDefinition</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        param
+                      </b>
+                      :
+                      <code><span><a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-schema-queryparameter.html">QueryParameter</a>&#32;list</span></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-schema-queryparameter.html">QueryParameter</a>&#32;list</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  con
+                </span>
+                :
+                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a>&#32;option</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  prov
+                </span>
+                :
+                <code><a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html">ISqlProvider</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  sprocname
+                </span>
+                :
+                <code>string</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  sprocDefinition
+                </span>
+                :
+                <code><a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-schema-compiletimesprocdefinition.html">CompileTimeSprocDefinition</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  param
+                </span>
+                :
+                <code><span><a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-schema-queryparameter.html">QueryParameter</a>&#32;list</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-schema-queryparameter.html">QueryParameter</a>&#32;list</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '197', 197)" onmouseover="showTip(event, '197', 197)">
+                <p>
+                  <a id="mySaveLock">
+                    <a href="#mySaveLock">
+                      <code><span>mySaveLock&#32;<span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="197">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>mySaveLock&#32;<span></span></span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://learn.microsoft.com/dotnet/api/system.object">Object</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://learn.microsoft.com/dotnet/api/system.object">Object</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '198', 198)" onmouseover="showTip(event, '198', 198)">
+                <p>
+                  <a id="runtime1">
+                    <a href="#runtime1">
+                      <code><span>runtime1&#32;<span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="198">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>runtime1&#32;<span></span></span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>string</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>string</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '199', 199)" onmouseover="showTip(event, '199', 199)">
+                <p>
+                  <a id="runtime2">
+                    <a href="#runtime2">
+                      <code><span>runtime2&#32;<span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="199">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>runtime2&#32;<span></span></span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>string</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>string</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '200', 200)" onmouseover="showTip(event, '200', 200)">
+                <p>
+                  <a id="saveInProcess">
+                    <a href="#saveInProcess">
+                      <code><span>saveInProcess&#32;<span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="200">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>saveInProcess&#32;<span></span></span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>bool</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '201', 201)" onmouseover="showTip(event, '201', 201)">
+                <p>
+                  <a id="transactionOptions">
+                    <a href="#transactionOptions">
+                      <code><span>transactionOptions&#32;<span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="201">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>transactionOptions&#32;<span></span></span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-transactions-transactionoptions.html">TransactionOptions</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-transactions-transactionoptions.html">TransactionOptions</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '202', 202)" onmouseover="showTip(event, '202', 202)">
+                <p>
+                  <a id="walkSproc">
+                    <a href="#walkSproc">
+                      <code><span>walkSproc&#32;<span>con&#32;prov&#32;path&#32;parent&#32;createdTypes&#32;sproc</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="202">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>walkSproc&#32;<span>con&#32;prov&#32;path&#32;parent&#32;createdTypes&#32;sproc</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        con
+                      </b>
+                      :
+                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a>&#32;option</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        prov
+                      </b>
+                      :
+                      <code><a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html">ISqlProvider</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        path
+                      </b>
+                      :
+                      <code><span>string&#32;list</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        parent
+                      </b>
+                      :
+                      <code><span><a href="https://www.nuget.org/packages/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-5.html">ProvidedTypeDefinition</a>&#32;option</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        createdTypes
+                      </b>
+                      :
+                      <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span><span>string&#32;list</span>,&#32;<a href="https://www.nuget.org/packages/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-5.html">ProvidedTypeDefinition</a></span>&gt;</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        sproc
+                      </b>
+                      :
+                      <code><a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-schema-sproc.html">Sproc</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span><span>string&#32;list</span>,&#32;<a href="https://www.nuget.org/packages/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-5.html">ProvidedTypeDefinition</a></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  con
+                </span>
+                :
+                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a>&#32;option</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  prov
+                </span>
+                :
+                <code><a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html">ISqlProvider</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  path
+                </span>
+                :
+                <code><span>string&#32;list</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  parent
+                </span>
+                :
+                <code><span><a href="https://www.nuget.org/packages/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-5.html">ProvidedTypeDefinition</a>&#32;option</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  createdTypes
+                </span>
+                :
+                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span><span>string&#32;list</span>,&#32;<a href="https://www.nuget.org/packages/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-5.html">ProvidedTypeDefinition</a></span>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  sproc
+                </span>
+                :
+                <code><a href="https://www.nuget.org/packages/SQLProvider/reference/fsharp-data-sql-schema-sproc.html">Sproc</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span><span>string&#32;list</span>,&#32;<a href="https://www.nuget.org/packages/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-5.html">ProvidedTypeDefinition</a></span>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+</div>
+        
+    </div>
+</main>
+<aside id="fsdocs-page-menu">
+    <p id="on-this-page">On this page</p>
+    <div class="empty"></div>
+</aside>
+<dialog>
+    <input type="search" placeholder="Search docs" />
+    <div class="results">
+        <ul></ul>
+        <p class="empty">Type something to start searching.</p>
+    </div>
+</dialog>
+<script type="module" src="https://www.nuget.org/packages/SQLProvider/content/fsdocs-tips.js"></script>
+<script type="module" src="https://www.nuget.org/packages/SQLProvider/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="https://www.nuget.org/packages/SQLProvider/content/fsdocs-theme.js"></script>
+<script type="module" src="https://www.nuget.org/packages/SQLProvider/content/fsdocs-search.js"></script>
+
+</body>
+</html>
