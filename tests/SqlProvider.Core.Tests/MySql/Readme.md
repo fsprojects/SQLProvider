@@ -1,5 +1,66 @@
 # MySQL - Getting started
 
+There are two ways of using SQLProvider: Either via dynamic package SQLProvider or with pre-defined dependency SQLProvider.MySql or SQLProvider.MySqlConnector.
+The dynamic package needs more configuration but has more flexibility if you want manual control over all reference dlls.
+
+# Using SQLProvider.MySql or SQLProvider.MySqlConnector
+
+The SQLProvider.MySql works with official MySQL meanwhile SQLProvider.MySqlConnector works with MariaDB as well.
+
+## Part 1: Create project
+
+```
+dotnet new console --language f#
+dotnet add package SQLProvider.MySqlConnector
+``` 
+
+## Part 2: Source code, build and run
+
+Replace content of Program.fs with this:
+
+```fsharp
+open System
+open FSharp.Data
+open FSharp.Data.Sql
+//open FSharp.Data.Sql.MySql
+open FSharp.Data.Sql.MySqlConnector
+
+[<Literal>]
+let connStr = "Server=localhost;Database=HR;Uid=admin;Pwd=password;Auto Enlist=false; Convert Zero Datetime=true;" // SslMode=none;
+
+type TypeProviderConnection =
+    //FSharp.Data.Sql.MySql.SqlDataProvider< 
+    FSharp.Data.Sql.MySqlConnector.SqlDataProvider< 
+        ConnectionString = connStr,
+        DatabaseVendor = Common.DatabaseProviderTypes.MYSQL,
+        IndividualsAmount=100,
+        UseOptionTypes=FSharp.Data.Sql.Common.NullableColumnType.VALUE_OPTION>
+
+let ctx = TypeProviderConnection.GetDataContext()
+let fsts =
+    query {
+        for c in ctx.Hr.Countries do
+        where (c.CountryName.IsSome)
+        select c.CountryName.Value
+    } |> Seq.head
+
+printfn "%s" fsts
+//Console.ReadLine()
+```
+
+Run:
+
+```
+dotnet build
+dotnet run
+```
+
+That's it.
+
+
+# Using the dynamic SQLProvider
+
+This is the other, more complex way.
 You can either clone this repository and observe the more complex 
 multi-environment version of
 SqlProvider.Core.Tests.fsproj and Program.fs (and database scripts at /src/DatabaseScripts/MySql)

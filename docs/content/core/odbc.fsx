@@ -22,6 +22,10 @@ open FSharp.Data.Sql
 
 # ODBC
 
+SQLProvider with ODBC is available via both NuGet-Packages:
+- NuGet: SQLProvider.Odbc - Fixed libraries. Doesn't need resolution path. TypeProvider class: FSharp.Data.Sql.Odbc.SqlDataProvider
+- NuGet: SQLProvider - Dynamic version. TypeProvider class: FSharp.Data.Sql.SqlDataProvider
+
 ### DSN
 
 Configuring DSN on Windows ODBC Data Source Administrator server:

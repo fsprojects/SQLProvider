@@ -35,4 +35,5 @@ dependencies
     FSharp.Core >= 8.0.301
     Newtonsoft.Json >= 13.0.1
     System.Memory >= 4.6.3
+    System.Runtime.Loader >= 4.3
     MySql.Data >= 6.10.9

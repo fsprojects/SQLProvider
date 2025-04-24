@@ -1,4 +1,6 @@
 FSharp.Core
+System.Runtime
+System.Data.Common
 System.Memory
 
 group SourceFiles

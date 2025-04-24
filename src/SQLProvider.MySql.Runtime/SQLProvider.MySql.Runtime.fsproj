@@ -22,7 +22,8 @@
   </Target>
   <ItemGroup>
       <PackageReference Include="MySql.Data" Version="9.3.0" />
-    <ProjectReference Include="..\SQLProvider.Common\SQLProvider.Common.fsproj" />
+      <PackageReference Include="System.Runtime.Loader" Version="4.3" />
+      <ProjectReference Include="..\SQLProvider.Common\SQLProvider.Common.fsproj" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

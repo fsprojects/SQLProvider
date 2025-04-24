@@ -35,7 +35,9 @@
       <Compile Include="..\SQLProvider.DesignTime\SqlDesignTime.fs" Link="SqlDesignTime.fs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="FirebirdSql.Data.FirebirdClient" Version="10.3.2" />
+    <PackageReference Include="FirebirdSql.Data.FirebirdClient" Version="10.3.2">
+        <IncludeAssets>all</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SQLProvider.Common\SQLProvider.Common.fsproj" />

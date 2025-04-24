@@ -7,6 +7,10 @@ open FSharp.Data.Sql
 
 # SQLite Provider
 
+SQLProvider with SQLite is available via both NuGet-Packages:
+- NuGet: SQLProvider.SQLite - Experimental, not tested. Fixed libraries. Doesn't need resolution path. TypeProvider class: FSharp.Data.Sql.SQLite.SqlDataProvider
+- NuGet: SQLProvider - Dynamic version. TypeProvider class: FSharp.Data.Sql.SqlDataProvider
+
 ## Parameters
 
 ### ConnectionString

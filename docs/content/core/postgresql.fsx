@@ -16,6 +16,11 @@ open FSharp.Data.Sql
 
 # PostgreSQL Provider
 
+SQLProvider with Oracle is available via both NuGet-Packages:
+- NuGet: SQLProvider.PostgreSql - Experimental, not tested. Fixed libraries. Doesn't need resolution path. TypeProvider class: FSharp.Data.Sql.PostgreSql.SqlDataProvider
+- NuGet: SQLProvider - Dynamic version. TypeProvider class: FSharp.Data.Sql.SqlDataProvider
+
+
 ## Parameters
 
 ### DatabaseVendor

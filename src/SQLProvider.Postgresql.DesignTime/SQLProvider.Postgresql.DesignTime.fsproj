@@ -35,7 +35,9 @@
       <Compile Include="..\SQLProvider.DesignTime\SqlDesignTime.fs" Link="SqlDesignTime.fs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Npgsql" Version="8.0.7" />
+    <PackageReference Include="Npgsql" Version="8.0.7">
+        <IncludeAssets>all</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.3" />
   </ItemGroup>
   <ItemGroup>

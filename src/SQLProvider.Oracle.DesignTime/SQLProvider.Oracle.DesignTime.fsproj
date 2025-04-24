@@ -35,13 +35,16 @@
       <Compile Include="..\SQLProvider.DesignTime\SqlDesignTime.fs" Link="SqlDesignTime.fs" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0' Or '$(TargetFramework)' == 'net472'">
-    <PackageReference Include="Oracle.ManagedDataAccess" Version="23.8.0" />
+    <PackageReference Include="Oracle.ManagedDataAccess" Version="23.8.0">
+        <IncludeAssets>all</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SQLProvider.Common\SQLProvider.Common.fsproj" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
     <PackageReference Include="Oracle.ManagedDataAccess.Core">
+      <IncludeAssets>all</IncludeAssets>
       <Version>23.8.0</Version>
     </PackageReference>
   </ItemGroup>

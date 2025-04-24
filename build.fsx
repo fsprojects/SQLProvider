@@ -95,14 +95,14 @@ let environVarOrDefault varName defaultValue =
 // The name of the project
 // (used by attributes in AssemblyInfo, name of a NuGet package and directory in 'src')
 
-type Project = { 
-    name:string; 
+type Project = {
+    name:string;
     /// Short summary of the project
     /// (used as description in AssemblyInfo and as a short summary for NuGet package)
-    summary:string; 
+    summary:string;
     /// Longer description of the project
     /// (used as a description for NuGet package; line breaks are automatically cleaned up)
-    description:string; 
+    description:string;
     /// List of dependencies
     dependencies:(string * string) list }
 
@@ -120,11 +120,11 @@ let projects =
      {name="SQLProvider.MsSql.DesignTime";summary="Type providers for Microsoft SQL Server database access.";description="Type providers for Microsoft SQL Server database access.";dependencies=[]};
      {name="SQLProvider.MsSql.Runtime";summary="Type providers for Microsoft SQL Server database access.";description="Type providers for Microsoft SQL Server database access.";dependencies=[]};
 
-     {name="SQLProvider.MySql.DesignTime";summary="Type providers for MySSQL database and MariaDB database access.";description="Type providers for MySSQL database and MariaDB database access with the official driver.";dependencies=[]};
-     {name="SQLProvider.MySql.Runtime";summary="Type providers for MySSQL database and MariaDB database access.";description="Type providers for MySSQL database and MariaDB database access with the official driver.";dependencies=[]};
+     {name="SQLProvider.MySql.DesignTime";summary="Type providers for MySQL database and MariaDB database access.";description="Type providers for MySQL database access with the official driver.";dependencies=[]};
+     {name="SQLProvider.MySql.Runtime";summary="Type providers for MySQL database and MariaDB database access.";description="Type providers for MySQL database database access with the official driver.";dependencies=[]};
 
-     {name="SQLProvider.MySqlConnector.DesignTime";summary="Type providers for MySSQL database and MariaDB database access via MySqlConnector.";description="Type providers for MySSQL database and MariaDB database access via MySqlConnector.";dependencies=[]};
-     {name="SQLProvider.MySqlConnector.Runtime";summary="Type providers for MySSQL database and MariaDB database access via MySqlConnector.";description="Type providers for MySSQL database and MariaDB database access via MySqlConnector.";dependencies=[]};
+     {name="SQLProvider.MySqlConnector.DesignTime";summary="Type providers for MySQL database and MariaDB database access via MySqlConnector.";description="Type providers for MySQL database and MariaDB database access via MySqlConnector.";dependencies=[]};
+     {name="SQLProvider.MySqlConnector.Runtime";summary="Type providers for MySQL database and MariaDB database access via MySqlConnector.";description="Type providers for MySQL database and MariaDB database access via MySqlConnector.";dependencies=[]};
 
      {name="SQLProvider.Odbc.DesignTime";summary="Type providers for any ODBC connection database access.";description="Type providers for any ODBC connection database access.";dependencies=[]};
      {name="SQLProvider.Odbc.Runtime";summary="Type providers for any ODBC connection database access.";description="Type providers for any ODBC connection database access.";dependencies=[]};
@@ -195,7 +195,7 @@ Target.create "Clean" (fun _ ->
     !! "**/**/test*/SqlProvider.Core.Tests/MsSqlSsdt/MsSqlSsdt.Tests/AdventureWorks_SSDT/obj/" |> Shell.cleanDirs
     !! "**/**/test*/SqlProvider.Core.Tests/MsSqlSsdt/MsSqlSsdt.Tests/obj/" |> Shell.cleanDirs
     "tests/SqlProvider.Core.Tests/MsSqlSsdt/MsSqlSsdt.Tests/AdventureWorks_SSDT/AdventureWorks_SSDT.dacpac" |> Shell.rm
- 
+
     Shell.cleanDirs ["bin"; "temp"]
 )
 
@@ -207,12 +207,12 @@ Target.create "CleanDocs" (fun _ ->
 // Build library & test project
 
 Target.create "Build" (fun _ ->
-    Fake.DotNet.DotNet.build (fun p -> 
+    Fake.DotNet.DotNet.build (fun p ->
       {
-        p with 
+        p with
           Configuration = DotNet.BuildConfiguration.Release
           MSBuildParams = { MSBuild.CliArguments.Create() with DisableInternalBinLog = true }
-    
+
     }) "SQLProvider.sln"
 )
 
@@ -237,27 +237,27 @@ Target.create "SetupPostgreSQL" (fun _ ->
       connBuilder.Port <- 5432
       connBuilder.Database <- "postgres"
       connBuilder.Username <- "postgres"
-      connBuilder.Password <- 
+      connBuilder.Password <-
         match Fake.Core.BuildServer.buildServer with
         | Travis -> ""
         | AppVeyor -> "Password12!"
-        | _ -> "postgres"      
-  
-      let runCmd query = 
+        | _ -> "postgres"
+
+      let runCmd query =
         // We wait up to 30 seconds for PostgreSQL to be initialized
-        let rec runCmd' attempt = 
+        let rec runCmd' attempt =
           try
             use conn = new Npgsql.NpgsqlConnection(connBuilder.ConnectionString)
             conn.Open()
             use cmd = new Npgsql.NpgsqlCommand(query, conn)
-            cmd.ExecuteNonQuery() |> ignore 
-          with e -> 
+            cmd.ExecuteNonQuery() |> ignore
+          with e ->
             printfn "Connection attempt %i: %A" attempt e
             Threading.Thread.Sleep 1000
             if attempt < 30 then runCmd' (attempt + 1)
 
         runCmd' 0
-              
+
       let testDbName = "sqlprovider"
       printfn "Creating test database %s on connection %s" testDbName connBuilder.ConnectionString
       runCmd (sprintf "CREATE DATABASE %s" testDbName)
@@ -265,7 +265,7 @@ Target.create "SetupPostgreSQL" (fun _ ->
 
       (!! "src/DatabaseScripts/PostgreSQL/*.sql")
       |> Seq.map (fun file -> printfn "Running script %s on connection %s" file connBuilder.ConnectionString; file)
-      |> Seq.map IO.File.ReadAllText      
+      |> Seq.map IO.File.ReadAllText
       |> Seq.iter runCmd
 	  *)
     ()
@@ -274,31 +274,31 @@ Target.create "SetupPostgreSQL" (fun _ ->
 // --------------------------------------------------------------------------------------
 // Set up a MS SQL Server database to run tests
 
-let setupMssql url saPassword = 
-  
-    let connBuilder = SqlConnectionStringBuilder()    
+let setupMssql url saPassword =
+
+    let connBuilder = SqlConnectionStringBuilder()
     connBuilder.InitialCatalog <- "master"
     connBuilder.UserID <- "sa"
     connBuilder.DataSource <- url
-    connBuilder.Password <- saPassword   
-          
-    let runCmd query = 
+    connBuilder.Password <- saPassword
+
+    let runCmd query =
       // We wait up to 30 seconds for MSSQL to be initialized
-      let rec runCmd' attempt = 
+      let rec runCmd' attempt =
         try
           use conn = new SqlConnection(connBuilder.ConnectionString)
           conn.Open()
           use cmd = new SqlCommand(query, conn)
-          cmd.ExecuteNonQuery() |> ignore 
-        with e -> 
+          cmd.ExecuteNonQuery() |> ignore
+        with e ->
           printfn "Connection attempt %i: %A" attempt e
           Threading.Thread.Sleep 1000
           if attempt < 30 then runCmd' (attempt + 1)
 
       runCmd' 0
 
-    let runScript fileLines =            
-            
+    let runScript fileLines =
+
       // We look for the 'GO' lines that complete the individual SQL commands
       let rec cmdGen cache (lines : string list) =
         seq {
@@ -307,7 +307,7 @@ let setupMssql url saPassword =
           | cmds, [] -> yield cmds
           | cmds, l :: ls when l.Trim().ToUpper() = "GO" -> yield cmds; yield! cmdGen [] ls
           | cmds, l :: ls -> yield! cmdGen (l :: cmds) ls
-        }      
+        }
 
       for cmd in cmdGen [] (fileLines |> Seq.toList) do
         let query = cmd |> List.rev |> String.concat "\r\n"
@@ -322,9 +322,9 @@ let setupMssql url saPassword =
     |> Seq.map (fun file -> printfn "Running script %s on connection %s" file connBuilder.ConnectionString; file)
     |> Seq.map IO.File.ReadAllLines
     |> Seq.iter runScript
-   
+
     (url,saPassword) |> ignore
-    
+
 Target.create "SetupMSSQL2008R2" (fun _ ->
     setupMssql "(local)\\SQL2008R2SP2" "Password12!"
 )
@@ -337,7 +337,7 @@ Target.create "SetupMSSQL2017" (fun _ ->
 // --------------------------------------------------------------------------------------
 // Run the unit tests using test runner
 
-Target.create "RunTests" (fun _ -> 
+Target.create "RunTests" (fun _ ->
 
     Fake.DotNet.DotNet.test (fun p ->
         { p with
@@ -351,7 +351,7 @@ Target.create "RunTests" (fun _ ->
             }) "SQLProvider.Tests.sln"
 
 (*
-    !! testAssemblies 
+    !! testAssemblies
     |> Fake.DotNet.Testing.NUnit3.run (fun p ->
         { p with
             DisableShadowCopy = true
@@ -392,8 +392,8 @@ Target.create "NuGet" (fun _ ->
 )
 
 Target.create "PackNuGet" (fun _ ->
-    let _ = 
-        Fake.DotNet.Paket.pack(fun p -> 
+    let _ =
+        Fake.DotNet.Paket.pack(fun p ->
             { p with
                 ToolType = Fake.DotNet.ToolType.CreateLocalTool()
                 OutputPath = "bin"
@@ -402,13 +402,13 @@ Target.create "PackNuGet" (fun _ ->
                 Symbols = true
                 })
 
-    try 
+    try
         Branches.tag "" release.NugetVersion
     with
-    | e -> 
+    | e ->
          printfn "Git tag fail: %s" e.Message
     ()
-) 
+)
 
 // --------------------------------------------------------------------------------------
 // Generate the documentation
@@ -460,7 +460,7 @@ Target.create "Release" (fun _ ->
     // push manually: nuget.exe push bin\SQLProvider.1.*.nupkg -Source https://www.nuget.org/api/v2/package
     //Branches.pushTag "" "upstream" release.NugetVersion
     ()
-) 
+)
 
 // --------------------------------------------------------------------------------------
 // Run all targets by default. Invoke 'build <Target>' to override
@@ -471,7 +471,7 @@ Target.create "All" ignore
 Target.create "BuildDocs" ignore
 
 "Clean"
-  ==> "AssemblyInfo"  
+  ==> "AssemblyInfo"
   // In CI mode, we setup a Postgres database before building
   =?> ("SetupPostgreSQL", not Fake.Core.BuildServer.isLocalBuild)
   // On AppVeyor, we also add a SQL Server 2008R2 one and a SQL Server 2017 for compatibility
@@ -488,16 +488,16 @@ Target.create "BuildDocs" ignore
 
 "Build"
   ==> "NuGet"
-  
+
 // Use this to test and run document generation in localhost:
 // build -t WatchLocalDocs
-"Build" 
+"Build"
   ==> "WatchLocalDocs"
 
 "All"
   ==> "BuildDocs"
 
-"All" 
+"All"
 #if MONO
 #else
   //=?> ("SourceLink", Pdbstr.tryFind().IsSome )
@@ -506,7 +506,7 @@ Target.create "BuildDocs" ignore
   ==> "ReleaseDocs"
   ==> "Release"
 
-"All" 
+"All"
   ==> "Release"
 
 // Change target via command-line: build -t PackNuGet

@@ -1,5 +1,7 @@
 FSharp.Core
 System.Memory
+System.Runtime
+System.Data.Common
 group SourceFiles
 File:ProvidedTypes.fsi
 File:ProvidedTypes.fs

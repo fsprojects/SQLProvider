@@ -4,7 +4,7 @@ open System.Reflection
 
 [<assembly: AssemblyTitleAttribute("SQLProvider.MySqlConnector.DesignTime")>]
 [<assembly: AssemblyProductAttribute("SQLProvider")>]
-[<assembly: AssemblyDescriptionAttribute("Type providers for MySSQL database and MariaDB database access via MySqlConnector.")>]
+[<assembly: AssemblyDescriptionAttribute("Type providers for MySQL database and MariaDB database access via MySqlConnector.")>]
 [<assembly: AssemblyVersionAttribute("1.5.0")>]
 [<assembly: AssemblyFileVersionAttribute("1.5.0")>]
 do ()
@@ -12,6 +12,6 @@ do ()
 module internal AssemblyVersionInformation =
     let [<Literal>] AssemblyTitle = "SQLProvider.MySqlConnector.DesignTime"
     let [<Literal>] AssemblyProduct = "SQLProvider"
-    let [<Literal>] AssemblyDescription = "Type providers for MySSQL database and MariaDB database access via MySqlConnector."
+    let [<Literal>] AssemblyDescription = "Type providers for MySQL database and MariaDB database access via MySqlConnector."
     let [<Literal>] AssemblyVersion = "1.5.0"
     let [<Literal>] AssemblyFileVersion = "1.5.0"

@@ -36,6 +36,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="MySqlConnector" Version="2.4.0" />
+    <PackageReference Include="System.Runtime.Loader" Version="4.3" />
     <ProjectReference Include="..\SQLProvider.Common\SQLProvider.Common.fsproj" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />

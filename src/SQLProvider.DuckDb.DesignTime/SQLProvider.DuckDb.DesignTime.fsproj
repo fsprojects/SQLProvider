@@ -35,7 +35,9 @@
       <Compile Include="..\SQLProvider.DesignTime\SqlDesignTime.fs" Link="SqlDesignTime.fs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="DuckDB.NET.Bindings.Full" Version="1.2.1" />
+    <PackageReference Include="DuckDB.NET.Bindings.Full" Version="1.2.1">
+        <IncludeAssets>all</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="DuckDB.NET.Data.Full" Version="1.2.1" />
   </ItemGroup>
   <ItemGroup>

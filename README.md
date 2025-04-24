@@ -76,7 +76,7 @@ Depending on the used provider, the namespace of SqlDataProvider type class may 
 - [SQLProvider](https://www.nuget.org/packages/SQLProvider) - Generic provider supports all databases, but needs some manual setup of reference assemblies
 - [SQLProvider.MsSql](https://www.nuget.org/packages/SQLProvider.MsSql) - Microsoft SQL Server (and SSDT) only, using Microsoft.Data.SqlClient
 - [SQLProvider.PostgreSql](https://www.nuget.org/packages/SQLProvider.PostgreSql) - PostgreSQL only
-- [SQLProvider.MySql](https://www.nuget.org/packages/SQLProvider.MySql) - MySQL and MariaDB only (via the official driver)
+- [SQLProvider.MySql](https://www.nuget.org/packages/SQLProvider.MySql) - MySQL only (via the official driver)
 - [SQLProvider.MySqlConnector](https://www.nuget.org/packages/SQLProvider.MySqlConnector) - MySQL and MariaDB only (via MySqlConnector)
 - [SQLProvider.FireBird](https://www.nuget.org/packages/SQLProvider.FireBird) - FireBird only 
 - [SQLProvider.SQLite](https://www.nuget.org/packages/SQLProvider.SQLite) - SQLite only 

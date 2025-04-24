@@ -1,5 +1,6 @@
 FSharp.Core
 System.Memory
+System.Runtime.Loader
 
 group SourceFiles
       File:ExpressionOptimizer.fs

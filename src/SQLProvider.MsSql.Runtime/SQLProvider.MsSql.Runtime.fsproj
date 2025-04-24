@@ -19,7 +19,7 @@
     <Compile Include="..\SQLProvider.Runtime\SqlRuntime.DataContext.fs" Link="SqlRuntime.DataContext.fs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.0.1" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
   </ItemGroup>
   <Target Name="BeforeBuild">
     <MSBuild Projects="..\SQLProvider.MsSql.DesignTime\SQLProvider.MsSql.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=$(TargetFramework)" />

@@ -1,4 +1,62 @@
-# Ms SQL Server - Getting started
+There are two ways of using SQLProvider: Either via dynamic package SQLProvider or with pre-defined dependency SQLProvider.MsSql 
+The dynamic package needs more configuration but has more flexibility if you want manual control over all reference dlls.
+
+# Using SQLProvider.MsSql 
+
+The SQLProvider.MsSql can be used with direct connection or with reading the schema from SSDT dacpac file.
+The later is good option if you expect to need longer maintenance project, you can create .sqlproj and save your DB schema to your version control.
+SQLProvider.MsSql uses Microsoft.Data.SqlClient to connect to the database.
+
+## Part 1: Create project
+
+```
+dotnet new console --language f#
+dotnet add package SQLProvider.MsSql
+dotnet add package Microsoft.Data.SqlClient --version 5.2.2
+``` 
+
+## Part 2: Source code, build and run
+
+```fsharp
+open System
+open FSharp.Data.Sql
+open FSharp.Data.Sql.MsSql
+
+[<Literal>]
+let connStr = "Data Source=localhost; Initial Catalog=HR; Integrated Security=True;TrustServerCertificate=true"
+
+type HR = FSharp.Data.Sql.MsSql.SqlDataProvider<Common.DatabaseProviderTypes.MSSQLSERVER, connStr>
+
+[<EntryPoint>]
+let main argv =
+    let ctx = HR.GetDataContext()
+    let employeesFirstName = 
+        query {
+            for emp in ctx.Dbo.Employees do
+            select emp.FirstName
+        } |> Seq.head
+
+    printfn "Hello %s!" employeesFirstName
+    0 // return an integer exit code
+```
+
+Run:
+Build with VS2022 and run.
+
+```
+dotnet build
+dotnet run
+```
+
+Now, add .sqlproj to your project, change `type HR = FSharp.Data.Sql.MsSql.SqlDataProvider<Common.DatabaseProviderTypes.MSSQLSERVER, connStr>` to
+`type HR = FSharp.Data.Sql.MsSql.SqlDataProvider<Common.DatabaseProviderTypes.MSSQLSERVER_SSDT, connStr, SsdtPath= @"c:\mydatabase.dacpac">`
+
+Happy development!
+
+
+# Using the dynamic SQLProvider
+
+This is the other, more complex way.
 
 You can either clone this repository and observe the more complex 
 multi-environment version of

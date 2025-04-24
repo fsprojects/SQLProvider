@@ -36,7 +36,9 @@
       <Compile Include="..\SQLProvider.DesignTime\SqlDesignTime.fs" Link="SqlDesignTime.fs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.0.1" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2">
+        <IncludeAssets>all</IncludeAssets>
+    </PackageReference>
     <ProjectReference Include="..\SQLProvider.Common\SQLProvider.Common.fsproj" />
   </ItemGroup>
     <ItemGroup Condition="'$(TargetFramework)' == 'net462' ">
