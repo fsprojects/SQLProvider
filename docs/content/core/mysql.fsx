@@ -13,9 +13,10 @@ open System
 # MySQL Provider
 
 SQLProvider with MySQL is available via multiple NuGet-Packages:
-- NuGet: SQLProvider.MySql - Fixed libraries. Doesn't need resolution path. TypeProvider class: FSharp.Data.Sql.MySql.SqlDataProvider
-- NuGet: SQLProvider.MySqlConnector - Fixed libraries. Works also with MariaDB. Doesn't need resolution path. TypeProvider class: FSharp.Data.Sql.MySqlConnector.SqlDataProvider
-- NuGet: SQLProvider - Dynamic version. TypeProvider class: FSharp.Data.Sql.SqlDataProvider
+
+- NuGet: [SQLProvider.MySql](https://www.nuget.org/packages/SQLProvider.MySql) - Fixed libraries. Doesn't need resolution path. TypeProvider class: `FSharp.Data.Sql.MySql.SqlDataProvider`
+- NuGet: [SQLProvider.MySqlConnector](https://www.nuget.org/packages/SQLProvider.MySqlConnector) - Fixed libraries. Works also with MariaDB. Doesn't need resolution path. TypeProvider class: `FSharp.Data.Sql.MySqlConnector.SqlDataProvider`
+- NuGet: [SQLProvider](https://www.nuget.org/packages/SQLProvider) - Dynamic version. TypeProvider class: `FSharp.Data.Sql.SqlDataProvider`
 
 ## Parameters
 

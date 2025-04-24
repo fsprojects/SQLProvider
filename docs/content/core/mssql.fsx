@@ -6,8 +6,9 @@ open FSharp.Data.Sql
 # MSSQL Provider
 
 SQLProvider with Microsoft SQL Server (and SSDT) is available via both NuGet-Packages:
-- NuGet: SQLProvider.MsSql - Fixed libraries, Microsoft.Data.SqlClient. TypeProvider class: FSharp.Data.Sql.MsSql.SqlDataProvider
-- NuGet: SQLProvider - Dynamic version. TypeProvider class: FSharp.Data.Sql.SqlDataProvider
+
+- NuGet: [SQLProvider.MsSql](https://www.nuget.org/packages/SQLProvider.MsSql) - Fixed libraries, Microsoft.Data.SqlClient. TypeProvider class: `FSharp.Data.Sql.MsSql.SqlDataProvider`
+- NuGet: [SQLProvider](https://www.nuget.org/packages/SQLProvider) - Dynamic version. TypeProvider class: `FSharp.Data.Sql.SqlDataProvider`
 
 ## Parameters
 

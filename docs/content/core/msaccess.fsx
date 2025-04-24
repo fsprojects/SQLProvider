@@ -17,8 +17,9 @@ JET drivers can be used, although ACE will also work.
 [http://www.microsoft.com/download/en/confirmation.aspx?id=23734](http://www.microsoft.com/download/en/confirmation.aspx?id=23734)
 
 SQLProvider with Microsoft Access is available via both NuGet-Packages:
-- NuGet: SQLProvider.MsAccess - Fixed libraries. Doesn't need resolution path. TypeProvider class: FSharp.Data.Sql.MsAccess.SqlDataProvider
-- NuGet: SQLProvider - Dynamic version. TypeProvider class: FSharp.Data.Sql.SqlDataProvider
+
+- NuGet: [SQLProvider.MsAccess](https://www.nuget.org/packages/SQLProvider.MsAccess) - Fixed libraries. Doesn't need resolution path. TypeProvider class: `FSharp.Data.Sql.MsAccess.SqlDataProvider`
+- NuGet: [SQLProvider](https://www.nuget.org/packages/SQLProvider) - Dynamic version. TypeProvider class: `FSharp.Data.Sql.SqlDataProvider`
 
 
 ## Parameters
