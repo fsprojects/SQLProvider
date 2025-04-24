@@ -250,9 +250,11 @@
     <div id="content">
         <h1><a name="SQL-Provider-for-Oracle" class="anchor" href="#SQL-Provider-for-Oracle">SQL Provider for Oracle</a></h1>
 <p>Oracle is based on the current release (12.1.0.1.2) of the managed ODP.NET driver found <a href="http://www.oracle.com/technetwork/topics/dotnet/downloads/index.html">here</a>. However, although the managed version is recommended, it should also work with previous versions of the native driver.</p>
-<p>SQLProvider with Oracle is available via both NuGet-Packages:
-- NuGet: SQLProvider.Oracle - Experimental, not tested. Fixed libraries. Doesn't need resolution path. TypeProvider class: FSharp.Data.Sql.Oracle.SqlDataProvider
-- NuGet: SQLProvider - Dynamic version. TypeProvider class: FSharp.Data.Sql.SqlDataProvider</p>
+<p>SQLProvider with Oracle is available via both NuGet-Packages:</p>
+<ul>
+<li>NuGet: <a href="https://www.nuget.org/packages/SQLProvider.Oracle">SQLProvider.Oracle</a> - Experimental, not tested. Fixed libraries. Doesn't need resolution path. TypeProvider class: <code>FSharp.Data.Sql.Oracle.SqlDataProvider</code></li>
+<li>NuGet: <a href="https://www.nuget.org/packages/SQLProvider">SQLProvider</a> - Dynamic version. TypeProvider class: <code>FSharp.Data.Sql.SqlDataProvider</code></li>
+</ul>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="pp">#r</span> <span class="s">&quot;FSharp.Data.SqlProvider.dll&quot;</span>
 
 <span class="k">open</span> <span onmouseout="hideTip(event, 'fs4', 5)" onmouseover="showTip(event, 'fs4', 5)" class="id">FSharp</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs5', 6)" onmouseover="showTip(event, 'fs5', 6)" class="id">Data</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs6', 7)" onmouseover="showTip(event, 'fs6', 7)" class="id">Sql</span>
