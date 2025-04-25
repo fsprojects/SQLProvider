@@ -2,20 +2,26 @@ version 8.1.0
 source https://api.nuget.org/v3/index.json
 storage: none
 
+// Note for package updates:
+// - TypeProvider runs on both Dotnet and .NET Framework full
+// - Some packages have runtime dependencies that are needed, possibly in desgin-time/compile-time as well
+// - Some fsproj files may have direct dependencies listed as packagereference, shouldn't conflict with these versions
+// - Nuget packages have dependencies listed, so if updated here, the paket.template needs update as well
+
 nuget FSharp.Core == 8.0.301
 nuget System.Data.SqlClient framework: net461, net472, net48, netstandard2.0, netstandard2.1, netcoreapp2.1, netcoreapp3.1
 nuget NETStandard.Library.NETFramework storage: packages
 nuget System.Runtime
 nuget System.Data.Common
-nuget System.Data.OleDb
-nuget System.Data.Odbc
+nuget System.Data.OleDb 6.0.1
+nuget System.Data.Odbc 6.0.2
 nuget Microsoft.Data.SQLite 2.0
-nuget Microsoft.Data.SqlClient framework: net462, netstandard2.0, net8.0, net6.0, netstandard2.1
+nuget Microsoft.Data.SqlClient 5.2.2
 nuget System.Memory
-nuget System.Runtime.Loader
+nuget System.Runtime.Loader 4.3
 nuget System.Text.Encodings.Web 9.0.4
 nuget System.Threading.Tasks.Extensions
-nuget Microsoft.Extensions.Logging.Abstractions
+nuget Microsoft.Extensions.Logging.Abstractions 8.0.3
 
 group Build
 
@@ -86,13 +92,14 @@ group Tests
     nuget Newtonsoft.Json
     nuget Npgsql 8.0.7
     nuget NUnit 3.14.0
-    nuget Oracle.ManagedDataAccess 23.8.0
-    nuget Oracle.ManagedDataAccess.Core 23.8.0
+    nuget Oracle.ManagedDataAccess 23.8.0 framework: net461, netstandard2.0
+    nuget Oracle.ManagedDataAccess.Core 23.8.0 framework: net8.0, net6.0, netstandard2.1
     nuget FirebirdSql.Data.FirebirdClient 10.3.2
-    nuget System.Data.SQLite.Core 1.0.119
-    nuget System.Data.SQLite.Linq 1.0.119
-    nuget SQLitePCLRaw.bundle_green
-    nuget Microsoft.Data.Sqlite.Core
-    nuget DuckDB.NET.Bindings.Full
-    nuget DuckDB.NET.Data.Full
+    nuget System.Data.SQLite.Core 1.0.115.5
+    nuget System.Data.SQLite.Linq 1.0.115.5
+    nuget SQLitePCLRaw.bundle_green 2.1.11
+    nuget SQLitePCLRaw.core 2.1.11
+    nuget Microsoft.Data.Sqlite.Core 9.0.4
+    nuget DuckDB.NET.Bindings.Full 1.2.1
+    nuget DuckDB.NET.Data.Full 1.2.1
     // nuget Microsoft.Data.Sqlite.Core.Backport // Needed if we want currently Core support on Linux.

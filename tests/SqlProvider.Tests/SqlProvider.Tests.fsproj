@@ -53,8 +53,9 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="SQLitePCLRaw.core" Version="2.0.4" />
-    <PackageReference Include="System.Data.SQLite" Version="1.0.113.7" />
+    <PackageReference Include="System.Data.SQLite.Linq" Version="1.0.115.5" />
+    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.115.5" />
+    <PackageReference Include="SQLitePCLRaw.core" Version="2.1.11" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System.Transactions, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
@@ -66,7 +67,7 @@
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
     <CallTarget Targets="CopyLibrariesWin" Condition="'$(IsWindows)' == 'true'" />
     <CallTarget Targets="CopyLibrariesNonWin" Condition="'$(IsWindows)' != 'true'" />
-  </Target>  
+  </Target>
   <Target Name="BeforeBuild">
   </Target>
   <Target Name="AfterBuild">

@@ -41,10 +41,10 @@
     <PackageReference Include="SQLitePCLRaw.bundle_green" Version="2.1.11">
         <IncludeAssets>all</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.119">
+    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.115.5">
         <IncludeAssets>all</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="System.Data.SQLite.Linq" Version="1.0.119" />
+    <PackageReference Include="System.Data.SQLite.Linq" Version="1.0.115.5" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SQLProvider.Common\SQLProvider.Common.fsproj" />
