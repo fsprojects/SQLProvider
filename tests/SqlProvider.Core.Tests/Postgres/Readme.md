@@ -1,5 +1,59 @@
 # PostgreSQL - Getting started
 
+There are two ways of using SQLProvider: Either via dynamic package SQLProvider or with pre-defined dependency SQLProvider.PostgreSql.
+The dynamic package needs more configuration but has more flexibility if you want manual control over all reference dlls.
+
+# Using SQLProvider.PostgreSql
+
+The SQLProvider.PostgreSql uses Npgsql.
+
+## Part 1: Create project
+
+```
+dotnet new console --language F#
+dotnet add package SQLProvider.PostgreSql
+``` 
+
+## Part 2: Source code, build and run
+
+Replace content of Program.fs with this:
+
+```fsharp
+open System
+open FSharp.Data.Sql
+open FSharp.Data.Sql.PostgreSql
+
+[<Literal>]
+let connStr = "User ID=postgres;Host=localhost;Port=5432;Database=sqlprovider;Password=postgres"
+
+type HR = FSharp.Data.Sql.PostgreSql.SqlDataProvider<
+            Common.DatabaseProviderTypes.POSTGRESQL, connStr, Owner="sqlprovider">
+
+let ctx = HR.GetDataContext()
+
+let employeesFirstName =
+    query {
+        for emp in ctx.Public.Employees do
+        select emp.FirstName
+    } |> Seq.head
+
+printfn "Hello %s!" employeesFirstName
+//Console.ReadLine()
+```
+
+Run:
+
+```
+dotnet build
+dotnet run
+```
+
+That's it.
+
+
+# Using the dynamic SQLProvider
+
+This is the other, more complex way.
 You can either clone this repository and observe the more complex 
 multi-environment version of
 SqlProvider.Core.Tests.fsproj and Program.fs (and database scripts at /src/DatabaseScripts/PostgreSQL)
