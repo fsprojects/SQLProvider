@@ -101,6 +101,7 @@ module public QueryEvents =
             | _ -> acc.Replace(pName, (sprintf "%O" pValue))) (StringBuilder x.Command)
         |> string<StringBuilder>
 
+      /// SQLProvider does parametrized SQL. This method opens parameters for easier query debugging.
       member x.ToRawSqlWithParamInfo() =
         let arr = x.Parameters |> Seq.toArray
         if arr.Length = 0 then x.Command

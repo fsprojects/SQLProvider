@@ -25,6 +25,7 @@ FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executin
 
 The event has separate fields of Command and Parameters
 for you to store your clauses with a strongly typed logging system like [Logary](https://github.com/logary/logary).
+As you can see, SQLProvider does parametrized SQL. If you want to open the parameters for easier copy&paste query debugging, you can do `fun e -> e.ToRawSqlWithParamInfo()`.
 
 # Querying
 *)
