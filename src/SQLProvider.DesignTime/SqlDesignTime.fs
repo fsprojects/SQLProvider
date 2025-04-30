@@ -1310,7 +1310,6 @@ module internal FixReferenceAssemblies =
                         System.IO.Path.Combine [| "runtimes"; "browser"; "lib"; "net8.0"; "System.Text.Encodings.Web.dll" |]
         #endif
                 |]
-
             if libraries |> Array.isEmpty then true
             else
 
@@ -1353,7 +1352,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
 
     // check we contain a copy of runtime files, and are not referencing the runtime DLL
     do assert (typeof<SqlDataContext>.Assembly.GetName().Name = asm.GetName().Name)  
-    do assert FixReferenceAssemblies.manualLoadNet8Runtime.Force()
+    let _ = FixReferenceAssemblies.manualLoadNet8Runtime.Force()
 
     let sqlRuntimeInfo = SqlRuntimeInfo(config)
     let mySaveLock = new Object();

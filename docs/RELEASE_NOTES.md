@@ -1,4 +1,4 @@
-### 1.5.2 - 30.04.2025
+### 1.5.3 - 30.04.2025
 * Type-provider package library and target framework fixes
 * Compile-time assembly loading fixes to get rid of "platform not supported" on .NET 8.0/9.0
 
