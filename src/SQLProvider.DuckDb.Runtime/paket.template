@@ -25,9 +25,11 @@ description
     Type providers for DuckDB database access.
 files
     ../../bin/duckdb/lib/net8.0/FSharp.Data.SqlProvider.* ==> lib/net8.0
+    ../../bin/duckdb/lib/net462/FSharp.Data.SqlProvider.* ==> lib/net462
     ../../bin/duckdb/lib/netstandard2.0/FSharp.Data.SqlProvider.* ==> lib/netstandard2.0
-    ../../bin/duckdb/typeproviders/fsharp41/net8.0/*.dll ==> typeproviders/fsharp41/net8.0
-    ../../bin/duckdb/typeproviders/fsharp41/netstandard2.0/*.dll ==> typeproviders/fsharp41/netstandard2.0
+    ../../bin/duckdb/typeproviders/fsharp41/net8.0/**/*.dll ==> typeproviders/fsharp41/net8.0
+    ../../bin/duckdb/typeproviders/fsharp41/net462/**/*.dll ==> typeproviders/fsharp41/net462
+    ../../bin/duckdb/typeproviders/fsharp41/netstandard2.0/**/*.dll ==> typeproviders/fsharp41/netstandard2.0
 references
     FSharp.Data.SqlProvider.Common.dll
     FSharp.Data.SqlProvider.DuckDb.dll

@@ -25,9 +25,11 @@ description
     Type providers for Firebird database access.
 files
     ../../bin/firebird/lib/net8.0/FSharp.Data.SqlProvider.* ==> lib/net8.0
+    ../../bin/firebird/lib/net48/FSharp.Data.SqlProvider.* ==> lib/net48
     ../../bin/firebird/lib/netstandard2.0/FSharp.Data.SqlProvider.* ==> lib/netstandard2.0
-    ../../bin/firebird/typeproviders/fsharp41/net8.0/*.dll ==> typeproviders/fsharp41/net8.0
-    ../../bin/firebird/typeproviders/fsharp41/netstandard2.0/*.dll ==> typeproviders/fsharp41/netstandard2.0
+    ../../bin/firebird/typeproviders/fsharp41/net8.0/**/*.dll ==> typeproviders/fsharp41/net8.0
+    ../../bin/firebird/typeproviders/fsharp41/net48/**/*.dll ==> typeproviders/fsharp41/net48
+    ../../bin/firebird/typeproviders/fsharp41/netstandard2.0/**/*.dll ==> typeproviders/fsharp41/netstandard2.0
 references
     FSharp.Data.SqlProvider.Common.dll
     FSharp.Data.SqlProvider.FireBird.dll

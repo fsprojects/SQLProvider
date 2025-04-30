@@ -30,12 +30,12 @@ files
     ../../bin/lib/net8.0/FSharp.Data.SqlProvider.* ==> lib/net8.0
     ../../bin/lib/netstandard2.0/FSharp.Data.SqlProvider.* ==> lib/netstandard2.0
     ../../bin/lib/netstandard2.1/FSharp.Data.SqlProvider.* ==> lib/netstandard2.1
-    ../../bin/typeproviders/fsharp41/net6.0/*.dll ==> typeproviders/fsharp41/net6.0
-    ../../bin/typeproviders/fsharp41/netstandard2.0/*.dll ==> typeproviders/fsharp41/netstandard2.0
-    ../../bin/typeproviders/fsharp41/netcoreapp3.1/*.dll ==> typeproviders/fsharp41/netcoreapp3.1
-    ../../bin/typeproviders/fsharp41/net472/*.dll ==> typeproviders/fsharp41/net472
-    ../../bin/typeproviders/fsharp41/net48/*.dll ==> typeproviders/fsharp41/net48
-    ../../bin/typeproviders/fsharp41/net8.0/*.dll ==> typeproviders/fsharp41/net8.0
+    ../../bin/typeproviders/fsharp41/net6.0/**/*.dll ==> typeproviders/fsharp41/net6.0
+    ../../bin/typeproviders/fsharp41/netstandard2.0/**/*.dll ==> typeproviders/fsharp41/netstandard2.0
+    ../../bin/typeproviders/fsharp41/netstandard2.1/**/*.dll ==> typeproviders/fsharp41/netstandard2.1
+    ../../bin/typeproviders/fsharp41/net472/**/*.dll ==> typeproviders/fsharp41/net472
+    ../../bin/typeproviders/fsharp41/net48/**/*.dll ==> typeproviders/fsharp41/net48
+    ../../bin/typeproviders/fsharp41/net8.0/**/*.dll ==> typeproviders/fsharp41/net8.0
 references
     FSharp.Data.SqlProvider.Common.dll
     FSharp.Data.SqlProvider.dll

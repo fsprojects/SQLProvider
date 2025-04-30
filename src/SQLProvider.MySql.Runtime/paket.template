@@ -18,16 +18,17 @@ requireLicenseAcceptance
 copyright
     Copyright 2025
 tags
-    F#, fsharp, data, database, typeprovider, sql, mysql, mariadb
+    F#, fsharp, data, database, typeprovider, sql, mysql
 summary
-    Type providers for MySQL and MariaDB database access.
+    Type providers for MySQL database access.
 description
-    Type providers for MySQL and MariaDB database access.
+    Type providers for MySQL database access.
 files
     ../../bin/mysql/lib/net8.0/FSharp.Data.SqlProvider.* ==> lib/net8.0
     ../../bin/mysql/lib/netstandard2.0/FSharp.Data.SqlProvider.* ==> lib/netstandard2.0
-    ../../bin/mysql/typeproviders/fsharp41/net8.0/*.dll ==> typeproviders/fsharp41/net8.0
-    ../../bin/mysql/typeproviders/fsharp41/netstandard2.0/*.dll ==> typeproviders/fsharp41/netstandard2.0
+    ../../bin/mysql/typeproviders/fsharp41/net48/**/*.dll ==> typeproviders/fsharp41/net48
+    ../../bin/mysql/typeproviders/fsharp41/net8.0/**/*.dll ==> typeproviders/fsharp41/net8.0
+    ../../bin/mysql/typeproviders/fsharp41/netstandard2.0/**/*.dll ==> typeproviders/fsharp41/netstandard2.0
 references
     FSharp.Data.SqlProvider.Common.dll
     FSharp.Data.SqlProvider.MySql.dll

@@ -25,9 +25,11 @@ description
     Type providers for Oracle database access.
 files
     ../../bin/oracle/lib/net8.0/FSharp.Data.SqlProvider.* ==> lib/net8.0
+    ../../bin/oracle/lib/net472/FSharp.Data.SqlProvider.* ==> lib/net472
     ../../bin/oracle/lib/netstandard2.0/FSharp.Data.SqlProvider.* ==> lib/netstandard2.0
-    ../../bin/oracle/typeproviders/fsharp41/net8.0/*.dll ==> typeproviders/fsharp41/net8.0
-    ../../bin/oracle/typeproviders/fsharp41/netstandard2.0/*.dll ==> typeproviders/fsharp41/netstandard2.0
+    ../../bin/oracle/typeproviders/fsharp41/net8.0/**/*.dll ==> typeproviders/fsharp41/net8.0
+    ../../bin/oracle/typeproviders/fsharp41/net472/**/*.dll ==> typeproviders/fsharp41/net472
+    ../../bin/oracle/typeproviders/fsharp41/netstandard2.0/**/*.dll ==> typeproviders/fsharp41/netstandard2.0
 references
     FSharp.Data.SqlProvider.Common.dll
     FSharp.Data.SqlProvider.Oracle.dll
