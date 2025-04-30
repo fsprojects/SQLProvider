@@ -577,8 +577,13 @@ module DesignTimeUtils =
                                 match prov.GetSchemaCache().IsOffline with
                                 | false ->
                                     let con = prov.CreateConnection conString
-                                    registerDispose (con, dbVendor) 
-                                    con.Open()
+                                    registerDispose (con, dbVendor)
+                                    try
+                                        con.Open()
+                                    with 
+                                    | exn ->
+                                        let baseError = exn.GetBaseException()
+                                        failwithf $"Error opening compile-time connection. Connection string: {conString}. Error: {typeof<exn>}, {exn.Message}, inner {baseError.GetType()} {baseError.Message}"
                                     prov.CreateTypeMappings con
                                     Some con
                                 | true ->
@@ -1252,6 +1257,94 @@ type SqlRuntimeInfo (config : TypeProviderConfig) =
 module DesignTimeCache =
     let cache = System.Collections.Concurrent.ConcurrentDictionary<DesignCacheKey,Lazy<ProvidedTypeDefinition>>()
 
+/// The idea of this is trying to avoid case where compile-time has loaded non-runtime assembly. (Happens in .NET 8.0, not in .NET Framework.)
+/// So let's load compile-time (and design-time) manually the required runtime assembly.
+module internal FixReferenceAssemblies =
+#if MSSQL
+    AppContext.SetSwitch("Switch.Microsoft.Data.SqlClient.UseManagedNetworkingOnWindows", true); // No Windows SNI in design-time
+#endif
+
+    let manualLoadNet8Runtime =
+        lazy
+            let isWindows = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows)
+            let isMac = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.OSX)
+
+            let libraries =
+                [|
+        #if MSSQL
+                    System.IO.Path.Combine [| "runtimes"; (if isWindows then "win" else "unix"); "lib"; "net8.0"; "System.Data.SqlClient.dll" |]
+                    System.IO.Path.Combine [| "runtimes"; (if isWindows then "win" else "unix"); "lib"; "net8.0";"Microsoft.Data.SqlClient.dll" |]
+        #endif
+        #if MSACCESS
+                    System.IO.Path.Combine [| "runtimes"; "win"; "lib"; "net8.0"; "System.Diagnostics.EventLog.Messages.dll" |]
+                    System.IO.Path.Combine [| "runtimes"; "win"; "lib"; "net8.0"; "System.Diagnostics.EventLog.dll" |]
+                    System.IO.Path.Combine [| "runtimes"; "win"; "lib"; "net8.0"; "System.Diagnostics.PerformanceCounter.dll" |]
+                    System.IO.Path.Combine [| "runtimes"; "win"; "lib"; "net6.0"; "System.Data.OleDb.dll" |]
+        #endif
+        #if ODBC
+                    System.IO.Path.Combine [| "runtimes"; (
+                            if isWindows then "win"
+                            elif isMac then "osx"
+                            elif System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux) then "linux"
+                            elif System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Create "FreeBSD") then "freebsd"
+                            else ""
+                        ); "lib"; "net6.0"; "System.Data.Odbc.dll" |]
+        #endif
+        #if ORACLE
+                    System.IO.Path.Combine [| "runtimes"; (
+                            if isWindows then "win"
+                            elif isMac then "osx"
+                            elif System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux) then "linux"
+                            else ""
+                        ); "lib"; "net8.0"; "System.DirectoryServices.Protocols.dll" |]
+                    if isWindows then
+                        System.IO.Path.Combine [| "runtimes"; "win"; "lib"; "net8.0"; "System.Diagnostics.EventLog.Messages.dll" |]
+                        System.IO.Path.Combine [| "runtimes"; "win"; "lib"; "net8.0"; "System.Diagnostics.EventLog.dll" |]
+                        System.IO.Path.Combine [| "runtimes"; "win"; "lib"; "net8.0"; "System.Diagnostics.PerformanceCounter.dll" |]
+                        System.IO.Path.Combine [| "runtimes"; "win"; "lib"; "net8.0"; "System.Security.Cryptography.Pkcs.dll" |]
+                    if System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Create "Browser") then
+                        System.IO.Path.Combine [| "runtimes"; "browser"; "lib"; "net8.0"; "System.Text.Encodings.Web.dll" |]
+        #endif
+        #if POSTGRES
+                    if System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Create "Browser") then
+                        System.IO.Path.Combine [| "runtimes"; "browser"; "lib"; "net8.0"; "System.Text.Encodings.Web.dll" |]
+        #endif
+                |]
+
+            if libraries |> Array.isEmpty then true
+            else
+
+            let pathsToSeek =
+                let ifNotNull (x:Assembly) =
+                    if isNull x then ""
+                    elif String.IsNullOrWhiteSpace x.Location then ""
+                    else x.Location |> System.IO.Path.GetDirectoryName
+
+                [__SOURCE_DIRECTORY__;
+    #if !INTERACITVE
+                   DesignReflection.execAssembly.Force() |> ifNotNull;
+    #endif
+                   Environment.CurrentDirectory;
+                   System.Reflection.Assembly.GetEntryAssembly() |> ifNotNull;]
+
+            let tryLoad (asmPath:string) =
+                // Only Net8.0 compile-time need fixing. Path doesn't exist in other targetFrameworks.
+                if not (System.IO.Directory.Exists asmPath) then ()
+                else
+                    let checkAndLoad (file:string) =
+                        let fileToSeek = asmPath + System.IO.Path.DirectorySeparatorChar.ToString() + file
+                        if System.IO.File.Exists (fileToSeek) then
+                            try
+                                Assembly.LoadFrom fileToSeek |> ignore
+                            with
+                            | e ->
+                                ()
+                        ()
+                    libraries |> Array.iter checkAndLoad
+                    ()
+            pathsToSeek |> List.iter tryLoad
+            true
+
 [<TypeProvider>]
 type public SqlTypeProvider(config: TypeProviderConfig) as this =
     inherit TypeProviderForNamespaces(config, assemblyReplacementMap=[design1, runtime1;
@@ -1260,6 +1353,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
 
     // check we contain a copy of runtime files, and are not referencing the runtime DLL
     do assert (typeof<SqlDataContext>.Assembly.GetName().Name = asm.GetName().Name)  
+    do assert FixReferenceAssemblies.manualLoadNet8Runtime.Force()
 
     let sqlRuntimeInfo = SqlRuntimeInfo(config)
     let mySaveLock = new Object();
