@@ -9,7 +9,7 @@ open FSharp.Data.Sql
 
 SQLProvider with SQLite is available via both NuGet-Packages:
 
-- NuGet: [SQLProvider.SQLite](https://www.nuget.org/packages/SQLProvider.SQLite) - Experimental, not tested. Fixed libraries. Doesn't need resolution path. TypeProvider class: `FSharp.Data.Sql.SQLite.SqlDataProvider`
+- NuGet: [SQLProvider.SQLite](https://www.nuget.org/packages/SQLProvider.SQLite) - Fixed libraries. Doesn't need resolution path. TypeProvider class: `FSharp.Data.Sql.SQLite.SqlDataProvider`
 - NuGet: [SQLProvider](https://www.nuget.org/packages/SQLProvider) - Dynamic version. TypeProvider class: `FSharp.Data.Sql.SqlDataProvider`
 
 ## Parameters

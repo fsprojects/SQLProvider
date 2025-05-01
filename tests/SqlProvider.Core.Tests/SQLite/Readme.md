@@ -1,5 +1,64 @@
 # SQLite - Getting started
 
+There are two ways of using SQLProvider: Either via dynamic package SQLProvider or with pre-defined dependency SQLProvider.SQLite.
+The dynamic package needs more configuration but has more flexibility if you want manual control over all reference dlls.
+
+# Using SQLProvider.SQLite
+
+There are still selection of `FSharp.Data.Sql.Common.SQLiteLibrary`:
+
+- Common.SQLiteLibrary.MicrosoftDataSqlite: Microsoft.Data.Sqlite
+- Common.SQLiteLibrary.SystemDataSQLite: System.Data.SQLite
+
+These two also have different connection strings.
+From Microsoft side, the more recent effort has been put to Microsoft.Data.Sqlite.
+
+## Part 1: Create project
+
+```
+dotnet new console --language f#
+dotnet add package SQLProvider.SQLite
+``` 
+
+## Part 2: Source code, build and run
+
+Replace content of Program.fs with this:
+
+```fsharp
+open System
+open FSharp.Data.Sql
+
+[<Literal>]
+let connStr = 
+    // Common.SQLiteLibrary.MicrosoftDataSqlite connection string example:
+    @"Filename=./../../SqlProvider.Tests/db/northwindEF.db"
+
+    // Common.SQLiteLibrary.SystemDataSQLite connection string example:
+    // @"Data Source=./../../SqlProvider.Tests/db/northwindEF.db;Pooling=true;FailIfMissing=false;Version=3"
+
+type HR = FSharp.Data.Sql.SQLite.SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connStr, SQLiteLibrary = Common.SQLiteLibrary.MicrosoftDataSqlite>
+
+let ctx = HR.GetDataContext connStr
+let employeesFirstName =
+    query {
+        for emp in ctx.Main.Employees do
+        select emp.FirstName
+    } |> Seq.head
+```
+
+Run:
+
+```
+dotnet build
+dotnet run
+```
+
+That's it.
+
+
+# Using the dynamic SQLProvider
+
+This is the other, more complex way, but sometimes you want manual control over native libraries.
 You can either clone this repository and observe the more complex 
 multi-environment version of
 SqlProvider.Core.Tests.fsproj and Program.fs (and database file at /tests/SqlProvider.Tests/db/northwindEF.db)

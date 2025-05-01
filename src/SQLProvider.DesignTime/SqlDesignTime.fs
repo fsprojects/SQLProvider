@@ -1264,6 +1264,19 @@ module internal FixReferenceAssemblies =
     AppContext.SetSwitch("Switch.Microsoft.Data.SqlClient.UseManagedNetworkingOnWindows", true); // No Windows SNI in design-time
 #endif
 
+    let pathsToSeek() =
+        let ifNotNull (x:Assembly) =
+            if isNull x then ""
+            elif String.IsNullOrWhiteSpace x.Location then ""
+            else x.Location |> System.IO.Path.GetDirectoryName
+
+        [__SOURCE_DIRECTORY__;
+#if !INTERACITVE
+            DesignReflection.execAssembly.Force() |> ifNotNull;
+#endif
+            Environment.CurrentDirectory;
+            System.Reflection.Assembly.GetEntryAssembly() |> ifNotNull;]
+
     let manualLoadNet8Runtime =
         lazy
             let isWindows = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows)
@@ -1310,21 +1323,64 @@ module internal FixReferenceAssemblies =
                         System.IO.Path.Combine [| "runtimes"; "browser"; "lib"; "net8.0"; "System.Text.Encodings.Web.dll" |]
         #endif
                 |]
+
+        #if DUCKDB
+            let isArm = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture.ToString().StartsWith "Arm"
+            let isLinux = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux)
+            pathsToSeek() |> List.iter(fun basePath ->
+                let nativeLibrary = System.IO.Path.Combine [| basePath; "runtimes"; (
+                        if isWindows then
+                            if isArm then "win-arm64"
+                            else "win-x64"
+                        elif isMac then
+                            "osx"
+                        elif isLinux then
+                            if isArm then "linux-arm64"
+                            else "linux-x64"
+                        else ""
+                    ); "native" |]
+                if System.IO.Directory.Exists nativeLibrary then
+                    Environment.SetEnvironmentVariable("Path", Environment.GetEnvironmentVariable("Path") + ";" + nativeLibrary) // Path for native duckdb.dll
+                ()
+            )
+
+        #endif
+        #if SQLITE
+
+            let isLinux = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux)
+            pathsToSeek() |> List.iter(fun basePath ->
+                let nativeLibrary = System.IO.Path.Combine [| basePath; "runtimes"; (
+                        if isWindows then
+                            match System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture with
+                            | System.Runtime.InteropServices.Architecture.X64 -> "win-x64"
+                            | System.Runtime.InteropServices.Architecture.Arm64 -> "win-arm64"
+                            | System.Runtime.InteropServices.Architecture.X86 -> "win-x86"
+                            | System.Runtime.InteropServices.Architecture.Arm -> "win-arm"
+                            | _ -> ""
+                        elif isMac then
+                            if System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture.ToString().StartsWith "Arm" then "osx-arm64"
+                            else "osx-x64"
+                        elif isLinux then
+                            "linux-" + System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant()
+                        else ""
+                    ); "native" |]
+                    
+                if System.IO.Directory.Exists nativeLibrary then
+                    Environment.SetEnvironmentVariable("Path", Environment.GetEnvironmentVariable("Path") + ";" + nativeLibrary) // Path for native libraries (net8.0)
+
+                let anotherLocation =
+                    System.IO.Path.Combine [| basePath; (if System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture = System.Runtime.InteropServices.Architecture.X64 then "x64" else "x86") |]
+
+                if System.IO.Directory.Exists anotherLocation then
+                    Environment.SetEnvironmentVariable("Path", Environment.GetEnvironmentVariable("Path") + ";" + anotherLocation) // net462
+
+                ()
+            )
+        #endif
+
+
             if libraries |> Array.isEmpty then true
             else
-
-            let pathsToSeek =
-                let ifNotNull (x:Assembly) =
-                    if isNull x then ""
-                    elif String.IsNullOrWhiteSpace x.Location then ""
-                    else x.Location |> System.IO.Path.GetDirectoryName
-
-                [__SOURCE_DIRECTORY__;
-    #if !INTERACITVE
-                   DesignReflection.execAssembly.Force() |> ifNotNull;
-    #endif
-                   Environment.CurrentDirectory;
-                   System.Reflection.Assembly.GetEntryAssembly() |> ifNotNull;]
 
             let tryLoad (asmPath:string) =
                 // Only Net8.0 compile-time need fixing. Path doesn't exist in other targetFrameworks.
@@ -1341,7 +1397,7 @@ module internal FixReferenceAssemblies =
                         ()
                     libraries |> Array.iter checkAndLoad
                     ()
-            pathsToSeek |> List.iter tryLoad
+            pathsToSeek() |> List.iter tryLoad
             true
 
 [<TypeProvider>]
@@ -1352,8 +1408,9 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
 
     // check we contain a copy of runtime files, and are not referencing the runtime DLL
     do assert (typeof<SqlDataContext>.Assembly.GetName().Name = asm.GetName().Name)  
+#if !COMMON
     let _ = FixReferenceAssemblies.manualLoadNet8Runtime.Force()
-
+#endif
     let sqlRuntimeInfo = SqlRuntimeInfo(config)
     let mySaveLock = new Object();
     let mutable saveInProcess = false

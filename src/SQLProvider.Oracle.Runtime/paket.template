@@ -34,8 +34,24 @@ references
     FSharp.Data.SqlProvider.Common.dll
     FSharp.Data.SqlProvider.Oracle.dll
 dependencies
+  framework: netstandard20
+    FSharp.Core >= 8.0.301
+    Newtonsoft.Json >= 13.0.1
+    System.Memory >= 4.6.3
+    Oracle.ManagedDataAccess >= 23.8.0
+  framework: netstandard21
+    FSharp.Core >= 8.0.301
+    Newtonsoft.Json >= 13.0.1
+    System.Memory >= 4.6.3
+    Oracle.ManagedDataAccess.Core >= 23.8.0
+  framework: net8.0
     FSharp.Core >= 8.0.301
     Newtonsoft.Json >= 13.0.1
     System.Memory >= 4.6.3
     Oracle.ManagedDataAccess >= 23.8.0
     Oracle.ManagedDataAccess.Core >= 23.8.0
+  framework: net472
+    FSharp.Core >= 8.0.301
+    Newtonsoft.Json >= 13.0.1
+    System.Memory >= 4.6.3
+    Oracle.ManagedDataAccess >= 23.8.0

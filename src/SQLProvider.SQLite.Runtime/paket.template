@@ -34,6 +34,7 @@ references
     FSharp.Data.SqlProvider.Common.dll
     FSharp.Data.SqlProvider.SQLite.dll
 dependencies
+  framework: net462
     FSharp.Core >= 8.0.301
     Newtonsoft.Json >= 13.0.1
     System.Memory >= 4.6.3
@@ -41,5 +42,23 @@ dependencies
     System.Data.Common >= 4.3
     System.Data.SQLite.Core >= 1.0.115.5
     System.Data.SQLite.Linq >= 1.0.115.5
+    SQLitePCLRaw.bundle_green >= 2.1.11
+    Microsoft.Data.Sqlite.Core >= 9.0.4
+  framework: netstandard20
+    FSharp.Core >= 8.0.301
+    Newtonsoft.Json >= 13.0.1
+    System.Memory >= 4.6.3
+    System.Runtime >= 4.3
+    System.Data.Common >= 4.3
+    System.Data.SQLite.Core >= 1.0.115.5
+    SQLitePCLRaw.bundle_green >= 2.1.11
+    Microsoft.Data.Sqlite.Core >= 9.0.4
+  framework: net8.0
+    FSharp.Core >= 8.0.301
+    Newtonsoft.Json >= 13.0.1
+    System.Memory >= 4.6.3
+    System.Runtime >= 4.3
+    System.Data.Common >= 4.3
+    System.Data.SQLite.Core >= 1.0.115.5
     SQLitePCLRaw.bundle_green >= 2.1.11
     Microsoft.Data.Sqlite.Core >= 9.0.4

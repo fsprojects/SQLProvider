@@ -47,6 +47,7 @@
         <Reference Include="System.Transactions" />
         <Reference Include="System.Xml" />
         <Reference Include="System.IO.Compression" />
+        <Reference Include="System.Runtime" />
     </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SQLProvider.Common\SQLProvider.Common.fsproj" />

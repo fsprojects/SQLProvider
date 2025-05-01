@@ -44,7 +44,7 @@
     <PackageReference Include="System.Data.SQLite.Core" Version="1.0.115.5">
         <IncludeAssets>all</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="System.Data.SQLite.Linq" Version="1.0.115.5" />
+    <PackageReference Include="System.Data.SQLite.Linq" Version="1.0.115.5" Condition="'$(TargetFramework)' == 'net462'" />
   </ItemGroup>
     <ItemGroup Condition="'$(TargetFramework)' == 'net462'">
         <Reference Include="System.Configuration" />
@@ -55,6 +55,7 @@
         <Reference Include="System.Transactions" />
         <Reference Include="System.Xml" />
         <Reference Include="System.IO.Compression" />
+        <Reference Include="System.Runtime" />
     </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SQLProvider.Common\SQLProvider.Common.fsproj" />
