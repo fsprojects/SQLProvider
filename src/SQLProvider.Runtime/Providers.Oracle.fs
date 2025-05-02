@@ -80,11 +80,14 @@ module internal Oracle =
 
     let createCommandParameter (param:QueryParameter) value =
         let value = if isNull value then (box System.DBNull.Value) else value
+
+#if REFLECTIONLOAD
         let parameterType = parameterType.Value
         let oracleDbTypeSetter =
             parameterType.GetProperty("OracleDbType").GetSetMethod()
 
         let p = Activator.CreateInstance(parameterType,[|box param.Name; box value|]) :?> IDbDataParameter
+
         p.Direction <- param.Direction
 
         match param.TypeMapping.ProviderTypeName with
@@ -92,6 +95,17 @@ module internal Oracle =
             p.DbType <- param.TypeMapping.DbType
             param.TypeMapping.ProviderType |> ValueOption.iter (fun pt -> oracleDbTypeSetter.Invoke(p, [|pt|]) |> ignore)
         | ValueNone -> ()
+#else
+        let p1 = new Oracle.ManagedDataAccess.Client.OracleParameter()
+        p1.Direction <- param.Direction
+        match param.TypeMapping.ProviderTypeName with
+        | ValueSome _ ->
+            p1.DbType <- param.TypeMapping.DbType
+            param.TypeMapping.ProviderType |> ValueOption.iter (fun pt -> 
+                p1.OracleDbType <- Enum.ToObject(typeof<Oracle.ManagedDataAccess.Client.OracleDbType>, pt) :?> Oracle.ManagedDataAccess.Client.OracleDbType)
+        | ValueNone -> ()
+        let p = p1 :> IDbDataParameter
+#endif
 
         match param.Length with
         | ValueSome(length) when length >= 0 -> p.Size <- length
@@ -109,12 +123,18 @@ module internal Oracle =
         Utilities.genericAliasNotation aliasSprint col
 
     let createTypeMappings con =
-        let getDbType(providerType) =
+        let getDbType(providerType:int) =
+#if REFLECTIONLOAD
             let p = Activator.CreateInstance(parameterType.Value,[||]) :?> IDbDataParameter
             let oracleDbTypeSetter = parameterType.Value.GetProperty("OracleDbType").GetSetMethod()
             let dbTypeGetter = parameterType.Value.GetProperty("DbType").GetGetMethod()
             oracleDbTypeSetter.Invoke(p, [|providerType|]) |> ignore
             dbTypeGetter.Invoke(p, [||]) :?> DbType
+#else
+            let p = new Oracle.ManagedDataAccess.Client.OracleParameter()
+            p.OracleDbType <- Enum.ToObject(typeof<Oracle.ManagedDataAccess.Client.OracleDbType>, providerType) :?> Oracle.ManagedDataAccess.Client.OracleDbType
+            p.DbType
+#endif
 
         let getClrType (input:string) =
             (match input.ToLower() with
@@ -160,6 +180,7 @@ module internal Oracle =
             else None
 
     let createConnection connectionString =
+#if REFLECTIONLOAD
         try
             Activator.CreateInstance(connectionType.Value,[|box connectionString|]) :?> IDbConnection
         with
@@ -179,22 +200,40 @@ module internal Oracle =
                         (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else "")
             raise(System.Reflection.TargetInvocationException(msg, ex.InnerException)) 
         | :? System.TypeInitializationException as te when not(isNull te.InnerException) -> raise (te.GetBaseException())
+#else
+        new Oracle.ManagedDataAccess.Client.OracleConnection(connectionString) :> IDbConnection
+#endif
 
-    let createCommand commandText connection =
+    let createCommand commandText (connection:IDbConnection) =
+#if REFLECTIONLOAD
         Activator.CreateInstance(commandType.Value,[|box commandText;box connection|]) :?> IDbCommand
+#else
+        new Oracle.ManagedDataAccess.Client.OracleCommand(commandText, (connection :?> Oracle.ManagedDataAccess.Client.OracleConnection) ) :> IDbCommand
+#endif
 
     let readParameter (parameter:IDbDataParameter) =
+#if REFLECTIONLOAD
         let parameterType = parameterType.Value
         let oracleDbTypeGetter =
             parameterType.GetProperty("OracleDbType").GetGetMethod()
+        let pti = oracleDbTypeGetter.Invoke(parameter, [||]) :?> int
+#else
+        let pti = int (parameter :?> Oracle.ManagedDataAccess.Client.OracleParameter).OracleDbType
+#endif
 
-        match parameter.DbType, (oracleDbTypeGetter.Invoke(parameter, [||]) :?> int) with
+        match parameter.DbType, pti with
         | DbType.Object, 121 ->
              if isNull parameter.Value
              then null
              else
                 let data =
-                    Sql.dataReaderToArray (getDataReaderForRefCursor.Value.Invoke(parameter.Value, [||]) :?> IDataReader)
+                    Sql.dataReaderToArray (
+#if REFLECTIONLOAD
+                            getDataReaderForRefCursor.Value.Invoke(parameter.Value, [||]) :?> IDataReader
+#else
+                            (parameter.Value :?> Oracle.ManagedDataAccess.Types.OracleRefCursor).GetDataReader() :> IDataReader
+#endif
+                        )
                     |> Seq.ofArray
                 data |> box
         | _, _ ->
@@ -204,17 +243,28 @@ module internal Oracle =
 
     let readParameterAsync (parameter:IDbDataParameter) =
         task {
+#if REFLECTIONLOAD
             let parameterType = parameterType.Value
             let oracleDbTypeGetter =
                 parameterType.GetProperty("OracleDbType").GetGetMethod()
+            let pti = oracleDbTypeGetter.Invoke(parameter, [||]) :?> int
+#else
+            let pti = int (parameter :?> Oracle.ManagedDataAccess.Client.OracleParameter).OracleDbType
+#endif
 
-            match parameter.DbType, (oracleDbTypeGetter.Invoke(parameter, [||]) :?> int) with
+            match parameter.DbType, pti with
             | DbType.Object, 121 ->
                  if isNull parameter.Value
                  then return null
                  else
                     let! data =
-                        Sql.dataReaderToArrayAsync (getDataReaderForRefCursor.Value.Invoke(parameter.Value, [||]) :?> Common.DbDataReader)
+                        Sql.dataReaderToArrayAsync (
+#if REFLECTIONLOAD
+                                getDataReaderForRefCursor.Value.Invoke(parameter.Value, [||]) :?> Common.DbDataReader
+#else
+                                (parameter.Value :?> Oracle.ManagedDataAccess.Types.OracleRefCursor).GetDataReader() :> Common.DbDataReader
+#endif
+                            )
                     return data |> Seq.ofArray |> box
             | _, _ ->
                 match tryReadValueProperty parameter.Value with

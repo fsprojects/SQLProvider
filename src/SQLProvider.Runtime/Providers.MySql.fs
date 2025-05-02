@@ -8,6 +8,13 @@ open FSharp.Data.Sql
 open FSharp.Data.Sql.Transactions
 open FSharp.Data.Sql.Schema
 open FSharp.Data.Sql.Common
+#if !REFLECTIONLOAD
+#if MYSQLCONNECTOR
+open MySqlConnector
+#else
+open MySql.Data.MySqlClient
+#endif
+#endif
 
 module MySql =
     let mutable resolutionPath = String.Empty
@@ -57,7 +64,7 @@ module MySql =
     let connectionType =  lazy (findType "MySqlConnection")
     let commandType =     lazy (findType "MySqlCommand")
     let parameterType =   lazy (findType "MySqlParameter")
-    let enumType =        lazy (findType "MySqlDbType")
+    //let enumType =        lazy (findType "MySqlDbType")
     let getSchemaMethod = lazy (connectionType.Value.GetMethod("GetSchema",[|typeof<string>; typeof<string[]>|]))
     //let paramEnumCtor   = lazy parameterType.Value.GetConstructor([|typeof<string>;enumType.Value|])
     //let paramObjectCtor = lazy parameterType.Value.GetConstructor([|typeof<string>;typeof<obj>|])
@@ -107,16 +114,26 @@ module MySql =
         let mapping = if (not(isNull value)) && (not sprocCommand) then (findClrType (value.GetType().ToString())) else None
         let value = if isNull value then (box System.DBNull.Value) else value
 
-        let parameterType = parameterType.Value
+#if REFLECTIONLOAD
+        let parameterType =
+            parameterType.Value
         let mySqlDbTypeSetter =
             parameterType.GetProperty("MySqlDbType").GetSetMethod()
-
         let p = Activator.CreateInstance(parameterType,[|box param.Name;value|]) :?> IDbDataParameter
 
         p.Direction <-  param.Direction
 
         p.DbType <- (defaultArg mapping param.TypeMapping).DbType
         param.TypeMapping.ProviderType |> ValueOption.iter (fun pt -> mySqlDbTypeSetter.Invoke(p, [|pt|]) |> ignore)
+#else
+        let pm = new MySqlParameter(param.Name, value)
+        pm.Direction <-  param.Direction
+
+        pm.DbType <- (defaultArg mapping param.TypeMapping).DbType
+        
+        param.TypeMapping.ProviderType |> ValueOption.iter (fun pt -> pm.MySqlDbType <- Enum.ToObject(typeof<MySqlDbType>, pt) :?> MySqlDbType)
+        let p = pm :> IDbDataParameter
+#endif
 
         ValueOption.iter (fun l -> p.Size <- l) param.Length
         p
@@ -181,6 +198,7 @@ module MySql =
         findDbType <- dbMappings.TryFind
 
     let createConnection connectionString =
+#if REFLECTIONLOAD
         try
             Activator.CreateInstance(connectionType.Value,[|box connectionString|]) :?> IDbConnection
         with
@@ -200,9 +218,16 @@ module MySql =
                         (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else "")
             raise(System.Reflection.TargetInvocationException(msg, ex.InnerException))
         | :? System.TypeInitializationException as te when not(isNull te.InnerException) -> raise (te.GetBaseException())
+#else
+        new MySqlConnection(connectionString) :> IDbConnection
+#endif
 
-    let createCommand commandText connection =
+    let createCommand commandText (connection:IDbConnection) =
+#if REFLECTIONLOAD
         Activator.CreateInstance(commandType.Value,[|box commandText;box connection|]) :?> IDbCommand
+#else
+        new MySqlCommand(commandText, (connection :?> MySqlConnection)) :> IDbCommand
+#endif
 
     let getSprocReturnCols (sparams: QueryParameter list) =
         match sparams |> List.filter (fun p -> p.Direction <> ParameterDirection.Input) with
