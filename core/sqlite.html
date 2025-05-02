@@ -251,7 +251,7 @@
         <h1><a name="SQLite-Provider" class="anchor" href="#SQLite-Provider">SQLite Provider</a></h1>
 <p>SQLProvider with SQLite is available via both NuGet-Packages:</p>
 <ul>
-<li>NuGet: <a href="https://www.nuget.org/packages/SQLProvider.SQLite">SQLProvider.SQLite</a> - Experimental, not tested. Fixed libraries. Doesn't need resolution path. TypeProvider class: <code>FSharp.Data.Sql.SQLite.SqlDataProvider</code></li>
+<li>NuGet: <a href="https://www.nuget.org/packages/SQLProvider.SQLite">SQLProvider.SQLite</a> - Fixed libraries. Doesn't need resolution path. TypeProvider class: <code>FSharp.Data.Sql.SQLite.SqlDataProvider</code></li>
 <li>NuGet: <a href="https://www.nuget.org/packages/SQLProvider">SQLProvider</a> - Dynamic version. TypeProvider class: <code>FSharp.Data.Sql.SqlDataProvider</code></li>
 </ul>
 <h2><a name="Parameters" class="anchor" href="#Parameters">Parameters</a></h2>
@@ -299,24 +299,24 @@ namespace, which has the following members:</p>
 </ul>
 <h2><a name="Example" class="anchor" href="#Example">Example</a></h2>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">type</span> <span onmouseout="hideTip(event, 'fs8', 9)" onmouseover="showTip(event, 'fs8', 9)" class="rt">sql</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs9', 10)" onmouseover="showTip(event, 'fs9', 10)" class="rt">SqlDataProvider</span><span class="pn">&lt;</span>
-                <span class="id">Common</span><span class="pn">.</span><span class="id">DatabaseProviderTypes</span><span class="pn">.</span><span class="id">SQLITE</span><span class="pn">,</span>
-                <span class="id">SQLiteLibrary</span> <span class="o">=</span> <span class="id">Common</span><span class="pn">.</span><span class="id">SQLiteLibrary</span><span class="pn">.</span><span class="id">SystemDataSQLite</span><span class="pn">,</span>
-                <span class="id">ConnectionString</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs6', 11)" onmouseover="showTip(event, 'fs6', 11)" class="id">connectionString</span><span class="pn">,</span>
-                <span class="id">ResolutionPath</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs7', 12)" onmouseover="showTip(event, 'fs7', 12)" class="id">resolutionPath</span><span class="pn">,</span>
-                <span class="id">CaseSensitivityChange</span> <span class="o">=</span> <span class="id">Common</span><span class="pn">.</span><span class="id">CaseSensitivityChange</span><span class="pn">.</span><span class="id">ORIGINAL</span><span class="pn">&gt;</span>
+                <span onmouseout="hideTip(event, 'fs10', 11)" onmouseover="showTip(event, 'fs10', 11)" class="id">Common</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs11', 12)" onmouseover="showTip(event, 'fs11', 12)" class="en">DatabaseProviderTypes</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs12', 13)" onmouseover="showTip(event, 'fs12', 13)" class="id">SQLITE</span><span class="pn">,</span>
+                <span class="fn">SQLiteLibrary</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs10', 14)" onmouseover="showTip(event, 'fs10', 14)" class="id">Common</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs13', 15)" onmouseover="showTip(event, 'fs13', 15)" class="en">SQLiteLibrary</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs14', 16)" onmouseover="showTip(event, 'fs14', 16)" class="id">SystemDataSQLite</span><span class="pn">,</span>
+                <span class="fn">ConnectionString</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs6', 17)" onmouseover="showTip(event, 'fs6', 17)" class="prop">connectionString</span><span class="pn">,</span>
+                <span class="fn">ResolutionPath</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs7', 18)" onmouseover="showTip(event, 'fs7', 18)" class="prop">resolutionPath</span><span class="pn">,</span>
+                <span class="fn">CaseSensitivityChange</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs10', 19)" onmouseover="showTip(event, 'fs10', 19)" class="id">Common</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs15', 20)" onmouseover="showTip(event, 'fs15', 20)" class="en">CaseSensitivityChange</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs16', 21)" onmouseover="showTip(event, 'fs16', 21)" class="id">ORIGINAL</span><span class="pn">&gt;</span>
 
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs10', 13)" onmouseover="showTip(event, 'fs10', 13)" class="id">ctx</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs8', 14)" onmouseover="showTip(event, 'fs8', 14)" class="id">sql</span><span class="pn">.</span><span class="id">GetDataContext</span><span class="pn">(</span><span class="pn">)</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs17', 22)" onmouseover="showTip(event, 'fs17', 22)" class="id">ctx</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs8', 23)" onmouseover="showTip(event, 'fs8', 23)" class="rt">sql</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs18', 24)" onmouseover="showTip(event, 'fs18', 24)" class="id">GetDataContext</span><span class="pn">(</span><span class="pn">)</span>
 
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs11', 15)" onmouseover="showTip(event, 'fs11', 15)" class="id">customers</span> <span class="o">=</span>
-    <span onmouseout="hideTip(event, 'fs10', 16)" onmouseover="showTip(event, 'fs10', 16)" class="id">ctx</span><span class="pn">.</span><span class="id">Main</span><span class="pn">.</span><span class="id">Customers</span>
-    <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs12', 17)" onmouseover="showTip(event, 'fs12', 17)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs13', 18)" onmouseover="showTip(event, 'fs13', 18)" class="id">map</span><span class="pn">(</span><span class="k">fun</span> <span onmouseout="hideTip(event, 'fs14', 19)" onmouseover="showTip(event, 'fs14', 19)" class="fn">c</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs14', 20)" onmouseover="showTip(event, 'fs14', 20)" class="fn">c</span><span class="pn">.</span><span class="id">ContactName</span><span class="pn">)</span>
-    <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs12', 21)" onmouseover="showTip(event, 'fs12', 21)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs15', 22)" onmouseover="showTip(event, 'fs15', 22)" class="id">toList</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs19', 25)" onmouseover="showTip(event, 'fs19', 25)" class="id">customers</span> <span class="o">=</span>
+    <span onmouseout="hideTip(event, 'fs17', 26)" onmouseover="showTip(event, 'fs17', 26)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs20', 27)" onmouseover="showTip(event, 'fs20', 27)" class="prop">Main</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs21', 28)" onmouseover="showTip(event, 'fs21', 28)" class="id">Customers</span>
+    <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs22', 29)" onmouseover="showTip(event, 'fs22', 29)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs23', 30)" onmouseover="showTip(event, 'fs23', 30)" class="id">map</span><span class="pn">(</span><span class="k">fun</span> <span onmouseout="hideTip(event, 'fs24', 31)" onmouseover="showTip(event, 'fs24', 31)" class="fn">c</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs24', 32)" onmouseover="showTip(event, 'fs24', 32)" class="fn">c</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs25', 33)" onmouseover="showTip(event, 'fs25', 33)" class="id">ContactName</span><span class="pn">)</span>
+    <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs22', 34)" onmouseover="showTip(event, 'fs22', 34)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs26', 35)" onmouseover="showTip(event, 'fs26', 35)" class="id">toList</span>
 </code></pre>
 <h1><a name="CRUD" class="anchor" href="#CRUD">CRUD</a></h1>
 <p>When you do insert operation, after .SubmitUpdates call you can get inserted rowid like this:</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs16', 23)" onmouseover="showTip(event, 'fs16', 23)" class="id">myCustomer</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs10', 24)" onmouseover="showTip(event, 'fs10', 24)" class="id">ctx</span><span class="pn">.</span><span class="id">Main</span><span class="pn">.</span><span class="id">Customers</span><span class="pn">.</span><span class="id">``Create(CompanyName)``</span><span class="pn">(</span><span class="s">&quot;MyCompany&quot;</span><span class="pn">)</span>
-<span onmouseout="hideTip(event, 'fs10', 25)" onmouseover="showTip(event, 'fs10', 25)" class="id">ctx</span><span class="pn">.</span><span class="id">SubmitUpdates</span><span class="pn">(</span><span class="pn">)</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs17', 26)" onmouseover="showTip(event, 'fs17', 26)" class="id">rowid</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs16', 27)" onmouseover="showTip(event, 'fs16', 27)" class="id">myCustomer</span><span class="pn">.</span><span class="id">GetColumn</span><span class="pn">(</span><span class="s">&quot;rowid&quot;</span><span class="pn">)</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs18', 28)" onmouseover="showTip(event, 'fs18', 28)" class="vt">int</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs27', 36)" onmouseover="showTip(event, 'fs27', 36)" class="id">myCustomer</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs17', 37)" onmouseover="showTip(event, 'fs17', 37)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs20', 38)" onmouseover="showTip(event, 'fs20', 38)" class="prop">Main</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs21', 39)" onmouseover="showTip(event, 'fs21', 39)" class="prop">Customers</span><span class="pn">.</span><span class="id">``Create(CompanyName)``</span><span class="pn">(</span><span class="s">&quot;MyCompany&quot;</span><span class="pn">)</span>
+<span onmouseout="hideTip(event, 'fs17', 40)" onmouseover="showTip(event, 'fs17', 40)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs28', 41)" onmouseover="showTip(event, 'fs28', 41)" class="id">SubmitUpdates</span><span class="pn">(</span><span class="pn">)</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs29', 42)" onmouseover="showTip(event, 'fs29', 42)" class="id">rowid</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs27', 43)" onmouseover="showTip(event, 'fs27', 43)" class="id">myCustomer</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs30', 44)" onmouseover="showTip(event, 'fs30', 44)" class="id">GetColumn</span><span class="pn">(</span><span class="s">&quot;rowid&quot;</span><span class="pn">)</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs31', 45)" onmouseover="showTip(event, 'fs31', 45)" class="vt">int</span>
 </code></pre>
 
         <div class="fsdocs-tip" id="fs1">namespace System</div>
@@ -330,7 +330,7 @@ namespace, which has the following members:</p>
 val connectionString: string = &quot;Data Source=C:\git\SQLProvider\docs\content\core/../../../tests/SqlProvider.Tests/scripts/northwindEF.db;Version=3;foreign keys=true&quot;</div>
 <div class="fsdocs-tip" id="fs7">[&lt;Literal&gt;]
 val resolutionPath: string = &quot;C:\git\SQLProvider\docs\content\core/../../../tests/SqlProvider.Tests/libs&quot;</div>
-<div class="fsdocs-tip" id="fs8">type sql = obj</div>
+<div class="fsdocs-tip" id="fs8">type sql = SqlDataProvider&lt;...&gt;</div>
 <div class="fsdocs-tip" id="fs9">type SqlDataProvider<br /><em>&lt;summary&gt;Typed representation of a database&lt;/summary&gt;
                     &lt;param name=&#39;ConnectionString&#39;&gt;The connection string for the SQL database&lt;/param&gt;
                     &lt;param name=&#39;ConnectionStringName&#39;&gt;The connection string name to select from a configuration file&lt;/param&gt;
@@ -346,17 +346,56 @@ val resolutionPath: string = &quot;C:\git\SQLProvider\docs\content\core/../../..
                     &lt;param name=&#39;SQLiteLibrary&#39;&gt;Use System.Data.SQLite or Mono.Data.SQLite or select automatically (SQLite only)&lt;/param&gt;
                     &lt;param name=&#39;SsdtPath&#39;&gt;A path to an SSDT .dacpac file.&#39;&lt;/param&gt;
                     </em></div>
-<div class="fsdocs-tip" id="fs10">val ctx: obj</div>
-<div class="fsdocs-tip" id="fs11">val customers: obj list</div>
-<div class="fsdocs-tip" id="fs12">module Seq
+<div class="fsdocs-tip" id="fs10">namespace FSharp.Data.Sql.Common</div>
+<div class="fsdocs-tip" id="fs11">[&lt;Struct&gt;]
+type DatabaseProviderTypes =
+  | MSSQLSERVER = 0
+  | SQLITE = 1
+  | POSTGRESQL = 2
+  | MYSQL = 3
+  | ORACLE = 4
+  | MSACCESS = 5
+  | ODBC = 6
+  | FIREBIRD = 7
+  | MSSQLSERVER_DYNAMIC = 8
+  | MSSQLSERVER_SSDT = 9
+  | DUCKDB = 10
+  | EXTERNAL = 11</div>
+<div class="fsdocs-tip" id="fs12">Common.DatabaseProviderTypes.SQLITE: Common.DatabaseProviderTypes = 1</div>
+<div class="fsdocs-tip" id="fs13">[&lt;Struct&gt;]
+type SQLiteLibrary =
+  | SystemDataSQLite = 0
+  | MonoDataSQLite = 1
+  | AutoSelect = 2
+  | MicrosoftDataSqlite = 3</div>
+<div class="fsdocs-tip" id="fs14">Common.SQLiteLibrary.SystemDataSQLite: Common.SQLiteLibrary = 0<br /><em>&lt;summary&gt;
+ .NET Framework default
+&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs15">[&lt;Struct&gt;]
+type CaseSensitivityChange =
+  | ORIGINAL = 0
+  | TOUPPER = 1
+  | TOLOWER = 2</div>
+<div class="fsdocs-tip" id="fs16">Common.CaseSensitivityChange.ORIGINAL: Common.CaseSensitivityChange = 0</div>
+<div class="fsdocs-tip" id="fs17">val ctx: SqlDataProvider&lt;...&gt;.dataContext</div>
+<div class="fsdocs-tip" id="fs18">SqlDataProvider&lt;...&gt;.GetDataContext() : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(selectOperations: SelectOperations) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;selectOperations&#39;&gt;Execute select-clause operations in SQL database rather than .NET-side.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(commandTimeout: int) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;commandTimeout&#39;&gt;SQL command timeout. Maximum time for single SQL-command in seconds.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(transactionOptions: Transactions.TransactionOptions) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;transactionOptions&#39;&gt;TransactionOptions for the transaction created on SubmitChanges.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string, selectOperations: SelectOperations) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;&lt;param name=&#39;selectOperations&#39;&gt;Execute select-clause operations in SQL database rather than .NET-side.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(transactionOptions: Transactions.TransactionOptions, commandTimeout: int) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;transactionOptions&#39;&gt;TransactionOptions for the transaction created on SubmitChanges.&lt;/param&gt;&lt;param name=&#39;commandTimeout&#39;&gt;SQL command timeout. Maximum time for single SQL-command in seconds.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string, commandTimeout: int) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;&lt;param name=&#39;commandTimeout&#39;&gt;SQL command timeout. Maximum time for single SQL-command in seconds.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string, transactionOptions: Transactions.TransactionOptions) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;&lt;param name=&#39;transactionOptions&#39;&gt;TransactionOptions for the transaction created on SubmitChanges.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string, resolutionPath: string) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;&lt;param name=&#39;resolutionPath&#39;&gt;The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types.  Types used in desing-time: If no better clue, prefer .NET Standard 2.0 versions. Semicolon to separate multiple.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em></div>
+<div class="fsdocs-tip" id="fs19">val customers: string list</div>
+<div class="fsdocs-tip" id="fs20">property SqlDataProvider&lt;...&gt;.dataContext.Main: SqlDataProvider&lt;...&gt;.readDataContext.mainSchema with get</div>
+<div class="fsdocs-tip" id="fs21">property SqlDataProvider&lt;...&gt;.readDataContext.mainSchema.Customers: SqlDataProvider&lt;...&gt;.readDataContext.mainSchema.main.Customers with get<br /><em>&lt;summary&gt;  The table Customers belonging to schema main&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs22">Multiple items<br />module Seq
+
+from FSharp.Data.Sql<br /><br />--------------------<br />module Seq
 
 from Microsoft.FSharp.Collections</div>
-<div class="fsdocs-tip" id="fs13">val map: mapping: (&#39;T -&gt; &#39;U) -&gt; source: &#39;T seq -&gt; &#39;U seq</div>
-<div class="fsdocs-tip" id="fs14">val c: obj</div>
-<div class="fsdocs-tip" id="fs15">val toList: source: &#39;T seq -&gt; &#39;T list</div>
-<div class="fsdocs-tip" id="fs16">val myCustomer: obj</div>
-<div class="fsdocs-tip" id="fs17">val rowid: int</div>
-<div class="fsdocs-tip" id="fs18">Multiple items<br />val int: value: &#39;T -&gt; int (requires member op_Explicit)<br /><br />--------------------<br />type int = int32<br /><br />--------------------<br />type int&lt;&#39;Measure&gt; =
+<div class="fsdocs-tip" id="fs23">val map: mapping: (&#39;T -&gt; &#39;U) -&gt; source: &#39;T seq -&gt; &#39;U seq</div>
+<div class="fsdocs-tip" id="fs24">val c: SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity</div>
+<div class="fsdocs-tip" id="fs25">property SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity.ContactName: string with get, set<br /><em>&lt;summary&gt;ContactName:   nvarchar(30)&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs26">val toList: source: &#39;T seq -&gt; &#39;T list</div>
+<div class="fsdocs-tip" id="fs27">val myCustomer: SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity</div>
+<div class="fsdocs-tip" id="fs28">SqlDataProvider&lt;...&gt;.dataContext.SubmitUpdates() : Unit<br /><em>&lt;summary&gt;Save changes to data-source. May throws errors: To deal with non-saved items use GetUpdates() and ClearUpdates().&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs29">val rowid: int</div>
+<div class="fsdocs-tip" id="fs30">member Common.SqlEntity.GetColumn: key: string -&gt; &#39;T</div>
+<div class="fsdocs-tip" id="fs31">Multiple items<br />val int: value: &#39;T -&gt; int (requires member op_Explicit)<br /><br />--------------------<br />type int = int32<br /><br />--------------------<br />type int&lt;&#39;Measure&gt; =
   int</div>
 
     </div>

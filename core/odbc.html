@@ -259,11 +259,11 @@
 Control Panel -&gt; Administrative Tools -&gt; Data Sources (ODBC)
 (or launch: c:\windows\syswow64\odbcad32.exe)
 and add your driver to DSN.</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">open</span> <span onmouseout="hideTip(event, 'fs7', 14)" onmouseover="showTip(event, 'fs7', 14)" class="id">FSharp</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs8', 15)" onmouseover="showTip(event, 'fs8', 15)" class="id">Data</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs9', 16)" onmouseover="showTip(event, 'fs9', 16)" class="id">Sql</span>
-<span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs1', 17)" onmouseover="showTip(event, 'fs1', 17)" class="rt">Literal</span><span class="pn">&gt;]</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs10', 18)" onmouseover="showTip(event, 'fs10', 18)" class="prop">dnsConn</span> <span class="o">=</span> <span class="s">@&quot;DSN=foo&quot;</span>
-<span class="k">type</span> <span onmouseout="hideTip(event, 'fs11', 19)" onmouseover="showTip(event, 'fs11', 19)" class="rt">db</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs12', 20)" onmouseover="showTip(event, 'fs12', 20)" class="rt">SqlDataProvider</span><span class="pn">&lt;</span><span class="id">Common</span><span class="pn">.</span><span class="id">DatabaseProviderTypes</span><span class="pn">.</span><span class="id">ODBC</span><span class="pn">,</span> <span onmouseout="hideTip(event, 'fs10', 21)" onmouseover="showTip(event, 'fs10', 21)" class="id">dnsConn</span><span class="pn">&gt;</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs13', 22)" onmouseover="showTip(event, 'fs13', 22)" class="id">ctx</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs11', 23)" onmouseover="showTip(event, 'fs11', 23)" class="id">db</span><span class="pn">.</span><span class="id">GetDataContext</span><span class="pn">(</span><span class="pn">)</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">open</span> <span onmouseout="hideTip(event, 'fs7', 18)" onmouseover="showTip(event, 'fs7', 18)" class="id">FSharp</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs8', 19)" onmouseover="showTip(event, 'fs8', 19)" class="id">Data</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs9', 20)" onmouseover="showTip(event, 'fs9', 20)" class="id">Sql</span>
+<span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs1', 21)" onmouseover="showTip(event, 'fs1', 21)" class="rt">Literal</span><span class="pn">&gt;]</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs11', 22)" onmouseover="showTip(event, 'fs11', 22)" class="prop">dnsConn</span> <span class="o">=</span> <span class="s">@&quot;DSN=foo&quot;</span>
+<span class="k">type</span> <span onmouseout="hideTip(event, 'fs12', 23)" onmouseover="showTip(event, 'fs12', 23)" class="rt">db</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs13', 24)" onmouseover="showTip(event, 'fs13', 24)" class="rt">SqlDataProvider</span><span class="pn">&lt;</span><span onmouseout="hideTip(event, 'fs14', 25)" onmouseover="showTip(event, 'fs14', 25)" class="id">Common</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs15', 26)" onmouseover="showTip(event, 'fs15', 26)" class="en">DatabaseProviderTypes</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs16', 27)" onmouseover="showTip(event, 'fs16', 27)" class="id">ODBC</span><span class="pn">,</span> <span onmouseout="hideTip(event, 'fs11', 28)" onmouseover="showTip(event, 'fs11', 28)" class="prop">dnsConn</span><span class="pn">&gt;</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs17', 29)" onmouseover="showTip(event, 'fs17', 29)" class="id">ctx</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs12', 30)" onmouseover="showTip(event, 'fs12', 30)" class="id">db</span><span class="pn">.</span><span class="id">GetDataContext</span><span class="pn">(</span><span class="pn">)</span>
 </code></pre>
 <p>You don't need DSN for all data sources, e.g. MS Access can be used directly
 through the database file with a connection string like:
@@ -285,10 +285,10 @@ quote characters for SQL-clauses with optional parameter OdbcQuote.</p>
 <span class="k">SELECT</span> "CourseID", "CourseName" <span class="k">FROM</span> "Course" <span class="k">as</span> "q"
 <span class="k">SELECT</span> <span class="s">'CourseID'</span>, <span class="s">'CourseName'</span> <span class="k">FROM</span> <span class="s">'Course'</span> <span class="k">as</span> <span class="s">'q'</span>
 </code></pre></td></tr></table>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs1', 24)" onmouseover="showTip(event, 'fs1', 24)" class="rt">Literal</span><span class="pn">&gt;]</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs14', 25)" onmouseover="showTip(event, 'fs14', 25)" class="prop">quotechar</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs7', 26)" onmouseover="showTip(event, 'fs7', 26)" class="id">FSharp</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs8', 27)" onmouseover="showTip(event, 'fs8', 27)" class="id">Data</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs9', 28)" onmouseover="showTip(event, 'fs9', 28)" class="id">Sql</span><span class="pn">.</span><span class="id">Common</span><span class="pn">.</span><span class="id">OdbcQuoteCharacter</span><span class="pn">.</span><span class="id">DEFAULT_QUOTE</span>
-<span class="k">type</span> <span onmouseout="hideTip(event, 'fs15', 29)" onmouseover="showTip(event, 'fs15', 29)" class="rt">db2</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs12', 30)" onmouseover="showTip(event, 'fs12', 30)" class="rt">SqlDataProvider</span><span class="pn">&lt;</span><span class="id">Common</span><span class="pn">.</span><span class="id">DatabaseProviderTypes</span><span class="pn">.</span><span class="id">ODBC</span><span class="pn">,</span> <span onmouseout="hideTip(event, 'fs10', 31)" onmouseover="showTip(event, 'fs10', 31)" class="id">dnsConn</span><span class="pn">,</span> <span class="id">OdbcQuote</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs14', 32)" onmouseover="showTip(event, 'fs14', 32)" class="id">quotechar</span><span class="pn">&gt;</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs16', 33)" onmouseover="showTip(event, 'fs16', 33)" class="id">ctx2</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs15', 34)" onmouseover="showTip(event, 'fs15', 34)" class="id">db2</span><span class="pn">.</span><span class="id">GetDataContext</span><span class="pn">(</span><span class="pn">)</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs1', 31)" onmouseover="showTip(event, 'fs1', 31)" class="rt">Literal</span><span class="pn">&gt;]</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs18', 32)" onmouseover="showTip(event, 'fs18', 32)" class="prop">quotechar</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs7', 33)" onmouseover="showTip(event, 'fs7', 33)" class="id">FSharp</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs8', 34)" onmouseover="showTip(event, 'fs8', 34)" class="id">Data</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs9', 35)" onmouseover="showTip(event, 'fs9', 35)" class="id">Sql</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs14', 36)" onmouseover="showTip(event, 'fs14', 36)" class="id">Common</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs19', 37)" onmouseover="showTip(event, 'fs19', 37)" class="en">OdbcQuoteCharacter</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs20', 38)" onmouseover="showTip(event, 'fs20', 38)" class="id">DEFAULT_QUOTE</span>
+<span class="k">type</span> <span onmouseout="hideTip(event, 'fs21', 39)" onmouseover="showTip(event, 'fs21', 39)" class="rt">db2</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs13', 40)" onmouseover="showTip(event, 'fs13', 40)" class="rt">SqlDataProvider</span><span class="pn">&lt;</span><span onmouseout="hideTip(event, 'fs14', 41)" onmouseover="showTip(event, 'fs14', 41)" class="id">Common</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs15', 42)" onmouseover="showTip(event, 'fs15', 42)" class="en">DatabaseProviderTypes</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs16', 43)" onmouseover="showTip(event, 'fs16', 43)" class="id">ODBC</span><span class="pn">,</span> <span onmouseout="hideTip(event, 'fs11', 44)" onmouseover="showTip(event, 'fs11', 44)" class="prop">dnsConn</span><span class="pn">,</span> <span class="fn">OdbcQuote</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs18', 45)" onmouseover="showTip(event, 'fs18', 45)" class="prop">quotechar</span><span class="pn">&gt;</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs22', 46)" onmouseover="showTip(event, 'fs22', 46)" class="id">ctx2</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs21', 47)" onmouseover="showTip(event, 'fs21', 47)" class="id">db2</span><span class="pn">.</span><span class="id">GetDataContext</span><span class="pn">(</span><span class="pn">)</span>
 </code></pre>
 <h3><a name="DTC-Transactions" class="anchor" href="#DTC-Transactions">DTC Transactions</a></h3>
 <p>SQLProvider will do DTC-transactions over CRUD-operations. That will ensure
@@ -297,11 +297,11 @@ that all the database operations will either succeed or fail at once; when you d
 <p>However, some ODBC-drivers (like MS-Access) don't support
 DTC-transactions and will fail on the constructor call. The transaction creation can be
 disabled in context creation:</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs17', 35)" onmouseover="showTip(event, 'fs17', 35)" class="id">ctx3</span> <span class="o">=</span>
-    <span onmouseout="hideTip(event, 'fs11', 36)" onmouseover="showTip(event, 'fs11', 36)" class="id">db</span><span class="pn">.</span><span class="id">GetDataContext</span><span class="pn">(</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs23', 48)" onmouseover="showTip(event, 'fs23', 48)" class="id">ctx3</span> <span class="o">=</span>
+    <span onmouseout="hideTip(event, 'fs12', 49)" onmouseover="showTip(event, 'fs12', 49)" class="id">db</span><span class="pn">.</span><span class="id">GetDataContext</span><span class="pn">(</span>
         <span class="pn">{</span> <span class="id">Timeout</span> <span class="o">=</span> <span class="id">TimeSpan</span><span class="pn">.</span><span class="id">MaxValue</span><span class="pn">;</span>
-          <span class="id">IsolationLevel</span> <span class="o">=</span> <span class="id">Transactions</span><span class="pn">.</span><span class="id">IsolationLevel</span><span class="pn">.</span><span class="id">DontCreateTransaction</span>
-        <span class="pn">}</span><span class="pn">:</span><span onmouseout="hideTip(event, 'fs7', 37)" onmouseover="showTip(event, 'fs7', 37)" class="id">FSharp</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs8', 38)" onmouseover="showTip(event, 'fs8', 38)" class="id">Data</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs9', 39)" onmouseover="showTip(event, 'fs9', 39)" class="id">Sql</span><span class="pn">.</span><span class="id">Transactions</span><span class="pn">.</span><span class="id">TransactionOptions</span><span class="pn">)</span>
+          <span class="id">IsolationLevel</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs24', 50)" onmouseover="showTip(event, 'fs24', 50)" class="id">Transactions</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs25', 51)" onmouseover="showTip(event, 'fs25', 51)" class="id">IsolationLevel</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs26', 52)" onmouseover="showTip(event, 'fs26', 52)" class="id">DontCreateTransaction</span>
+        <span class="pn">}</span><span class="pn">:</span><span onmouseout="hideTip(event, 'fs7', 53)" onmouseover="showTip(event, 'fs7', 53)" class="id">FSharp</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs8', 54)" onmouseover="showTip(event, 'fs8', 54)" class="id">Data</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs9', 55)" onmouseover="showTip(event, 'fs9', 55)" class="id">Sql</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs24', 56)" onmouseover="showTip(event, 'fs24', 56)" class="id">Transactions</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs27', 57)" onmouseover="showTip(event, 'fs27', 57)" class="id">TransactionOptions</span><span class="pn">)</span>
 </code></pre>
 <p>Don't disable transactions if you don't need to.</p>
 
@@ -321,10 +321,11 @@ val resolutionPath: string = &quot;C:\git\SQLProvider\docs\content\core..\..\..\
 <div class="fsdocs-tip" id="fs7">Multiple items<br />namespace FSharp<br /><br />--------------------<br />namespace Microsoft.FSharp</div>
 <div class="fsdocs-tip" id="fs8">Multiple items<br />namespace FSharp.Data<br /><br />--------------------<br />namespace Microsoft.FSharp.Data</div>
 <div class="fsdocs-tip" id="fs9">namespace FSharp.Data.Sql</div>
-<div class="fsdocs-tip" id="fs10">[&lt;Literal&gt;]
+<div class="fsdocs-tip" id="fs10">namespace FSharp.Data.Sql.Odbc</div>
+<div class="fsdocs-tip" id="fs11">[&lt;Literal&gt;]
 val dnsConn: string = &quot;DSN=foo&quot;</div>
-<div class="fsdocs-tip" id="fs11">type db = obj</div>
-<div class="fsdocs-tip" id="fs12">type SqlDataProvider<br /><em>&lt;summary&gt;Typed representation of a database&lt;/summary&gt;
+<div class="fsdocs-tip" id="fs12">type db = obj</div>
+<div class="fsdocs-tip" id="fs13">type SqlDataProvider<br /><em>&lt;summary&gt;Typed representation of a database&lt;/summary&gt;
                     &lt;param name=&#39;ConnectionString&#39;&gt;The connection string for the SQL database&lt;/param&gt;
                     &lt;param name=&#39;ConnectionStringName&#39;&gt;The connection string name to select from a configuration file&lt;/param&gt;
                     &lt;param name=&#39;DatabaseVendor&#39;&gt; The target database vendor&lt;/param&gt;
@@ -339,12 +340,61 @@ val dnsConn: string = &quot;DSN=foo&quot;</div>
                     &lt;param name=&#39;SQLiteLibrary&#39;&gt;Use System.Data.SQLite or Mono.Data.SQLite or select automatically (SQLite only)&lt;/param&gt;
                     &lt;param name=&#39;SsdtPath&#39;&gt;A path to an SSDT .dacpac file.&#39;&lt;/param&gt;
                     </em></div>
-<div class="fsdocs-tip" id="fs13">val ctx: obj</div>
-<div class="fsdocs-tip" id="fs14">[&lt;Literal&gt;]
-val quotechar: obj = ()</div>
-<div class="fsdocs-tip" id="fs15">type db2 = obj</div>
-<div class="fsdocs-tip" id="fs16">val ctx2: obj</div>
-<div class="fsdocs-tip" id="fs17">val ctx3: obj</div>
+<div class="fsdocs-tip" id="fs14">namespace FSharp.Data.Sql.Common</div>
+<div class="fsdocs-tip" id="fs15">[&lt;Struct&gt;]
+type DatabaseProviderTypes =
+  | MSSQLSERVER = 0
+  | SQLITE = 1
+  | POSTGRESQL = 2
+  | MYSQL = 3
+  | ORACLE = 4
+  | MSACCESS = 5
+  | ODBC = 6
+  | FIREBIRD = 7
+  | MSSQLSERVER_DYNAMIC = 8
+  | MSSQLSERVER_SSDT = 9
+  | DUCKDB = 10
+  | EXTERNAL = 11</div>
+<div class="fsdocs-tip" id="fs16">Common.DatabaseProviderTypes.ODBC: Common.DatabaseProviderTypes = 6</div>
+<div class="fsdocs-tip" id="fs17">val ctx: obj</div>
+<div class="fsdocs-tip" id="fs18">[&lt;Literal&gt;]
+val quotechar: Common.OdbcQuoteCharacter = 0</div>
+<div class="fsdocs-tip" id="fs19">[&lt;Struct&gt;]
+type OdbcQuoteCharacter =
+  | DEFAULT_QUOTE = 0
+  | GRAVE_ACCENT = 1
+  | SQUARE_BRACKETS = 2
+  | NO_QUOTES = 3
+  | DOUBLE_QUOTES = 4
+  | APHOSTROPHE = 5</div>
+<div class="fsdocs-tip" id="fs20">Common.OdbcQuoteCharacter.DEFAULT_QUOTE: Common.OdbcQuoteCharacter = 0</div>
+<div class="fsdocs-tip" id="fs21">type db2 = obj</div>
+<div class="fsdocs-tip" id="fs22">val ctx2: obj</div>
+<div class="fsdocs-tip" id="fs23">val ctx3: obj</div>
+<div class="fsdocs-tip" id="fs24">namespace FSharp.Data.Sql.Transactions</div>
+<div class="fsdocs-tip" id="fs25">[&lt;Struct&gt;]
+type IsolationLevel =
+  | Serializable = 0
+  | RepeatableRead = 1
+  | ReadCommitted = 2
+  | ReadUncommitted = 3
+  | Snapshot = 4
+  | Chaos = 5
+  | Unspecified = 6
+  | DontCreateTransaction = 99<br /><em>&lt;summary&gt;
+ Corresponds to the System.Transactions.IsolationLevel.
+&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs26">Transactions.IsolationLevel.DontCreateTransaction: Transactions.IsolationLevel = 99</div>
+<div class="fsdocs-tip" id="fs27">[&lt;Struct&gt;]
+type TransactionOptions =
+  {
+    Timeout: TimeSpan
+    IsolationLevel: IsolationLevel
+  }
+  member Equals: TransactionOptions * IEqualityComparer -&gt; bool
+  static member Default: TransactionOptions<br /><em>&lt;summary&gt;
+ Corresponds to the System.Transactions.TransactionOptions.
+&lt;/summary&gt;</em></div>
 
     </div>
 </main>

@@ -286,6 +286,85 @@
 <p>MySQL is based on the .NET drivers found <a href="http://dev.mysql.com/downloads/connector/net/1.0.html">here</a>. You will need the correct version for your specific architecture and setup. You also need to specify ResolutionPath, which points to the folder containing the dll files for the MySQL driver.</p>
 <p>Oracle is based on the current release (12.1.0.1.2) of the managed ODP.NET driver found <a href="http://www.oracle.com/technetwork/topics/dotnet/downloads/index.html">here</a>. However, although the managed version is recommended, it should also work with previous versions of the native driver.</p>
 <p>SQL Server SSDT is based on the current release (160.20216.14) found <a href="https://www.nuget.org/packages/Microsoft.SqlServer.Management.SqlParser/">here</a>.</p>
+<table>
+<thead>
+<tr class="header">
+<th><p>Database</p></th>
+<th><p>Nuget Package</p></th>
+<th><p>TypeProvider Class</p></th>
+<th><p>NuGet Status</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><p>Microsoft SQL Server</p></td>
+<td><p><a href="https://www.nuget.org/packages/SQLProvider.MsSql">SQLProvider.MsSql</a></p></td>
+<td><p>FSharp.Data.Sql.MsSql.SqlDataProvider</p></td>
+<td><p><a href="https://www.nuget.org/packages/SQLProvider.MsSql"><img src="https://img.shields.io/nuget/v/SQLProvider.MsSql" alt="Nuget" /> <img src="https://img.shields.io/nuget/dt/SQLProvider.MsSql" alt="Nuget" /></a></p></td>
+</tr>
+<tr class="even">
+<td><p>PostgreSQL</p></td>
+<td><p><a href="https://www.nuget.org/packages/SQLProvider.PostgreSql">SQLProvider.PostgreSql</a></p></td>
+<td><p>FSharp.Data.Sql.PostgreSql.SqlDataProvider</p></td>
+<td><p><a href="https://www.nuget.org/packages/SQLProvider.PostgreSql"><img src="https://img.shields.io/nuget/v/SQLProvider.PostgreSql" alt="Nuget" /> <img src="https://img.shields.io/nuget/dt/SQLProvider.PostgreSql" alt="Nuget" /></a></p></td>
+</tr>
+<tr class="odd">
+<td><p>MySQL and MariaDB</p></td>
+<td><p><a href="https://www.nuget.org/packages/SQLProvider.MySqMySqlConnectorl">SQLProvider.MySqlConnector</a></p></td>
+<td><p>FSharp.Data.Sql.MySqlConnector.SqlDataProvider</p></td>
+<td><p><a href="https://www.nuget.org/packages/SQLProvider.MySqMySqlConnectorl"><img src="https://img.shields.io/nuget/v/SQLProvider.MySqlConnector" alt="Nuget" /> <img src="https://img.shields.io/nuget/dt/SQLProvider.MySqlConnector" alt="Nuget" /></a></p></td>
+</tr>
+<tr class="even">
+<td><p>MySQL</p></td>
+<td><p><a href="https://www.nuget.org/packages/SQLProvider.MySql">SQLProvider.MySql</a></p></td>
+<td><p>FSharp.Data.Sql.MySql.SqlDataProvider</p></td>
+<td><p><a href="https://www.nuget.org/packages/SQLProvider.MySql"><img src="https://img.shields.io/nuget/v/SQLProvider.MySql" alt="Nuget" /> <img src="https://img.shields.io/nuget/dt/SQLProvider.MySql" alt="Nuget" /></a></p></td>
+</tr>
+<tr class="odd">
+<td><p>Oracle</p></td>
+<td><p><a href="https://www.nuget.org/packages/SQLProvider.Oracle">SQLProvider.Oracle</a></p></td>
+<td><p>FSharp.Data.Sql.Oracle.SqlDataProvider</p></td>
+<td><p><a href="https://www.nuget.org/packages/SQLProvider.Oracle"><img src="https://img.shields.io/nuget/v/SQLProvider.Oracle" alt="Nuget" /> <img src="https://img.shields.io/nuget/dt/SQLProvider.Oracle" alt="Nuget" /></a></p></td>
+</tr>
+<tr class="even">
+<td><p>Any ODBC connection</p></td>
+<td><p><a href="https://www.nuget.org/packages/SQLProvider.Odbc">SQLProvider.Odbc</a></p></td>
+<td><p>FSharp.Data.Sql.Odbc.SqlDataProvider</p></td>
+<td><p><a href="https://www.nuget.org/packages/SQLProvider.Odbc"><img src="https://img.shields.io/nuget/v/SQLProvider.Odbc" alt="Nuget" /> <img src="https://img.shields.io/nuget/dt/SQLProvider.Odbc" alt="Nuget" /></a></p></td>
+</tr>
+<tr class="odd">
+<td><p>SQLite</p></td>
+<td><p><a href="https://www.nuget.org/packages/SQLProvider.SQLite">SQLProvider.SQLite</a></p></td>
+<td><p>FSharp.Data.Sql.SQLite.SqlDataProvider</p></td>
+<td><p><a href="https://www.nuget.org/packages/SQLProvider.SQLite"><img src="https://img.shields.io/nuget/v/SQLProvider.SQLite" alt="Nuget" /> <img src="https://img.shields.io/nuget/dt/SQLProvider.SQLite" alt="Nuget" /></a></p></td>
+</tr>
+<tr class="even">
+<td><p>Microsoft Access</p></td>
+<td><p><a href="https://www.nuget.org/packages/SQLProvider.MsAccess">SQLProvider.MsAccess</a></p></td>
+<td><p>FSharp.Data.Sql.MsAccess.SqlDataProvider</p></td>
+<td><p><a href="https://www.nuget.org/packages/SQLProvider.MsAccess"><img src="https://img.shields.io/nuget/v/SQLProvider.MsAccess" alt="Nuget" /> <img src="https://img.shields.io/nuget/dt/SQLProvider.MsAccess" alt="Nuget" /></a></p></td>
+</tr>
+<tr class="odd">
+<td><p>FireBird</p></td>
+<td><p><a href="https://www.nuget.org/packages/SQLProvider.FireBird">SQLProvider.FireBird</a></p></td>
+<td><p>FSharp.Data.Sql.FireBird.SqlDataProvider</p></td>
+<td><p><a href="https://www.nuget.org/packages/SQLProvider.FireBird"><img src="https://img.shields.io/nuget/v/SQLProvider.FireBird" alt="Nuget" /> <img src="https://img.shields.io/nuget/dt/SQLProvider.FireBird" alt="Nuget" /></a></p></td>
+</tr>
+<tr class="even">
+<td><p>DuckDb</p></td>
+<td><p><a href="https://www.nuget.org/packages/SQLProvider.DuckDb">SQLProvider.DuckDb</a></p></td>
+<td><p>FSharp.Data.Sql.DuckDb.SqlDataProvider</p></td>
+<td><p><a href="https://www.nuget.org/packages/SQLProvider.DuckDb"><img src="https://img.shields.io/nuget/v/SQLProvider.DuckDb" alt="Nuget" /> <img src="https://img.shields.io/nuget/dt/SQLProvider.DuckDb" alt="Nuget" /></a></p></td>
+</tr>
+<tr class="odd">
+<td><p>General, all via manual config</p></td>
+<td><p><a href="https://www.nuget.org/packages/SQLProvider">SQLProvider</a></p></td>
+<td><p>FSharp.Data.Sql.SqlDataProvider</p></td>
+<td><p><a href="https://www.nuget.org/packages/SQLProvider"><img src="https://img.shields.io/nuget/v/SQLProvider" alt="Nuget" /> <img src="https://img.shields.io/nuget/dt/SQLProvider" alt="Nuget" /></a></p></td>
+</tr>
+</tbody>
+</table>
+
 <div class="row">
   <div class="span1"></div>
   <div class="span6">
@@ -296,11 +375,14 @@
   </div>
   <div class="span1"></div>
 </div>
+<p>Depending on the used provider, the namespace of the SqlDataProvider type class varies as above.
+The general version of SQLProvider is the most popular because it is the oldest one. It often uses reflection, so the database-specific ones may be better in performance. It also requires manual configuration with a reference assembly path to seek the reference database drivers.</p>
 <h2><a name="Example" class="anchor" href="#Example">Example</a></h2>
 <p><img src="https://raw.githubusercontent.com/fsprojects/SQLProvider/master/docs/files/sqlprovider.gif" alt="No OR-mapping: FSharp compiles your database to .NET-types." title="No OR-mapping: FSharp compiles your database to .NET-types." /></p>
 <p>This example demonstrates the use of the SQL type provider:</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="c">// reference the type provider dll</span>
 
+<span class="pp">#r</span> <span class="s">&quot;../../bin/lib/netstandard2.0/FSharp.Data.SqlProvider.Common.dll&quot;</span>
 <span class="pp">#r</span> <span class="s">&quot;../../bin/lib/netstandard2.0/FSharp.Data.SqlProvider.dll&quot;</span>
 
 <span class="k">open</span> <span onmouseout="hideTip(event, 'fs1', 1)" onmouseover="showTip(event, 'fs1', 1)" class="id">FSharp</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs2', 2)" onmouseover="showTip(event, 'fs2', 2)" class="id">Data</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs3', 3)" onmouseover="showTip(event, 'fs3', 3)" class="id">Sql</span>
@@ -309,41 +391,41 @@
 <span class="k">let</span> <span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs4', 6)" onmouseover="showTip(event, 'fs4', 6)" class="rt">Literal</span><span class="pn">&gt;]</span> <span onmouseout="hideTip(event, 'fs6', 7)" onmouseover="showTip(event, 'fs6', 7)" class="prop">connectionString</span> <span class="o">=</span> <span class="s">&quot;Data Source=&quot;</span> <span class="o">+</span> <span class="k">__SOURCE_DIRECTORY__</span> <span class="o">+</span> <span class="s">@&quot;\northwindEF.db;Version=3;Read Only=false;FailIfMissing=True;&quot;</span>
 <span class="c">// create a type alias with the connection string and database vendor settings</span>
 <span class="k">type</span> <span onmouseout="hideTip(event, 'fs7', 8)" onmouseover="showTip(event, 'fs7', 8)" class="rt">sql</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs8', 9)" onmouseover="showTip(event, 'fs8', 9)" class="rt">SqlDataProvider</span><span class="pn">&lt;</span>
-              <span class="id">ConnectionString</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs6', 10)" onmouseover="showTip(event, 'fs6', 10)" class="id">connectionString</span><span class="pn">,</span>
-              <span class="id">DatabaseVendor</span> <span class="o">=</span> <span class="id">Common</span><span class="pn">.</span><span class="id">DatabaseProviderTypes</span><span class="pn">.</span><span class="id">SQLITE</span><span class="pn">,</span>
-              <span class="id">SQLiteLibrary</span><span class="o">=</span><span class="id">Common</span><span class="pn">.</span><span class="id">SQLiteLibrary</span><span class="pn">.</span><span class="id">SystemDataSQLite</span><span class="pn">,</span>
-              <span class="id">ResolutionPath</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs5', 11)" onmouseover="showTip(event, 'fs5', 11)" class="id">resolutionPath</span><span class="pn">,</span>
-              <span class="id">IndividualsAmount</span> <span class="o">=</span> <span class="n">1000</span><span class="pn">,</span>
-              <span class="id">UseOptionTypes</span> <span class="o">=</span> <span class="id">Common</span><span class="pn">.</span><span class="id">NullableColumnType</span><span class="pn">.</span><span class="id">OPTION</span>
+              <span class="fn">ConnectionString</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs6', 10)" onmouseover="showTip(event, 'fs6', 10)" class="prop">connectionString</span><span class="pn">,</span>
+              <span class="fn">DatabaseVendor</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs9', 11)" onmouseover="showTip(event, 'fs9', 11)" class="id">Common</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs10', 12)" onmouseover="showTip(event, 'fs10', 12)" class="en">DatabaseProviderTypes</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs11', 13)" onmouseover="showTip(event, 'fs11', 13)" class="id">SQLITE</span><span class="pn">,</span>
+              <span class="fn">SQLiteLibrary</span><span class="o">=</span><span onmouseout="hideTip(event, 'fs9', 14)" onmouseover="showTip(event, 'fs9', 14)" class="id">Common</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs12', 15)" onmouseover="showTip(event, 'fs12', 15)" class="en">SQLiteLibrary</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs13', 16)" onmouseover="showTip(event, 'fs13', 16)" class="id">SystemDataSQLite</span><span class="pn">,</span>
+              <span class="fn">ResolutionPath</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs5', 17)" onmouseover="showTip(event, 'fs5', 17)" class="prop">resolutionPath</span><span class="pn">,</span>
+              <span class="fn">IndividualsAmount</span> <span class="o">=</span> <span class="n">1000</span><span class="pn">,</span>
+              <span class="fn">UseOptionTypes</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs9', 18)" onmouseover="showTip(event, 'fs9', 18)" class="id">Common</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs14', 19)" onmouseover="showTip(event, 'fs14', 19)" class="en">NullableColumnType</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs15', 20)" onmouseover="showTip(event, 'fs15', 20)" class="id">OPTION</span>
               <span class="pn">&gt;</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs9', 12)" onmouseover="showTip(event, 'fs9', 12)" class="id">ctx</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs7', 13)" onmouseover="showTip(event, 'fs7', 13)" class="id">sql</span><span class="pn">.</span><span class="id">GetDataContext</span><span class="pn">(</span><span class="pn">)</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs16', 21)" onmouseover="showTip(event, 'fs16', 21)" class="id">ctx</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs7', 22)" onmouseover="showTip(event, 'fs7', 22)" class="rt">sql</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs17', 23)" onmouseover="showTip(event, 'fs17', 23)" class="id">GetDataContext</span><span class="pn">(</span><span class="pn">)</span>
 
 <span class="c">// To use dynamic runtime connectionString, you could use:</span>
 <span class="c">// let ctx = sql.GetDataContext connectionString2</span>
 
 <span class="c">// pick individual entities from the database</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs10', 14)" onmouseover="showTip(event, 'fs10', 14)" class="id">christina</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs9', 15)" onmouseover="showTip(event, 'fs9', 15)" class="id">ctx</span><span class="pn">.</span><span class="id">Main</span><span class="pn">.</span><span class="id">Customers</span><span class="pn">.</span><span class="id">Individuals</span><span class="pn">.</span><span class="id">``As ContactName``</span><span class="pn">.</span><span class="id">``BERGS, Christina Berglund``</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs18', 24)" onmouseover="showTip(event, 'fs18', 24)" class="id">christina</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs16', 25)" onmouseover="showTip(event, 'fs16', 25)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs19', 26)" onmouseover="showTip(event, 'fs19', 26)" class="prop">Main</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs20', 27)" onmouseover="showTip(event, 'fs20', 27)" class="prop">Customers</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs21', 28)" onmouseover="showTip(event, 'fs21', 28)" class="prop">Individuals</span><span class="pn">.</span><span class="prop">``As ContactName``</span><span class="pn">.</span><span class="id">``BERGS, Christina Berglund``</span>
 
 <span class="c">// directly enumerate an entity&#39;s relationships,</span>
 <span class="c">// this creates and triggers the relevant query in the background</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs11', 16)" onmouseover="showTip(event, 'fs11', 16)" class="id">christinasOrders</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs10', 17)" onmouseover="showTip(event, 'fs10', 17)" class="id">christina</span><span class="pn">.</span><span class="id">``main.Orders by CustomerID``</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs12', 18)" onmouseover="showTip(event, 'fs12', 18)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs13', 19)" onmouseover="showTip(event, 'fs13', 19)" class="id">toArray</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs22', 29)" onmouseover="showTip(event, 'fs22', 29)" class="id">christinasOrders</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs18', 30)" onmouseover="showTip(event, 'fs18', 30)" class="id">christina</span><span class="pn">.</span><span class="id">``main.Orders by CustomerID``</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs23', 31)" onmouseover="showTip(event, 'fs23', 31)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs24', 32)" onmouseover="showTip(event, 'fs24', 32)" class="id">toArray</span>
 
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs14', 20)" onmouseover="showTip(event, 'fs14', 20)" class="id">mattisOrderDetails</span> <span class="o">=</span>
-    <span onmouseout="hideTip(event, 'fs15', 21)" onmouseover="showTip(event, 'fs15', 21)" class="k">query</span> <span class="pn">{</span> <span class="k">for</span> <span onmouseout="hideTip(event, 'fs16', 22)" onmouseover="showTip(event, 'fs16', 22)" class="fn">c</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs9', 23)" onmouseover="showTip(event, 'fs9', 23)" class="id">ctx</span><span class="pn">.</span><span class="id">Main</span><span class="pn">.</span><span class="id">Customers</span> <span class="k">do</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs25', 33)" onmouseover="showTip(event, 'fs25', 33)" class="id">mattisOrderDetails</span> <span class="o">=</span>
+    <span onmouseout="hideTip(event, 'fs26', 34)" onmouseover="showTip(event, 'fs26', 34)" class="k">query</span> <span class="pn">{</span> <span class="k">for</span> <span onmouseout="hideTip(event, 'fs27', 35)" onmouseover="showTip(event, 'fs27', 35)" class="fn">c</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs16', 36)" onmouseover="showTip(event, 'fs16', 36)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs19', 37)" onmouseover="showTip(event, 'fs19', 37)" class="prop">Main</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs20', 38)" onmouseover="showTip(event, 'fs20', 38)" class="id">Customers</span> <span class="k">do</span>
             <span class="c">// you can directly enumerate relationships with no join information</span>
-            <span class="k">for</span> <span onmouseout="hideTip(event, 'fs17', 24)" onmouseover="showTip(event, 'fs17', 24)" class="fn">o</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs16', 25)" onmouseover="showTip(event, 'fs16', 25)" class="fn">c</span><span class="pn">.</span><span class="id">``main.Orders by CustomerID``</span> <span class="k">do</span>
+            <span class="k">for</span> <span onmouseout="hideTip(event, 'fs28', 39)" onmouseover="showTip(event, 'fs28', 39)" class="fn">o</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs27', 40)" onmouseover="showTip(event, 'fs27', 40)" class="fn">c</span><span class="pn">.</span><span class="id">``main.Orders by CustomerID``</span> <span class="k">do</span>
             <span class="c">// or you can explicitly join on the fields you choose</span>
-            <span onmouseout="hideTip(event, 'fs18', 26)" onmouseover="showTip(event, 'fs18', 26)" class="k">join</span> <span onmouseout="hideTip(event, 'fs19', 27)" onmouseover="showTip(event, 'fs19', 27)" class="fn">od</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs9', 28)" onmouseover="showTip(event, 'fs9', 28)" class="id">ctx</span><span class="pn">.</span><span class="id">Main</span><span class="pn">.</span><span class="id">OrderDetails</span> <span class="k">on</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs17', 29)" onmouseover="showTip(event, 'fs17', 29)" class="fn">o</span><span class="pn">.</span><span class="id">OrderId</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs19', 30)" onmouseover="showTip(event, 'fs19', 30)" class="fn">od</span><span class="pn">.</span><span class="id">OrderId</span><span class="pn">)</span>
+            <span onmouseout="hideTip(event, 'fs29', 41)" onmouseover="showTip(event, 'fs29', 41)" class="k">join</span> <span onmouseout="hideTip(event, 'fs30', 42)" onmouseover="showTip(event, 'fs30', 42)" class="fn">od</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs16', 43)" onmouseover="showTip(event, 'fs16', 43)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs19', 44)" onmouseover="showTip(event, 'fs19', 44)" class="prop">Main</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs31', 45)" onmouseover="showTip(event, 'fs31', 45)" class="id">OrderDetails</span> <span class="k">on</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs28', 46)" onmouseover="showTip(event, 'fs28', 46)" class="fn">o</span><span class="pn">.</span><span class="id">OrderId</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs30', 47)" onmouseover="showTip(event, 'fs30', 47)" class="fn">od</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs32', 48)" onmouseover="showTip(event, 'fs32', 48)" class="id">OrderId</span><span class="pn">)</span>
             <span class="c">//  the (!!) operator will perform an outer join on a relationship</span>
-            <span class="k">for</span> <span onmouseout="hideTip(event, 'fs20', 31)" onmouseover="showTip(event, 'fs20', 31)" class="fn">prod</span> <span class="k">in</span> <span class="pn">(</span><span class="pn">!!</span><span class="pn">)</span> <span onmouseout="hideTip(event, 'fs19', 32)" onmouseover="showTip(event, 'fs19', 32)" class="fn">od</span><span class="pn">.</span><span class="id">``main.Products by ProductID``</span> <span class="k">do</span>
+            <span class="k">for</span> <span onmouseout="hideTip(event, 'fs33', 49)" onmouseover="showTip(event, 'fs33', 49)" class="fn">prod</span> <span class="k">in</span> <span class="pn">(</span><span class="o">!!</span><span class="pn">)</span> <span onmouseout="hideTip(event, 'fs30', 50)" onmouseover="showTip(event, 'fs30', 50)" class="fn">od</span><span class="pn">.</span><span class="id">``main.Products by ProductID``</span> <span class="k">do</span>
             <span class="c">// nullable columns can be represented as option types; the following generates IS NOT NULL</span>
-            <span onmouseout="hideTip(event, 'fs21', 33)" onmouseover="showTip(event, 'fs21', 33)" class="k">where</span> <span onmouseout="hideTip(event, 'fs17', 34)" onmouseover="showTip(event, 'fs17', 34)" class="fn">o</span><span class="pn">.</span><span class="id">ShipCountry</span><span class="pn">.</span><span class="id">IsSome</span>
+            <span onmouseout="hideTip(event, 'fs34', 51)" onmouseover="showTip(event, 'fs34', 51)" class="k">where</span> <span onmouseout="hideTip(event, 'fs28', 52)" onmouseover="showTip(event, 'fs28', 52)" class="fn">o</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs35', 53)" onmouseover="showTip(event, 'fs35', 53)" class="prop">ShipCountry</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs36', 54)" onmouseover="showTip(event, 'fs36', 54)" class="id">IsSome</span>
             <span class="c">// standard operators will work as expected; the following shows the like operator and IN operator</span>
-            <span onmouseout="hideTip(event, 'fs21', 35)" onmouseover="showTip(event, 'fs21', 35)" class="k">where</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs16', 36)" onmouseover="showTip(event, 'fs16', 36)" class="fn">c</span><span class="pn">.</span><span class="id">ContactName</span> <span class="pn">=%</span> <span class="pn">(</span><span class="s">&quot;Matti%&quot;</span><span class="pn">)</span> <span class="o">&amp;&amp;</span> <span onmouseout="hideTip(event, 'fs16', 37)" onmouseover="showTip(event, 'fs16', 37)" class="fn">c</span><span class="pn">.</span><span class="id">CompanyName</span> <span class="pn">|=|</span> <span class="pn">[|</span><span class="s">&quot;Squirrelcomapny&quot;</span><span class="pn">;</span><span class="s">&quot;DaveCompant&quot;</span><span class="pn">|]</span> <span class="pn">)</span>
-            <span onmouseout="hideTip(event, 'fs22', 38)" onmouseover="showTip(event, 'fs22', 38)" class="k">sortBy</span> <span onmouseout="hideTip(event, 'fs17', 39)" onmouseover="showTip(event, 'fs17', 39)" class="fn">o</span><span class="pn">.</span><span class="id">ShipName</span>
+            <span onmouseout="hideTip(event, 'fs34', 55)" onmouseover="showTip(event, 'fs34', 55)" class="k">where</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs27', 56)" onmouseover="showTip(event, 'fs27', 56)" class="fn">c</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs37', 57)" onmouseover="showTip(event, 'fs37', 57)" class="id">ContactName</span> <span class="o">=%</span> <span class="pn">(</span><span class="s">&quot;Matti%&quot;</span><span class="pn">)</span> <span class="o">&amp;&amp;</span> <span onmouseout="hideTip(event, 'fs27', 58)" onmouseover="showTip(event, 'fs27', 58)" class="fn">c</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs38', 59)" onmouseover="showTip(event, 'fs38', 59)" class="id">CompanyName</span> <span class="o">|=|</span> <span class="pn">[|</span><span class="s">&quot;Squirrelcomapny&quot;</span><span class="pn">;</span><span class="s">&quot;DaveCompant&quot;</span><span class="pn">|]</span> <span class="pn">)</span>
+            <span onmouseout="hideTip(event, 'fs39', 60)" onmouseover="showTip(event, 'fs39', 60)" class="k">sortBy</span> <span onmouseout="hideTip(event, 'fs28', 61)" onmouseover="showTip(event, 'fs28', 61)" class="fn">o</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs40', 62)" onmouseover="showTip(event, 'fs40', 62)" class="id">ShipName</span>
             <span class="c">// arbitrarily complex projections are supported</span>
-            <span onmouseout="hideTip(event, 'fs23', 40)" onmouseover="showTip(event, 'fs23', 40)" class="k">select</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs16', 41)" onmouseover="showTip(event, 'fs16', 41)" class="fn">c</span><span class="pn">.</span><span class="id">ContactName</span><span class="pn">,</span><span onmouseout="hideTip(event, 'fs17', 42)" onmouseover="showTip(event, 'fs17', 42)" class="fn">o</span><span class="pn">.</span><span class="id">ShipAddress</span><span class="pn">,</span><span onmouseout="hideTip(event, 'fs17', 43)" onmouseover="showTip(event, 'fs17', 43)" class="fn">o</span><span class="pn">.</span><span class="id">ShipCountry</span><span class="pn">,</span><span onmouseout="hideTip(event, 'fs20', 44)" onmouseover="showTip(event, 'fs20', 44)" class="fn">prod</span><span class="pn">.</span><span class="id">ProductName</span><span class="pn">,</span><span onmouseout="hideTip(event, 'fs20', 45)" onmouseover="showTip(event, 'fs20', 45)" class="fn">prod</span><span class="pn">.</span><span class="id">UnitPrice</span><span class="pn">)</span> <span class="pn">}</span>
-    <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs12', 46)" onmouseover="showTip(event, 'fs12', 46)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs13', 47)" onmouseover="showTip(event, 'fs13', 47)" class="id">toArray</span>
+            <span onmouseout="hideTip(event, 'fs41', 63)" onmouseover="showTip(event, 'fs41', 63)" class="k">select</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs27', 64)" onmouseover="showTip(event, 'fs27', 64)" class="fn">c</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs37', 65)" onmouseover="showTip(event, 'fs37', 65)" class="id">ContactName</span><span class="pn">,</span><span onmouseout="hideTip(event, 'fs28', 66)" onmouseover="showTip(event, 'fs28', 66)" class="fn">o</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs42', 67)" onmouseover="showTip(event, 'fs42', 67)" class="id">ShipAddress</span><span class="pn">,</span><span onmouseout="hideTip(event, 'fs28', 68)" onmouseover="showTip(event, 'fs28', 68)" class="fn">o</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs35', 69)" onmouseover="showTip(event, 'fs35', 69)" class="id">ShipCountry</span><span class="pn">,</span><span onmouseout="hideTip(event, 'fs33', 70)" onmouseover="showTip(event, 'fs33', 70)" class="fn">prod</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs43', 71)" onmouseover="showTip(event, 'fs43', 71)" class="id">ProductName</span><span class="pn">,</span><span onmouseout="hideTip(event, 'fs33', 72)" onmouseover="showTip(event, 'fs33', 72)" class="fn">prod</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs44', 73)" onmouseover="showTip(event, 'fs44', 73)" class="id">UnitPrice</span><span class="pn">)</span> <span class="pn">}</span>
+    <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs23', 74)" onmouseover="showTip(event, 'fs23', 74)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs24', 75)" onmouseover="showTip(event, 'fs24', 75)" class="id">toArray</span>
 </code></pre>
 <h2><a name="Samples-amp-documentation" class="anchor" href="#Samples-amp-documentation">Samples &amp; documentation</a></h2>
 <p>The library comes with comprehensive documentation.</p>
@@ -384,7 +466,7 @@ redistribution for both commercial and non-commercial purposes. For more informa
 val resolutionPath: string = &quot;C:\git\SQLProvider\docs\content/../files/sqlite&quot;</div>
 <div class="fsdocs-tip" id="fs6">[&lt;Literal&gt;]
 val connectionString: string = &quot;Data Source=C:\git\SQLProvider\docs\content\northwindEF.db;Version=3;Read Only=false;FailIfMissing=True;&quot;</div>
-<div class="fsdocs-tip" id="fs7">type sql = obj</div>
+<div class="fsdocs-tip" id="fs7">type sql = SqlDataProvider&lt;...&gt;</div>
 <div class="fsdocs-tip" id="fs8">type SqlDataProvider<br /><em>&lt;summary&gt;Typed representation of a database&lt;/summary&gt;
                     &lt;param name=&#39;ConnectionString&#39;&gt;The connection string for the SQL database&lt;/param&gt;
                     &lt;param name=&#39;ConnectionStringName&#39;&gt;The connection string name to select from a configuration file&lt;/param&gt;
@@ -400,31 +482,80 @@ val connectionString: string = &quot;Data Source=C:\git\SQLProvider\docs\content
                     &lt;param name=&#39;SQLiteLibrary&#39;&gt;Use System.Data.SQLite or Mono.Data.SQLite or select automatically (SQLite only)&lt;/param&gt;
                     &lt;param name=&#39;SsdtPath&#39;&gt;A path to an SSDT .dacpac file.&#39;&lt;/param&gt;
                     </em></div>
-<div class="fsdocs-tip" id="fs9">val ctx: obj</div>
-<div class="fsdocs-tip" id="fs10">val christina: obj</div>
-<div class="fsdocs-tip" id="fs11">val christinasOrders: obj array</div>
-<div class="fsdocs-tip" id="fs12">module Seq
+<div class="fsdocs-tip" id="fs9">namespace FSharp.Data.Sql.Common</div>
+<div class="fsdocs-tip" id="fs10">[&lt;Struct&gt;]
+type DatabaseProviderTypes =
+  | MSSQLSERVER = 0
+  | SQLITE = 1
+  | POSTGRESQL = 2
+  | MYSQL = 3
+  | ORACLE = 4
+  | MSACCESS = 5
+  | ODBC = 6
+  | FIREBIRD = 7
+  | MSSQLSERVER_DYNAMIC = 8
+  | MSSQLSERVER_SSDT = 9
+  | DUCKDB = 10
+  | EXTERNAL = 11</div>
+<div class="fsdocs-tip" id="fs11">Common.DatabaseProviderTypes.SQLITE: Common.DatabaseProviderTypes = 1</div>
+<div class="fsdocs-tip" id="fs12">[&lt;Struct&gt;]
+type SQLiteLibrary =
+  | SystemDataSQLite = 0
+  | MonoDataSQLite = 1
+  | AutoSelect = 2
+  | MicrosoftDataSqlite = 3</div>
+<div class="fsdocs-tip" id="fs13">Common.SQLiteLibrary.SystemDataSQLite: Common.SQLiteLibrary = 0<br /><em>&lt;summary&gt;
+ .NET Framework default
+&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs14">[&lt;Struct&gt;]
+type NullableColumnType =
+  | NO_OPTION = 0
+  | OPTION = 1
+  | VALUE_OPTION = 2</div>
+<div class="fsdocs-tip" id="fs15">Common.NullableColumnType.OPTION: Common.NullableColumnType = 1<br /><em>&lt;summary&gt;
+ Option types are Option&amp;lt;_&amp;gt;. (Old true.)
+&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs16">val ctx: SqlDataProvider&lt;...&gt;.dataContext</div>
+<div class="fsdocs-tip" id="fs17">SqlDataProvider&lt;...&gt;.GetDataContext() : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(selectOperations: SelectOperations) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;selectOperations&#39;&gt;Execute select-clause operations in SQL database rather than .NET-side.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(commandTimeout: int) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;commandTimeout&#39;&gt;SQL command timeout. Maximum time for single SQL-command in seconds.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(transactionOptions: Transactions.TransactionOptions) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;transactionOptions&#39;&gt;TransactionOptions for the transaction created on SubmitChanges.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string, selectOperations: SelectOperations) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;&lt;param name=&#39;selectOperations&#39;&gt;Execute select-clause operations in SQL database rather than .NET-side.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(transactionOptions: Transactions.TransactionOptions, commandTimeout: int) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;transactionOptions&#39;&gt;TransactionOptions for the transaction created on SubmitChanges.&lt;/param&gt;&lt;param name=&#39;commandTimeout&#39;&gt;SQL command timeout. Maximum time for single SQL-command in seconds.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string, commandTimeout: int) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;&lt;param name=&#39;commandTimeout&#39;&gt;SQL command timeout. Maximum time for single SQL-command in seconds.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string, transactionOptions: Transactions.TransactionOptions) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;&lt;param name=&#39;transactionOptions&#39;&gt;TransactionOptions for the transaction created on SubmitChanges.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string, resolutionPath: string) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;&lt;param name=&#39;resolutionPath&#39;&gt;The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types.  Types used in desing-time: If no better clue, prefer .NET Standard 2.0 versions. Semicolon to separate multiple.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em></div>
+<div class="fsdocs-tip" id="fs18">val christina: SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity</div>
+<div class="fsdocs-tip" id="fs19">property SqlDataProvider&lt;...&gt;.dataContext.Main: SqlDataProvider&lt;...&gt;.readDataContext.mainSchema with get</div>
+<div class="fsdocs-tip" id="fs20">property SqlDataProvider&lt;...&gt;.readDataContext.mainSchema.Customers: SqlDataProvider&lt;...&gt;.readDataContext.mainSchema.main.Customers with get<br /><em>&lt;summary&gt;  The table Customers belonging to schema main&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs21">property SqlDataProvider&lt;...&gt;.readDataContext.mainSchema.main.Customers.Individuals: SqlDataProvider&lt;...&gt;.dataContext.main.Customers.Individuals with get<br /><em>&lt;summary&gt;Get individual items from the table. Requires single primary key.&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs22">val christinasOrders: SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity array</div>
+<div class="fsdocs-tip" id="fs23">Multiple items<br />module Seq
+
+from FSharp.Data.Sql<br /><br />--------------------<br />module Seq
 
 from Microsoft.FSharp.Collections</div>
-<div class="fsdocs-tip" id="fs13">val toArray: source: &#39;T seq -&gt; &#39;T array</div>
-<div class="fsdocs-tip" id="fs14">val mattisOrderDetails: (obj * obj * obj * obj * obj) array</div>
-<div class="fsdocs-tip" id="fs15">val query: Linq.QueryBuilder</div>
-<div class="fsdocs-tip" id="fs16">val c: obj</div>
-<div class="fsdocs-tip" id="fs17">val o: obj</div>
-<div class="fsdocs-tip" id="fs18">custom operation: join var in collection on (outerKey = innerKey). Note that parentheses are required after &#39;on&#39;
+<div class="fsdocs-tip" id="fs24">val toArray: source: &#39;T seq -&gt; &#39;T array</div>
+<div class="fsdocs-tip" id="fs25">val mattisOrderDetails: (Option&lt;string&gt; * Option&lt;string&gt; * Option&lt;string&gt; * string * Option&lt;decimal&gt;) array</div>
+<div class="fsdocs-tip" id="fs26">val query: Linq.QueryBuilder</div>
+<div class="fsdocs-tip" id="fs27">val c: SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity</div>
+<div class="fsdocs-tip" id="fs28">val o: SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity</div>
+<div class="fsdocs-tip" id="fs29">custom operation: join var in collection on (outerKey = innerKey). Note that parentheses are required after &#39;on&#39;
 
 Calls Linq.QueryBuilder.Join</div>
-<div class="fsdocs-tip" id="fs19">val od: obj</div>
-<div class="fsdocs-tip" id="fs20">val prod: obj</div>
-<div class="fsdocs-tip" id="fs21">custom operation: where (bool)
+<div class="fsdocs-tip" id="fs30">val od: SqlDataProvider&lt;...&gt;.dataContext.main.OrderDetailsEntity</div>
+<div class="fsdocs-tip" id="fs31">property SqlDataProvider&lt;...&gt;.readDataContext.mainSchema.OrderDetails: SqlDataProvider&lt;...&gt;.readDataContext.mainSchema.main.OrderDetails with get<br /><em>&lt;summary&gt;  The table OrderDetails belonging to schema main&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs32">property SqlDataProvider&lt;...&gt;.dataContext.main.OrderDetailsEntity.OrderId: int64 with get, set<br /><em>&lt;summary&gt;OrderID:   integer&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs33">val prod: SqlDataProvider&lt;...&gt;.dataContext.main.ProductsEntity</div>
+<div class="fsdocs-tip" id="fs34">custom operation: where (bool)
 
 Calls Linq.QueryBuilder.Where</div>
-<div class="fsdocs-tip" id="fs22">custom operation: sortBy (&#39;Key)
+<div class="fsdocs-tip" id="fs35">property SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity.ShipCountry: Option&lt;string&gt; with get, set<br /><em>&lt;summary&gt;ShipCountry:   nvarchar(15)&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs36">property Option.IsSome: bool with get</div>
+<div class="fsdocs-tip" id="fs37">property SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity.ContactName: Option&lt;string&gt; with get, set<br /><em>&lt;summary&gt;ContactName:   nvarchar(30)&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs38">property SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity.CompanyName: string with get, set<br /><em>&lt;summary&gt;CompanyName:   nvarchar(40)&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs39">custom operation: sortBy (&#39;Key)
 
 Calls Linq.QueryBuilder.SortBy</div>
-<div class="fsdocs-tip" id="fs23">custom operation: select (&#39;Result)
+<div class="fsdocs-tip" id="fs40">property SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity.ShipName: Option&lt;string&gt; with get, set<br /><em>&lt;summary&gt;ShipName:   nvarchar(40)&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs41">custom operation: select (&#39;Result)
 
 Calls Linq.QueryBuilder.Select</div>
+<div class="fsdocs-tip" id="fs42">property SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity.ShipAddress: Option&lt;string&gt; with get, set<br /><em>&lt;summary&gt;ShipAddress:   nvarchar(60)&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs43">property SqlDataProvider&lt;...&gt;.dataContext.main.ProductsEntity.ProductName: string with get, set<br /><em>&lt;summary&gt;ProductName:   nvarchar(40)&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs44">property SqlDataProvider&lt;...&gt;.dataContext.main.ProductsEntity.UnitPrice: Option&lt;decimal&gt; with get, set<br /><em>&lt;summary&gt;UnitPrice:   money&lt;/summary&gt;</em></div>
 
     </div>
 </main>

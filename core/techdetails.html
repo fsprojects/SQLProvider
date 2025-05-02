@@ -280,18 +280,18 @@ The unit tests are located in another one, <code>SQLProvider.Tests.sln</code>, a
 <p>You have a source code like:</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="c">// type sql = SqlDataProvider&lt;...params...&gt;</span>
 
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs10', 13)" onmouseover="showTip(event, 'fs10', 13)" class="id">dc</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs8', 14)" onmouseover="showTip(event, 'fs8', 14)" class="id">sql</span><span class="pn">.</span><span class="id">GetDataContext</span><span class="pn">(</span><span class="pn">)</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs17', 22)" onmouseover="showTip(event, 'fs17', 22)" class="id">dc</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs8', 23)" onmouseover="showTip(event, 'fs8', 23)" class="rt">sql</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs18', 24)" onmouseover="showTip(event, 'fs18', 24)" class="id">GetDataContext</span><span class="pn">(</span><span class="pn">)</span>
 </code></pre>
 <p>What will first happen in the design-time, is that this will call <code>createTypes</code> of <a href="https://github.com/fsprojects/SQLProvider/blob/master/src/SQLProvider/SqlDesignTime.fs">SqlDesignTime.fs</a> and create (as lazily as possible) the database schema types (the shape of the database). These methods are added to the <code>sql.datacontext</code> and are stored to concurrent dictionaries. Visual Studio will do a lot of background processing so thread-safety is important here.</p>
 <p><code>GetDataContext()</code> will return a dynamic class called dataContext which will on design-time call class SqlDataContext in file <a href="https://github.com/fsprojects/SQLProvider/blob/master/src/SQLProvider/SqlRuntime.DataContext.fs">SqlRuntime.DataContext.fs</a> through interface <code>ISqlDataContext</code>. SqlDataContext uses ProviderBuilder to create database specific providers, fairly well documented <code>ISqlProvider</code> in file <a href="https://github.com/fsprojects/SQLProvider/blob/master/src/SQLProvider/SqlRuntime.Common.fs">SqlRuntime.Common.fs</a>.</p>
 <h3><a name="Querying" class="anchor" href="#Querying">Querying</a></h3>
 <p>The entity-items themselves are rows in the database data, and they are modelled as dynamic sub-classes of <code>SqlEntity</code>, base-class in file <a href="https://github.com/fsprojects/SQLProvider/blob/master/src/SQLProvider/SqlRuntime.Common.fs">SqlRuntime.Common.fs</a> which can be thought of as a wrapper for <code>Dictionary&lt;string,obj&gt;</code> (a column name, and the value). SqlEntity is actually used for all kinds of result data, so the data columns may not correspond to the actual data values. Mostly the results of the data are shaped as <code>SqlQueryable&lt;SqlEntity&gt;</code> or <code>SqlQueryable&lt;'T&gt;</code>, which is SQLProvider's class for <code>IQueryable&lt;'T&gt;</code> items.</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs11', 15)" onmouseover="showTip(event, 'fs11', 15)" class="id">qry</span> <span class="o">=</span> 
- <span onmouseout="hideTip(event, 'fs12', 16)" onmouseover="showTip(event, 'fs12', 16)" class="k">query</span> <span class="pn">{</span>
-    <span class="k">for</span> <span onmouseout="hideTip(event, 'fs13', 17)" onmouseover="showTip(event, 'fs13', 17)" class="fn">cust</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs10', 18)" onmouseover="showTip(event, 'fs10', 18)" class="id">dc</span><span class="pn">.</span><span class="id">Main</span><span class="pn">.</span><span class="id">Customers</span> <span class="k">do</span>
-    <span onmouseout="hideTip(event, 'fs14', 19)" onmouseover="showTip(event, 'fs14', 19)" class="k">where</span> <span class="pn">(</span><span class="s">&quot;ALFKI&quot;</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs13', 20)" onmouseover="showTip(event, 'fs13', 20)" class="fn">cust</span><span class="pn">.</span><span class="id">CustomerId</span><span class="pn">)</span>
-    <span onmouseout="hideTip(event, 'fs15', 21)" onmouseover="showTip(event, 'fs15', 21)" class="k">select</span> <span onmouseout="hideTip(event, 'fs13', 22)" onmouseover="showTip(event, 'fs13', 22)" class="fn">cust</span>
- <span class="pn">}</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs16', 23)" onmouseover="showTip(event, 'fs16', 23)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs17', 24)" onmouseover="showTip(event, 'fs17', 24)" class="id">toArray</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs19', 25)" onmouseover="showTip(event, 'fs19', 25)" class="id">qry</span> <span class="o">=</span> 
+ <span onmouseout="hideTip(event, 'fs20', 26)" onmouseover="showTip(event, 'fs20', 26)" class="k">query</span> <span class="pn">{</span>
+    <span class="k">for</span> <span onmouseout="hideTip(event, 'fs21', 27)" onmouseover="showTip(event, 'fs21', 27)" class="fn">cust</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs17', 28)" onmouseover="showTip(event, 'fs17', 28)" class="id">dc</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs22', 29)" onmouseover="showTip(event, 'fs22', 29)" class="prop">Main</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs23', 30)" onmouseover="showTip(event, 'fs23', 30)" class="id">Customers</span> <span class="k">do</span>
+    <span onmouseout="hideTip(event, 'fs24', 31)" onmouseover="showTip(event, 'fs24', 31)" class="k">where</span> <span class="pn">(</span><span class="s">&quot;ALFKI&quot;</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs21', 32)" onmouseover="showTip(event, 'fs21', 32)" class="fn">cust</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs25', 33)" onmouseover="showTip(event, 'fs25', 33)" class="id">CustomerId</span><span class="pn">)</span>
+    <span onmouseout="hideTip(event, 'fs26', 34)" onmouseover="showTip(event, 'fs26', 34)" class="k">select</span> <span onmouseout="hideTip(event, 'fs21', 35)" onmouseover="showTip(event, 'fs21', 35)" class="fn">cust</span>
+ <span class="pn">}</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs27', 36)" onmouseover="showTip(event, 'fs27', 36)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs28', 37)" onmouseover="showTip(event, 'fs28', 37)" class="id">toArray</span>
 </code></pre>
 <p>This query is translated to a LINQ-expression-tree through Microsoft.FSharp.Linq.QueryFSharpBuilder. That will call <code>IQueryable&lt;'T&gt;</code>'s member Provider to execute two things for the LINQ-expression-tree: first <code>CreateQuery</code> and later <code>Execute</code>.</p>
 <h3><a name="Parsing-the-LINQ-expression-tree" class="anchor" href="#Parsing-the-LINQ-expression-tree">Parsing the LINQ-expression-tree</a></h3>
@@ -305,7 +305,7 @@ The unit tests are located in another one, <code>SQLProvider.Tests.sln</code>, a
 }
 </code></pre></td></tr></table>
 <p>so it would hit this in <a href="https://github.com/fsprojects/SQLProvider/blob/master/src/SQLProvider/SqlRuntime.Linq.fs">SqlRuntime.Linq.fs</a>:</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">|</span> <span class="id">MethodCall</span><span class="pn">(</span><span onmouseout="hideTip(event, 'fs18', 25)" onmouseover="showTip(event, 'fs18', 25)" class="id">None</span><span class="pn">,</span> <span class="pn">(</span><span class="id">MethodWithName</span> <span class="s">&quot;Where&quot;</span> <span class="k">as</span> <span class="id">meth</span><span class="pn">)</span><span class="pn">,</span> <span class="pn">[</span> <span class="id">SourceWithQueryData</span> <span class="id">source</span><span class="pn">;</span> <span class="id">OptionalQuote</span> <span class="id">qual</span> <span class="pn">]</span><span class="pn">)</span> <span class="k">-&gt;</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">|</span> <span class="id">MethodCall</span><span class="pn">(</span><span onmouseout="hideTip(event, 'fs29', 38)" onmouseover="showTip(event, 'fs29', 38)" class="id">None</span><span class="pn">,</span> <span class="pn">(</span><span class="id">MethodWithName</span> <span class="s">&quot;Where&quot;</span> <span class="k">as</span> <span class="id">meth</span><span class="pn">)</span><span class="pn">,</span> <span class="pn">[</span> <span class="id">SourceWithQueryData</span> <span class="id">source</span><span class="pn">;</span> <span class="id">OptionalQuote</span> <span class="id">qual</span> <span class="pn">]</span><span class="pn">)</span> <span class="k">-&gt;</span>
 </code></pre>
 <p>because the LINQ-expression-tree has <code>ExpressionType.Call</code> named "Where" with source of IWithSqlService (which is the SqlQueryable<SqlEntity>).
 What happens then is the parsing of the Where-query. Where-queries are nested structures having known conditions (modelled with pattern <code>Condition</code>). If the conditions have <code>SqlColumnGet</code>s, a pattern that says that it's <code>SqlEntity</code> with method <code>GetColumn</code>, we know that it has to be part of SQL-clause.</p>
@@ -341,11 +341,11 @@ For security reasons, we don't do <code>SELECT *</code>, but we actually list th
 </code></pre></td></tr></table>
 <h3><a name="Projection-lambda" class="anchor" href="#Projection-lambda">Projection-lambda</a></h3>
 <p>Now, if the select-clause had been complex:</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs19', 26)" onmouseover="showTip(event, 'fs19', 26)" class="id">qry2</span> <span class="o">=</span> 
- <span onmouseout="hideTip(event, 'fs12', 27)" onmouseover="showTip(event, 'fs12', 27)" class="k">query</span> <span class="pn">{</span>
-    <span class="k">for</span> <span onmouseout="hideTip(event, 'fs20', 28)" onmouseover="showTip(event, 'fs20', 28)" class="fn">emp</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs10', 29)" onmouseover="showTip(event, 'fs10', 29)" class="id">dc</span><span class="pn">.</span><span class="id">Main</span><span class="pn">.</span><span class="id">Employees</span> <span class="k">do</span>
-    <span onmouseout="hideTip(event, 'fs15', 30)" onmouseover="showTip(event, 'fs15', 30)" class="k">select</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs20', 31)" onmouseover="showTip(event, 'fs20', 31)" class="fn">emp</span><span class="pn">.</span><span class="id">BirthDate</span><span class="pn">.</span><span class="id">DayOfYear</span> <span class="o">+</span> <span class="n">3</span><span class="pn">)</span>
- <span class="pn">}</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs16', 32)" onmouseover="showTip(event, 'fs16', 32)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs17', 33)" onmouseover="showTip(event, 'fs17', 33)" class="id">toArray</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs30', 39)" onmouseover="showTip(event, 'fs30', 39)" class="id">qry2</span> <span class="o">=</span> 
+ <span onmouseout="hideTip(event, 'fs20', 40)" onmouseover="showTip(event, 'fs20', 40)" class="k">query</span> <span class="pn">{</span>
+    <span class="k">for</span> <span onmouseout="hideTip(event, 'fs31', 41)" onmouseover="showTip(event, 'fs31', 41)" class="fn">emp</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs17', 42)" onmouseover="showTip(event, 'fs17', 42)" class="id">dc</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs22', 43)" onmouseover="showTip(event, 'fs22', 43)" class="prop">Main</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs32', 44)" onmouseover="showTip(event, 'fs32', 44)" class="id">Employees</span> <span class="k">do</span>
+    <span onmouseout="hideTip(event, 'fs26', 45)" onmouseover="showTip(event, 'fs26', 45)" class="k">select</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs31', 46)" onmouseover="showTip(event, 'fs31', 46)" class="fn">emp</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs33', 47)" onmouseover="showTip(event, 'fs33', 47)" class="prop">BirthDate</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs34', 48)" onmouseover="showTip(event, 'fs34', 48)" class="id">DayOfYear</span> <span class="o">+</span> <span class="n">3</span><span class="pn">)</span>
+ <span class="pn">}</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs27', 49)" onmouseover="showTip(event, 'fs27', 49)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs28', 50)" onmouseover="showTip(event, 'fs28', 50)" class="id">toArray</span>
 </code></pre>
 <p>We don't know the function of DayOfYear for each different SQL-providers (Oracle/MSSQL/Odbc/...), but we still want this code to work. The LINQ-expression-tree for this query is:</p>
 <table class="pre"><tr><td class="snippet"><pre class="fssnip highlighted"><code lang="csharp">.Call System.Linq.Queryable.Select(
@@ -400,7 +400,7 @@ This will mess up your SQLProvider Nuget cache, so after done, delete the SQLPro
 val connectionString: string = &quot;Data Source=C:\git\SQLProvider\docs\content\core/../../../tests/SqlProvider.Tests/scripts/northwindEF.db;Version=3;foreign keys=true&quot;</div>
 <div class="fsdocs-tip" id="fs7">[&lt;Literal&gt;]
 val resolutionPath: string = &quot;C:\git\SQLProvider\docs\content\core/../../../tests/SqlProvider.Tests/libs&quot;</div>
-<div class="fsdocs-tip" id="fs8">type sql = obj</div>
+<div class="fsdocs-tip" id="fs8">type sql = SqlDataProvider&lt;...&gt;</div>
 <div class="fsdocs-tip" id="fs9">type SqlDataProvider<br /><em>&lt;summary&gt;Typed representation of a database&lt;/summary&gt;
                     &lt;param name=&#39;ConnectionString&#39;&gt;The connection string for the SQL database&lt;/param&gt;
                     &lt;param name=&#39;ConnectionStringName&#39;&gt;The connection string name to select from a configuration file&lt;/param&gt;
@@ -416,23 +416,63 @@ val resolutionPath: string = &quot;C:\git\SQLProvider\docs\content\core/../../..
                     &lt;param name=&#39;SQLiteLibrary&#39;&gt;Use System.Data.SQLite or Mono.Data.SQLite or select automatically (SQLite only)&lt;/param&gt;
                     &lt;param name=&#39;SsdtPath&#39;&gt;A path to an SSDT .dacpac file.&#39;&lt;/param&gt;
                     </em></div>
-<div class="fsdocs-tip" id="fs10">val dc: obj</div>
-<div class="fsdocs-tip" id="fs11">val qry: obj array</div>
-<div class="fsdocs-tip" id="fs12">val query: Linq.QueryBuilder</div>
-<div class="fsdocs-tip" id="fs13">val cust: obj</div>
-<div class="fsdocs-tip" id="fs14">custom operation: where (bool)
+<div class="fsdocs-tip" id="fs10">namespace FSharp.Data.Sql.Common</div>
+<div class="fsdocs-tip" id="fs11">[&lt;Struct&gt;]
+type DatabaseProviderTypes =
+  | MSSQLSERVER = 0
+  | SQLITE = 1
+  | POSTGRESQL = 2
+  | MYSQL = 3
+  | ORACLE = 4
+  | MSACCESS = 5
+  | ODBC = 6
+  | FIREBIRD = 7
+  | MSSQLSERVER_DYNAMIC = 8
+  | MSSQLSERVER_SSDT = 9
+  | DUCKDB = 10
+  | EXTERNAL = 11</div>
+<div class="fsdocs-tip" id="fs12">Common.DatabaseProviderTypes.SQLITE: Common.DatabaseProviderTypes = 1</div>
+<div class="fsdocs-tip" id="fs13">[&lt;Struct&gt;]
+type SQLiteLibrary =
+  | SystemDataSQLite = 0
+  | MonoDataSQLite = 1
+  | AutoSelect = 2
+  | MicrosoftDataSqlite = 3</div>
+<div class="fsdocs-tip" id="fs14">Common.SQLiteLibrary.SystemDataSQLite: Common.SQLiteLibrary = 0<br /><em>&lt;summary&gt;
+ .NET Framework default
+&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs15">[&lt;Struct&gt;]
+type CaseSensitivityChange =
+  | ORIGINAL = 0
+  | TOUPPER = 1
+  | TOLOWER = 2</div>
+<div class="fsdocs-tip" id="fs16">Common.CaseSensitivityChange.ORIGINAL: Common.CaseSensitivityChange = 0</div>
+<div class="fsdocs-tip" id="fs17">val dc: SqlDataProvider&lt;...&gt;.dataContext</div>
+<div class="fsdocs-tip" id="fs18">SqlDataProvider&lt;...&gt;.GetDataContext() : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(selectOperations: SelectOperations) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;selectOperations&#39;&gt;Execute select-clause operations in SQL database rather than .NET-side.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(commandTimeout: int) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;commandTimeout&#39;&gt;SQL command timeout. Maximum time for single SQL-command in seconds.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(transactionOptions: Transactions.TransactionOptions) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;transactionOptions&#39;&gt;TransactionOptions for the transaction created on SubmitChanges.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string, selectOperations: SelectOperations) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;&lt;param name=&#39;selectOperations&#39;&gt;Execute select-clause operations in SQL database rather than .NET-side.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(transactionOptions: Transactions.TransactionOptions, commandTimeout: int) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;transactionOptions&#39;&gt;TransactionOptions for the transaction created on SubmitChanges.&lt;/param&gt;&lt;param name=&#39;commandTimeout&#39;&gt;SQL command timeout. Maximum time for single SQL-command in seconds.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string, commandTimeout: int) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;&lt;param name=&#39;commandTimeout&#39;&gt;SQL command timeout. Maximum time for single SQL-command in seconds.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string, transactionOptions: Transactions.TransactionOptions) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;&lt;param name=&#39;transactionOptions&#39;&gt;TransactionOptions for the transaction created on SubmitChanges.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string, resolutionPath: string) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;&lt;param name=&#39;resolutionPath&#39;&gt;The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types.  Types used in desing-time: If no better clue, prefer .NET Standard 2.0 versions. Semicolon to separate multiple.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em></div>
+<div class="fsdocs-tip" id="fs19">val qry: SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity array</div>
+<div class="fsdocs-tip" id="fs20">val query: Linq.QueryBuilder</div>
+<div class="fsdocs-tip" id="fs21">val cust: SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity</div>
+<div class="fsdocs-tip" id="fs22">property SqlDataProvider&lt;...&gt;.dataContext.Main: SqlDataProvider&lt;...&gt;.readDataContext.mainSchema with get</div>
+<div class="fsdocs-tip" id="fs23">property SqlDataProvider&lt;...&gt;.readDataContext.mainSchema.Customers: SqlDataProvider&lt;...&gt;.readDataContext.mainSchema.main.Customers with get<br /><em>&lt;summary&gt;  The table Customers belonging to schema main&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs24">custom operation: where (bool)
 
 Calls Linq.QueryBuilder.Where</div>
-<div class="fsdocs-tip" id="fs15">custom operation: select (&#39;Result)
+<div class="fsdocs-tip" id="fs25">property SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity.CustomerId: string with get, set<br /><em>&lt;summary&gt;CustomerID:   nchar(5)&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs26">custom operation: select (&#39;Result)
 
 Calls Linq.QueryBuilder.Select</div>
-<div class="fsdocs-tip" id="fs16">module Seq
+<div class="fsdocs-tip" id="fs27">Multiple items<br />module Seq
+
+from FSharp.Data.Sql<br /><br />--------------------<br />module Seq
 
 from Microsoft.FSharp.Collections</div>
-<div class="fsdocs-tip" id="fs17">val toArray: source: &#39;T seq -&gt; &#39;T array</div>
-<div class="fsdocs-tip" id="fs18">union case Option.None: Option&lt;&#39;T&gt;</div>
-<div class="fsdocs-tip" id="fs19">val qry2: int array</div>
-<div class="fsdocs-tip" id="fs20">val emp: obj</div>
+<div class="fsdocs-tip" id="fs28">val toArray: source: &#39;T seq -&gt; &#39;T array</div>
+<div class="fsdocs-tip" id="fs29">union case Option.None: Option&lt;&#39;T&gt;</div>
+<div class="fsdocs-tip" id="fs30">val qry2: int array</div>
+<div class="fsdocs-tip" id="fs31">val emp: SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity</div>
+<div class="fsdocs-tip" id="fs32">property SqlDataProvider&lt;...&gt;.readDataContext.mainSchema.Employees: SqlDataProvider&lt;...&gt;.readDataContext.mainSchema.main.Employees with get<br /><em>&lt;summary&gt;  The table Employees belonging to schema main&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs33">property SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity.BirthDate: DateTime with get, set<br /><em>&lt;summary&gt;BirthDate:   datetime&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs34">property DateTime.DayOfYear: int with get<br /><em>&lt;summary&gt;Gets the day of the year represented by this instance.&lt;/summary&gt;<br />&lt;returns&gt;The day of the year, expressed as a value between 1 and 366.&lt;/returns&gt;</em></div>
 
     </div>
 </main>

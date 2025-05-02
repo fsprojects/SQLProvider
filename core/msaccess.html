@@ -266,11 +266,11 @@ connection strings for the driver apply here. See
 for a complete list of connection string options.</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="c">//TODO: link to reference</span>
 
-<span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs1', 1)" onmouseover="showTip(event, 'fs1', 1)" class="rt">Literal</span><span class="pn">&gt;]</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs2', 2)" onmouseover="showTip(event, 'fs2', 2)" class="prop">connectionString1</span> <span class="o">=</span> <span class="s">&quot;Provider=Microsoft.ACE.OLEDB.12.0; Data Source= &quot;</span> <span class="o">+</span>  <span class="k">__SOURCE_DIRECTORY__</span> <span class="o">+</span> <span class="s">@&quot;..\..\..\files\msaccess\Northwind.accdb&quot;</span>
+<span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs5', 5)" onmouseover="showTip(event, 'fs5', 5)" class="rt">Literal</span><span class="pn">&gt;]</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs6', 6)" onmouseover="showTip(event, 'fs6', 6)" class="prop">connectionString1</span> <span class="o">=</span> <span class="s">&quot;Provider=Microsoft.ACE.OLEDB.12.0; Data Source= &quot;</span> <span class="o">+</span>  <span class="k">__SOURCE_DIRECTORY__</span> <span class="o">+</span> <span class="s">@&quot;..\..\..\files\msaccess\Northwind.accdb&quot;</span>
 
-<span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs1', 3)" onmouseover="showTip(event, 'fs1', 3)" class="rt">Literal</span><span class="pn">&gt;]</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs3', 4)" onmouseover="showTip(event, 'fs3', 4)" class="prop">connectionString2</span> <span class="o">=</span>
+<span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs5', 7)" onmouseover="showTip(event, 'fs5', 7)" class="rt">Literal</span><span class="pn">&gt;]</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs7', 8)" onmouseover="showTip(event, 'fs7', 8)" class="prop">connectionString2</span> <span class="o">=</span>
     <span class="s">&quot;Provider=Microsoft.Jet.OLEDB.4.0; Data Source= &quot;</span> <span class="o">+</span>
     <span class="k">__SOURCE_DIRECTORY__</span> <span class="o">+</span>
     <span class="s">@&quot;..\..\..\files\msaccess\Northwind.mdb&quot;</span>
@@ -280,18 +280,18 @@ for a complete list of connection string options.</p>
 can store values in the <code>App.config</code> file. This is the name of the
 connectionString key/value pair stored in App.config (TODO: confirm file name).</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="c">// found in App.config (TODO:confirm)</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs4', 5)" onmouseover="showTip(event, 'fs4', 5)" class="id">connexStringName</span> <span class="o">=</span> <span class="s">&quot;DefaultConnectionString&quot;</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs8', 9)" onmouseover="showTip(event, 'fs8', 9)" class="id">connexStringName</span> <span class="o">=</span> <span class="s">&quot;DefaultConnectionString&quot;</span>
 </code></pre>
 <h3><a name="DatabaseVendor" class="anchor" href="#DatabaseVendor">DatabaseVendor</a></h3>
 <p>From the <code>FSharp.Data.Sql.Common.DatabaseProviderTypes</code> enumeration. For MSAccess,
 use <code>Common.DatabaseProviderTypes.MSACCESS</code>.</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs5', 6)" onmouseover="showTip(event, 'fs5', 6)" class="id">dbVendor</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs6', 7)" onmouseover="showTip(event, 'fs6', 7)" class="id">FSharp</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs7', 8)" onmouseover="showTip(event, 'fs7', 8)" class="id">Data</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs8', 9)" onmouseover="showTip(event, 'fs8', 9)" class="id">Sql</span><span class="pn">.</span><span class="id">Common</span><span class="pn">.</span><span class="id">DatabaseProviderTypes</span><span class="pn">.</span><span class="id">MSACCESS</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs9', 10)" onmouseover="showTip(event, 'fs9', 10)" class="id">dbVendor</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs1', 11)" onmouseover="showTip(event, 'fs1', 11)" class="id">FSharp</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs2', 12)" onmouseover="showTip(event, 'fs2', 12)" class="id">Data</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs3', 13)" onmouseover="showTip(event, 'fs3', 13)" class="id">Sql</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs10', 14)" onmouseover="showTip(event, 'fs10', 14)" class="id">Common</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs11', 15)" onmouseover="showTip(event, 'fs11', 15)" class="en">DatabaseProviderTypes</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs12', 16)" onmouseover="showTip(event, 'fs12', 16)" class="id">MSACCESS</span>
 </code></pre>
 <h3><a name="ResolutionPath" class="anchor" href="#ResolutionPath">ResolutionPath</a></h3>
 <p>Path to search for assemblies containing database vendor-specific connections
 and custom types. Type the path where <code>Npgsql.Data.dll</code> is stored.</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs1', 10)" onmouseover="showTip(event, 'fs1', 10)" class="rt">Literal</span><span class="pn">&gt;]</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs9', 11)" onmouseover="showTip(event, 'fs9', 11)" class="prop">resolutionPath</span> <span class="o">=</span> <span class="k">__SOURCE_DIRECTORY__</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs5', 17)" onmouseover="showTip(event, 'fs5', 17)" class="rt">Literal</span><span class="pn">&gt;]</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs13', 18)" onmouseover="showTip(event, 'fs13', 18)" class="prop">resolutionPath</span> <span class="o">=</span> <span class="k">__SOURCE_DIRECTORY__</span>
 </code></pre>
 <h3><a name="IndividualsAmount" class="anchor" href="#IndividualsAmount">IndividualsAmount</a></h3>
 <p>Sets the count to load for each individual. See (individuals)[individuals.html]
@@ -300,46 +300,72 @@ for further info.</p>
 <p>If true, F# option types will be used in place of nullable database columns.
 If false, you will always receive the default value of the column's type, even
 if it is null in the database. You can also use VALUE_OPTION.</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs1', 12)" onmouseover="showTip(event, 'fs1', 12)" class="rt">Literal</span><span class="pn">&gt;]</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs10', 13)" onmouseover="showTip(event, 'fs10', 13)" class="prop">useOptTypes</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs6', 14)" onmouseover="showTip(event, 'fs6', 14)" class="id">FSharp</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs7', 15)" onmouseover="showTip(event, 'fs7', 15)" class="id">Data</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs8', 16)" onmouseover="showTip(event, 'fs8', 16)" class="id">Sql</span><span class="pn">.</span><span class="id">Common</span><span class="pn">.</span><span class="id">NullableColumnType</span><span class="pn">.</span><span class="id">OPTION</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs5', 19)" onmouseover="showTip(event, 'fs5', 19)" class="rt">Literal</span><span class="pn">&gt;]</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs14', 20)" onmouseover="showTip(event, 'fs14', 20)" class="prop">useOptTypes</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs1', 21)" onmouseover="showTip(event, 'fs1', 21)" class="id">FSharp</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs2', 22)" onmouseover="showTip(event, 'fs2', 22)" class="id">Data</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs3', 23)" onmouseover="showTip(event, 'fs3', 23)" class="id">Sql</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs10', 24)" onmouseover="showTip(event, 'fs10', 24)" class="id">Common</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs15', 25)" onmouseover="showTip(event, 'fs15', 25)" class="en">NullableColumnType</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs16', 26)" onmouseover="showTip(event, 'fs16', 26)" class="id">OPTION</span>
 
 
+<span class="pp">#r</span> <span class="s">&quot;FSharp.Data.SqlProvider.Common.dll&quot;</span>
 <span class="pp">#r</span> <span class="s">&quot;FSharp.Data.SqlProvider.dll&quot;</span>
-<span class="k">open</span> <span onmouseout="hideTip(event, 'fs6', 17)" onmouseover="showTip(event, 'fs6', 17)" class="id">FSharp</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs7', 18)" onmouseover="showTip(event, 'fs7', 18)" class="id">Data</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs8', 19)" onmouseover="showTip(event, 'fs8', 19)" class="id">Sql</span>
+<span class="k">open</span> <span onmouseout="hideTip(event, 'fs1', 27)" onmouseover="showTip(event, 'fs1', 27)" class="id">FSharp</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs2', 28)" onmouseover="showTip(event, 'fs2', 28)" class="id">Data</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs3', 29)" onmouseover="showTip(event, 'fs3', 29)" class="id">Sql</span>
 
 <span class="c">//type accdb = SqlDataProvider&lt;Common.DatabaseProviderTypes.MSACCESS , connectionString1, ResolutionPath=resolutionPath &gt;</span>
 <span class="c">//let accdbctx = accdb.GetDataContext()</span>
 <span class="c">//</span>
 <span class="c">//let accdbcustomers = accdbctx.Northwind.Customers|&gt; Seq.toArray</span>
 
-<span class="k">type</span> <span onmouseout="hideTip(event, 'fs11', 20)" onmouseover="showTip(event, 'fs11', 20)" class="rt">mdb</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs12', 21)" onmouseover="showTip(event, 'fs12', 21)" class="rt">SqlDataProvider</span><span class="pn">&lt;</span><span class="id">Common</span><span class="pn">.</span><span class="id">DatabaseProviderTypes</span><span class="pn">.</span><span class="id">MSACCESS</span><span class="pn">,</span> <span onmouseout="hideTip(event, 'fs3', 22)" onmouseover="showTip(event, 'fs3', 22)" class="id">connectionString2</span><span class="pn">,</span> <span class="id">ResolutionPath</span><span class="o">=</span><span onmouseout="hideTip(event, 'fs9', 23)" onmouseover="showTip(event, 'fs9', 23)" class="id">resolutionPath</span><span class="pn">,</span> <span class="id">UseOptionTypes</span><span class="o">=</span><span onmouseout="hideTip(event, 'fs10', 24)" onmouseover="showTip(event, 'fs10', 24)" class="id">useOptTypes</span> <span class="pn">&gt;</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs13', 25)" onmouseover="showTip(event, 'fs13', 25)" class="id">mdbctx</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs11', 26)" onmouseover="showTip(event, 'fs11', 26)" class="id">mdb</span><span class="pn">.</span><span class="id">GetDataContext</span><span class="pn">(</span><span class="pn">)</span>
+<span class="k">type</span> <span onmouseout="hideTip(event, 'fs17', 30)" onmouseover="showTip(event, 'fs17', 30)" class="rt">mdb</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs18', 31)" onmouseover="showTip(event, 'fs18', 31)" class="rt">SqlDataProvider</span><span class="pn">&lt;</span><span onmouseout="hideTip(event, 'fs10', 32)" onmouseover="showTip(event, 'fs10', 32)" class="id">Common</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs11', 33)" onmouseover="showTip(event, 'fs11', 33)" class="en">DatabaseProviderTypes</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs19', 34)" onmouseover="showTip(event, 'fs19', 34)" class="id">MSACCESS</span><span class="pn">,</span> <span onmouseout="hideTip(event, 'fs7', 35)" onmouseover="showTip(event, 'fs7', 35)" class="prop">connectionString2</span><span class="pn">,</span> <span class="fn">ResolutionPath</span><span class="o">=</span><span onmouseout="hideTip(event, 'fs13', 36)" onmouseover="showTip(event, 'fs13', 36)" class="prop">resolutionPath</span><span class="pn">,</span> <span class="fn">UseOptionTypes</span><span class="o">=</span><span onmouseout="hideTip(event, 'fs20', 37)" onmouseover="showTip(event, 'fs20', 37)" class="prop">useOptTypes</span> <span class="pn">&gt;</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs21', 38)" onmouseover="showTip(event, 'fs21', 38)" class="id">mdbctx</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs17', 39)" onmouseover="showTip(event, 'fs17', 39)" class="id">mdb</span><span class="pn">.</span><span class="id">GetDataContext</span><span class="pn">(</span><span class="pn">)</span>
 
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs14', 27)" onmouseover="showTip(event, 'fs14', 27)" class="id">mdbcustomers</span> <span class="o">=</span>
-    <span onmouseout="hideTip(event, 'fs13', 28)" onmouseover="showTip(event, 'fs13', 28)" class="id">mdbctx</span><span class="pn">.</span><span class="id">Northwind</span><span class="pn">.</span><span class="id">Customers</span>
-    <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs15', 29)" onmouseover="showTip(event, 'fs15', 29)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs16', 30)" onmouseover="showTip(event, 'fs16', 30)" class="id">map</span><span class="pn">(</span><span class="k">fun</span> <span onmouseout="hideTip(event, 'fs17', 31)" onmouseover="showTip(event, 'fs17', 31)" class="fn">c</span> <span class="k">-&gt;</span>
-        <span onmouseout="hideTip(event, 'fs17', 32)" onmouseover="showTip(event, 'fs17', 32)" class="fn">c</span><span class="pn">.</span><span class="id">ColumnValues</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs15', 33)" onmouseover="showTip(event, 'fs15', 33)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs18', 34)" onmouseover="showTip(event, 'fs18', 34)" class="id">toList</span><span class="pn">)</span>
-    <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs15', 35)" onmouseover="showTip(event, 'fs15', 35)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs18', 36)" onmouseover="showTip(event, 'fs18', 36)" class="id">toList</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs22', 40)" onmouseover="showTip(event, 'fs22', 40)" class="id">mdbcustomers</span> <span class="o">=</span>
+    <span onmouseout="hideTip(event, 'fs21', 41)" onmouseover="showTip(event, 'fs21', 41)" class="id">mdbctx</span><span class="pn">.</span><span class="id">Northwind</span><span class="pn">.</span><span class="id">Customers</span>
+    <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs23', 42)" onmouseover="showTip(event, 'fs23', 42)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs24', 43)" onmouseover="showTip(event, 'fs24', 43)" class="id">map</span><span class="pn">(</span><span class="k">fun</span> <span onmouseout="hideTip(event, 'fs25', 44)" onmouseover="showTip(event, 'fs25', 44)" class="fn">c</span> <span class="k">-&gt;</span>
+        <span onmouseout="hideTip(event, 'fs25', 45)" onmouseover="showTip(event, 'fs25', 45)" class="fn">c</span><span class="pn">.</span><span class="id">ColumnValues</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs23', 46)" onmouseover="showTip(event, 'fs23', 46)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs26', 47)" onmouseover="showTip(event, 'fs26', 47)" class="id">toList</span><span class="pn">)</span>
+    <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs23', 48)" onmouseover="showTip(event, 'fs23', 48)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs26', 49)" onmouseover="showTip(event, 'fs26', 49)" class="id">toList</span>
 </code></pre>
 
-        <div class="fsdocs-tip" id="fs1">Multiple items<br />type LiteralAttribute =
+        <div class="fsdocs-tip" id="fs1">Multiple items<br />namespace FSharp<br /><br />--------------------<br />namespace Microsoft.FSharp</div>
+<div class="fsdocs-tip" id="fs2">Multiple items<br />namespace FSharp.Data<br /><br />--------------------<br />namespace Microsoft.FSharp.Data</div>
+<div class="fsdocs-tip" id="fs3">namespace FSharp.Data.Sql</div>
+<div class="fsdocs-tip" id="fs4">namespace FSharp.Data.Sql.MsAccess</div>
+<div class="fsdocs-tip" id="fs5">Multiple items<br />type LiteralAttribute =
   inherit Attribute
   new: unit -&gt; LiteralAttribute<br /><br />--------------------<br />new: unit -&gt; LiteralAttribute</div>
-<div class="fsdocs-tip" id="fs2">[&lt;Literal&gt;]
+<div class="fsdocs-tip" id="fs6">[&lt;Literal&gt;]
 val connectionString1: string = &quot;Provider=Microsoft.ACE.OLEDB.12.0; Data Source= C:\git\SQLProvider\docs\content\core..\..\..\files\msaccess\Northwind.accdb&quot;</div>
-<div class="fsdocs-tip" id="fs3">[&lt;Literal&gt;]
+<div class="fsdocs-tip" id="fs7">[&lt;Literal&gt;]
 val connectionString2: string = &quot;Provider=Microsoft.Jet.OLEDB.4.0; Data Source= C:\git\SQLProvider\docs\content\core..\..\..\files\msaccess\Northwind.mdb&quot;</div>
-<div class="fsdocs-tip" id="fs4">val connexStringName: string</div>
-<div class="fsdocs-tip" id="fs5">val dbVendor: obj</div>
-<div class="fsdocs-tip" id="fs6">Multiple items<br />namespace FSharp<br /><br />--------------------<br />namespace Microsoft.FSharp</div>
-<div class="fsdocs-tip" id="fs7">Multiple items<br />namespace FSharp.Data<br /><br />--------------------<br />namespace Microsoft.FSharp.Data</div>
-<div class="fsdocs-tip" id="fs8">namespace FSharp.Data.Sql</div>
-<div class="fsdocs-tip" id="fs9">[&lt;Literal&gt;]
+<div class="fsdocs-tip" id="fs8">val connexStringName: string</div>
+<div class="fsdocs-tip" id="fs9">val dbVendor: FSharp.Data.Sql.Common.DatabaseProviderTypes</div>
+<div class="fsdocs-tip" id="fs10">namespace FSharp.Data.Sql.Common</div>
+<div class="fsdocs-tip" id="fs11">[&lt;Struct&gt;]
+type DatabaseProviderTypes =
+  | MSSQLSERVER = 0
+  | SQLITE = 1
+  | POSTGRESQL = 2
+  | MYSQL = 3
+  | ORACLE = 4
+  | MSACCESS = 5
+  | ODBC = 6
+  | FIREBIRD = 7
+  | MSSQLSERVER_DYNAMIC = 8
+  | MSSQLSERVER_SSDT = 9
+  | DUCKDB = 10
+  | EXTERNAL = 11</div>
+<div class="fsdocs-tip" id="fs12">FSharp.Data.Sql.Common.DatabaseProviderTypes.MSACCESS: FSharp.Data.Sql.Common.DatabaseProviderTypes = 5</div>
+<div class="fsdocs-tip" id="fs13">[&lt;Literal&gt;]
 val resolutionPath: string = &quot;C:\git\SQLProvider\docs\content\core&quot;</div>
-<div class="fsdocs-tip" id="fs10">[&lt;Literal&gt;]
-val useOptTypes: obj = ()</div>
-<div class="fsdocs-tip" id="fs11">type mdb = obj</div>
-<div class="fsdocs-tip" id="fs12">type SqlDataProvider<br /><em>&lt;summary&gt;Typed representation of a database&lt;/summary&gt;
+<div class="fsdocs-tip" id="fs14">[&lt;Literal&gt;]
+val useOptTypes: FSharp.Data.Sql.Common.NullableColumnType = 1</div>
+<div class="fsdocs-tip" id="fs15">[&lt;Struct&gt;]
+type NullableColumnType =
+  | NO_OPTION = 0
+  | OPTION = 1
+  | VALUE_OPTION = 2</div>
+<div class="fsdocs-tip" id="fs16">FSharp.Data.Sql.Common.NullableColumnType.OPTION: FSharp.Data.Sql.Common.NullableColumnType = 1<br /><em>&lt;summary&gt;
+ Option types are Option&amp;lt;_&amp;gt;. (Old true.)
+&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs17">type mdb = obj</div>
+<div class="fsdocs-tip" id="fs18">type SqlDataProvider<br /><em>&lt;summary&gt;Typed representation of a database&lt;/summary&gt;
                     &lt;param name=&#39;ConnectionString&#39;&gt;The connection string for the SQL database&lt;/param&gt;
                     &lt;param name=&#39;ConnectionStringName&#39;&gt;The connection string name to select from a configuration file&lt;/param&gt;
                     &lt;param name=&#39;DatabaseVendor&#39;&gt; The target database vendor&lt;/param&gt;
@@ -354,14 +380,19 @@ val useOptTypes: obj = ()</div>
                     &lt;param name=&#39;SQLiteLibrary&#39;&gt;Use System.Data.SQLite or Mono.Data.SQLite or select automatically (SQLite only)&lt;/param&gt;
                     &lt;param name=&#39;SsdtPath&#39;&gt;A path to an SSDT .dacpac file.&#39;&lt;/param&gt;
                     </em></div>
-<div class="fsdocs-tip" id="fs13">val mdbctx: obj</div>
-<div class="fsdocs-tip" id="fs14">val mdbcustomers: obj list list</div>
-<div class="fsdocs-tip" id="fs15">module Seq
+<div class="fsdocs-tip" id="fs19">Common.DatabaseProviderTypes.MSACCESS: Common.DatabaseProviderTypes = 5</div>
+<div class="fsdocs-tip" id="fs20">[&lt;Literal&gt;]
+val useOptTypes: Common.NullableColumnType = 1</div>
+<div class="fsdocs-tip" id="fs21">val mdbctx: obj</div>
+<div class="fsdocs-tip" id="fs22">val mdbcustomers: obj list list</div>
+<div class="fsdocs-tip" id="fs23">Multiple items<br />module Seq
+
+from FSharp.Data.Sql<br /><br />--------------------<br />module Seq
 
 from Microsoft.FSharp.Collections</div>
-<div class="fsdocs-tip" id="fs16">val map: mapping: (&#39;T -&gt; &#39;U) -&gt; source: &#39;T seq -&gt; &#39;U seq</div>
-<div class="fsdocs-tip" id="fs17">val c: obj</div>
-<div class="fsdocs-tip" id="fs18">val toList: source: &#39;T seq -&gt; &#39;T list</div>
+<div class="fsdocs-tip" id="fs24">val map: mapping: (&#39;T -&gt; &#39;U) -&gt; source: &#39;T seq -&gt; &#39;U seq</div>
+<div class="fsdocs-tip" id="fs25">val c: obj</div>
+<div class="fsdocs-tip" id="fs26">val toList: source: &#39;T seq -&gt; &#39;T list</div>
 
     </div>
 </main>

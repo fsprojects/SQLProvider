@@ -258,54 +258,54 @@
 <h3><a name="DatabaseVendor" class="anchor" href="#DatabaseVendor">DatabaseVendor</a></h3>
 <p>From the <code>FSharp.Data.Sql.Common.DatabaseProviderTypes</code> enumeration. For PostgreSQL,
 use <code>Common.DatabaseProviderTypes.POSTGRESQL</code>.</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs2', 7)" onmouseover="showTip(event, 'fs2', 7)" class="rt">Literal</span><span class="pn">&gt;]</span> <span onmouseout="hideTip(event, 'fs7', 8)" onmouseover="showTip(event, 'fs7', 8)" class="prop">dbVendor</span> <span class="o">=</span> <span class="id">Common</span><span class="pn">.</span><span class="id">DatabaseProviderTypes</span><span class="pn">.</span><span class="id">POSTGRESQL</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs2', 7)" onmouseover="showTip(event, 'fs2', 7)" class="rt">Literal</span><span class="pn">&gt;]</span> <span onmouseout="hideTip(event, 'fs7', 8)" onmouseover="showTip(event, 'fs7', 8)" class="prop">dbVendor</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs8', 9)" onmouseover="showTip(event, 'fs8', 9)" class="id">Common</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs9', 10)" onmouseover="showTip(event, 'fs9', 10)" class="en">DatabaseProviderTypes</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs10', 11)" onmouseover="showTip(event, 'fs10', 11)" class="id">POSTGRESQL</span>
 </code></pre>
 <h3><a name="ConnectionString" class="anchor" href="#ConnectionString">ConnectionString</a></h3>
 <p>A basic connection string used to connect to PostgreSQL instance; typical
 connection strings for the driver apply here. See
 <a href="http://www.npgsql.org/doc/connection-string-parameters.html">PostgreSQL Connecting Strings Documentation</a>
 for a complete list of connection string options.</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs2', 9)" onmouseover="showTip(event, 'fs2', 9)" class="rt">Literal</span><span class="pn">&gt;]</span> <span onmouseout="hideTip(event, 'fs8', 10)" onmouseover="showTip(event, 'fs8', 10)" class="prop">connString</span> <span class="o">=</span> <span class="s">&quot;Host=localhost;Database=test;Username=test;Password=test&quot;</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs2', 12)" onmouseover="showTip(event, 'fs2', 12)" class="rt">Literal</span><span class="pn">&gt;]</span> <span onmouseout="hideTip(event, 'fs11', 13)" onmouseover="showTip(event, 'fs11', 13)" class="prop">connString</span> <span class="o">=</span> <span class="s">&quot;Host=localhost;Database=test;Username=test;Password=test&quot;</span>
 </code></pre>
 <h3><a name="ConnectionStringName" class="anchor" href="#ConnectionStringName">ConnectionStringName</a></h3>
 <p>Instead of storing the connection string in the source code / <code>fsx</code> script, you
 can store values in the <code>App.config</code> file.  This is the name of the
 connectionString key/value pair stored in App.config (TODO: confirm file name).</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="c">// found in App.config (TOOD: confirm)</span>
-<span class="k">let</span> <span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs2', 11)" onmouseover="showTip(event, 'fs2', 11)" class="rt">Literal</span><span class="pn">&gt;]</span> <span onmouseout="hideTip(event, 'fs9', 12)" onmouseover="showTip(event, 'fs9', 12)" class="prop">connexStringName</span> <span class="o">=</span> <span class="s">&quot;DefaultConnectionString&quot;</span>
+<span class="k">let</span> <span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs2', 14)" onmouseover="showTip(event, 'fs2', 14)" class="rt">Literal</span><span class="pn">&gt;]</span> <span onmouseout="hideTip(event, 'fs12', 15)" onmouseover="showTip(event, 'fs12', 15)" class="prop">connexStringName</span> <span class="o">=</span> <span class="s">&quot;DefaultConnectionString&quot;</span>
 </code></pre>
 <h3><a name="Resolution-Path" class="anchor" href="#Resolution-Path">Resolution Path</a></h3>
 <p>Path to search for assemblies containing database vendor-specific connections
 and custom types. Type the path where <code>Npgsql.Data.dll</code> is stored.</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs2', 13)" onmouseover="showTip(event, 'fs2', 13)" class="rt">Literal</span><span class="pn">&gt;]</span> <span onmouseout="hideTip(event, 'fs10', 14)" onmouseover="showTip(event, 'fs10', 14)" class="prop">resPath</span> <span class="o">=</span> <span class="s">@&quot;C:\Projects\Libs\Npgsql&quot;</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs2', 16)" onmouseover="showTip(event, 'fs2', 16)" class="rt">Literal</span><span class="pn">&gt;]</span> <span onmouseout="hideTip(event, 'fs13', 17)" onmouseover="showTip(event, 'fs13', 17)" class="prop">resPath</span> <span class="o">=</span> <span class="s">@&quot;C:\Projects\Libs\Npgsql&quot;</span>
 </code></pre>
 <h3><a name="IndividualsAmount" class="anchor" href="#IndividualsAmount">IndividualsAmount</a></h3>
 <p>Sets the count to load for each individual. See <a href="individuals.html">individuals</a>
 for further info.</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs2', 15)" onmouseover="showTip(event, 'fs2', 15)" class="rt">Literal</span><span class="pn">&gt;]</span> <span onmouseout="hideTip(event, 'fs11', 16)" onmouseover="showTip(event, 'fs11', 16)" class="prop">indivAmount</span> <span class="o">=</span> <span class="n">1000</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs2', 18)" onmouseover="showTip(event, 'fs2', 18)" class="rt">Literal</span><span class="pn">&gt;]</span> <span onmouseout="hideTip(event, 'fs14', 19)" onmouseover="showTip(event, 'fs14', 19)" class="prop">indivAmount</span> <span class="o">=</span> <span class="n">1000</span>
 </code></pre>
 <h3><a name="UseOptionTypes" class="anchor" href="#UseOptionTypes">UseOptionTypes</a></h3>
 <p>If true, F# option types will be used in place of nullable database columns.
 If false, you will always receive the default value of the column's type, even
 if it is null in the database. You can also use VALUE_OPTION.</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs2', 17)" onmouseover="showTip(event, 'fs2', 17)" class="rt">Literal</span><span class="pn">&gt;]</span> <span onmouseout="hideTip(event, 'fs12', 18)" onmouseover="showTip(event, 'fs12', 18)" class="prop">useOptTypes</span>  <span class="o">=</span> <span onmouseout="hideTip(event, 'fs4', 19)" onmouseover="showTip(event, 'fs4', 19)" class="id">FSharp</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs5', 20)" onmouseover="showTip(event, 'fs5', 20)" class="id">Data</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs6', 21)" onmouseover="showTip(event, 'fs6', 21)" class="id">Sql</span><span class="pn">.</span><span class="id">Common</span><span class="pn">.</span><span class="id">NullableColumnType</span><span class="pn">.</span><span class="id">OPTION</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs2', 20)" onmouseover="showTip(event, 'fs2', 20)" class="rt">Literal</span><span class="pn">&gt;]</span> <span onmouseout="hideTip(event, 'fs15', 21)" onmouseover="showTip(event, 'fs15', 21)" class="prop">useOptTypes</span>  <span class="o">=</span> <span onmouseout="hideTip(event, 'fs4', 22)" onmouseover="showTip(event, 'fs4', 22)" class="id">FSharp</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs5', 23)" onmouseover="showTip(event, 'fs5', 23)" class="id">Data</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs6', 24)" onmouseover="showTip(event, 'fs6', 24)" class="id">Sql</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs8', 25)" onmouseover="showTip(event, 'fs8', 25)" class="id">Common</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs16', 26)" onmouseover="showTip(event, 'fs16', 26)" class="en">NullableColumnType</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs17', 27)" onmouseover="showTip(event, 'fs17', 27)" class="id">OPTION</span>
 </code></pre>
 <h3><a name="Owner" class="anchor" href="#Owner">Owner</a></h3>
 <p>Indicates the schema or schemas to which SqlProvider will try to provide access to.
 Multiple schemas can be indicated and separated by commas or semicolons.
 Defaults to "public".</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs2', 22)" onmouseover="showTip(event, 'fs2', 22)" class="rt">Literal</span><span class="pn">&gt;]</span> <span onmouseout="hideTip(event, 'fs13', 23)" onmouseover="showTip(event, 'fs13', 23)" class="prop">owner</span> <span class="o">=</span> <span class="s">&quot;public, admin, references&quot;</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs2', 28)" onmouseover="showTip(event, 'fs2', 28)" class="rt">Literal</span><span class="pn">&gt;]</span> <span onmouseout="hideTip(event, 'fs18', 29)" onmouseover="showTip(event, 'fs18', 29)" class="prop">owner</span> <span class="o">=</span> <span class="s">&quot;public, admin, references&quot;</span>
 
 
-<span class="k">type</span> <span onmouseout="hideTip(event, 'fs14', 24)" onmouseover="showTip(event, 'fs14', 24)" class="rt">sql</span> <span class="o">=</span>
-    <span onmouseout="hideTip(event, 'fs15', 25)" onmouseover="showTip(event, 'fs15', 25)" class="rt">SqlDataProvider</span><span class="pn">&lt;</span>
-        <span onmouseout="hideTip(event, 'fs7', 26)" onmouseover="showTip(event, 'fs7', 26)" class="id">dbVendor</span><span class="pn">,</span>
-        <span onmouseout="hideTip(event, 'fs8', 27)" onmouseover="showTip(event, 'fs8', 27)" class="id">connString</span><span class="pn">,</span>
+<span class="k">type</span> <span onmouseout="hideTip(event, 'fs19', 30)" onmouseover="showTip(event, 'fs19', 30)" class="rt">sql</span> <span class="o">=</span>
+    <span onmouseout="hideTip(event, 'fs20', 31)" onmouseover="showTip(event, 'fs20', 31)" class="rt">SqlDataProvider</span><span class="pn">&lt;</span>
+        <span onmouseout="hideTip(event, 'fs7', 32)" onmouseover="showTip(event, 'fs7', 32)" class="prop">dbVendor</span><span class="pn">,</span>
+        <span onmouseout="hideTip(event, 'fs11', 33)" onmouseover="showTip(event, 'fs11', 33)" class="prop">connString</span><span class="pn">,</span>
         <span class="s">&quot;&quot;</span><span class="pn">,</span>         <span class="c">//ConnectionNameString can be left empty</span>
-        <span onmouseout="hideTip(event, 'fs10', 28)" onmouseover="showTip(event, 'fs10', 28)" class="id">resPath</span><span class="pn">,</span>
-        <span onmouseout="hideTip(event, 'fs11', 29)" onmouseover="showTip(event, 'fs11', 29)" class="id">indivAmount</span><span class="pn">,</span>
-        <span onmouseout="hideTip(event, 'fs12', 30)" onmouseover="showTip(event, 'fs12', 30)" class="id">useOptTypes</span><span class="pn">,</span>
-        <span onmouseout="hideTip(event, 'fs13', 31)" onmouseover="showTip(event, 'fs13', 31)" class="id">owner</span><span class="pn">&gt;</span>
+        <span onmouseout="hideTip(event, 'fs13', 34)" onmouseover="showTip(event, 'fs13', 34)" class="prop">resPath</span><span class="pn">,</span>
+        <span onmouseout="hideTip(event, 'fs14', 35)" onmouseover="showTip(event, 'fs14', 35)" class="prop">indivAmount</span><span class="pn">,</span>
+        <span onmouseout="hideTip(event, 'fs15', 36)" onmouseover="showTip(event, 'fs15', 36)" class="prop">useOptTypes</span><span class="pn">,</span>
+        <span onmouseout="hideTip(event, 'fs18', 37)" onmouseover="showTip(event, 'fs18', 37)" class="prop">owner</span><span class="pn">&gt;</span>
 </code></pre>
 
         <div class="fsdocs-tip" id="fs1">val connectionString: string</div>
@@ -318,21 +318,45 @@ val resolutionPath: string = &quot;C:\git\SQLProvider\docs\content\core..\..\..\
 <div class="fsdocs-tip" id="fs5">Multiple items<br />namespace FSharp.Data<br /><br />--------------------<br />namespace Microsoft.FSharp.Data</div>
 <div class="fsdocs-tip" id="fs6">namespace FSharp.Data.Sql</div>
 <div class="fsdocs-tip" id="fs7">[&lt;Literal&gt;]
-val dbVendor: obj = ()</div>
-<div class="fsdocs-tip" id="fs8">[&lt;Literal&gt;]
-val connString: string = &quot;Host=localhost;Database=test;Username=test;Password=test&quot;</div>
-<div class="fsdocs-tip" id="fs9">[&lt;Literal&gt;]
-val connexStringName: string = &quot;DefaultConnectionString&quot;</div>
-<div class="fsdocs-tip" id="fs10">[&lt;Literal&gt;]
-val resPath: string = &quot;C:\Projects\Libs\Npgsql&quot;</div>
+val dbVendor: Common.DatabaseProviderTypes = 2</div>
+<div class="fsdocs-tip" id="fs8">namespace FSharp.Data.Sql.Common</div>
+<div class="fsdocs-tip" id="fs9">[&lt;Struct&gt;]
+type DatabaseProviderTypes =
+  | MSSQLSERVER = 0
+  | SQLITE = 1
+  | POSTGRESQL = 2
+  | MYSQL = 3
+  | ORACLE = 4
+  | MSACCESS = 5
+  | ODBC = 6
+  | FIREBIRD = 7
+  | MSSQLSERVER_DYNAMIC = 8
+  | MSSQLSERVER_SSDT = 9
+  | DUCKDB = 10
+  | EXTERNAL = 11</div>
+<div class="fsdocs-tip" id="fs10">Common.DatabaseProviderTypes.POSTGRESQL: Common.DatabaseProviderTypes = 2</div>
 <div class="fsdocs-tip" id="fs11">[&lt;Literal&gt;]
-val indivAmount: int = 1000</div>
+val connString: string = &quot;Host=localhost;Database=test;Username=test;Password=test&quot;</div>
 <div class="fsdocs-tip" id="fs12">[&lt;Literal&gt;]
-val useOptTypes: obj = ()</div>
+val connexStringName: string = &quot;DefaultConnectionString&quot;</div>
 <div class="fsdocs-tip" id="fs13">[&lt;Literal&gt;]
+val resPath: string = &quot;C:\Projects\Libs\Npgsql&quot;</div>
+<div class="fsdocs-tip" id="fs14">[&lt;Literal&gt;]
+val indivAmount: int = 1000</div>
+<div class="fsdocs-tip" id="fs15">[&lt;Literal&gt;]
+val useOptTypes: Common.NullableColumnType = 1</div>
+<div class="fsdocs-tip" id="fs16">[&lt;Struct&gt;]
+type NullableColumnType =
+  | NO_OPTION = 0
+  | OPTION = 1
+  | VALUE_OPTION = 2</div>
+<div class="fsdocs-tip" id="fs17">Common.NullableColumnType.OPTION: Common.NullableColumnType = 1<br /><em>&lt;summary&gt;
+ Option types are Option&amp;lt;_&amp;gt;. (Old true.)
+&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs18">[&lt;Literal&gt;]
 val owner: string = &quot;public, admin, references&quot;</div>
-<div class="fsdocs-tip" id="fs14">type sql = obj</div>
-<div class="fsdocs-tip" id="fs15">type SqlDataProvider<br /><em>&lt;summary&gt;Typed representation of a database&lt;/summary&gt;
+<div class="fsdocs-tip" id="fs19">type sql = obj</div>
+<div class="fsdocs-tip" id="fs20">type SqlDataProvider<br /><em>&lt;summary&gt;Typed representation of a database&lt;/summary&gt;
                     &lt;param name=&#39;ConnectionString&#39;&gt;The connection string for the SQL database&lt;/param&gt;
                     &lt;param name=&#39;ConnectionStringName&#39;&gt;The connection string name to select from a configuration file&lt;/param&gt;
                     &lt;param name=&#39;DatabaseVendor&#39;&gt; The target database vendor&lt;/param&gt;
