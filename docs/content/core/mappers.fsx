@@ -20,8 +20,6 @@ type sql  = SqlDataProvider<
 
 (**
 
-One 
-
 ## Adding a Mapper using dataContext to use generated types from db
 
 Typically F# is about writing business logic and not about OR-mapping. Consider using your database types as is. But sometimes you want to 
