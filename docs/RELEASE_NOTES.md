@@ -1,3 +1,6 @@
+### 1.5.4 - 02.05.2025
+* SQLProvider.Oracle, SQLProvider.MySql and SQLProvider.MySqlConnector loading without reflection.
+
 ### 1.5.3 - 30.04.2025
 * Type-provider package library and target framework fixes
 * Compile-time assembly loading fixes to get rid of "platform not supported" on .NET 8.0/9.0
