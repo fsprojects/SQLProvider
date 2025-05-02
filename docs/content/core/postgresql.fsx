@@ -10,6 +10,7 @@ let connectionString =
 let resolutionPath =
     __SOURCE_DIRECTORY__ + @"..\..\..\files\sqlite"
 #r "FSharp.Data.SqlProvider.dll"
+#r "FSharp.Data.SqlProvider.Common.dll"
 open FSharp.Data.Sql
 (**
 

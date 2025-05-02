@@ -48,6 +48,20 @@ Oracle is based on the current release (12.1.0.1.2) of the managed ODP.NET drive
 
 SQL Server SSDT is based on the current release (160.20216.14) found [here](https://www.nuget.org/packages/Microsoft.SqlServer.Management.SqlParser/).
 
+| Database | Nuget Package | TypeProvider Class | NuGet Status |
+| ------- | ----- | -----------| ---------- | 
+| Microsoft SQL Server | [SQLProvider.MsSql](https://www.nuget.org/packages/SQLProvider.MsSql) | FSharp.Data.Sql.MsSql.SqlDataProvider | [![Nuget](https://img.shields.io/nuget/v/SQLProvider.MsSql) ![Nuget](https://img.shields.io/nuget/dt/SQLProvider.MsSql)](https://www.nuget.org/packages/SQLProvider.MsSql) 
+| PostgreSQL | [SQLProvider.PostgreSql](https://www.nuget.org/packages/SQLProvider.PostgreSql) | FSharp.Data.Sql.PostgreSql.SqlDataProvider | [![Nuget](https://img.shields.io/nuget/v/SQLProvider.PostgreSql) ![Nuget](https://img.shields.io/nuget/dt/SQLProvider.PostgreSql)](https://www.nuget.org/packages/SQLProvider.PostgreSql) 
+| MySQL and MariaDB | [SQLProvider.MySqlConnector](https://www.nuget.org/packages/SQLProvider.MySqMySqlConnectorl) |  FSharp.Data.Sql.MySqlConnector.SqlDataProvider | [![Nuget](https://img.shields.io/nuget/v/SQLProvider.MySqlConnector) ![Nuget](https://img.shields.io/nuget/dt/SQLProvider.MySqlConnector)](https://www.nuget.org/packages/SQLProvider.MySqMySqlConnectorl) 
+| MySQL | [SQLProvider.MySql](https://www.nuget.org/packages/SQLProvider.MySql)  | FSharp.Data.Sql.MySql.SqlDataProvider | [![Nuget](https://img.shields.io/nuget/v/SQLProvider.MySql) ![Nuget](https://img.shields.io/nuget/dt/SQLProvider.MySql)](https://www.nuget.org/packages/SQLProvider.MySql) 
+| Oracle | [SQLProvider.Oracle](https://www.nuget.org/packages/SQLProvider.Oracle)  | FSharp.Data.Sql.Oracle.SqlDataProvider | [![Nuget](https://img.shields.io/nuget/v/SQLProvider.Oracle) ![Nuget](https://img.shields.io/nuget/dt/SQLProvider.Oracle)](https://www.nuget.org/packages/SQLProvider.Oracle) 
+| Any ODBC connection | [SQLProvider.Odbc](https://www.nuget.org/packages/SQLProvider.Odbc) | FSharp.Data.Sql.Odbc.SqlDataProvider | [![Nuget](https://img.shields.io/nuget/v/SQLProvider.Odbc) ![Nuget](https://img.shields.io/nuget/dt/SQLProvider.Odbc)](https://www.nuget.org/packages/SQLProvider.Odbc) 
+| SQLite | [SQLProvider.SQLite](https://www.nuget.org/packages/SQLProvider.SQLite) | FSharp.Data.Sql.SQLite.SqlDataProvider | [![Nuget](https://img.shields.io/nuget/v/SQLProvider.SQLite) ![Nuget](https://img.shields.io/nuget/dt/SQLProvider.SQLite)](https://www.nuget.org/packages/SQLProvider.SQLite) 
+| Microsoft Access | [SQLProvider.MsAccess](https://www.nuget.org/packages/SQLProvider.MsAccess)  | FSharp.Data.Sql.MsAccess.SqlDataProvider | [![Nuget](https://img.shields.io/nuget/v/SQLProvider.MsAccess) ![Nuget](https://img.shields.io/nuget/dt/SQLProvider.MsAccess)](https://www.nuget.org/packages/SQLProvider.MsAccess) 
+| FireBird | [SQLProvider.FireBird](https://www.nuget.org/packages/SQLProvider.FireBird) | FSharp.Data.Sql.FireBird.SqlDataProvider | [![Nuget](https://img.shields.io/nuget/v/SQLProvider.FireBird) ![Nuget](https://img.shields.io/nuget/dt/SQLProvider.FireBird)](https://www.nuget.org/packages/SQLProvider.FireBird) 
+| DuckDb | [SQLProvider.DuckDb](https://www.nuget.org/packages/SQLProvider.DuckDb) | FSharp.Data.Sql.DuckDb.SqlDataProvider | [![Nuget](https://img.shields.io/nuget/v/SQLProvider.DuckDb) ![Nuget](https://img.shields.io/nuget/dt/SQLProvider.DuckDb)](https://www.nuget.org/packages/SQLProvider.DuckDb) 
+| General, all via manual config | [SQLProvider](https://www.nuget.org/packages/SQLProvider) | FSharp.Data.Sql.SqlDataProvider | [![Nuget](https://img.shields.io/nuget/v/SQLProvider) ![Nuget](https://img.shields.io/nuget/dt/SQLProvider)](https://www.nuget.org/packages/SQLProvider) 
+
 <div class="row">
   <div class="span1"></div>
   <div class="span6">
@@ -59,6 +73,9 @@ SQL Server SSDT is based on the current release (160.20216.14) found [here](http
   <div class="span1"></div>
 </div>
 
+Depending on the used provider, the namespace of the SqlDataProvider type class varies as above.
+The general version of SQLProvider is the most popular because it is the oldest one. It often uses reflection, so the database-specific ones may be better in performance. It also requires manual configuration with a reference assembly path to seek the reference database drivers.
+
 Example
 -------
 
@@ -69,6 +86,7 @@ This example demonstrates the use of the SQL type provider:
 *)
 // reference the type provider dll
 
+#r "../../bin/lib/netstandard2.0/FSharp.Data.SqlProvider.Common.dll"
 #r "../../bin/lib/netstandard2.0/FSharp.Data.SqlProvider.dll"
 
 open FSharp.Data.Sql

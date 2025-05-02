@@ -5,6 +5,7 @@
 #r "nuget: DuckDB.NET.Data.Full"
 
 #I @"../../../bin/lib/net48"
+#r @"../../../bin/lib/net48/FSharp.Data.SqlProvider.Common.dll"
 #r @"../../../bin/lib/net48/FSharp.Data.SqlProvider.dll"
 
 // Note: In Windows you need to install first: https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist

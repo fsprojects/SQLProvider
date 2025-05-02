@@ -3,9 +3,11 @@
 
 // This is with classic FSI:
 #I @"../../../bin/lib/net48"
+#r @"../../../bin/lib/net48/FSharp.Data.SqlProvider.Common.dll"
 #r @"../../../bin/lib/net48/FSharp.Data.SqlProvider.dll"
 // This is with dotnet.exe fsi:
 #I @"../../../bin/lib/netstandard2.1"
+#r @"../../../bin/lib/netstandard2.1/FSharp.Data.SqlProvider.Common.dll"
 #r @"../../../bin/lib/netstandard2.1/FSharp.Data.SqlProvider.dll"
 
 open System

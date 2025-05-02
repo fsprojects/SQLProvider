@@ -1,4 +1,5 @@
 #if INTERACTIVE
+#r @"../../bin/lib/net48/FSharp.Data.SqlProvider.Common.dll"
 #r @"../../bin/lib/net48/FSharp.Data.SqlProvider.dll"
 #r @"../../packages/NUnit/lib/nunit.framework.dll"
 #else

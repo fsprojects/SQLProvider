@@ -2,6 +2,7 @@
 #I @"../../../bin/lib/netstandard2.0"
 (*** hide ***)
 #r @"../../../bin/lib/netstandard2.0/FSharp.Data.SqlProvider.dll"
+#r @"../../../bin/lib/netstandard2.0/FSharp.Data.SqlProvider.Common.dll"
 (*** hide ***)
 open System
 (*** hide ***)

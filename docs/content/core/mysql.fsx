@@ -1,10 +1,12 @@
 (*** hide ***)
 #I @"../../files/sqlite"
 (*** hide ***)
-#I "../../../bin/lib/netstandard2.0"
+#I "../../../bin/mysql/lib/netstandard2.0"
 (*** hide ***)
-#r "FSharp.Data.SqlProvider.dll"
+#r "FSharp.Data.SqlProvider.Common.dll"
+#r "FSharp.Data.SqlProvider.MySql.dll"
 open FSharp.Data.Sql
+open FSharp.Data.Sql.MySql
 open System
 
 (**

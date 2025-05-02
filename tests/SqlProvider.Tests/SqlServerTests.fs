@@ -1,5 +1,6 @@
 #if INTERACTIVE
 #I @"../../bin/lib/net48"
+#r @"../../bin/lib/net48/FSharp.Data.SqlProvider.Common.dll"
 #r @"../../bin/lib/net48/FSharp.Data.SqlProvider.dll"
 #I @"../../packages/tests/Newtonsoft.Json/lib/net45"
 #r @"../../packages/tests/Newtonsoft.Json/lib/net45/Newtonsoft.Json.dll"

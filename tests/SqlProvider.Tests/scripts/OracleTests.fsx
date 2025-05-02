@@ -1,4 +1,5 @@
-﻿#I @"../../../bin/lib/net48"
+#I @"../../../bin/lib/net48"
+#r @"../../../bin/lib/net48/FSharp.Data.SqlProvider.Common.dll"
 #r @"../../../bin/lib/net48/FSharp.Data.SqlProvider.dll"
 #r @"../libs/Oracle.ManagedDataAccess.dll"
 

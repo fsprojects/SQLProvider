@@ -1,4 +1,5 @@
 (*** hide ***)
+#r "../../../bin/lib/netstandard2.0/FSharp.Data.SqlProvider.Common.dll"
 #r "../../../bin/lib/netstandard2.0/FSharp.Data.SqlProvider.dll"
 (*** hide ***)
 let [<Literal>] resolutionPath = __SOURCE_DIRECTORY__ + @"/../../files/sqlite"
@@ -18,7 +19,13 @@ type sql  = SqlDataProvider<
             >
 
 (**
+
+One 
+
 ## Adding a Mapper using dataContext to use generated types from db
+
+Typically F# is about writing business logic and not about OR-mapping. Consider using your database types as is. But sometimes you want to 
+map objects to different, for example to interact with other languages like C# domain.
 
 This mapper will ensure that you always sync your types with those you receive from your DB.
 

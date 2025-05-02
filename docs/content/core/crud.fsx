@@ -1,4 +1,5 @@
 (*** hide ***)
+#r "../../../bin/lib/netstandard2.0/FSharp.Data.SqlProvider.Common.dll"
 #r "../../../bin/lib/netstandard2.0/FSharp.Data.SqlProvider.dll"
 (*** hide ***)
 let [<Literal>] resolutionPath = __SOURCE_DIRECTORY__ + @"/../../files/sqlite"

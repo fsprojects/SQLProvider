@@ -3,7 +3,9 @@
 (*** hide ***)
 #I "../../../bin/lib/netstandard2.0"
 (*** hide ***)
-#r @"../../../bin/lib/netstandard2.0/FSharp.Data.SqlProvider.dll"
+#r @"../../../bin/msaccess/lib/net8.0/FSharp.Data.SqlProvider.Common.dll"
+#r @"../../../bin/msaccess/lib/net8.0/FSharp.Data.SqlProvider.MsAccess.dll"
+open FSharp.Data.Sql.MsAccess
 
 //type mdb = SqlDataProvider< "Provider=Microsoft.Jet.OLEDB.4.0; Data Source= C:\\ACCESS\\BT.mdb", Common.DatabaseProviderTypes.MSACCESS, "c:\\ACCESS" , 100, true >
 
@@ -92,6 +94,7 @@ if it is null in the database. You can also use VALUE_OPTION.
 let useOptTypes = FSharp.Data.Sql.Common.NullableColumnType.OPTION
 
 
+#r "FSharp.Data.SqlProvider.Common.dll"
 #r "FSharp.Data.SqlProvider.dll"
 open FSharp.Data.Sql
 

@@ -1,22 +1,25 @@
+#r @"../../../bin/lib/net48/FSharp.Data.SqlProvider.Common.dll"
 #r @"../../../bin/lib/net48/FSharp.Data.SqlProvider.dll"
 #r @"../../../packages/tests/Newtonsoft.Json/lib/net45/Newtonsoft.Json.dll"
 
 open System
-open FSharp.Data.Sql
 open FSharp.Data.Sql.Common
+open FSharp.Data.Sql
 open Newtonsoft.Json
+
+// The test folder databases are ODS 11.1 (require Firebird 2.1)
 
 [<Literal>]
 let port = "3050"
 [<Literal>]
-let connectionString1 = @" Data Source=localhost;port=" + port + ";initial catalog=" + __SOURCE_DIRECTORY__ + @"\northwindfbd1.fdb;user id=SYSDBA;password=masterkey;Dialect=1"
+let connectionString1 = @" Data Source=localhost;port=" + port + ";initial catalog=" + __SOURCE_DIRECTORY__ + @"\northwindfbd1.fdb;user id=SYSDBA;password=root;Dialect=1"
 [<Literal>]
-let connectionString3 = @" Data Source=localhost; port=" + port + ";initial catalog=" + __SOURCE_DIRECTORY__ + @"\northwindfbd3.fdb;user id=SYSDBA;password=masterkey;Dialect=3"
+let connectionString3 = @" Data Source=localhost; port=" + port + ";initial catalog=" + __SOURCE_DIRECTORY__ + @"\northwindfbd3.fdb;user id=SYSDBA;password=root;Dialect=3"
 
 [<Literal>]
 let resolutionPath = __SOURCE_DIRECTORY__ + "/../../../packages/tests/FirebirdSql.Data.FirebirdClient/lib/net452"
 
-type HR = SqlDataProvider<Common.DatabaseProviderTypes.FIREBIRD, connectionString1, ResolutionPath = resolutionPath>
+type HR = FSharp.Data.Sql.FireBird.SqlDataProvider<Common.DatabaseProviderTypes.FIREBIRD, connectionString1>
 let ctx = HR.GetDataContext()
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %O")
 
@@ -24,7 +27,7 @@ let processId = System.Diagnostics.Process.GetCurrentProcess().Id;
 
 //*************** quoted table names ***********
 //just get the single existing record
-type HRCamelCase = SqlDataProvider<Common.DatabaseProviderTypes.FIREBIRD, connectionString3, ResolutionPath = resolutionPath, OdbcQuote = OdbcQuoteCharacter.DOUBLE_QUOTES>
+type HRCamelCase = FSharp.Data.Sql.FireBird.SqlDataProvider<Common.DatabaseProviderTypes.FIREBIRD, connectionString3,  OdbcQuote = OdbcQuoteCharacter.DOUBLE_QUOTES>
 
 let ctxCamelCase = HRCamelCase.GetDataContext()
 let cc = query {

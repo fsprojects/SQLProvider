@@ -3,6 +3,7 @@
 (*** hide ***)
 #I "../../../bin/lib/netstandard2.0"
 (*** hide ***)
+#r "FSharp.Data.SqlProvider.Common.dll"
 #r "FSharp.Data.SqlProvider.dll"
 open FSharp.Data.Sql
 open System

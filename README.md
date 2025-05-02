@@ -70,18 +70,19 @@ your program or the program using your library: http://msdn.microsoft.com/en-us/
 The default maintainer account for projects under "fsprojects" is [@fsprojectsgit](https://github.com/fsprojectsgit) - F# Community Project Incubation Space (repo management)
 
 ## Nuget Packages
+| Database | Nuget Package | TypeProvider Class | NuGet Status |
+| ------- | ----- | -----------| ---------- | 
+| Microsoft SQL Server | [SQLProvider.MsSql](https://www.nuget.org/packages/SQLProvider.MsSql) | FSharp.Data.Sql.MsSql.SqlDataProvider | [![Nuget](https://img.shields.io/nuget/v/SQLProvider.MsSql) ![Nuget](https://img.shields.io/nuget/dt/SQLProvider.MsSql)](https://www.nuget.org/packages/SQLProvider.MsSql) 
+| PostgreSQL | [SQLProvider.PostgreSql](https://www.nuget.org/packages/SQLProvider.PostgreSql) | FSharp.Data.Sql.PostgreSql.SqlDataProvider | [![Nuget](https://img.shields.io/nuget/v/SQLProvider.PostgreSql) ![Nuget](https://img.shields.io/nuget/dt/SQLProvider.PostgreSql)](https://www.nuget.org/packages/SQLProvider.PostgreSql) 
+| MySQL and MariaDB | [SQLProvider.MySqlConnector](https://www.nuget.org/packages/SQLProvider.MySqMySqlConnectorl) |  FSharp.Data.Sql.MySqlConnector.SqlDataProvider | [![Nuget](https://img.shields.io/nuget/v/SQLProvider.MySqlConnector) ![Nuget](https://img.shields.io/nuget/dt/SQLProvider.MySqlConnector)](https://www.nuget.org/packages/SQLProvider.MySqMySqlConnectorl) 
+| MySQL | [SQLProvider.MySql](https://www.nuget.org/packages/SQLProvider.MySql)  | FSharp.Data.Sql.MySql.SqlDataProvider | [![Nuget](https://img.shields.io/nuget/v/SQLProvider.MySql) ![Nuget](https://img.shields.io/nuget/dt/SQLProvider.MySql)](https://www.nuget.org/packages/SQLProvider.MySql) 
+| Oracle | [SQLProvider.Oracle](https://www.nuget.org/packages/SQLProvider.Oracle)  | FSharp.Data.Sql.Oracle.SqlDataProvider | [![Nuget](https://img.shields.io/nuget/v/SQLProvider.Oracle) ![Nuget](https://img.shields.io/nuget/dt/SQLProvider.Oracle)](https://www.nuget.org/packages/SQLProvider.Oracle) 
+| Any ODBC connection | [SQLProvider.Odbc](https://www.nuget.org/packages/SQLProvider.Odbc) | FSharp.Data.Sql.Odbc.SqlDataProvider | [![Nuget](https://img.shields.io/nuget/v/SQLProvider.Odbc) ![Nuget](https://img.shields.io/nuget/dt/SQLProvider.Odbc)](https://www.nuget.org/packages/SQLProvider.Odbc) 
+| SQLite | [SQLProvider.SQLite](https://www.nuget.org/packages/SQLProvider.SQLite) | FSharp.Data.Sql.SQLite.SqlDataProvider | [![Nuget](https://img.shields.io/nuget/v/SQLProvider.SQLite) ![Nuget](https://img.shields.io/nuget/dt/SQLProvider.SQLite)](https://www.nuget.org/packages/SQLProvider.SQLite) 
+| Microsoft Access | [SQLProvider.MsAccess](https://www.nuget.org/packages/SQLProvider.MsAccess)  | FSharp.Data.Sql.MsAccess.SqlDataProvider | [![Nuget](https://img.shields.io/nuget/v/SQLProvider.MsAccess) ![Nuget](https://img.shields.io/nuget/dt/SQLProvider.MsAccess)](https://www.nuget.org/packages/SQLProvider.MsAccess) 
+| FireBird | [SQLProvider.FireBird](https://www.nuget.org/packages/SQLProvider.FireBird) | FSharp.Data.Sql.FireBird.SqlDataProvider | [![Nuget](https://img.shields.io/nuget/v/SQLProvider.FireBird) ![Nuget](https://img.shields.io/nuget/dt/SQLProvider.FireBird)](https://www.nuget.org/packages/SQLProvider.FireBird) 
+| DuckDb | [SQLProvider.DuckDb](https://www.nuget.org/packages/SQLProvider.DuckDb) | FSharp.Data.Sql.DuckDb.SqlDataProvider | [![Nuget](https://img.shields.io/nuget/v/SQLProvider.DuckDb) ![Nuget](https://img.shields.io/nuget/dt/SQLProvider.DuckDb)](https://www.nuget.org/packages/SQLProvider.DuckDb) 
+| General, all via manual config | [SQLProvider](https://www.nuget.org/packages/SQLProvider) | FSharp.Data.Sql.SqlDataProvider | [![Nuget](https://img.shields.io/nuget/v/SQLProvider) ![Nuget](https://img.shields.io/nuget/dt/SQLProvider)](https://www.nuget.org/packages/SQLProvider) 
 
-Depending on the used provider, the namespace of SqlDataProvider type class may vary.
 
-- [SQLProvider](https://www.nuget.org/packages/SQLProvider) - Generic provider supports all databases, but needs some manual setup of reference assemblies
-- [SQLProvider.MsSql](https://www.nuget.org/packages/SQLProvider.MsSql) - Microsoft SQL Server (and SSDT) only, using Microsoft.Data.SqlClient
-- [SQLProvider.PostgreSql](https://www.nuget.org/packages/SQLProvider.PostgreSql) - PostgreSQL only
-- [SQLProvider.MySql](https://www.nuget.org/packages/SQLProvider.MySql) - MySQL only (via the official driver)
-- [SQLProvider.MySqlConnector](https://www.nuget.org/packages/SQLProvider.MySqlConnector) - MySQL and MariaDB only (via MySqlConnector)
-- [SQLProvider.FireBird](https://www.nuget.org/packages/SQLProvider.FireBird) - FireBird only 
-- [SQLProvider.SQLite](https://www.nuget.org/packages/SQLProvider.SQLite) - SQLite only 
-- [SQLProvider.Oracle](https://www.nuget.org/packages/SQLProvider.Oracle) - Oracle only 
-- [SQLProvider.Odbc](https://www.nuget.org/packages/SQLProvider.Odbc) - ODBC connections only 
-- [SQLProvider.DuckDb](https://www.nuget.org/packages/SQLProvider.DuckDb) - DuckDB only 
-- [SQLProvider.MsAccess](https://www.nuget.org/packages/SQLProvider.MsAccess) - Microsoft Access only 
-
+Depending on the used provider, the namespace of the SqlDataProvider type class varies as above.

@@ -1,7 +1,7 @@
 ﻿(*** hide ***)
 #I @"../../files/sqlite"
 (*** hide ***)
-#I "../../../bin/lib/netstandard2.0"
+#I "../../../bin/odbc/lib/net8.0"
 (*** hide ***)
 [<Literal>]
 let connectionString = "Microsoft.ACE.OLEDB.12.0;Data Source=" + __SOURCE_DIRECTORY__ + @"\northwindEF.db;Version=3"
@@ -15,8 +15,10 @@ let connectionString4 = @"Driver={Microsoft Access Driver (*.mdb, *.accdb)};Dbq=
 (*** hide ***)
 [<Literal>]
 let resolutionPath = __SOURCE_DIRECTORY__ + @"..\..\..\files\sqlite"
-#r "FSharp.Data.SqlProvider.dll"
+#r "FSharp.Data.SqlProvider.Common.dll"
+#r "FSharp.Data.SqlProvider.Odbc.dll"
 open FSharp.Data.Sql
+open FSharp.Data.Sql.Odbc
 (**
 
 

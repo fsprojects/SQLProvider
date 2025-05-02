@@ -5,6 +5,7 @@
 (*** hide ***)
 #r "../../../packages/scripts/MySqlConnector/lib/net45/MySqlConnector.dll"
 (*** hide ***)
+#r "FSharp.Data.SqlProvider.Common.dll"
 #r "FSharp.Data.SqlProvider.dll"
 open FSharp.Data.Sql
 

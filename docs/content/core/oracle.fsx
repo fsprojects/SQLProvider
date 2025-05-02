@@ -21,6 +21,7 @@ SQLProvider with Oracle is available via both NuGet-Packages:
 
 *)
 
+#r "FSharp.Data.SqlProvider.Common.dll"
 #r "FSharp.Data.SqlProvider.dll"
 
 open FSharp.Data.Sql
