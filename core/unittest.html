@@ -333,13 +333,13 @@ But you can add extra-columns for easier asserts.</p>
                 <span class="pn">|]</span> <span class="o">:&gt;</span> <span onmouseout="hideTip(event, 'fs66', 131)" onmouseover="showTip(event, 'fs66', 131)" class="rt">obj</span>
 
                 <span class="pn">]</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs67', 132)" onmouseover="showTip(event, 'fs67', 132)" class="m">Map</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs68', 133)" onmouseover="showTip(event, 'fs68', 133)" class="id">ofList</span>
-        <span class="k">let</span> <span onmouseout="hideTip(event, 'fs69', 134)" onmouseover="showTip(event, 'fs69', 134)" class="fn">mockContext</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs4', 135)" onmouseover="showTip(event, 'fs4', 135)" class="id">FSharp</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs5', 136)" onmouseover="showTip(event, 'fs5', 136)" class="id">Data</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs6', 137)" onmouseover="showTip(event, 'fs6', 137)" class="id">Sql</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs9', 138)" onmouseover="showTip(event, 'fs9', 138)" class="id">Common</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs70', 139)" onmouseover="showTip(event, 'fs70', 139)" class="m">OfflineTools</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs71', 140)" onmouseover="showTip(event, 'fs71', 140)" class="id">CreateMockSqlDataContext</span><span class="pn">&lt;</span><span onmouseout="hideTip(event, 'fs7', 141)" onmouseover="showTip(event, 'fs7', 141)" class="rt">sql</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs72', 142)" onmouseover="showTip(event, 'fs72', 142)" class="id">dataContext</span><span class="pn">&gt;</span> <span onmouseout="hideTip(event, 'fs65', 143)" onmouseover="showTip(event, 'fs65', 143)" class="fn">sampleDataMap</span>
+        <span class="k">let</span> <span onmouseout="hideTip(event, 'fs69', 134)" onmouseover="showTip(event, 'fs69', 134)" class="fn">mockContext</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs4', 135)" onmouseover="showTip(event, 'fs4', 135)" class="id">FSharp</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs5', 136)" onmouseover="showTip(event, 'fs5', 136)" class="id">Data</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs6', 137)" onmouseover="showTip(event, 'fs6', 137)" class="id">Sql</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs9', 138)" onmouseover="showTip(event, 'fs9', 138)" class="id">Common</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs70', 139)" onmouseover="showTip(event, 'fs70', 139)" class="m">OfflineTools</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs71', 140)" onmouseover="showTip(event, 'fs71', 140)" class="id">CreateMockSqlDataContext</span><span class="pn">&lt;</span><span onmouseout="hideTip(event, 'fs7', 141)" onmouseover="showTip(event, 'fs7', 141)" class="rt">sql</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs32', 142)" onmouseover="showTip(event, 'fs32', 142)" class="id">dataContext</span><span class="pn">&gt;</span> <span onmouseout="hideTip(event, 'fs65', 143)" onmouseover="showTip(event, 'fs65', 143)" class="fn">sampleDataMap</span>
 
         <span class="k">let!</span> <span onmouseout="hideTip(event, 'fs62', 144)" onmouseover="showTip(event, 'fs62', 144)" class="fn">res</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs30', 145)" onmouseover="showTip(event, 'fs30', 145)" class="fn">someProductionFunction</span> <span onmouseout="hideTip(event, 'fs69', 146)" onmouseover="showTip(event, 'fs69', 146)" class="fn">mockContext</span> <span onmouseout="hideTip(event, 'fs29', 147)" onmouseover="showTip(event, 'fs29', 147)" class="rt">OrderDateFilter</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs39', 148)" onmouseover="showTip(event, 'fs39', 148)" class="id">OrderDate</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs35', 149)" onmouseover="showTip(event, 'fs35', 149)" class="fn">DateTime</span><span class="pn">(</span><span class="n">2024</span><span class="pn">,</span><span class="n">02</span><span class="pn">,</span><span class="n">04</span><span class="pn">)</span><span class="pn">)</span>
         <span class="c">//val res: (string * decimal) list =</span>
         <span class="c">//  [(&quot;75000&quot;, 22M); (&quot;E143AB&quot;, 20M); (&quot;E143AB&quot;, 50M)]</span>
 
-        <span onmouseout="hideTip(event, 'fs16', 150)" onmouseover="showTip(event, 'fs16', 150)" class="fn">assert_equal</span> <span class="n">3</span> <span onmouseout="hideTip(event, 'fs62', 151)" onmouseover="showTip(event, 'fs62', 151)" class="fn">res</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs73', 152)" onmouseover="showTip(event, 'fs73', 152)" class="id">Length</span>
+        <span onmouseout="hideTip(event, 'fs16', 150)" onmouseover="showTip(event, 'fs16', 150)" class="fn">assert_equal</span> <span class="n">3</span> <span onmouseout="hideTip(event, 'fs62', 151)" onmouseover="showTip(event, 'fs62', 151)" class="fn">res</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs72', 152)" onmouseover="showTip(event, 'fs72', 152)" class="id">Length</span>
         <span onmouseout="hideTip(event, 'fs19', 153)" onmouseover="showTip(event, 'fs19', 153)" class="fn">assert_contains</span> <span class="pn">(</span><span class="s">&quot;75000&quot;</span><span class="pn">,</span> <span class="n">22M</span><span class="pn">)</span> <span onmouseout="hideTip(event, 'fs62', 154)" onmouseover="showTip(event, 'fs62', 154)" class="fn">res</span>
         <span onmouseout="hideTip(event, 'fs19', 155)" onmouseover="showTip(event, 'fs19', 155)" class="fn">assert_contains</span> <span class="pn">(</span><span class="s">&quot;E143AB&quot;</span><span class="pn">,</span> <span class="n">20M</span><span class="pn">)</span> <span onmouseout="hideTip(event, 'fs62', 156)" onmouseover="showTip(event, 'fs62', 156)" class="fn">res</span>
         <span onmouseout="hideTip(event, 'fs19', 157)" onmouseover="showTip(event, 'fs19', 157)" class="fn">assert_contains</span> <span class="pn">(</span><span class="s">&quot;E143AB&quot;</span><span class="pn">,</span> <span class="n">50M</span><span class="pn">)</span> <span onmouseout="hideTip(event, 'fs62', 158)" onmouseover="showTip(event, 'fs62', 158)" class="fn">res</span>
@@ -457,7 +457,18 @@ from Microsoft.FSharp.Control<br /><br />--------------------<br />type Event&lt
   | Either</div>
 <div class="fsdocs-tip" id="fs30">val someProductionFunction: ctx: SqlDataProvider&lt;...&gt;.dataContext -&gt; orderType: OrderDateFilter -&gt; untilDate: DateTime -&gt; Threading.Tasks.Task&lt;(string * decimal) array&gt;</div>
 <div class="fsdocs-tip" id="fs31">val ctx: SqlDataProvider&lt;...&gt;.dataContext</div>
-<div class="fsdocs-tip" id="fs32"></div>
+<div class="fsdocs-tip" id="fs32">type dataContext =
+  member AsReadOnly: unit -&gt; readDataContext
+  member ClearUpdates: unit -&gt; List&lt;SqlEntity&gt;
+  member CreateConnection: unit -&gt; IDbConnection
+  member GetUpdates: unit -&gt; List&lt;SqlEntity&gt;
+  member SaveContextSchema: unit -&gt; SaveContextResponse
+  member SubmitUpdates: unit -&gt; Unit
+  member SubmitUpdatesAsync: unit -&gt; Task
+  member ``Design Time Commands`` : DesignTimeCommands
+  member Main: mainSchema
+  member Pragma: Pragma
+  ...<br /><em>Use dataContext to explore database schema and querying data. It will carry database-connection and possible modifications within transaction, that you can commit via SubmitUpdates.</em></div>
 <div class="fsdocs-tip" id="fs33">val orderType: OrderDateFilter</div>
 <div class="fsdocs-tip" id="fs34">val untilDate: DateTime</div>
 <div class="fsdocs-tip" id="fs35">Multiple items<br />[&lt;Struct&gt;]
@@ -549,19 +560,7 @@ from FSharp.Data.Sql.Common</div>
  NOTE: Case-sensitivity. Tables and columns are DB-names, not Linq-names.
  Limitation of mockContext: You cannot Create new entities to the mock context.
 &lt;/summary&gt;</em></div>
-<div class="fsdocs-tip" id="fs72">type dataContext =
-  member AsReadOnly: unit -&gt; readDataContext
-  member ClearUpdates: unit -&gt; List&lt;SqlEntity&gt;
-  member CreateConnection: unit -&gt; IDbConnection
-  member GetUpdates: unit -&gt; List&lt;SqlEntity&gt;
-  member SaveContextSchema: unit -&gt; SaveContextResponse
-  member SubmitUpdates: unit -&gt; Unit
-  member SubmitUpdatesAsync: unit -&gt; Task
-  member ``Design Time Commands`` : DesignTimeCommands
-  member Main: mainSchema
-  member Pragma: Pragma
-  ...<br /><em>Use dataContext to explore database schema and querying data. It will carry database-connection and possible modifications within transaction, that you can commit via SubmitUpdates.</em></div>
-<div class="fsdocs-tip" id="fs73">property Array.Length: int with get<br /><em>&lt;summary&gt;Gets the total number of elements in all the dimensions of the &lt;see cref=&quot;T:System.Array&quot; /&gt;.&lt;/summary&gt;<br />&lt;exception cref=&quot;T:System.OverflowException&quot;&gt;The array is multidimensional and contains more than &lt;see cref=&quot;F:System.Int32.MaxValue&quot;&gt;Int32.MaxValue&lt;/see&gt; elements.&lt;/exception&gt;<br />&lt;returns&gt;The total number of elements in all the dimensions of the &lt;see cref=&quot;T:System.Array&quot; /&gt;; zero if there are no elements in the array.&lt;/returns&gt;</em></div>
+<div class="fsdocs-tip" id="fs72">property Array.Length: int with get<br /><em>&lt;summary&gt;Gets the total number of elements in all the dimensions of the &lt;see cref=&quot;T:System.Array&quot; /&gt;.&lt;/summary&gt;<br />&lt;exception cref=&quot;T:System.OverflowException&quot;&gt;The array is multidimensional and contains more than &lt;see cref=&quot;F:System.Int32.MaxValue&quot;&gt;Int32.MaxValue&lt;/see&gt; elements.&lt;/exception&gt;<br />&lt;returns&gt;The total number of elements in all the dimensions of the &lt;see cref=&quot;T:System.Array&quot; /&gt;; zero if there are no elements in the array.&lt;/returns&gt;</em></div>
 
     </div>
 </main>
