@@ -70,15 +70,20 @@ module MySql =
     //let paramObjectCtor = lazy parameterType.Value.GetConstructor([|typeof<string>;typeof<obj>|])
 
     let getSchema (name:string) (args:string[]) (conn:IDbConnection) =
-#if !NETSTANDARD
+#if REFLECTIONLOAD && !NETSTANDARD
         getSchemaMethod.Value.Invoke(conn,[|name; args|]) :?> DataTable
 #else
         // Initial version of MySQL .Net-Standard doesn't suppot GetSchema()
-        let cont = connectionType.Value
         try
+#if REFLECTIONLOAD
+            let cont = connectionType.Value
             cont.GetMethod("GetSchema",[|typeof<string>; typeof<string[]>|]).Invoke(conn,[|name; args|]) :?> DataTable
+#else
+            (conn :?> MySqlConnection).GetSchema(name, args)
+#endif
         with
         | :?  System.Reflection.TargetInvocationException as re when ((not (isNull re.InnerException)) && re.InnerException :? System.NotSupportedException) ->
+            let cont = connectionType.Value
             let schemacoll = cont.GetMethod("GetSchemaCollection",[|typeof<string>; typeof<string[]>|]).Invoke(conn,[|name; args|])
             let collType = schemacoll.GetType()
             let name = collType.GetProperty("Name").GetValue(schemacoll,null) :?> string
@@ -160,12 +165,18 @@ module MySql =
         let dt = getSchema "DataTypes" [||] con
 
         let getDbType(providerType:int) =
+#if REFLECTIONLOAD
             let parameterType = parameterType.Value
             let p = Activator.CreateInstance(parameterType,[||]) :?> IDbDataParameter
             let oracleDbTypeSetter = parameterType.GetProperty("MySqlDbType").GetSetMethod()
             let dbTypeGetter = parameterType.GetProperty("DbType").GetGetMethod()
             oracleDbTypeSetter.Invoke(p, [|providerType|]) |> ignore
             dbTypeGetter.Invoke(p, [||]) :?> DbType
+#else
+            let p = new MySqlParameter()
+            p.MySqlDbType <- Enum.ToObject(typeof<MySqlDbType>, providerType) :?> MySqlDbType
+            p.DbType
+#endif
 
         let getClrType (input:string) = Utilities.getType(input).ToString()
 
@@ -178,7 +189,11 @@ module MySql =
                         if (not(isNull unsigned)) && unsigned.ToString() <> "" && (unsigned:?>bool) then (string r.["TypeName"]).Replace(" ", "") + " UNSIGNED"
                         else string r.["TypeName"]
                     let providerType = unbox<int> r.["ProviderDbType"]
-                    let dbType = getDbType providerType
+                    let dbType =
+                        if providerType = -1 then // unsupported, like Boolean.
+                            if clrType = "BOOL" then getDbType 2 //map to Int16
+                            else (enum<DbType>) (-1)
+                        else getDbType providerType
                     yield { ProviderTypeName = ValueSome oleDbType; ClrType = clrType; DbType = dbType; ProviderType = ValueSome providerType; }
                 yield { ProviderTypeName = ValueSome "cursor"; ClrType = (typeof<SqlEntity[]>).ToString(); DbType = DbType.Object; ProviderType = ValueNone; }
             ]

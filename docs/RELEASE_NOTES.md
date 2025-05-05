@@ -1,3 +1,6 @@
+### 1.5.5 - 05.05.2025
+* MySql boolean mapping fix.
+
 ### 1.5.4 - 02.05.2025
 * SQLProvider.Oracle, SQLProvider.MySql and SQLProvider.MySqlConnector loading without reflection.
 

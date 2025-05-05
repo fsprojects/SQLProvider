@@ -71,8 +71,12 @@ module internal Oracle =
 
     let getSchemaMethod = lazy (connectionType.Value.GetMethod("GetSchema",[|typeof<string>; typeof<string[]>|]))
 
-    let getSchema name (args:string[]) conn =
+    let getSchema name (args:string[]) (conn:IDbConnection) =
+#if REFLECTIONLOAD
         getSchemaMethod.Value.Invoke(conn,[|name; args|]) :?> DataTable
+#else
+        (conn :?> Oracle.ManagedDataAccess.Client.OracleConnection).GetSchema(name, args)
+#endif
 
     let mutable typeMappings = []
     let mutable findClrType : (string -> TypeMapping option)  = fun _ -> failwith "!"
