@@ -1,3 +1,6 @@
+### 1.5.6 - 06.05.2025
+* Mock-database case sensitivity backup search
+
 ### 1.5.5 - 05.05.2025
 * MySql boolean mapping fix.
 

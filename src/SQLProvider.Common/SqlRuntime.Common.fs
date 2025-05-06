@@ -1050,15 +1050,26 @@ module public OfflineTools =
                     member this.CommandTimeout: Option<int> = None
                     member this.CreateConnection(): Data.IDbConnection = raise (System.NotImplementedException())
                     member this.CreateEntities(arg1: string): IQueryable<SqlEntity> =
-                        match dummydata.TryGetValue arg1 with
+                        match dummydata.TryGetValue arg1 with // Try match exact case with case-sensitive backup
                         | true, tableData -> createMockEntitiesDc this arg1 tableData
-                        | false, _ -> failwith ("Add table to dummydata: " + arg1) 
+                        | false, _ ->
+                            match dummydata.TryGetValue(arg1.ToLower()) with
+                            | true, tableData -> createMockEntitiesDc this arg1 tableData
+                            | false, _ ->
+                                match dummydata |> Map.toSeq |> Seq.tryFind(fun (k,v) -> k.ToUpper() = arg1.ToUpper()) with
+                                | Some (k, tableData) -> createMockEntitiesDc this arg1 tableData
+                                | None -> failwith ("Add table to dummydata: " + arg1) 
                     member this.CreateEntity(arg1: string): SqlEntity =
                         match dummydata.TryGetValue arg1 with
                         | true, tableData ->
                             let _, cols = makeColumns tableData
                             new SqlEntity(this, arg1, cols, cols.Count)
-                        | false, _ -> new SqlEntity(this, arg1, Seq.empty |> ColumnLookup, 0)
+                        | false, _ ->
+                            match dummydata.TryGetValue (arg1.ToLower()) with
+                            | true, tableData ->
+                                let _, cols = makeColumns tableData
+                                new SqlEntity(this, arg1, cols, cols.Count)
+                            | false, _ -> new SqlEntity(this, arg1, Seq.empty |> ColumnLookup, 0)
                     member this.CreateRelated(inst: SqlEntity, arg2: string, pe: string, pk: string, fe: string, fk: string, direction: RelationshipDirection): IQueryable<SqlEntity> =
                         if direction = RelationshipDirection.Children then
                             match dummydata.TryGetValue fe with
@@ -1067,8 +1078,27 @@ module public OfflineTools =
                                 match (inst.ColumnValues |> Map.ofSeq).TryGetValue pk with
                                 | true, relevant ->
                                     related.Where(fun e -> e.ColumnValues |> Seq.exists(fun (k, v) -> k = fk && v = relevant))
-                                | false, _ -> failwith ("Key not found: " + arg2 + " " + pk)
-                            | false, _ -> failwith ("Add table to dummydata: " + fe)
+                                | false, _ ->
+                                    match (inst.ColumnValues |> Map.ofSeq).TryGetValue (pk.ToLower()) with
+                                    | true, relevant ->
+                                        related.Where(fun e -> e.ColumnValues |> Seq.exists(fun (k, v) -> k = fk && v = relevant))
+                                    | false, _ ->
+                                        failwith ("Key not found: " + arg2 + " " + pk)
+                            | false, _ ->
+                                match dummydata.TryGetValue (fe.ToLower()) with
+                                | true, tableData ->
+                                    let related = createMockEntitiesDc this fe tableData
+                                    match (inst.ColumnValues |> Map.ofSeq).TryGetValue pk with
+                                    | true, relevant ->
+                                        related.Where(fun e -> e.ColumnValues |> Seq.exists(fun (k, v) -> k = fk && v = relevant))
+                                    | false, _ ->
+                                        match (inst.ColumnValues |> Map.ofSeq).TryGetValue (pk.ToLower()) with
+                                        | true, relevant ->
+                                            related.Where(fun e -> e.ColumnValues |> Seq.exists(fun (k, v) -> k = fk && v = relevant))
+                                        | false, _ ->
+                                            failwith ("Key not found: " + arg2 + " " + pk)
+                                | false, _ ->
+                                    failwith ("Add table to dummydata: " + fe)
                         else
                             match dummydata.TryGetValue pe with
                             | true, tableData ->
@@ -1076,8 +1106,27 @@ module public OfflineTools =
                                     match (inst.ColumnValues |> Map.ofSeq).TryGetValue fk with
                                     | true, relevant -> 
                                         related.Where(fun e -> e.ColumnValues |> Seq.exists(fun (k, v) -> k = pk && v = relevant))
-                                    | false, _ -> failwith ("Key not found: " + arg2 + " " + fk)
-                            | false, _ -> failwith ("Add table to dummydata: " + pe)
+                                    | false, _ ->
+                                        match (inst.ColumnValues |> Map.ofSeq).TryGetValue (fk.ToLower()) with
+                                        | true, relevant -> 
+                                            related.Where(fun e -> e.ColumnValues |> Seq.exists(fun (k, v) -> k = pk && v = relevant))
+                                        | false, _ ->
+                                            failwith ("Key not found: " + arg2 + " " + fk)
+                            | false, _ ->
+                                match dummydata.TryGetValue (pe.ToLower()) with
+                                | true, tableData ->
+                                        let related = createMockEntitiesDc this pe tableData
+                                        match (inst.ColumnValues |> Map.ofSeq).TryGetValue fk with
+                                        | true, relevant -> 
+                                            related.Where(fun e -> e.ColumnValues |> Seq.exists(fun (k, v) -> k = pk && v = relevant))
+                                        | false, _ ->
+                                            match (inst.ColumnValues |> Map.ofSeq).TryGetValue (fk.ToLower()) with
+                                            | true, relevant -> 
+                                                related.Where(fun e -> e.ColumnValues |> Seq.exists(fun (k, v) -> k = pk && v = relevant))
+                                            | false, _ ->
+                                                failwith ("Key not found: " + arg2 + " " + fk)
+                                | false, _ ->
+                                    failwith ("Add table to dummydata: " + pe)
                     member this.GetIndividual(arg1: string, arg2: obj): SqlEntity = raise (System.NotImplementedException())
                     member this.GetPendingEntities(): SqlEntity list = (CommonTasks.sortEntities pendingChanges) |> Seq.toList
                     member this.GetPrimaryKeyDefinition(arg1: string): string = ""
