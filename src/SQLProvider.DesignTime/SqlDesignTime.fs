@@ -1255,7 +1255,7 @@ type SqlRuntimeInfo (config : TypeProviderConfig) =
     member __.RuntimeAssembly = runtimeAssembly
 
 module DesignTimeCache =
-    let cache = System.Collections.Concurrent.ConcurrentDictionary<DesignCacheKey,Lazy<ProvidedTypeDefinition>>()
+    let cache = System.Collections.Concurrent.ConcurrentDictionary<DesignCacheKey,Lazy<ProvidedTypeDefinition> * DateTime>()
 
 /// The idea of this is trying to avoid case where compile-time has loaded non-runtime assembly. (Happens in .NET 8.0, not in .NET Framework.)
 /// So let's load compile-time (and design-time) manually the required runtime assembly.
@@ -1490,12 +1490,24 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                 // This is not a perfect cache-invalidation solution, it can remove a valid item from
                 // cache after the time-out, causing one extra hit, but this is only a design-time cache
                 // and it will work well enough to deal with Visual Studio's multi-threading problems
-                async {
-                    do! Async.Sleep 60000
-                    DesignTimeCache.cache.TryRemove args |> ignore
-                } |> Async.Start
+                let expiration = TimeSpan.FromMinutes 3
+                let rec invalidationFunction key = 
+                    async {
+                        do! Async.Sleep (int expiration.TotalMilliseconds)
+
+                        match DesignTimeCache.cache.TryGetValue key with
+                        | true, (_, timestamp) ->
+                            if DateTime.UtcNow - timestamp >= expiration then
+                                DesignTimeCache.cache.TryRemove key |> ignore
+                            else
+                                do! invalidationFunction key
+                        | _ -> ()
+
+                    }
+                invalidationFunction args |> Async.Start
                 rootType
-        try DesignTimeCache.cache.GetOrAdd(arguments, addCache).Value
+            , DateTime.UtcNow
+        try (DesignTimeCache.cache.GetOrAdd(arguments, addCache) |> fst).Value
         with
         | e ->
             let _ = DesignTimeCache.cache.TryRemove(arguments)
