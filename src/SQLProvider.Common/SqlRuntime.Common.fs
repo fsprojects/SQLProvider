@@ -341,6 +341,8 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup, activeColu
             aliasCache.Value.Add(alias,newEntity)
             newEntity
 
+    /// Maps database entity class to the type provided in generic attribute.
+    /// You can define more detailed mapping via MappedColumnAttribute or propertyTypeMapping 
     member x.MapTo<'a>(?propertyTypeMapping : (string * obj) -> obj) =
         let typ = typeof<'a>
         let propertyTypeMapping = defaultArg propertyTypeMapping snd
@@ -359,7 +361,11 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup, activeColu
                 [|
                     for prop in fields do
                         match dataMap.TryGetValue(clean prop) with
-                        | true, data -> yield propertyTypeMapping (prop.Name,data)
+                        | true, null when (prop.PropertyType.Name.StartsWith "FSharpValueOption" || prop.PropertyType.Name.StartsWith "FSharpOption") ->
+                            let cases = FSharpType.GetUnionCases prop.PropertyType
+                            let typedNone = FSharpValue.MakeUnion(cases[0], null)
+                            yield propertyTypeMapping (prop.Name, typedNone)
+                        | true, dataVal -> yield propertyTypeMapping (prop.Name, (Utilities.convertTypes dataVal prop.PropertyType))
                         | false, _ -> ()
                 |]
             unbox<'a> (ctor(values))
@@ -367,7 +373,11 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup, activeColu
             let instance = Activator.CreateInstance<'a>()
             for prop in typ.GetProperties() do
                 match dataMap.TryGetValue(clean prop) with
-                | true, data -> prop.GetSetMethod().Invoke(instance, [|propertyTypeMapping (prop.Name,data)|]) |> ignore
+                | true, null when (prop.PropertyType.Name.StartsWith "FSharpValueOption" || prop.PropertyType.Name.StartsWith "FSharpOption") ->
+                    let cases = FSharpType.GetUnionCases prop.PropertyType
+                    let typedNone = FSharpValue.MakeUnion(cases[0], null)
+                    prop.GetSetMethod().Invoke(instance, [|propertyTypeMapping (prop.Name, typedNone)|]) |> ignore
+                | true, dataVal -> prop.GetSetMethod().Invoke(instance, [|propertyTypeMapping (prop.Name, (Utilities.convertTypes dataVal prop.PropertyType))|]) |> ignore
                 | false, _ -> ()
             instance
     

@@ -80,7 +80,7 @@ module MSSqlServer =
         findClrType <- clrMappings.TryFind
         findDbType <- dbMappings.TryFind
 
-    let checkIfMsSqlAssemblyIsDesingOnly (assembly:System.Reflection.Assembly)=
+    let checkIfMsSqlAssemblyIsDesignOnly (assembly:System.Reflection.Assembly)=
         try
             let metaData =
                 assembly.GetCustomAttributes(typeof<System.Reflection.AssemblyMetadataAttribute>, false)

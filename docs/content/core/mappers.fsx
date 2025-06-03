@@ -20,12 +20,10 @@ type sql  = SqlDataProvider<
 
 (**
 
-## Adding a Mapper using dataContext to use generated types from db
+## Adding a Mapper using dataContext to use generated types from the DB
 
-Typically F# is about writing business logic and not about OR-mapping. Consider using your database types as is. But sometimes you want to 
-map objects to different, for example to interact with other languages like C# domain.
-
-This mapper will ensure that you always sync your types with those you receive from your DB.
+Typically, F# is about writing business logic and not about OR-mapping. Consider using your database types as is. And select only the columns you need, not full entities. But sometimes you want to
+map objects to different ones, for example to interact with other languages like C# domain.
 
 First, add a Domain Model
 
@@ -41,7 +39,7 @@ type Employee = {
 }
 
 (**
-Then you can create the mapper using dataContext to use generated types from db
+Then you can create the mapper using dataContext to use the generated types from the DB
 *)
 
 let mapEmployee (dbRecord:sql.dataContext.``main.EmployeesEntity``) : Employee =
@@ -51,7 +49,25 @@ let mapEmployee (dbRecord:sql.dataContext.``main.EmployeesEntity``) : Employee =
       HireDate = dbRecord.HireDate }
 
 (**
-SqlProvider also has a `.MapTo<'T>` convenience  method:
+
+### TemplateAsRecord
+
+If you want to copy and paste the current SQLProvider objects as separate classes, you can use `TemplateAsRecord` property of your database table:
+
+*)
+
+ctx.Main.Employees.TemplateAsRecord
+// intellisense will generate you code that you can copy and paste as template to create your own type:
+// ``type MainOrders = { CustomerId : String voption; EmployeeId : Int64 voption; Freight : Decimal voption; OrderDate : DateTime voption; OrderId : Int64; RequiredDate : DateTime voption; ShipAddress : String voption; ShipCity : String voption; ShipCountry : String voption; ShipName : String voption; ShipPostalCode : String voption; ShipRegion : String voption; ShippedDate : DateTime voption }``
+
+(**
+
+This could be useful if you e.g. want to use SQLProvider objects in some reflection based code-generator (because the normal objects are erased).
+
+
+### MapTo
+
+SqlProvider also has a `.MapTo<'T>` convenience method:
 *)
 
 
@@ -71,6 +87,9 @@ let qry = query { for row in employees do
 
 (**
 The target type can be a record (as in the example) or a class type with properties named as the source columns and with a parameterless setter.
+
+Target will support mapping database nullable fields to Option and ValueOption types automatically.
+
 The target field name can also be different than the column name; in this case, it must be decorated with the MappedColumnAttribute custom attribute:
 *)
 
@@ -88,7 +107,10 @@ let qry2 =
 
 
 (**
-Or alternatively, the ColumnValues from  SQLEntity can be used to create a map, with the
+
+### ColumnValues
+
+Or alternatively, the ColumnValues from SQLEntity can be used to create a map, with the
 column as a key:
 *)
 
@@ -99,4 +121,3 @@ let rows =
 
 let employees2map = rows |> Seq.map(fun i -> i.ColumnValues |> Map.ofSeq)
 let firstNames = employees2map |> Seq.map (fun x -> x.["FirstName"])
-

@@ -78,6 +78,8 @@ module Utilities =
         Type.GetType typename
 
     let rec internal convertTypes (itm:obj) (returnType:Type) =
+        if not(isNull itm) && Type.(=) (itm.GetType(), returnType) then itm
+        else
         if (returnType.Name.StartsWith("Option") || returnType.Name.StartsWith("FSharpOption")) && returnType.GenericTypeArguments.Length = 1 then
             if isNull itm then None |> box
             else
@@ -99,7 +101,9 @@ module Utilities =
             | :? Char as t -> Option.Some t |> box
             | :? DateTimeOffset as t -> Option.Some t |> box
             | :? TimeSpan as t -> Option.Some t |> box
-            | t -> Option.Some t |> box
+            | t ->
+                if t.GetType().Name.StartsWith("FSharpOption") then t |> box
+                else Option.Some t |> box
         elif (returnType.Name.StartsWith("ValueOption") || returnType.Name.StartsWith("FSharpValueOption")) && returnType.GenericTypeArguments.Length = 1 then
             if isNull itm then ValueNone |> box
             else
@@ -121,7 +125,10 @@ module Utilities =
             | :? Char as t -> ValueOption.Some t |> box
             | :? DateTimeOffset as t -> ValueOption.Some t |> box
             | :? TimeSpan as t -> ValueOption.Some t |> box
-            | t -> ValueOption.Some t |> box
+            | t ->
+                if t.GetType().Name.StartsWith("FSharpValueOption") then t|> box
+                else ValueOption.Some t |> box
+
         elif returnType.Name.StartsWith("Nullable") && returnType.GenericTypeArguments.Length = 1 then
             if isNull itm then null |> box
             else convertTypes itm (returnType.GenericTypeArguments.[0])

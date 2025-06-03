@@ -930,8 +930,25 @@ module DesignTimeUtils =
                                   e
                               @@>)
 
-
-                        // This genertes a template.
+                        let templateContainer = ProvidedTypeDefinition("TemplateAsRecord", Some typeof<obj>, isErased=true)
+                        let templateCont = ProvidedProperty("TemplateAsRecord", templateContainer, getterCode = empty)
+                        templateCont.AddXmlDocDelayed(fun () -> "As this is erasing TypeProvider, you can use the generated types. However, if you need manual access to corresponding type, e.g. to use it in reflection, this will generate you a template of the runtime type. Copy and paste this to use however you will (e.g. with MapTo).")
+                        templateContainer.AddMemberDelayed(fun () ->
+                            let optType =
+                                match useOptionTypes with
+                                | NullableColumnType.OPTION -> " option"
+                                | NullableColumnType.VALUE_OPTION -> " voption"
+                                | NullableColumnType.NO_OPTION
+                                | _ -> ""
+                            let template=
+                                let items = 
+                                    columns
+                                    |> Seq.toArray
+                                    |> Array.map(fun kvp -> (SchemaProjections.nicePascalName kvp.Value.Name) + " : " + (Utilities.getType kvp.Value.TypeMapping.ClrType).Name + (if kvp.Value.IsNullable then optType else ""))
+                                "type " + (SchemaProjections.nicePascalName key) + " = { "  + (String.concat "; " items) + " }"
+                            ProvidedProperty(template, typeof<unit>, getterCode = empty) :> MemberInfo
+                        )
+                        serviceType.AddMember templateContainer
 
                         seq {
                             if not (ct.DeclaredProperties |> Seq.exists(fun m -> m.Name = "Individuals")) then
@@ -956,6 +973,7 @@ module DesignTimeUtils =
                                backwardCompatibilityOnly.Length <> minimalParameters.Length then
                                    create4old.AddXmlDoc("This will be obsolete soon. Migrate away from this!")
                                    yield create4old :> MemberInfo
+                            yield templateCont :> MemberInfo
 
                          } |> Seq.toList
                     )
@@ -1071,6 +1089,76 @@ module DesignTimeUtils =
             | Some con -> if (dbVendor <> DatabaseProviderTypes.MSACCESS) && con.State <> ConnectionState.Closed then con.Close()
             | None -> ()
 
+            let funcType =
+                typedefof<FSharpFunc<_, _>>.MakeGenericType(serviceType, typedefof<System.Threading.Tasks.Task>)
+            let wtr = ProvidedMethod("WithTransaction", [ ProvidedParameter("func", funcType)], typedefof<System.Threading.Tasks.Task>, invokeCode = fun args ->
+                let a0 = args.[0]
+                let func = args.[1]
+                let isMono = not(isNull (Type.GetType "Mono.Runtime"))
+                <@@
+                    task {
+                        use scope =
+                            match isMono with
+                            | true -> Unchecked.defaultof<Transactions.TransactionScope> // new Transactions.TransactionScope()
+                            | false ->
+                                // Note1: On Mono, 4.6.1 or newer is requred for compiling TransactionScopeAsyncFlowOption.
+                                // Note2: We should here also set the transaction option isolation level.
+                                new Transactions.TransactionScope(System.Transactions.TransactionScopeAsyncFlowOption.Enabled)
+                    //            new Transactions.TransactionScope(
+                    //                Transactions.TransactionScopeOption.Required,
+                    //                new Transactions.TransactionOptions(
+                    //                    IsolationLevel = Transactions.IsolationLevel.RepeatableRead),
+                    //                System.Transactions.TransactionScopeAsyncFlowOption.Enabled)
+
+                        let! res = ((%%func : obj) :?> FSharpFunc<ISqlDataContext,Task<_>>) ((%%a0 : obj) :?> ISqlDataContext)
+
+                        if not (isMono || isNull scope) then
+                            try
+                                scope.Complete()
+                                scope.Dispose()
+                            with
+                            | :? ObjectDisposedException -> ()
+                        return res
+                    }
+                    @@> )
+            wtr.AddXmlDoc ("Write operations can be wrapped into a single transaction with this. Try to avoid transactions taking possibly seconds.")
+            rootType.AddMember wtr
+
+            let funcTypeA =
+                typedefof<FSharpFunc<_, _>>.MakeGenericType(serviceType, typedefof<Async>)
+            let wtra = ProvidedMethod("WithTransactionAsync", [ ProvidedParameter("func", funcTypeA)], typedefof<Async>, invokeCode = fun args ->
+                let a0 = args.[0]
+                let func = args.[1]
+                <@@
+                    task {
+                        let isMono = not(isNull (Type.GetType "Mono.Runtime"))
+                        use scope =
+                            match isMono with
+                            | true -> Unchecked.defaultof<Transactions.TransactionScope> // new Transactions.TransactionScope()
+                            | false ->
+                                // Note1: On Mono, 4.6.1 or newer is requred for compiling TransactionScopeAsyncFlowOption.
+                                // Note2: We should here also set the transaction option isolation level.
+                                new Transactions.TransactionScope(System.Transactions.TransactionScopeAsyncFlowOption.Enabled)
+                    //            new Transactions.TransactionScope(
+                    //                Transactions.TransactionScopeOption.Required,
+                    //                new Transactions.TransactionOptions(
+                    //                    IsolationLevel = Transactions.IsolationLevel.RepeatableRead),
+                    //                System.Transactions.TransactionScopeAsyncFlowOption.Enabled)
+
+                        let! res = ((%%func : obj) :?> FSharpFunc<ISqlDataContext,Async<_>>) ((%%a0 : obj) :?> ISqlDataContext)
+
+                        if not (isMono || isNull scope) then
+                            try
+                                scope.Complete()
+                                scope.Dispose()
+                            with
+                            | :? ObjectDisposedException -> ()
+                        return res
+                    }
+                    @@> )
+            wtra.AddXmlDoc ("Write operations can be wrapped into a single transaction with this. Try to avoid transactions taking possibly seconds.")
+            rootType.AddMember wtra
+
             ()
 
         let createConstructors (config:TypeProviderConfig) (rootType:ProvidedTypeDefinition, serviceType, readServiceType, args) = 
@@ -1091,7 +1179,7 @@ module DesignTimeUtils =
 
             let customResPath =
               "resolutionPath",
-              "The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types.  Types used in desing-time: If no better clue, prefer .NET Standard 2.0 versions. Semicolon to separate multiple.",
+              "The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types.  Types used in design-time: If no better clue, prefer .NET Standard 2.0 versions. Semicolon to separate multiple.",
               typeof<string>
 
             let customTransOpts =
@@ -1447,7 +1535,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                     <param name='DatabaseVendor'> The target database vendor</param>
                     <param name='IndividualsAmount'>The amount of sample entities to project into the type system for each SQL entity type. Default 50. Note GDPR/PII regulations if using individuals with ContextSchemaPath.</param>
                     <param name='UseOptionTypes'>If set, F# option types will be used in place of nullable database columns.  If not, you will always receive the default value of the column's type even if it is null in the database.</param>
-                    <param name='ResolutionPath'>The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types. Types used in desing-time: If no better clue, prefer .NET Standard 2.0 versions. Semicolon to separate multiple.</param>
+                    <param name='ResolutionPath'>The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types. Types used in design-time: If no better clue, prefer .NET Standard 2.0 versions. Semicolon to separate multiple.</param>
                     <param name='Owner'>Oracle: The owner of the schema for this provider to resolve. PostgreSQL: A list of schemas to resolve, separated by spaces, newlines, commas, or semicolons.</param>
                     <param name='CaseSensitivityChange'>Should we do ToUpper or ToLower when generating table names?</param>
                     <param name='TableNames'>Comma separated table names list to limit a number of tables in big instances. The names can have '%' sign to handle it as in the 'LIKE' query (Oracle and MSSQL Only)</param>

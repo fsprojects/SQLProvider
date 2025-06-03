@@ -2928,5 +2928,29 @@ let ``mock for unit-testing: datacontext``() =
 
     Assert.AreEqual(2, res.Length)
     ()
-    
 
+
+// Generated with dc.Main.OrderDetails.TemplateAsRecord
+type MyMainOrders = { CustomerId : String voption; EmployeeId : Int64 voption; Freight : Decimal voption; OrderDate : DateTime voption; OrderId : Int64; RequiredDate : DateTime voption; ShipAddress : String voption; ShipCity : String voption; ShipCountry : String voption; ShipName : String voption; ShipPostalCode : String voption; ShipRegion : String voption; ShippedDate : DateTime voption }
+
+type MyMainOrders2() =
+    class
+        member val CustomerId = ValueSome "" with get,set
+        member val ShipRegion = ValueSome "" with get,set
+    end
+
+
+[<Test >]
+let ``simple select query with MapTo``() = 
+    let dc = sqlValueOption.GetDataContext()
+
+    let qry = 
+        query {
+            for ord in dc.Main.Orders do
+            select (ord)
+        } |> Seq.head
+    let mapped1 = qry.MapTo<MyMainOrders>()
+    let mapped2 = qry.MapTo<MyMainOrders2>()
+
+    Assert.AreEqual(ValueSome "VINET", mapped1.CustomerId)
+    Assert.AreEqual(ValueSome "VINET", mapped2.CustomerId)

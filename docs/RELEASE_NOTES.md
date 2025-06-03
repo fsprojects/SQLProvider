@@ -1,3 +1,10 @@
+### 1.5.8 - 04.06.2025
+* MapTo support Option and ValueOption on target types
+* TemplateAsRecord to generate list of properies and types
+
+### 1.5.7 - 13.05.2025
+* Performance improvement: ProvidedTypes update
+
 ### 1.5.6 - 06.05.2025
 * Mock-database case sensitivity backup search
 
