@@ -14,6 +14,7 @@ open FSharp.Data.Sql.Transactions
 open FSharp.Data.Sql.Schema
 open Microsoft.FSharp.Reflection
 open System.Collections.Concurrent
+open System.Runtime.Serialization
 
 type DatabaseProviderTypes =
     | MSSQLSERVER = 0
@@ -361,9 +362,8 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup, activeColu
                 [|
                     for prop in fields do
                         match dataMap.TryGetValue(clean prop) with
-                        | true, null when (prop.PropertyType.Name.StartsWith "FSharpValueOption" || prop.PropertyType.Name.StartsWith "FSharpOption") ->
-                            let cases = FSharpType.GetUnionCases prop.PropertyType
-                            let typedNone = FSharpValue.MakeUnion(cases[0], null)
+                        | true, null when prop.PropertyType.Name.StartsWith "FSharpValueOption" ->
+                            let typedNone = FormatterServices.GetUninitializedObject prop.PropertyType
                             yield propertyTypeMapping (prop.Name, typedNone)
                         | true, dataVal -> yield propertyTypeMapping (prop.Name, (Utilities.convertTypes dataVal prop.PropertyType))
                         | false, _ -> ()
@@ -373,9 +373,8 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup, activeColu
             let instance = Activator.CreateInstance<'a>()
             for prop in typ.GetProperties() do
                 match dataMap.TryGetValue(clean prop) with
-                | true, null when (prop.PropertyType.Name.StartsWith "FSharpValueOption" || prop.PropertyType.Name.StartsWith "FSharpOption") ->
-                    let cases = FSharpType.GetUnionCases prop.PropertyType
-                    let typedNone = FSharpValue.MakeUnion(cases[0], null)
+                | true, null when prop.PropertyType.Name.StartsWith "FSharpValueOption" ->
+                    let typedNone = FormatterServices.GetUninitializedObject prop.PropertyType
                     prop.GetSetMethod().Invoke(instance, [|propertyTypeMapping (prop.Name, typedNone)|]) |> ignore
                 | true, dataVal -> prop.GetSetMethod().Invoke(instance, [|propertyTypeMapping (prop.Name, (Utilities.convertTypes dataVal prop.PropertyType))|]) |> ignore
                 | false, _ -> ()
