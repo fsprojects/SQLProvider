@@ -19,7 +19,7 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "SQLProvider.MsSql.DesignTim
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DB-Specific", "DB-Specific", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "SQLProvider.Postgresql.DesignTime", "src\SQLProvider.Postgresql.DesignTime\SQLProvider.Postgresql.DesignTime.fsproj", "{8896C5BC-D2D0-49C6-BBD2-9DFBB2F7D32A}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "SQLProvider.PostgreSql.DesignTime", "src\SQLProvider.Postgresql.DesignTime\SQLProvider.Postgresql.DesignTime.fsproj", "{8896C5BC-D2D0-49C6-BBD2-9DFBB2F7D32A}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "SQLProvider.Postgresql.Runtime", "src\SQLProvider.Postgresql.Runtime\SQLProvider.Postgresql.Runtime.fsproj", "{9BDF1CC4-C97B-BFF4-CEEE-1403C1E6E1EF}"
 EndProject

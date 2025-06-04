@@ -139,8 +139,8 @@ let projects =
      {name="SQLProvider.MsAccess.DesignTime";summary="Type providers for Microsoft Access database access.";description="Type providers for Microsoft Access database access.";dependencies=[]};
      {name="SQLProvider.MsAccess.Runtime";summary="Type providers for Microsoft Access database access.";description="Type providers for Microsoft Access database access.";dependencies=[]};
 
-     {name="SQLProvider.Postgresql.DesignTime";summary="Type providers for PostgreSql database access.";description="Type providers for PostgreSql database access.";dependencies=[]};
-     {name="SQLProvider.Postgresql.Runtime";summary="Type providers for PostgreSql database access.";description="Type providers for PostgreSql database access.";dependencies=[]};
+     {name="SQLProvider.PostgreSql.DesignTime";summary="Type providers for PostgreSql database access.";description="Type providers for PostgreSql database access.";dependencies=[]};
+     {name="SQLProvider.PostgreSql.Runtime";summary="Type providers for PostgreSql database access.";description="Type providers for PostgreSql database access.";dependencies=[]};
 
      {name="SQLProvider.SQLite.DesignTime";summary="Type providers for SQLite database access.";description="Type providers for SQLite database access.";dependencies=[]};
      {name="SQLProvider.SQLite.Runtime";summary="Type providers for SQLite database access.";description="Type providers for SQLite database access.";dependencies=[]};

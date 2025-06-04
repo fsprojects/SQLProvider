@@ -290,7 +290,7 @@ do ()
     #endif
     #if POSTGRESQL
 // Put the TypeProviderAssemblyAttribute in the runtime DLL, pointing to the design-time DLL
-[<assembly:CompilerServices.TypeProviderAssembly("FSharp.Data.SqlProvider.Postgresql.DesignTime.dll")>]
+[<assembly:CompilerServices.TypeProviderAssembly("FSharp.Data.SqlProvider.PostgreSql.DesignTime.dll")>]
 do ()
     #endif
     #if SQLITE

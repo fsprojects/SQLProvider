@@ -2,7 +2,7 @@
 namespace System
 open System.Reflection
 
-[<assembly: AssemblyTitleAttribute("SQLProvider.Postgresql.DesignTime")>]
+[<assembly: AssemblyTitleAttribute("SQLProvider.PostgreSql.DesignTime")>]
 [<assembly: AssemblyProductAttribute("SQLProvider")>]
 [<assembly: AssemblyDescriptionAttribute("Type providers for PostgreSql database access.")>]
 [<assembly: AssemblyVersionAttribute("1.5.6")>]
@@ -10,7 +10,7 @@ open System.Reflection
 do ()
 
 module internal AssemblyVersionInformation =
-    let [<Literal>] AssemblyTitle = "SQLProvider.Postgresql.DesignTime"
+    let [<Literal>] AssemblyTitle = "SQLProvider.PostgreSql.DesignTime"
     let [<Literal>] AssemblyProduct = "SQLProvider"
     let [<Literal>] AssemblyDescription = "Type providers for PostgreSql database access."
     let [<Literal>] AssemblyVersion = "1.5.6"
