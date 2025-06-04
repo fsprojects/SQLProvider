@@ -2931,17 +2931,14 @@ let ``mock for unit-testing: datacontext``() =
 
 
 // Generated with dc.Main.OrderDetails.TemplateAsRecord
-type MyMainOrders = { CustomerId : String voption; EmployeeId : Int64 voption; Freight : Decimal voption; OrderDate : DateTime voption; OrderId : Int64; RequiredDate : DateTime voption; ShipAddress : String voption; ShipCity : String voption; ShipCountry : String voption; ShipName : String voption; ShipPostalCode : String voption; ShipRegion : String voption; ShippedDate : DateTime voption }
+type OrderDetailsRecordVopts = { CustomerId : String voption; EmployeeId : Int64 voption; Freight : Decimal voption; OrderDate : DateTime voption; OrderId : Int64; RequiredDate : DateTime voption; ShipAddress : String voption; ShipCity : String voption; ShipCountry : String voption; ShipName : String voption; ShipPostalCode : String voption; ShipRegion : String voption; ShippedDate : DateTime voption }
 
-type MyMainOrders2() =
-    class
-        member val CustomerId = ValueSome "" with get,set
-        member val ShipRegion = ValueSome "" with get,set
-    end
-
+type OrderDetailsClassVopts() =
+    member val CustomerId = ValueSome "" with get, set
+    member val ShipRegion = ValueSome "" with get, set
 
 [<Test >]
-let ``simple select query with MapTo``() = 
+let ``simple select query with MapTo with voptions``() = 
     let dc = sqlValueOption.GetDataContext()
 
     let qry = 
@@ -2949,8 +2946,33 @@ let ``simple select query with MapTo``() =
             for ord in dc.Main.Orders do
             select (ord)
         } |> Seq.head
-    let mapped1 = qry.MapTo<MyMainOrders>()
-    let mapped2 = qry.MapTo<MyMainOrders2>()
+    let mapped1 = qry.MapTo<OrderDetailsRecordVopts>()
+    let mapped2 = qry.MapTo<OrderDetailsClassVopts>()
 
     Assert.AreEqual(ValueSome "VINET", mapped1.CustomerId)
+    Assert.True(mapped1.ShipRegion.IsNone)
     Assert.AreEqual(ValueSome "VINET", mapped2.CustomerId)
+    Assert.True(mapped2.ShipRegion.IsNone)
+
+type OrderDetailsRecordOpts = { CustomerId : String option; EmployeeId : Int64 option; Freight : Decimal option; OrderDate : DateTime option; OrderId : Int64; RequiredDate : DateTime option; ShipAddress : String voption; ShipCity : String option; ShipCountry : String option; ShipName : String option; ShipPostalCode : String option; ShipRegion : String option; ShippedDate : DateTime option }
+
+type OrderDetailsClassOpts() =
+    member val CustomerId = Some "" with get, set
+    member val ShipRegion = Some "" with get, set
+
+[<Test >]
+let ``simple select query with MapTo with options``() = 
+    let dc = sqlOption.GetDataContext()
+
+    let qry = 
+        query {
+            for ord in dc.Main.Orders do
+            select (ord)
+        } |> Seq.head
+    let mapped1 = qry.MapTo<OrderDetailsRecordOpts>()
+    let mapped2 = qry.MapTo<OrderDetailsClassOpts>()
+
+    Assert.AreEqual(Some "VINET", mapped1.CustomerId)
+    Assert.True(mapped1.ShipRegion.IsNone)
+    Assert.AreEqual(Some "VINET", mapped2.CustomerId)
+    Assert.True(mapped2.ShipRegion.IsNone)
