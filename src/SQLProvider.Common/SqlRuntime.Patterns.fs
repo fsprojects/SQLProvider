@@ -143,8 +143,7 @@ let inline (|OptionNone|_|) (e: Expression) =
     match e with
     | MethodCall(None,MethodWithName("get_None"),[]) ->
         match e with
-        | :? MethodCallExpression as e when (e.Method.DeclaringType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpOption`1")
-                                             || e.Method.DeclaringType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpValueOption`1")) -> ValueSome()
+        | :? MethodCallExpression as e when Common.Utilities.isOpt e.Method.DeclaringType -> ValueSome()
         | _ -> ValueNone
     | _ -> ValueNone
 
@@ -157,8 +156,7 @@ let (|NullConstant|_|) (e:Expression) =
 let (|ConstantOrNullableConstant|_|) (e:Expression) = 
     match e.NodeType, e with 
     | ExpressionType.Constant, (:? ConstantExpression as ce) ->
-        if ce.Type.IsGenericType && (ce.Type.FullName.StartsWith("Microsoft.FSharp.Core.FSharpOption`1")
-                                     || ce.Type.FullName.StartsWith("Microsoft.FSharp.Core.FSharpValueOption`1")) then
+        if Common.Utilities.isOpt ce.Type then
             match ce.Type.GetProperty("Value").GetValue(ce.Value,[||]) with
             | null -> Some(Some(ce.Value))
             | optVal -> Some(Some(optVal))
@@ -223,11 +221,10 @@ let (|OptionalFSharpOptionValue|) (e:Expression) =
     match e.NodeType, e with
     | ExpressionType.MemberAccess, ( :? MemberExpression as e) -> 
         match e.Member with 
-        | :? PropertyInfo as p when p.Name = "Value" && (e.Member.DeclaringType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpOption`1")
-                                                          || e.Member.DeclaringType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpValueOption`1")) -> e.Expression
+        | :? PropertyInfo as p when p.Name = "Value" && Common.Utilities.isOpt e.Member.DeclaringType -> e.Expression
         | _ -> upcast e
     | ExpressionType.Call, OptionalCopyOfStruct ( :? MethodCallExpression as e)
-        when e.Method.Name = "Some" && (e.Method.DeclaringType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpOption`1") || e.Method.DeclaringType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpValueOption`1")) -> e.Arguments.[0]
+        when e.Method.Name = "Some" && Common.Utilities.isOpt e.Method.DeclaringType -> e.Arguments.[0]
     | _, OptionalCopyOfStruct n -> n
 
 let (|AndAlso|_|) (e:Expression) =
@@ -367,8 +364,8 @@ let integerTypes = [| typeof<Int32>; typeof<Int64>; typeof<Int16>; typeof<int8>;
                       typeof<ValueOption<Int32>>; typeof<ValueOption<Int64>>; typeof<ValueOption<Int16>>; typeof<ValueOption<int8>>; typeof<ValueOption<UInt32>>; typeof<ValueOption<UInt64>>; typeof<ValueOption<UInt16>>; typeof<ValueOption<uint8>>;|]
 
 let intType (typ:Type) = 
-    if (not (isNull typ)) && typ.IsGenericType && typ.GetGenericTypeDefinition() = typedefof<Option<_>> then typeof<Option<int>>
-    elif (not (isNull typ)) && typ.IsGenericType && typ.GetGenericTypeDefinition() = typedefof<ValueOption<_>> then typeof<ValueOption<int>>
+    if (not (isNull typ)) && Common.Utilities.isCOpt typ then typeof<Option<int>>
+    elif (not (isNull typ)) && Common.Utilities.isVOpt typ then typeof<ValueOption<int>>
     else typeof<int>
 
 let inline internal getRightFromOp (right:Expression) =
@@ -396,13 +393,13 @@ let rec (|SqlColumnGet|_|) (ex:Expression) =
     // These are aggregations, e.g. GROUPBY, HAVING-clause
     | ExpressionType.MemberAccess, ( :? MemberExpression as me) when 
             (not (isNull me.Expression || isNull me.Expression.Type || isNull me.Expression.Type.Name)) &&
-            me.Expression.Type.Name.StartsWith("IGrouping")  -> 
+                Common.Utilities.isGrp me.Expression.Type -> 
         match me.Member with 
         | :? PropertyInfo as p when p.Name = "Key" -> Some(String.Empty, GroupColumn (KeyOp "",SqlColumnType.KeyColumn("Key")), p.DeclaringType) 
         | _ -> None
     | ExpressionType.Call, ( :? MethodCallExpression as e) when (not (isNull e.Arguments)) && e.Arguments.Count = 1 && 
             not( isNull e.Arguments.[0] || isNull e.Arguments.[0].Type || isNull e.Arguments.[0].Type.Name) &&
-            e.Arguments.[0].Type.Name.StartsWith("IGrouping") ->
+                Common.Utilities.isGrp e.Arguments.[0].Type ->
         if e.Arguments.[0].NodeType = ExpressionType.Parameter then
             let pn = match e.Arguments.[0] with :? ParameterExpression as p -> p.Name | _ -> e.Method.Name
             match e.Method.Name with
@@ -566,7 +563,7 @@ let rec (|SqlColumnGet|_|) (ex:Expression) =
 
         match be.Left, be.Right with
         | OptionalConvertOrTypeAs(OptionalFSharpOptionValue(SqlColumnGet(alias, col, typ))) as p1, OptionalConvertOrTypeAs(Constant(constVal,constTyp)) 
-            when (Type.(=)(p1.Type, constTyp) || (p1.Type.IsGenericType && (p1.Type.GetGenericTypeDefinition() = typedefof<Option<_>> || p1.Type.GetGenericTypeDefinition() = typedefof<ValueOption<_>>) && p1.Type.GenericTypeArguments.[0] = constTyp )
+            when (Type.(=)(p1.Type, constTyp) || (Common.Utilities.isOpt p1.Type && p1.Type.GenericTypeArguments.[0] = constTyp )
                  || Type.(=)(be.Left.Type, be.Right.Type)) ->  // Support only numeric and string math
                 match p1.Type with
                 | t when (operation = "+" && (Type.(=)(t, typeof<System.String>) || Type.(=)(t, typeof<System.Char>) || Type.(=)(t, typeof<Option<System.String>>) || Type.(=)(t, typeof<Option<System.Char>>) || Type.(=)(t, typeof<ValueOption<System.Char>>))) -> 
@@ -576,7 +573,7 @@ let rec (|SqlColumnGet|_|) (ex:Expression) =
                         Some(alias, CanonicalOperation(CanonicalOp.BasicMath(operation, constVal), col), typ)
                 | _ -> None
         | OptionalConvertOrTypeAs(Constant(constVal,constTyp)), (OptionalConvertOrTypeAs(OptionalFSharpOptionValue(SqlColumnGet(alias, col, typ))) as p1)
-            when (Type.(=)(p1.Type, constTyp) || (p1.Type.IsGenericType && (p1.Type.GetGenericTypeDefinition() = typedefof<Option<_>> || p1.Type.GetGenericTypeDefinition() = typedefof<ValueOption<_>>) && p1.Type.GenericTypeArguments.[0] = constTyp )
+            when (Type.(=)(p1.Type, constTyp) || (Common.Utilities.isOpt p1.Type && p1.Type.GenericTypeArguments.[0] = constTyp )
                  || Type.(=)(be.Left.Type, be.Right.Type)) ->  // Support only numeric and string math
                 match p1.Type with
                 | t when (operation = "+" && (Type.(=)(t, typeof<System.String>) || Type.(=)(t, typeof<System.Char>) || Type.(=)(t, typeof<Option<System.String>>) || Type.(=)(t, typeof<Option<System.Char>>) || Type.(=)(t, typeof<ValueOption<System.String>>) || Type.(=)(t, typeof<ValueOption<System.Char>>))) -> 
@@ -587,8 +584,8 @@ let rec (|SqlColumnGet|_|) (ex:Expression) =
                 | _ -> None
         | OptionalConvertOrTypeAs(OptionalFSharpOptionValue(SqlColumnGet(aliasLeft, colLeft, typLeft))) as p1, (OptionalConvertOrTypeAs(OptionalFSharpOptionValue(SqlColumnGet(aliasRight, colRight, typRight))) as p2) 
             when (Type.(=)(p1.Type, p2.Type) ||
-                     (p1.Type.IsGenericType && (p1.Type.GetGenericTypeDefinition() = typedefof<Option<_>> || p1.Type.GetGenericTypeDefinition() = typedefof<ValueOption<_>>) && p1.Type.GenericTypeArguments.[0] = p2.Type ) ||
-                     (p2.Type.IsGenericType && (p2.Type.GetGenericTypeDefinition() = typedefof<Option<_>> || p2.Type.GetGenericTypeDefinition() = typedefof<ValueOption<_>>) && p2.Type.GenericTypeArguments.[0] = p1.Type ) ||
+                     (Common.Utilities.isOpt p1.Type && p1.Type.GenericTypeArguments.[0] = p2.Type ) ||
+                     (Common.Utilities.isOpt p2.Type && p2.Type.GenericTypeArguments.[0] = p1.Type ) ||
                          Type.(=)(be.Left.Type, be.Right.Type)) -> 
                 let opFix = 
                     match p1.Type with
@@ -733,8 +730,7 @@ and (|SimpleCondition|_|) exp =
             if isNull invokedResult then handleNullCompare()
             else
             let retType = invokedResult.GetType()
-            if retType.IsGenericType && (retType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpOption") ||
-                                         retType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpValueOption")) then
+            if Common.Utilities.isOpt retType then
                 let gotVal = retType.GetProperty("Value") // Option type Some should not be SQL-parameter.
                 match gotVal.GetValue(invokedResult, [||]) with
                 | null -> handleNullCompare()

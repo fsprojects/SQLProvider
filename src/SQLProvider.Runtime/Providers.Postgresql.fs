@@ -106,7 +106,7 @@ module PostgreSQL =
     let isOptionValue value =
         if isNull value then false else
         let typ = value.GetType()
-        typ.IsGenericType && typ.GetGenericTypeDefinition() = typedefof<Option<_>>
+        typ.IsGenericType && (typ.GetGenericTypeDefinition() = typedefof<Option<_>> || typ.GetGenericTypeDefinition() = typedefof<ValueOption<_>>)
 
     let createCommandParameter (param:QueryParameter) value =
         let normalizedValue =

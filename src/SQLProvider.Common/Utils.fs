@@ -55,6 +55,11 @@ module Utilities =
     let inline quoteWhiteSpace (str:String) = 
         (if str.Contains(" ") then sprintf "\"%s\"" str else str)
 
+    let inline internal isOpt (t:Type) = t.IsGenericType && (t.GetGenericTypeDefinition() = typedefof<Option<_>> || t.GetGenericTypeDefinition() = typedefof<ValueOption<_>>)
+    let inline internal isCOpt (t:Type) = t.IsGenericType && t.GetGenericTypeDefinition() = typedefof<Option<_>>
+    let inline internal isVOpt (t:Type) = t.IsGenericType && t.GetGenericTypeDefinition() = typedefof<ValueOption<_>>
+    let inline internal isGrp (t:Type) = t.IsGenericType && t.GetGenericTypeDefinition() = typedefof<System.Linq.IGrouping<_,_>>
+
     let uniqueName()= 
         let dict = ConcurrentDictionary<string, int>()
         (fun name -> 
@@ -80,7 +85,7 @@ module Utilities =
     let rec internal convertTypes (itm:obj) (returnType:Type) =
         if not(isNull itm) && Type.(=) (itm.GetType(), returnType) then itm
         else
-        if (returnType.Name.StartsWith("Option") || returnType.Name.StartsWith("FSharpOption")) && returnType.GenericTypeArguments.Length = 1 then
+        if isCOpt returnType && returnType.GenericTypeArguments.Length = 1 then
             if isNull itm then None |> box
             else
             match convertTypes itm (returnType.GenericTypeArguments.[0]) with
@@ -102,9 +107,9 @@ module Utilities =
             | :? DateTimeOffset as t -> Option.Some t |> box
             | :? TimeSpan as t -> Option.Some t |> box
             | t ->
-                if t.GetType().Name.StartsWith("FSharpOption") then t |> box
+                if isCOpt (t.GetType()) then t |> box
                 else Option.Some t |> box
-        elif (returnType.Name.StartsWith("ValueOption") || returnType.Name.StartsWith("FSharpValueOption")) && returnType.GenericTypeArguments.Length = 1 then
+        elif isVOpt returnType && returnType.GenericTypeArguments.Length = 1 then
             if isNull itm then ValueNone |> box
             else
             match convertTypes itm (returnType.GenericTypeArguments.[0]) with
@@ -126,7 +131,7 @@ module Utilities =
             | :? DateTimeOffset as t -> ValueOption.Some t |> box
             | :? TimeSpan as t -> ValueOption.Some t |> box
             | t ->
-                if t.GetType().Name.StartsWith("FSharpValueOption") then t|> box
+                if isVOpt (t.GetType()) then t|> box
                 else ValueOption.Some t |> box
 
         elif returnType.Name.StartsWith("Nullable") && returnType.GenericTypeArguments.Length = 1 then

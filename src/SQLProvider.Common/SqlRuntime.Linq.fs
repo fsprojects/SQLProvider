@@ -77,16 +77,23 @@ module internal QueryImplementation =
                 let genArgs = src.GetType().GetGenericArguments()
                 if genArgs.Length <> 1 then None, None
                 else
-                let tRes = typedefof<ResizeArray<_>>.MakeGenericType genArgs.[0]
+                let tTyp = genArgs.[0]
                 Some svc, Some (fun (queryResultsourcePropertyReplacement : IEnumerable) ->
+                                    let count =
+                                        match queryResultsourcePropertyReplacement with
+                                        | :? System.Collections.ICollection as ic -> ic.Count
+                                        | _ ->
+                                            let mutable count = 0
+                                            for obj in queryResultsourcePropertyReplacement do
+                                                count <- count + 1
+                                            count
                                     let enu2 = queryResultsourcePropertyReplacement.GetEnumerator()
-                                    let arr = Activator.CreateInstance(tRes, [||])
-                                    let addMethod = arr.GetType().GetMethod "Add"
+                                    let arr = Array.CreateInstance(tTyp, count)
+                                    let mutable i = 0
                                     while enu2.MoveNext() do
-                                        addMethod.Invoke(arr, [| enu2.Current |]) |> ignore
-
+                                        arr.SetValue(enu2.Current, i)
+                                        i <- i + 1
                                     srcProp.SetValue(enu, (box arr))
-
                                 )
             | _ -> None, None
         | _ -> None, None
@@ -107,7 +114,8 @@ module internal QueryImplementation =
             let invoker = projector :?> Func<SqlEntity, _> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
         else
 
-        let isValueOption = (returnType.Name.StartsWith("ValueOption") || returnType.Name.StartsWith("FSharpValueOption")) && returnType.GenericTypeArguments.Length = 1
+        let isValueOption = Utilities.isVOpt returnType && returnType.GenericTypeArguments.Length = 1
+
         if isValueOption then
             if   Type.(=)(returnType, typeof<ValueOption<String>>) then let invoker = projector :?> Func<SqlEntity, ValueOption<String>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
             elif Type.(=)(returnType, typeof<ValueOption<Decimal>>) then let invoker = projector :?> Func<SqlEntity, ValueOption<Decimal>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
@@ -154,8 +162,8 @@ module internal QueryImplementation =
     let inline internal parseGroupByQueryResults (projector:Delegate) (results:SqlEntity[]) =
 #endif
                 let args = projector.GetType().GenericTypeArguments
-                let keyType, keyConstructor, itemEntityType = 
-                    if args.[0].Name.StartsWith("IGrouping") then
+                let keyType, keyConstructor, itemEntityType =
+                    if Common.Utilities.isGrp args.[0] then
                         if args.[0].GenericTypeArguments.Length = 0 then None, None, typeof<SqlEntity>
                         else 
                             let kt = args.[0].GenericTypeArguments.[0]
@@ -166,7 +174,7 @@ module internal QueryImplementation =
                                 Some kt, Some (tyo.GetConstructors()), itmType
                     else
                         let baseItmType = typeof<Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity>>
-                        let genOpt = args.[0].GenericTypeArguments |> Array.tryFind(fun a -> a.Name.StartsWith("IGrouping"))
+                        let genOpt = args.[0].GenericTypeArguments |> Array.tryFind Common.Utilities.isGrp
                         match genOpt with
                         | None ->
                             // GroupValBy
@@ -1102,7 +1110,7 @@ module internal QueryImplementation =
 
                     | MethodCall(None, (MethodWithName "Select"), [ SourceWithQueryData source; OptionalQuote (Lambda([ v1 ], _) as lambda) ]) as whole ->
                         let ty = typedefof<SqlQueryable<_>>.MakeGenericType((lambda :?> LambdaExpression).ReturnType )
-                        if v1.Name.StartsWith "_arg" && Type.(<>)(v1.Type, typeof<SqlEntity>) && not(v1.Type.Name.StartsWith("IGrouping")) then
+                        if v1.Name.StartsWith "_arg" && Type.(<>)(v1.Type, typeof<SqlEntity>) && not(Utilities.isGrp v1.Type) then
                             // this is the projection from a join - ignore
                             // causing the ignore here will give us wrong return tyoe to deal with in convertExpression lambda handling
                             ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; source.SqlExpression; source.TupleIndex; |] :?> IQueryable<_>

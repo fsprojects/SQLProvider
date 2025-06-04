@@ -362,7 +362,7 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup, activeColu
                 [|
                     for prop in fields do
                         match dataMap.TryGetValue(clean prop) with
-                        | true, null when prop.PropertyType.Name.StartsWith "FSharpValueOption" ->
+                        | true, null when Utilities.isVOpt prop.PropertyType ->
 #if NETSTANDARD21
                             let typedNone = System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject prop.PropertyType
 #else
@@ -377,7 +377,7 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup, activeColu
             let instance = Activator.CreateInstance<'a>()
             for prop in typ.GetProperties() do
                 match dataMap.TryGetValue(clean prop) with
-                | true, null when prop.PropertyType.Name.StartsWith "FSharpValueOption" ->
+                | true, null when Utilities.isVOpt prop.PropertyType ->
 #if NETSTANDARD21
                     let typedNone = System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject prop.PropertyType
 #else
@@ -1001,15 +1001,15 @@ module public OfflineTools =
 
         let columnNames =
             tableItem.GetProperties()
-            |> Array.map(fun col -> col.Name, col.PropertyType.Name)
+            |> Array.map(fun col -> col.Name, col.PropertyType.Name, Utilities.isOpt col.PropertyType)
 
-        let cols = columnNames |> Array.map(fun (nam,typ) ->
+        let cols = columnNames |> Array.map(fun (nam,typ, isOpt) ->
             let tempCol = { Name = nam
                             TypeMapping = TypeMapping.Create(typ); IsPrimaryKey = false
-                            IsNullable = String.IsNullOrEmpty typ || typ.StartsWith "FSharpOptio" || typ.StartsWith "FSharpValueOption"
+                            IsNullable = String.IsNullOrEmpty typ || isOpt
                             IsAutonumber = false;  HasDefault = false; IsComputed = false; TypeInfo = ValueNone }
             nam, tempCol) |> ColumnLookup
-        columnNames, cols
+        columnNames |> Array.map(fun (f,_,_) -> f), cols
 
 
     let internal createMockEntitiesDc<'T when 'T :> SqlEntity> dc (tableName:string) (dummydata: obj) =
@@ -1018,22 +1018,27 @@ module public OfflineTools =
             dummydata :?> seq<obj>
             |> Seq.map(fun row ->
                 let entity = SqlEntity(dc, tableName, cols, cols.Count)
-                for (col, _) in columnNames do
+                for col in columnNames do
                     let colProp = row.GetType().GetProperty(col)
                     let colData = if isNull colProp then null else colProp.GetValue(row, null)
-                    let typ = if isNull colData || isNull (colData.GetType()) then "" else colData.GetType().Name
-                    if typ.StartsWith "FSharpOptio" || typ.StartsWith "FSharpValueOption" then
-                        let noneProp = colData.GetType().GetProperty("IsNone")
+                    let typ, isOpt =
+                        if isNull colData then null, false
+                        else
+                            let typ = colData.GetType()
+                            if isNull typ then null, false
+                            else typ, Utilities.isOpt typ
+                    if isOpt then
+                        let noneProp = typ.GetProperty("IsNone")
                         let optIsNone =
                             if isNull noneProp then null
                             elif noneProp.GetIndexParameters().Length = 0 then
-                                colData.GetType().GetProperty("IsNone").GetValue(colData, null)
+                                typ.GetProperty("IsNone").GetValue(colData, null)
                             else
-                                isNull (colData.GetType().GetProperty "Value")
+                                isNull (typ.GetProperty "Value")
                         if (isNull optIsNone) || optIsNone = true then
                             entity.SetColumnOptionSilent(col, None)
                         else
-                            let optValProp = colData.GetType().GetProperty("Value")
+                            let optValProp = typ.GetProperty("Value")
                             if isNull optValProp then 
                                 entity.SetColumnOptionSilent(col, None)
                             else

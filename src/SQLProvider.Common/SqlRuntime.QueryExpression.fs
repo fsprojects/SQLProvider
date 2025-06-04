@@ -26,8 +26,7 @@ module internal QueryExpressionTransformer =
         | ExpressionType.Convert, (:? UnaryExpression as ce) -> directAggregate ce.Operand picker
         | ExpressionType.MemberAccess, ( :? MemberExpression as me2) -> 
             match me2.Member with 
-            | :? PropertyInfo as p when p.Name = "Value" && (me2.Member.DeclaringType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpOption`1") ||
-                                                                me2.Member.DeclaringType.FullName.StartsWith("Microsoft.FSharp.Core.FSharpValueOption`1")) -> directAggregate (me2.Expression) picker
+            | :? PropertyInfo as p when p.Name = "Value" && (Utilities.isOpt me2.Member.DeclaringType) -> directAggregate (me2.Expression) picker
             | _ -> None
         | _ -> None
 
@@ -35,7 +34,7 @@ module internal QueryExpressionTransformer =
         let (|OperationColumnOnly|_|) = function
             | MethodCall(None, MethodWithName "Select", [Constant(_, t) ;
                 OptionalQuote (Lambda([ParamName sourceAlias],(SqlColumnGet(entity,(CanonicalOperation(_) | KeyColumn(_) as coltyp),rtyp) as oper))) as exp]) when 
-                    (Type.(=)(t, typeof<System.Linq.IQueryable<SqlEntity>>) || Type.(=)(t, typeof<System.Linq.IOrderedQueryable<SqlEntity>>)) && ((not(databaseParam.Type.Name.StartsWith("IGrouping")))) ->
+                    (Type.(=)(t, typeof<System.Linq.IQueryable<SqlEntity>>) || Type.(=)(t, typeof<System.Linq.IOrderedQueryable<SqlEntity>>)) && ((not(Common.Utilities.isGrp databaseParam.Type))) ->
                 let resolved = Utilities.resolveTuplePropertyName entity tupleIndex
                 let al = if String.IsNullOrEmpty resolved then sourceAlias else resolved
                 Some ((al,coltyp,rtyp), exp, oper.Type)
@@ -142,7 +141,7 @@ module internal QueryExpressionTransformer =
                         match m.Arguments.[0].NodeType, m.Arguments.[0] with
                         | ExpressionType.Call, (:? MethodCallExpression as me2) ->
                             if me2.Arguments.Count > 0 && (me2.Arguments.[0].Type.IsGenericType) &&
-                                    (me2.Arguments.[0].Type.Name.StartsWith("IGrouping") || me2.Arguments.[0].Type.Name.StartsWith("Grouping")) && me2.Method.Name = "Select"
+                                    (Common.Utilities.isGrp me2.Arguments.[0].Type || me2.Arguments.[0].Type.Name.StartsWith("Grouping")) && me2.Method.Name = "Select"
                                 then Some me2
                                 else None
                         | _ -> None
@@ -153,7 +152,7 @@ module internal QueryExpressionTransformer =
                         match me.Arguments.[0].NodeType, me.Arguments.[0] with
                         | ExpressionType.Call, (:? MethodCallExpression as me2) ->
                             if me2.Arguments.Count > 0 && (me2.Arguments.[0].Type.IsGenericType) &&
-                                    (me2.Arguments.[0].Type.Name.StartsWith("IGrouping") || me2.Arguments.[0].Type.Name.StartsWith("Grouping") || (checkInnerdSelect me2).IsSome) && me2.Method.Name = "Distinct"
+                                    (Common.Utilities.isGrp me2.Arguments.[0].Type || me2.Arguments.[0].Type.Name.StartsWith("Grouping") || (checkInnerdSelect me2).IsSome) && me2.Method.Name = "Distinct"
                                 then Some me2
                                 else None
                         | _ -> None
@@ -166,7 +165,7 @@ module internal QueryExpressionTransformer =
 
                 let isGrouping = 
                     me.Arguments.Count > 0 && (me.Arguments.[0].Type.IsGenericType) &&
-                    (me.Arguments.[0].Type.Name.StartsWith("IGrouping") || me.Arguments.[0].Type.Name.StartsWith("Grouping")) || hasInnerdSelect.IsSome
+                    (Common.Utilities.isGrp me.Arguments.[0].Type || me.Arguments.[0].Type.Name.StartsWith("Grouping")) || hasInnerdSelect.IsSome
 
                 let isNumType (ty:Type) =
                     decimalTypes  |> Seq.exists(fun t -> Type.(=)(t, ty)) || integerTypes |> Seq.exists(fun t -> Type.(=)(t, ty))
@@ -174,11 +173,11 @@ module internal QueryExpressionTransformer =
                 let op =
                     if me.Arguments.Count = 1 && (me.Arguments.[0].NodeType = ExpressionType.Parameter ||
                                                     (me.Arguments.[0].NodeType = ExpressionType.New && me.Arguments.[0].Type.Name.StartsWith("Grouping")) || 
-                                                    (me.Arguments.[0].NodeType = ExpressionType.MemberAccess && (me.Arguments.[0].Type.Name.StartsWith("IGrouping"))) ||
+                                                    (me.Arguments.[0].NodeType = ExpressionType.MemberAccess && (Common.Utilities.isGrp me.Arguments.[0].Type)) ||
                                                     (hasInnerDistinct.IsSome && (
                                                          hasInnerDistinct.Value.Arguments.[0].NodeType = ExpressionType.Parameter ||
                                                         (hasInnerDistinct.Value.Arguments.[0].NodeType = ExpressionType.New && hasInnerDistinct.Value.Arguments.[0].Type.Name.StartsWith("Grouping")) || 
-                                                        (hasInnerDistinct.Value.Arguments.[0].NodeType = ExpressionType.MemberAccess && (hasInnerDistinct.Value.Arguments.[0].Type.Name.StartsWith("IGrouping")))
+                                                        (hasInnerDistinct.Value.Arguments.[0].NodeType = ExpressionType.MemberAccess && (Common.Utilities.isGrp hasInnerDistinct.Value.Arguments.[0].Type))
                                                     )
                                                  )) then
                         match me.Method.Name with
@@ -199,7 +198,7 @@ module internal QueryExpressionTransformer =
                             | None -> me.Arguments.[0].NodeType, me.Arguments.[0]
                         match firstArg with
                         | ExpressionType.Call, (:? MethodCallExpression as me2) when me2.Arguments.Count = 2 && (me2.Arguments.[0].Type.IsGenericType) &&
-                                    (me2.Arguments.[0].Type.Name.StartsWith("IGrouping") || me2.Arguments.[0].Type.Name.StartsWith("Grouping")) && me2.Method.Name = "Select" ->
+                                    (Common.Utilities.isGrp me2.Arguments.[0].Type || me2.Arguments.[0].Type.Name.StartsWith("Grouping")) && me2.Method.Name = "Select" ->
 
                             match me2.Arguments.[1] with
                             | :? LambdaExpression as la ->
@@ -289,7 +288,7 @@ module internal QueryExpressionTransformer =
             if not(useCanonicalsOnSelect) then None
             else
             match e with
-            | _, (SqlColumnGet(alias,(CanonicalOperation(_,c1) as coltyp),ret) as exp) when ((not(databaseParam.Type.Name.StartsWith("IGrouping")))) -> 
+            | _, (SqlColumnGet(alias,(CanonicalOperation(_,c1) as coltyp),ret) as exp) when ((not(Common.Utilities.isGrp databaseParam.Type))) -> 
                 // Ok, this is an operation but not a plain column...
                 let foundAlias = 
                     if aliasEntityDict.ContainsKey(alias) then alias
@@ -302,9 +301,9 @@ module internal QueryExpressionTransformer =
 
                 let name = $"op{abs(coltyp.GetHashCode())}"
                 let meth = 
-                    if exp.Type.IsGenericType && exp.Type.GetGenericTypeDefinition() = typedefof<Option<_>> then
+                    if Common.Utilities.isCOpt exp.Type then
                         typeof<SqlEntity>.GetMethod("GetColumnOption").MakeGenericMethod([|exp.Type.GetGenericArguments().[0]|])
-                    elif exp.Type.IsGenericType && exp.Type.GetGenericTypeDefinition() = typedefof<ValueOption<_>> then
+                    elif Common.Utilities.isVOpt exp.Type then
                         typeof<SqlEntity>.GetMethod("GetColumnValueOption").MakeGenericMethod([|exp.Type.GetGenericArguments().[0]|])
                     else typeof<SqlEntity>.GetMethod("GetColumn").MakeGenericMethod([|exp.Type|])
 
@@ -339,7 +338,7 @@ module internal QueryExpressionTransformer =
                 | false, _ -> projectionMap.Add(alias, ResizeArray<_>(seq{yield EntityColumn(key)}))
                 | _ -> ()
                 Some
-                    (match databaseParam.Type.Name.StartsWith("IGrouping") with
+                    (match Common.Utilities.isGrp databaseParam.Type with
                      | false ->
                         (Expression.Call(
                             Expression.Call(databaseParam,getSubEntityMi,Expression.Constant(alias),Expression.Constant(name)),
@@ -380,7 +379,7 @@ module internal QueryExpressionTransformer =
                     | false, _ -> projectionMap.Add(alias, ResizeArray<_>(seq{yield EntityColumn(key)}))
                     | _ -> ()
                     Some
-                        (match databaseParam.Type.Name.StartsWith("IGrouping") with
+                        (match Common.Utilities.isGrp databaseParam.Type with
                          | false -> Expression.Call(databaseParam,mi,Expression.Constant(key))
                          | true -> Expression.Call(Expression.Parameter(typeof<SqlEntity>,alias),mi,Expression.Constant(key)))
                 | ValueNone -> None
@@ -440,7 +439,7 @@ module internal QueryExpressionTransformer =
                                                                                     | :? ConstantExpression as c when c.Value = box(true) -> transform en e.IfTrue
                                                                                     | :? ConstantExpression as c when c.Value = box(false) -> transform en e.IfFalse
                                                                                     | _ -> upcast Expression.Condition(testExp, transform en e.IfTrue, transform en e.IfFalse)
-            | ExpressionType.Constant,           (:? ConstantExpression as e)  when e.Type.FullName.StartsWith("Microsoft.FSharp.Core.FSharpValueOption`1") ->
+            | ExpressionType.Constant,           (:? ConstantExpression as e)  when Common.Utilities.isVOpt e.Type ->
                                                                                     // https://github.com/dotnet/fsharp/issues/13370
                                                                                     upcast Expression.Constant(e.Value, typeof<obj>)
             | ExpressionType.Constant,           (:? ConstantExpression as e)    -> upcast e
@@ -493,9 +492,9 @@ module internal QueryExpressionTransformer =
                     | OperationColumnOnly((al,coltyp,rtyp), OptionalQuote(lambda), opType) ->
                         projectionMap.Add(al, ResizeArray<_>(seq{yield OperationColumn("result", coltyp)}))
                         let meth = 
-                            if opType.IsGenericType && opType.GetGenericTypeDefinition() = typedefof<Option<_>> then
+                            if Utilities.isCOpt opType then
                                 typeof<SqlEntity>.GetMethod("GetColumnOption").MakeGenericMethod([|opType.GetGenericArguments().[0]|])
-                            elif opType.IsGenericType && opType.GetGenericTypeDefinition() = typedefof<ValueOption<_>> then
+                            elif Utilities.isVOpt opType then
                                 typeof<SqlEntity>.GetMethod("GetColumnValueOption").MakeGenericMethod([|opType.GetGenericArguments().[0]|])
                             else typeof<SqlEntity>.GetMethod("GetColumn").MakeGenericMethod([|opType|])
                         Some meth
