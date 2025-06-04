@@ -2,16 +2,16 @@
 namespace System
 open System.Reflection
 
-[<assembly: AssemblyTitleAttribute("SQLProvider.Postgresql.Runtime")>]
+[<assembly: AssemblyTitleAttribute("SQLProvider.PostgreSql.Runtime")>]
 [<assembly: AssemblyProductAttribute("SQLProvider")>]
 [<assembly: AssemblyDescriptionAttribute("Type providers for PostgreSql database access.")>]
-[<assembly: AssemblyVersionAttribute("1.5.6")>]
-[<assembly: AssemblyFileVersionAttribute("1.5.6")>]
+[<assembly: AssemblyVersionAttribute("1.5.8")>]
+[<assembly: AssemblyFileVersionAttribute("1.5.8")>]
 do ()
 
 module internal AssemblyVersionInformation =
-    let [<Literal>] AssemblyTitle = "SQLProvider.Postgresql.Runtime"
+    let [<Literal>] AssemblyTitle = "SQLProvider.PostgreSql.Runtime"
     let [<Literal>] AssemblyProduct = "SQLProvider"
     let [<Literal>] AssemblyDescription = "Type providers for PostgreSql database access."
-    let [<Literal>] AssemblyVersion = "1.5.6"
-    let [<Literal>] AssemblyFileVersion = "1.5.6"
+    let [<Literal>] AssemblyVersion = "1.5.8"
+    let [<Literal>] AssemblyFileVersion = "1.5.8"

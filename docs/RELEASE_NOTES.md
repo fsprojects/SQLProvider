@@ -1,6 +1,8 @@
 ### 1.5.8 - 04.06.2025
 * MapTo support Option and ValueOption on target types
 * TemplateAsRecord to generate list of properies and types
+* Minor performance improvements
+* Postgres case sensitivity fix
 
 ### 1.5.7 - 13.05.2025
 * Performance improvement: ProvidedTypes update
