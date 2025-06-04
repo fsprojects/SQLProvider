@@ -363,7 +363,11 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup, activeColu
                     for prop in fields do
                         match dataMap.TryGetValue(clean prop) with
                         | true, null when prop.PropertyType.Name.StartsWith "FSharpValueOption" ->
+#if NETSTANDARD21
+                            let typedNone = System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject prop.PropertyType
+#else
                             let typedNone = FormatterServices.GetUninitializedObject prop.PropertyType
+#endif
                             yield propertyTypeMapping (prop.Name, typedNone)
                         | true, dataVal -> yield propertyTypeMapping (prop.Name, (Utilities.convertTypes dataVal prop.PropertyType))
                         | false, _ -> ()
@@ -374,7 +378,11 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup, activeColu
             for prop in typ.GetProperties() do
                 match dataMap.TryGetValue(clean prop) with
                 | true, null when prop.PropertyType.Name.StartsWith "FSharpValueOption" ->
+#if NETSTANDARD21
+                    let typedNone = System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject prop.PropertyType
+#else
                     let typedNone = FormatterServices.GetUninitializedObject prop.PropertyType
+#endif
                     prop.GetSetMethod().Invoke(instance, [|propertyTypeMapping (prop.Name, typedNone)|]) |> ignore
                 | true, dataVal -> prop.GetSetMethod().Invoke(instance, [|propertyTypeMapping (prop.Name, (Utilities.convertTypes dataVal prop.PropertyType))|]) |> ignore
                 | false, _ -> ()

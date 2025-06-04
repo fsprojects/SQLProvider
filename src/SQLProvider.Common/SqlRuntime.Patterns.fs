@@ -105,9 +105,15 @@ let (|SeqValues|_|) (e:Expression) =
 
         // Working with untyped IEnumerable so need to do a lot manually instead of using Seq
         // Work out the size the sequence
-        let mutable count = 0
-        for obj in values do
-            count <- count + 1
+
+        let count =
+            match values with
+            | :? System.Collections.ICollection as ic -> ic.Count
+            | _ ->
+                let mutable count = 0
+                for obj in values do
+                    count <- count + 1
+                count
         // Create and populate the array
         let array = Array.CreateInstance(typeof<System.Object>, count)
         let mutable i = 0
@@ -115,7 +121,7 @@ let (|SeqValues|_|) (e:Expression) =
             array.SetValue(obj, i)
             i <- i + 1
         // Return the array
-        Some(array)
+        Some array
 
 
 let (|PropertyGet|_|) (e:Expression) = 
