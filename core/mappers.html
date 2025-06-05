@@ -265,12 +265,6 @@ map objects to different ones, for example to interact with other languages like
       <span class="prop">LastName</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs22', 36)" onmouseover="showTip(event, 'fs22', 36)" class="fn">dbRecord</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs26', 37)" onmouseover="showTip(event, 'fs26', 37)" class="id">LastName</span>
       <span class="prop">HireDate</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs22', 38)" onmouseover="showTip(event, 'fs22', 38)" class="fn">dbRecord</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs27', 39)" onmouseover="showTip(event, 'fs27', 39)" class="id">HireDate</span> <span class="pn">}</span>
 </code></pre>
-<h3><a name="TemplateAsRecord" class="anchor" href="#TemplateAsRecord">TemplateAsRecord</a></h3>
-<p>If you want to copy and paste the current SQLProvider objects as separate classes, you can use <code>TemplateAsRecord</code> property of your database table:</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="id">ctx</span><span class="pn">.</span><span class="id">Main</span><span class="pn">.</span><span class="id">Employees</span><span class="pn">.</span><span class="id">TemplateAsRecord</span>
-<span class="c">// intellisense will generate you code that you can copy and paste as template to create your own type:</span>
-<span class="c">// ``type MainOrders = { CustomerId : String voption; EmployeeId : Int64 voption; Freight : Decimal voption; OrderDate : DateTime voption; OrderId : Int64; RequiredDate : DateTime voption; ShipAddress : String voption; ShipCity : String voption; ShipCountry : String voption; ShipName : String voption; ShipPostalCode : String voption; ShipRegion : String voption; ShippedDate : DateTime voption }``</span>
-</code></pre>
 <p>This could be useful if you e.g. want to use SQLProvider objects in some reflection based code-generator (because the normal objects are erased).</p>
 <h3><a name="MapTo" class="anchor" href="#MapTo">MapTo</a></h3>
 <p>SqlProvider also has a <code>.MapTo&lt;'T&gt;</code> convenience method:</p>
@@ -302,16 +296,24 @@ map objects to different ones, for example to interact with other languages like
                 <span class="k">for</span> <span onmouseout="hideTip(event, 'fs38', 77)" onmouseover="showTip(event, 'fs38', 77)" class="fn">row</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs33', 78)" onmouseover="showTip(event, 'fs33', 78)" class="id">employees</span> <span class="k">do</span>
                 <span onmouseout="hideTip(event, 'fs39', 79)" onmouseover="showTip(event, 'fs39', 79)" class="k">select</span> <span onmouseout="hideTip(event, 'fs38', 80)" onmouseover="showTip(event, 'fs38', 80)" class="fn">row</span><span class="pn">}</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs40', 81)" onmouseover="showTip(event, 'fs40', 81)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs41', 82)" onmouseover="showTip(event, 'fs41', 82)" class="id">map</span> <span class="pn">(</span><span class="k">fun</span> <span onmouseout="hideTip(event, 'fs42', 83)" onmouseover="showTip(event, 'fs42', 83)" class="fn">x</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs42', 84)" onmouseover="showTip(event, 'fs42', 84)" class="fn">x</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs47', 85)" onmouseover="showTip(event, 'fs47', 85)" class="id">MapTo</span><span class="pn">&lt;</span><span onmouseout="hideTip(event, 'fs44', 86)" onmouseover="showTip(event, 'fs44', 86)" class="rt">Employee3</span><span class="pn">&gt;</span><span class="pn">(</span><span class="pn">)</span><span class="pn">)</span>
 </code></pre>
+<h3><a name="TemplateAsRecord" class="anchor" href="#TemplateAsRecord">TemplateAsRecord</a></h3>
+<p>If you want to use SQLProvider as code-generator and copy and paste the tables as separate classes (not recommended!), you can use <code>TemplateAsRecord</code> under your database table type which is located under dataContext types:</p>
+<pre class="fssnip highlighted"><code lang="fsharp"><span onmouseout="hideTip(event, 'fs7', 87)" onmouseover="showTip(event, 'fs7', 87)" class="id">sql</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs23', 88)" onmouseover="showTip(event, 'fs23', 88)" class="id">dataContext</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs48', 89)" onmouseover="showTip(event, 'fs48', 89)" class="id">DesignTimeCommands</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs49', 90)" onmouseover="showTip(event, 'fs49', 90)" class="id">TemplateAsRecord</span><span class="pn">.</span><span class="id">``main.OrdersTemplate``</span>
+
+<span class="c">// intellisense will generate you code that you can copy and paste as template to create your own type:</span>
+<span class="c">// ``type MainOrders = { CustomerId : String voption; EmployeeId : Int64 voption; Freight : Decimal voption; OrderDate : DateTime voption; OrderId : Int64; RequiredDate : DateTime voption; ShipAddress : String voption; ShipCity : String voption; ShipCountry : String voption; ShipName : String voption; ShipPostalCode : String voption; ShipRegion : String voption; ShippedDate : DateTime voption }``</span>
+</code></pre>
+<p>The main reason to do this would be to create some reflection schema or MapTo object templates without manual typing.</p>
 <h3><a name="ColumnValues" class="anchor" href="#ColumnValues">ColumnValues</a></h3>
 <p>Or alternatively, the ColumnValues from SQLEntity can be used to create a map, with the
 column as a key:</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs48', 87)" onmouseover="showTip(event, 'fs48', 87)" class="id">rows</span> <span class="o">=</span>
-        <span onmouseout="hideTip(event, 'fs37', 88)" onmouseover="showTip(event, 'fs37', 88)" class="k">query</span> <span class="pn">{</span>
-            <span class="k">for</span> <span onmouseout="hideTip(event, 'fs38', 89)" onmouseover="showTip(event, 'fs38', 89)" class="fn">row</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs33', 90)" onmouseover="showTip(event, 'fs33', 90)" class="id">employees</span> <span class="k">do</span>
-            <span onmouseout="hideTip(event, 'fs39', 91)" onmouseover="showTip(event, 'fs39', 91)" class="k">select</span> <span onmouseout="hideTip(event, 'fs38', 92)" onmouseover="showTip(event, 'fs38', 92)" class="fn">row</span><span class="pn">}</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs40', 93)" onmouseover="showTip(event, 'fs40', 93)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs49', 94)" onmouseover="showTip(event, 'fs49', 94)" class="id">toArray</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs50', 91)" onmouseover="showTip(event, 'fs50', 91)" class="id">rows</span> <span class="o">=</span>
+        <span onmouseout="hideTip(event, 'fs37', 92)" onmouseover="showTip(event, 'fs37', 92)" class="k">query</span> <span class="pn">{</span>
+            <span class="k">for</span> <span onmouseout="hideTip(event, 'fs38', 93)" onmouseover="showTip(event, 'fs38', 93)" class="fn">row</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs33', 94)" onmouseover="showTip(event, 'fs33', 94)" class="id">employees</span> <span class="k">do</span>
+            <span onmouseout="hideTip(event, 'fs39', 95)" onmouseover="showTip(event, 'fs39', 95)" class="k">select</span> <span onmouseout="hideTip(event, 'fs38', 96)" onmouseover="showTip(event, 'fs38', 96)" class="fn">row</span><span class="pn">}</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs40', 97)" onmouseover="showTip(event, 'fs40', 97)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs51', 98)" onmouseover="showTip(event, 'fs51', 98)" class="id">toArray</span>
 
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs50', 95)" onmouseover="showTip(event, 'fs50', 95)" class="id">employees2map</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs48', 96)" onmouseover="showTip(event, 'fs48', 96)" class="id">rows</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs40', 97)" onmouseover="showTip(event, 'fs40', 97)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs41', 98)" onmouseover="showTip(event, 'fs41', 98)" class="id">map</span><span class="pn">(</span><span class="k">fun</span> <span onmouseout="hideTip(event, 'fs51', 99)" onmouseover="showTip(event, 'fs51', 99)" class="fn">i</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs51', 100)" onmouseover="showTip(event, 'fs51', 100)" class="fn">i</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs52', 101)" onmouseover="showTip(event, 'fs52', 101)" class="id">ColumnValues</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs53', 102)" onmouseover="showTip(event, 'fs53', 102)" class="m">Map</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs54', 103)" onmouseover="showTip(event, 'fs54', 103)" class="id">ofSeq</span><span class="pn">)</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs55', 104)" onmouseover="showTip(event, 'fs55', 104)" class="id">firstNames</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs50', 105)" onmouseover="showTip(event, 'fs50', 105)" class="id">employees2map</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs40', 106)" onmouseover="showTip(event, 'fs40', 106)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs41', 107)" onmouseover="showTip(event, 'fs41', 107)" class="id">map</span> <span class="pn">(</span><span class="k">fun</span> <span onmouseout="hideTip(event, 'fs56', 108)" onmouseover="showTip(event, 'fs56', 108)" class="fn">x</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs56', 109)" onmouseover="showTip(event, 'fs56', 109)" class="fn">x</span><span class="pn">.</span><span class="pn">[</span><span class="s">&quot;FirstName&quot;</span><span class="pn">]</span><span class="pn">)</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs52', 99)" onmouseover="showTip(event, 'fs52', 99)" class="id">employees2map</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs50', 100)" onmouseover="showTip(event, 'fs50', 100)" class="id">rows</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs40', 101)" onmouseover="showTip(event, 'fs40', 101)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs41', 102)" onmouseover="showTip(event, 'fs41', 102)" class="id">map</span><span class="pn">(</span><span class="k">fun</span> <span onmouseout="hideTip(event, 'fs53', 103)" onmouseover="showTip(event, 'fs53', 103)" class="fn">i</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs53', 104)" onmouseover="showTip(event, 'fs53', 104)" class="fn">i</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs54', 105)" onmouseover="showTip(event, 'fs54', 105)" class="id">ColumnValues</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs55', 106)" onmouseover="showTip(event, 'fs55', 106)" class="m">Map</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs56', 107)" onmouseover="showTip(event, 'fs56', 107)" class="id">ofSeq</span><span class="pn">)</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs57', 108)" onmouseover="showTip(event, 'fs57', 108)" class="id">firstNames</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs52', 109)" onmouseover="showTip(event, 'fs52', 109)" class="id">employees2map</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs40', 110)" onmouseover="showTip(event, 'fs40', 110)" class="m">Seq</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs41', 111)" onmouseover="showTip(event, 'fs41', 111)" class="id">map</span> <span class="pn">(</span><span class="k">fun</span> <span onmouseout="hideTip(event, 'fs58', 112)" onmouseover="showTip(event, 'fs58', 112)" class="fn">x</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs58', 113)" onmouseover="showTip(event, 'fs58', 113)" class="fn">x</span><span class="pn">.</span><span class="pn">[</span><span class="s">&quot;FirstName&quot;</span><span class="pn">]</span><span class="pn">)</span>
 </code></pre>
 
         <div class="fsdocs-tip" id="fs1">Multiple items<br />type LiteralAttribute =
@@ -450,12 +452,32 @@ from Microsoft.FSharp.Collections</div>
   member Name: string<br /><br />--------------------<br />new: name: string -&gt; MappedColumnAttribute</div>
 <div class="fsdocs-tip" id="fs46">val qry2: Employee3 seq</div>
 <div class="fsdocs-tip" id="fs47">member SqlEntity.MapTo: ?propertyTypeMapping: (string * obj -&gt; obj) -&gt; &#39;a</div>
-<div class="fsdocs-tip" id="fs48">val rows: SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity array</div>
-<div class="fsdocs-tip" id="fs49">val toArray: source: &#39;T seq -&gt; &#39;T array</div>
-<div class="fsdocs-tip" id="fs50">val employees2map: Map&lt;string,obj&gt; seq</div>
-<div class="fsdocs-tip" id="fs51">val i: SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity</div>
-<div class="fsdocs-tip" id="fs52">property SqlEntity.ColumnValues: (string * obj) seq with get</div>
-<div class="fsdocs-tip" id="fs53">Multiple items<br />module Map
+<div class="fsdocs-tip" id="fs48">type DesignTimeCommands =
+  member ClearConnection: ClearConnectionCache
+  member ClearDatabaseSchemaCache: InvalidateResponse
+  member SaveContextSchema: SaveContextResponse
+  nested type ClearConnectionCache
+  nested type InvalidateResponse
+  nested type SaveContextResponse
+  nested type TemplateAsRecord</div>
+<div class="fsdocs-tip" id="fs49">type TemplateAsRecord =
+  nested type main.CategoriesTemplate
+  nested type main.CustomersTemplate
+  nested type main.EmployeesTemplate
+  nested type main.EmployeesTerritoriesTemplate
+  nested type main.InternationalOrdersTemplate
+  nested type main.OrderDetailsTemplate
+  nested type main.OrdersTemplate
+  nested type main.PreviousEmployeesTemplate
+  nested type main.ProductsTemplate
+  nested type main.RegionsTemplate
+  ...<br /><em>As this is erasing TypeProvider, you can use the generated types. However, if you need manual access to corresponding type, e.g. to use it in reflection, this will generate you a template of the runtime type. Copy and paste this to use however you will (e.g. with MapTo).</em></div>
+<div class="fsdocs-tip" id="fs50">val rows: SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity array</div>
+<div class="fsdocs-tip" id="fs51">val toArray: source: &#39;T seq -&gt; &#39;T array</div>
+<div class="fsdocs-tip" id="fs52">val employees2map: Map&lt;string,obj&gt; seq</div>
+<div class="fsdocs-tip" id="fs53">val i: SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity</div>
+<div class="fsdocs-tip" id="fs54">property SqlEntity.ColumnValues: (string * obj) seq with get</div>
+<div class="fsdocs-tip" id="fs55">Multiple items<br />module Map
 
 from Microsoft.FSharp.Collections<br /><br />--------------------<br />type Map&lt;&#39;Key,&#39;Value (requires comparison)&gt; =
   interface IReadOnlyDictionary&lt;&#39;Key,&#39;Value&gt;
@@ -469,9 +491,9 @@ from Microsoft.FSharp.Collections<br /><br />--------------------<br />type Map&
   new: elements: (&#39;Key * &#39;Value) seq -&gt; Map&lt;&#39;Key,&#39;Value&gt;
   member Add: key: &#39;Key * value: &#39;Value -&gt; Map&lt;&#39;Key,&#39;Value&gt;
   ...<br /><br />--------------------<br />new: elements: (&#39;Key * &#39;Value) seq -&gt; Map&lt;&#39;Key,&#39;Value&gt;</div>
-<div class="fsdocs-tip" id="fs54">val ofSeq: elements: (&#39;Key * &#39;T) seq -&gt; Map&lt;&#39;Key,&#39;T&gt; (requires comparison)</div>
-<div class="fsdocs-tip" id="fs55">val firstNames: obj seq</div>
-<div class="fsdocs-tip" id="fs56">val x: Map&lt;string,obj&gt;</div>
+<div class="fsdocs-tip" id="fs56">val ofSeq: elements: (&#39;Key * &#39;T) seq -&gt; Map&lt;&#39;Key,&#39;T&gt; (requires comparison)</div>
+<div class="fsdocs-tip" id="fs57">val firstNames: obj seq</div>
+<div class="fsdocs-tip" id="fs58">val x: Map&lt;string,obj&gt;</div>
 
     </div>
 </main>
@@ -484,13 +506,13 @@ from Microsoft.FSharp.Collections<br /><br />--------------------<br />type Map&
     </a>
   </li>
   <li class="level-3">
-    <a href="#TemplateAsRecord">
-      TemplateAsRecord
+    <a href="#MapTo">
+      MapTo
     </a>
   </li>
   <li class="level-3">
-    <a href="#MapTo">
-      MapTo
+    <a href="#TemplateAsRecord">
+      TemplateAsRecord
     </a>
   </li>
   <li class="level-3">

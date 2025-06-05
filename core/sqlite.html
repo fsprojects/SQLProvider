@@ -316,7 +316,7 @@ namespace, which has the following members:</p>
 <p>When you do insert operation, after .SubmitUpdates call you can get inserted rowid like this:</p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs27', 36)" onmouseover="showTip(event, 'fs27', 36)" class="id">myCustomer</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs17', 37)" onmouseover="showTip(event, 'fs17', 37)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs20', 38)" onmouseover="showTip(event, 'fs20', 38)" class="prop">Main</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs21', 39)" onmouseover="showTip(event, 'fs21', 39)" class="prop">Customers</span><span class="pn">.</span><span class="id">``Create(CompanyName)``</span><span class="pn">(</span><span class="s">&quot;MyCompany&quot;</span><span class="pn">)</span>
 <span onmouseout="hideTip(event, 'fs17', 40)" onmouseover="showTip(event, 'fs17', 40)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs28', 41)" onmouseover="showTip(event, 'fs28', 41)" class="id">SubmitUpdates</span><span class="pn">(</span><span class="pn">)</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs29', 42)" onmouseover="showTip(event, 'fs29', 42)" class="id">rowid</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs27', 43)" onmouseover="showTip(event, 'fs27', 43)" class="id">myCustomer</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs30', 44)" onmouseover="showTip(event, 'fs30', 44)" class="id">GetColumn</span><span class="pn">(</span><span class="s">&quot;rowid&quot;</span><span class="pn">)</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs31', 45)" onmouseover="showTip(event, 'fs31', 45)" class="vt">int</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs29', 42)" onmouseover="showTip(event, 'fs29', 42)" class="id">rowid</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs27', 43)" onmouseover="showTip(event, 'fs27', 43)" class="id">myCustomer</span><span class="pn">.</span><span class="id">GetColumn</span><span class="pn">(</span><span class="s">&quot;rowid&quot;</span><span class="pn">)</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs30', 44)" onmouseover="showTip(event, 'fs30', 44)" class="vt">int</span>
 </code></pre>
 
         <div class="fsdocs-tip" id="fs1">namespace System</div>
@@ -394,8 +394,7 @@ from Microsoft.FSharp.Collections</div>
 <div class="fsdocs-tip" id="fs27">val myCustomer: SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity</div>
 <div class="fsdocs-tip" id="fs28">SqlDataProvider&lt;...&gt;.dataContext.SubmitUpdates() : Unit<br /><em>&lt;summary&gt;Save changes to data-source. May throws errors: To deal with non-saved items use GetUpdates() and ClearUpdates().&lt;/summary&gt;</em></div>
 <div class="fsdocs-tip" id="fs29">val rowid: int</div>
-<div class="fsdocs-tip" id="fs30">member Common.SqlEntity.GetColumn: key: string -&gt; &#39;T</div>
-<div class="fsdocs-tip" id="fs31">Multiple items<br />val int: value: &#39;T -&gt; int (requires member op_Explicit)<br /><br />--------------------<br />type int = int32<br /><br />--------------------<br />type int&lt;&#39;Measure&gt; =
+<div class="fsdocs-tip" id="fs30">Multiple items<br />val int: value: &#39;T -&gt; int (requires member op_Explicit)<br /><br />--------------------<br />type int = int32<br /><br />--------------------<br />type int&lt;&#39;Measure&gt; =
   int</div>
 
     </div>

@@ -454,6 +454,11 @@ for example:</p>
 <span onmouseout="hideTip(event, 'fs17', 308)" onmouseover="showTip(event, 'fs17', 308)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs48', 309)" onmouseover="showTip(event, 'fs48', 309)" class="id">SubmitUpdates</span><span class="pn">(</span><span class="pn">)</span>
 </code></pre>
 <p>SetColumn takes an object, giving you more control over the type serialization.</p>
+<h3><a name="Identifying-columns-dynamically" class="anchor" href="#Identifying-columns-dynamically">Identifying columns dynamically</a></h3>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs122', 310)" onmouseover="showTip(event, 'fs122', 310)" class="fn">setIfExists</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs123', 311)" onmouseover="showTip(event, 'fs123', 311)" class="fn">columnName</span><span class="pn">)</span> <span class="o">=</span>
+   <span class="k">if</span> <span onmouseout="hideTip(event, 'fs49', 312)" onmouseover="showTip(event, 'fs49', 312)" class="id">emp</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs124', 313)" onmouseover="showTip(event, 'fs124', 313)" class="id">HasColumn</span><span class="pn">(</span><span onmouseout="hideTip(event, 'fs123', 314)" onmouseover="showTip(event, 'fs123', 314)" class="fn">columnName</span><span class="pn">,</span> <span onmouseout="hideTip(event, 'fs125', 315)" onmouseover="showTip(event, 'fs125', 315)" class="en">StringComparison</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs126', 316)" onmouseover="showTip(event, 'fs126', 316)" class="id">InvariantCultureIgnoreCase</span><span class="pn">)</span> <span class="k">then</span>
+      <span onmouseout="hideTip(event, 'fs49', 317)" onmouseover="showTip(event, 'fs49', 317)" class="id">emp</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs121', 318)" onmouseover="showTip(event, 'fs121', 318)" class="id">SetColumn</span><span class="pn">(</span><span onmouseout="hideTip(event, 'fs123', 319)" onmouseover="showTip(event, 'fs123', 319)" class="fn">columnName</span><span class="pn">,</span> <span class="s">&quot;testValue&quot;</span><span class="pn">)</span>
+</code></pre>
 
         <div class="fsdocs-tip" id="fs1">Multiple items<br />type LiteralAttribute =
   inherit Attribute
@@ -693,6 +698,18 @@ type OnConflict =
 <div class="fsdocs-tip" id="fs119">val append: source1: &#39;T seq -&gt; source2: &#39;T seq -&gt; &#39;T seq</div>
 <div class="fsdocs-tip" id="fs120">property SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity.BirthDate: DateTime with get, set<br /><em>&lt;summary&gt;BirthDate:   datetime&lt;/summary&gt;</em></div>
 <div class="fsdocs-tip" id="fs121">member Common.SqlEntity.SetColumn: key: string * value: &#39;t -&gt; unit</div>
+<div class="fsdocs-tip" id="fs122">val setIfExists: columnName: string -&gt; unit</div>
+<div class="fsdocs-tip" id="fs123">val columnName: string</div>
+<div class="fsdocs-tip" id="fs124">member Common.SqlEntity.HasColumn: key: string * ?comparison: StringComparison -&gt; bool</div>
+<div class="fsdocs-tip" id="fs125">[&lt;Struct&gt;]
+type StringComparison =
+  | CurrentCulture = 0
+  | CurrentCultureIgnoreCase = 1
+  | InvariantCulture = 2
+  | InvariantCultureIgnoreCase = 3
+  | Ordinal = 4
+  | OrdinalIgnoreCase = 5<br /><em>&lt;summary&gt;Specifies the culture, case, and sort rules to be used by certain overloads of the &lt;see cref=&quot;M:System.String.Compare(System.String,System.String)&quot; /&gt; and &lt;see cref=&quot;M:System.String.Equals(System.Object)&quot; /&gt; methods.&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs126">field StringComparison.InvariantCultureIgnoreCase: StringComparison = 3</div>
 
     </div>
 </main>
@@ -722,6 +739,11 @@ type OnConflict =
   <li class="level-3">
     <a href="#What-to-do-if-your-creation-fails-systematically-every-time">
       What to do if your creation fails systematically every time
+    </a>
+  </li>
+  <li class="level-3">
+    <a href="#Identifying-columns-dynamically">
+      Identifying columns dynamically
     </a>
   </li>
 </ul>
