@@ -377,7 +377,7 @@ module MSSqlServer =
         let cmd = new SqlCommand()
         cmd.Connection <- con :?> SqlConnection
         let haspk, pk =
-            match schemaCache.PrimaryKeys.TryGetValue entity.Table.FullName with
+            match schemaCache.PrimaryKeys.TryGetValue (entity :> IColumnHolder).Table.FullName with
             | true, pk -> true, pk
             | false, _ -> false, []
         let columnNames, values =
@@ -395,19 +395,19 @@ module MSSqlServer =
         match haspk, pk with
         | true, [itm] ->
             if values |> Array.isEmpty then
-                ~~(sprintf "INSERT INTO [%s].[%s] OUTPUT inserted.[%s] DEFAULT VALUES;" entity.Table.Schema entity.Table.Name itm)
+                ~~(sprintf "INSERT INTO [%s].[%s] OUTPUT inserted.[%s] DEFAULT VALUES;" (entity :> IColumnHolder).Table.Schema (entity :> IColumnHolder).Table.Name itm)
             else
                 ~~(sprintf "INSERT INTO [%s].[%s] (%s) OUTPUT inserted.[%s] VALUES (%s);"
-                    entity.Table.Schema entity.Table.Name
+                    (entity :> IColumnHolder).Table.Schema (entity :> IColumnHolder).Table.Name
                     (String.Join(",",columnNames))
                     itm
                     (String.Join(",",values |> Array.map(fun p -> p.ParameterName))))
         | _ -> 
             if values |> Array.isEmpty then
-                ~~(sprintf "INSERT INTO [%s].[%s] DEFAULT VALUES;" entity.Table.Schema entity.Table.Name )
+                ~~(sprintf "INSERT INTO [%s].[%s] DEFAULT VALUES;" (entity :> IColumnHolder).Table.Schema (entity :> IColumnHolder).Table.Name )
             else
                 ~~(sprintf "INSERT INTO [%s].[%s] (%s) VALUES (%s);"
-                    entity.Table.Schema entity.Table.Name
+                    (entity :> IColumnHolder).Table.Schema (entity :> IColumnHolder).Table.Name
                     (String.Join(",",columnNames))
                     (String.Join(",",values |> Array.map(fun p -> p.ParameterName))))
 
@@ -421,7 +421,7 @@ module MSSqlServer =
         let cmd = new SqlCommand()
         cmd.Connection <- con :?> SqlConnection
         let pk =
-            match schemaCache.PrimaryKeys.TryGetValue entity.Table.FullName with
+            match schemaCache.PrimaryKeys.TryGetValue (entity :> IColumnHolder).Table.FullName with
             | true, pk -> pk
             | false, _ -> []
         sb.Clear() |> ignore
@@ -431,8 +431,8 @@ module MSSqlServer =
         | _ -> ()
         
         let pkValues =
-            match entity.GetPkColumnOption<obj> pk with
-            | [] -> failwith ("Error - you cannot update an entity that does not have a primary key. (" + entity.Table.FullName + ")")
+            match (entity :> IColumnHolder).GetPkColumnOption<obj> pk with
+            | [] -> failwith ("Error - you cannot update an entity that does not have a primary key. (" + (entity :> IColumnHolder).Table.FullName + ")")
             | v -> v
 
         let data =
@@ -440,7 +440,7 @@ module MSSqlServer =
             ||> List.fold(fun (out,i) col ->
                 let name = sprintf "@param%i" i
                 let p =
-                    match entity.GetColumnOption<obj> col with
+                    match (entity :> IColumnHolder).GetColumnOption<obj> col with
                     | Some v ->
                         let p = createOpenParameter(name,v)
                         p
@@ -454,7 +454,7 @@ module MSSqlServer =
         | [] -> ()
         | ks -> 
             ~~(sprintf "UPDATE [%s].[%s] SET %s WHERE "
-                entity.Table.Schema entity.Table.Name
+                (entity :> IColumnHolder).Table.Schema (entity :> IColumnHolder).Table.Name
                 ((String.concat "," (data |> Array.map(fun (c,p) -> sprintf "[%s] = %s" c p.ParameterName )) )))
             ~~(String.concat " AND " (ks |> List.mapi(fun i k -> (sprintf "[%s] = @pk%i" k i))))
 
@@ -472,13 +472,13 @@ module MSSqlServer =
         cmd.Connection <- con :?> SqlConnection
         sb.Clear() |> ignore
         let pk =
-            match schemaCache.PrimaryKeys.TryGetValue entity.Table.FullName with
+            match schemaCache.PrimaryKeys.TryGetValue (entity :> IColumnHolder).Table.FullName with
             | true, pk -> pk
             | false, _ -> []
         sb.Clear() |> ignore
         let pkValues =
-            match entity.GetPkColumnOption<obj> pk with
-            | [] -> failwith ("Error - you cannot delete an entity that does not have a primary key. (" + entity.Table.FullName + ")")
+            match (entity :> IColumnHolder).GetPkColumnOption<obj> pk with
+            | [] -> failwith ("Error - you cannot delete an entity that does not have a primary key. (" + (entity :> IColumnHolder).Table.FullName + ")")
             | v -> v
 
         pkValues |> List.iteri(fun i pkValue ->
@@ -487,7 +487,7 @@ module MSSqlServer =
         match pk with
         | [] -> ()
         | ks -> 
-            ~~(sprintf "DELETE FROM [%s].[%s] WHERE " entity.Table.Schema entity.Table.Name)
+            ~~(sprintf "DELETE FROM [%s].[%s] WHERE " (entity :> IColumnHolder).Table.Schema (entity :> IColumnHolder).Table.Name)
             ~~(String.concat " AND " (ks |> List.mapi(fun i k -> (sprintf "[%s] = @id%i" k i))))
 
         cmd.CommandText <- sb.ToString()
@@ -1161,7 +1161,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                             cmd.CommandTimeout <- timeout.Value
                         cmd.ExecuteNonQuery() |> ignore
                         // remove the pk to prevent this attempting to be used again
-                        e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
+                        (e :> IColumnHolder).SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[(e :> IColumnHolder).Table.FullName], None)
                         e._State <- Deleted
                     | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! %O" e)
                                    // but is possible if you try to use same context on multiple threads. Don't do that.
@@ -1215,7 +1215,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                                     cmd.CommandTimeout <- timeout.Value
                                 let! c = cmd.ExecuteNonQueryAsync()
                                 // remove the pk to prevent this attempting to be used again
-                                e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
+                                (e :> IColumnHolder).SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[(e :> IColumnHolder).Table.FullName], None)
                                 e._State <- Deleted
                             }
                         | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e

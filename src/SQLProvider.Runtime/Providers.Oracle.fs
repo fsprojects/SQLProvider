@@ -613,7 +613,7 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
 
         sb.Clear() |> ignore
         ~~(sprintf "INSERT INTO %s (%s) VALUES (%s)"
-            (entity.Table.FullName)
+            ((entity :> IColumnHolder).Table.FullName)
             (String.Join(",",columnNames))
             (String.Join(",",values |> Array.map(fun p -> p.ParameterName))))
         let cmd = provider.CreateCommand(con, sb.ToString())
@@ -624,13 +624,13 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
         let (~~) (t:string) = sb.Append t |> ignore
         sb.Clear() |> ignore
 
-        if changedColumns |> List.exists (isPrimaryKey entity.Table.Name) 
+        if changedColumns |> List.exists (isPrimaryKey (entity :> IColumnHolder).Table.Name) 
         then failwith "Error - you cannot change the primary key of an entity."
 
-        let pk = schemaCache.PrimaryKeys.[entity.Table.Name]
+        let pk = schemaCache.PrimaryKeys.[(entity :> IColumnHolder).Table.Name]
         let pkValues =
-            match entity.GetPkColumnOption<obj> pk with
-            | [] -> failwith ("Error - you cannot update an entity that does not have a primary key. (" + entity.Table.FullName + ")")
+            match (entity :> IColumnHolder).GetPkColumnOption<obj> pk with
+            | [] -> failwith ("Error - you cannot update an entity that does not have a primary key. (" + (entity :> IColumnHolder).Table.FullName + ")")
             | v -> v
 
         let columns, parameters =
@@ -638,7 +638,7 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
             ||> List.fold(fun (out,i) col ->
                 let name = sprintf ":param%i" i
                 let p =
-                    match entity.GetColumnOption<obj> col with
+                    match (entity :> IColumnHolder).GetColumnOption<obj> col with
                     | Some v -> provider.CreateCommandParameter(QueryParameter.Create(name,i), v)
                     | None -> provider.CreateCommandParameter(QueryParameter.Create(name,i), DBNull.Value)
                 (col,p)::out,i+1)
@@ -651,7 +651,7 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
         | [] -> ()
         | ks -> 
             ~~(sprintf "UPDATE %s SET (%s) = (SELECT %s FROM DUAL) WHERE "
-                (entity.Table.FullName)
+                ((entity :> IColumnHolder).Table.FullName)
                 ((String.concat "," columns))
                 (String.concat "," (parameters |> Array.map (fun p -> p.ParameterName))))
             ~~(String.concat " AND " (ks |> List.mapi(fun i k -> (sprintf "\"%s\" = :pk%i" k i))))
@@ -666,17 +666,17 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
 
     let createDeleteCommand (provider:ISqlProvider) (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) =
         let (~~) (t:string) = sb.Append t |> ignore
-        let pk = schemaCache.PrimaryKeys.[entity.Table.Name]
+        let pk = schemaCache.PrimaryKeys.[(entity :> IColumnHolder).Table.Name]
         sb.Clear() |> ignore
         let pkValues =
-            match entity.GetPkColumnOption<obj> pk with
-            | [] -> failwith ("Error - you cannot delete an entity that does not have a primary key. (" + entity.Table.FullName + ")")
+            match (entity :> IColumnHolder).GetPkColumnOption<obj> pk with
+            | [] -> failwith ("Error - you cannot delete an entity that does not have a primary key. (" + (entity :> IColumnHolder).Table.FullName + ")")
             | v -> v
 
         match pk with
         | [] -> ()
         | ks -> 
-            ~~(sprintf "DELETE FROM %s WHERE " entity.Table.FullName)
+            ~~(sprintf "DELETE FROM %s WHERE " (entity :> IColumnHolder).Table.FullName)
             ~~(String.concat " AND " (ks |> List.mapi(fun i k -> (sprintf "\"%s\" = :pk%i" k i))))
 
         let cmd = provider.CreateCommand(con, sb.ToString())
@@ -1147,10 +1147,10 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
                         if timeout.IsSome then
                             cmd.CommandTimeout <- timeout.Value
                         let id = cmd.ExecuteScalar()
-                        match schemaCache.PrimaryKeys.TryGetValue e.Table.Name with
+                        match schemaCache.PrimaryKeys.TryGetValue (e :> IColumnHolder).Table.Name with
                         | true, pk ->
-                            match e.GetPkColumnOption pk with
-                            | [] ->  e.SetPkColumnSilent(pk, id)
+                            match (e :> IColumnHolder).GetPkColumnOption pk with
+                            | [] ->  (e :> IColumnHolder).SetPkColumnSilent(pk, id)
                             | _ -> () // if the primary key exists, do nothing
                                             // this is because non-identity columns will have been set
                                             // manually and in that case scope_identity would bring back 0 "" or whatever
@@ -1170,7 +1170,7 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
                             cmd.CommandTimeout <- timeout.Value
                         cmd.ExecuteNonQuery() |> ignore
                         // remove the pk to prevent this attempting to be used again
-                        e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.Name], None)
+                        (e :> IColumnHolder).SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[(e :> IColumnHolder).Table.Name], None)
                         e._State <- Deleted
                     | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e)
                 if not(isNull scope) then scope.Complete()
@@ -1206,10 +1206,10 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
                                 let! id = cmd.ExecuteScalarAsync()
-                                match schemaCache.PrimaryKeys.TryGetValue e.Table.Name with
+                                match schemaCache.PrimaryKeys.TryGetValue (e :> IColumnHolder).Table.Name with
                                 | true, pk ->
-                                    match e.GetPkColumnOption pk with
-                                    | [] ->  e.SetPkColumnSilent(pk, id)
+                                    match (e :> IColumnHolder).GetPkColumnOption pk with
+                                    | [] ->  (e :> IColumnHolder).SetPkColumnSilent(pk, id)
                                     | _ -> () // if the primary key exists, do nothing
                                                     // this is because non-identity columns will have been set
                                                     // manually and in that case scope_identity would bring back 0 "" or whatever
@@ -1233,7 +1233,7 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
                                     cmd.CommandTimeout <- timeout.Value
                                 let! c = cmd.ExecuteNonQueryAsync()
                                 // remove the pk to prevent this attempting to be used again
-                                e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.Name], None)
+                                (e :> IColumnHolder).SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[(e :> IColumnHolder).Table.Name], None)
                                 e._State <- Deleted
                             }
                         | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e

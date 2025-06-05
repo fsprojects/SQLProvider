@@ -1318,12 +1318,12 @@ module QueryFactory =
             if direction = RelationshipDirection.Children then
                 QueryImplementation.SqlQueryable<_>(dc,provider,
                     FilterClause(
-                        Condition.And(["__base__",(parseKey fk),ConditionOperator.Equal, Some(inst.GetColumn pk)],None),
+                        Condition.And(["__base__",(parseKey fk),ConditionOperator.Equal, Some((inst :> IColumnHolder).GetColumn pk)],None),
                         BaseTable("__base__",Table.FromFullName fe)),ResizeArray<_>()) :> System.Linq.IQueryable<_>
             else
                 QueryImplementation.SqlQueryable<_>(dc,provider,
                     FilterClause(
-                        Condition.And(["__base__",(parseKey pk),ConditionOperator.Equal, Some(box<|inst.GetColumn fk)],None),
+                        Condition.And(["__base__",(parseKey pk),ConditionOperator.Equal, Some(box<|(inst :> IColumnHolder).GetColumn fk)],None),
                         BaseTable("__base__",Table.FromFullName pe)),ResizeArray<_>()) :> System.Linq.IQueryable<_>
 
     let createEntities(dc:ISqlDataContext,provider:ISqlProvider,table:string) : System.Linq.IQueryable<SqlEntity> =

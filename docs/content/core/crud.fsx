@@ -307,4 +307,12 @@ ctx.SubmitUpdates()
 
 SetColumn takes an object, giving you more control over the type serialization.
 
+### Identifying columns dynamically
+
 *)
+
+let setIfExists (columnName) =
+   if emp.HasColumn(columnName, StringComparison.InvariantCultureIgnoreCase) then
+      emp.SetColumn(columnName, "testValue")
+
+(**

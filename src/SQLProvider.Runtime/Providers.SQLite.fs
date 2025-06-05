@@ -271,7 +271,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
         sb.Clear() |> ignore
         ~~(sprintf "INSERT %s INTO %s (%s) VALUES (%s); SELECT last_insert_rowid();"
             conflictClause
-            entity.Table.FullName
+            (entity :> IColumnHolder).Table.FullName
             (String.Join(",",columnNames))
             (String.Join(",",values |> Array.map(fun p -> p.ParameterName))))
 
@@ -284,7 +284,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
         let cmd = (this :> ISqlProvider).CreateCommand(con,"")
         cmd.Connection <- con
         let pk =
-            match schemaCache.PrimaryKeys.TryGetValue entity.Table.FullName with
+            match schemaCache.PrimaryKeys.TryGetValue (entity :> IColumnHolder).Table.FullName with
             | true, pk -> pk
             | false, _ -> []
         sb.Clear() |> ignore
@@ -295,8 +295,8 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
         | _ -> ()
 
         let pkValues =
-            match entity.GetPkColumnOption<obj> pk with
-            | [] -> failwith ("Error - you cannot update an entity that does not have a primary key. (" + entity.Table.FullName + ")")
+            match (entity :> IColumnHolder).GetPkColumnOption<obj> pk with
+            | [] -> failwith ("Error - you cannot update an entity that does not have a primary key. (" + (entity :> IColumnHolder).Table.FullName + ")")
             | v -> v
 
         let data =
@@ -304,7 +304,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
             ||> List.fold(fun (out,i) col ->
                 let name = sprintf "@param%i" i
                 let p =
-                    match entity.GetColumnOption<obj> col with
+                    match (entity :> IColumnHolder).GetColumnOption<obj> col with
                     | Some v -> createParam name i v
                     | None -> (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create(name,i),DBNull.Value)
                 (col,p)::out,i+1)
@@ -316,7 +316,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
         | [] -> ()
         | ks ->
             ~~(sprintf "UPDATE %s SET %s WHERE "
-                entity.Table.FullName
+                (entity :> IColumnHolder).Table.FullName
                 (String.concat "," (data |> Array.map(fun (c,p) -> sprintf "[%s] = %s" c p.ParameterName ) )))
             ~~(String.concat " AND " (ks |> List.mapi(fun i k -> (sprintf "[%s] = @pk%i" k i))) + ";")
 
@@ -333,13 +333,13 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
         cmd.Connection <- con
         sb.Clear() |> ignore
         let pk =
-            match schemaCache.PrimaryKeys.TryGetValue entity.Table.FullName with
+            match schemaCache.PrimaryKeys.TryGetValue (entity :> IColumnHolder).Table.FullName with
             | true, pk -> pk
             | false, _ -> []
         sb.Clear() |> ignore
         let pkValues =
-            match entity.GetPkColumnOption<obj> pk with
-            | [] -> failwith ("Error - you cannot delete an entity that does not have a primary key. (" + entity.Table.FullName + ")")
+            match (entity :> IColumnHolder).GetPkColumnOption<obj> pk with
+            | [] -> failwith ("Error - you cannot delete an entity that does not have a primary key. (" + (entity :> IColumnHolder).Table.FullName + ")")
             | v -> v
         pkValues |> List.iteri(fun i pkValue ->
             let p = createParam ("@id"+i.ToString()) i pkValue
@@ -348,7 +348,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
         match pk with
         | [] -> ()
         | ks ->
-            ~~(sprintf "DELETE FROM %s WHERE " entity.Table.FullName)
+            ~~(sprintf "DELETE FROM %s WHERE " (entity :> IColumnHolder).Table.FullName)
             ~~(String.concat " AND " (ks |> List.mapi(fun i k -> (sprintf "[%s] = @id%i" k i))) + ";")
         cmd.CommandText <- sb.ToString()
         cmd
@@ -961,7 +961,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                             cmd.CommandTimeout <- timeout.Value
                         cmd.ExecuteNonQuery() |> ignore
                         // remove the pk to prevent this attempting to be used again
-                        e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
+                        (e :> IColumnHolder).SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[(e :> IColumnHolder).Table.FullName], None)
                         e._State <- Deleted
                     | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e)
 
@@ -1032,7 +1032,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                                 cmd.CommandTimeout <- timeout.Value
                             let! c = cmd.ExecuteNonQueryAsync()
                             // remove the pk to prevent this attempting to be used again
-                            e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
+                            (e :> IColumnHolder).SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[(e :> IColumnHolder).Table.FullName], None)
                             e._State <- Deleted
                         }
                     | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e

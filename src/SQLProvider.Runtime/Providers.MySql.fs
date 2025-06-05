@@ -436,7 +436,7 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
 
         sb.Clear() |> ignore
         ~~(sprintf "INSERT INTO %s (%s) VALUES (%s)"
-            (entity.Table |> quotedTableName)
+            ((entity :> IColumnHolder).Table |> quotedTableName)
             ("`" + (String.Join("`, `",columnNames)) + "`")
             (String.Join(",",values |> Array.map(fun p -> p.ParameterName))))
 
@@ -460,7 +460,7 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
         let cmd = (this :> ISqlProvider).CreateCommand(con,"")
         cmd.Connection <- con
         let pk =
-            match schemaCache.PrimaryKeys.TryGetValue (entity.Table |> quotedTableName) with
+            match schemaCache.PrimaryKeys.TryGetValue ((entity :> IColumnHolder).Table |> quotedTableName) with
             | true, pk -> pk
             | false, _ -> []
         sb.Clear() |> ignore
@@ -471,8 +471,8 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
         | _ -> ()
 
         let pkValues =
-            match entity.GetPkColumnOption<obj> pk with
-            | [] -> failwith ("Error - you cannot update an entity that does not have a primary key. (" + (entity.Table |> quotedTableName) + ")")
+            match (entity :> IColumnHolder).GetPkColumnOption<obj> pk with
+            | [] -> failwith ("Error - you cannot update an entity that does not have a primary key. (" + ((entity :> IColumnHolder).Table |> quotedTableName) + ")")
             | v -> v
 
         let data =
@@ -480,7 +480,7 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
             ||> List.fold(fun (out,i) col ->
                 let name = sprintf "@param%i" i
                 let p =
-                    match entity.GetColumnOption<obj> col with
+                    match (entity :> IColumnHolder).GetColumnOption<obj> col with
                     | Some v -> (this :> ISqlProvider).CreateCommandParameter((MySql.createParam name i v),v)
                     | None -> (this :> ISqlProvider).CreateCommandParameter(QueryParameter.Create(name, i), DBNull.Value)
                 (col,p)::out,i+1)
@@ -492,7 +492,7 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
         | [] -> ()
         | ks ->
             ~~(sprintf "UPDATE %s SET %s WHERE "
-                (entity.Table |> quotedTableName)
+                ((entity :> IColumnHolder).Table |> quotedTableName)
                 (String.concat "," (data |> Array.map(fun (c,p) -> sprintf "`%s` = %s" c p.ParameterName ))))
             ~~(String.concat " AND " (ks |> List.mapi(fun i k -> (sprintf "`%s` = @pk%i" k i))) + ";")
 
@@ -510,13 +510,13 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
         cmd.Connection <- con
         sb.Clear() |> ignore
         let pk =
-            match schemaCache.PrimaryKeys.TryGetValue (entity.Table |> quotedTableName) with
+            match schemaCache.PrimaryKeys.TryGetValue ((entity :> IColumnHolder).Table |> quotedTableName) with
             | true, pk -> pk
             | false, _ -> []
         sb.Clear() |> ignore
         let pkValues =
-            match entity.GetPkColumnOption<obj> pk with
-            | [] -> failwith ("Error - you cannot delete an entity that does not have a primary key. (" + (entity.Table |> quotedTableName) + ")")
+            match (entity :> IColumnHolder).GetPkColumnOption<obj> pk with
+            | [] -> failwith ("Error - you cannot delete an entity that does not have a primary key. (" + ((entity :> IColumnHolder).Table |> quotedTableName) + ")")
             | v -> v
 
         pkValues |> List.iteri(fun i pkValue ->
@@ -526,7 +526,7 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
         match pk with
         | [] -> ()
         | ks ->
-            ~~(sprintf "DELETE FROM %s WHERE " (entity.Table |> quotedTableName))
+            ~~(sprintf "DELETE FROM %s WHERE " ((entity :> IColumnHolder).Table |> quotedTableName))
             ~~(String.concat " AND " (ks |> List.mapi(fun i k -> (sprintf "%s = @id%i" k i))) + ";")
         cmd.CommandText <- sb.ToString()
         cmd
@@ -1108,7 +1108,7 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                             cmd.CommandTimeout <- timeout.Value
                         cmd.ExecuteNonQuery() |> ignore
                         // remove the pk to prevent this attempting to be used again
-                        e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table |> quotedTableName], None)
+                        (e :> IColumnHolder).SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[(e :> IColumnHolder).Table |> quotedTableName], None)
                         e._State <- Deleted
                     | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e)
 
@@ -1164,7 +1164,7 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                                     cmd.CommandTimeout <- timeout.Value
                                 let! c = cmd.ExecuteNonQueryAsync()
                                 // remove the pk to prevent this attempting to be used again
-                                e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table |> quotedTableName], None)
+                                (e :> IColumnHolder).SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[(e :> IColumnHolder).Table |> quotedTableName], None)
                                 e._State <- Deleted
                             }
                         | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e

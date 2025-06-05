@@ -92,7 +92,7 @@ type internal MSAccessProvider(contextSchemaPath) =
 
         sb.Clear() |> ignore
         ~~(sprintf "INSERT INTO [%s] (%s) VALUES (%s)"//; SELECT @@IDENTITY;"
-            entity.Table.Name
+            (entity :> IColumnHolder).Table.Name
             (String.concat "," columnNames)
             (String.concat "," (values |> Array.map(fun p -> p.ParameterName))))
         cmd.Parameters.AddRange(values)
@@ -104,9 +104,9 @@ type internal MSAccessProvider(contextSchemaPath) =
         let cmd = new OleDbCommand()
         cmd.Connection <- con :?> OleDbConnection
         let pk =
-            match schemaCache.PrimaryKeys.TryGetValue entity.Table.FullName with
+            match schemaCache.PrimaryKeys.TryGetValue (entity :> IColumnHolder).Table.FullName with
             | false, _ ->
-                failwith("Can't update entity: Table doesn't have a primary key: " + entity.Table.FullName)
+                failwith("Can't update entity: Table doesn't have a primary key: " + (entity :> IColumnHolder).Table.FullName)
             | true, pkv -> pkv
         sb.Clear() |> ignore
 
@@ -116,8 +116,8 @@ type internal MSAccessProvider(contextSchemaPath) =
         | _ -> ()
 
         let pkValues =
-            match entity.GetPkColumnOption<obj> pk with
-            | [] -> failwith ("Error - you cannot update an entity that does not have a primary key. (" + entity.Table.FullName + ")")
+            match (entity :> IColumnHolder).GetPkColumnOption<obj> pk with
+            | [] -> failwith ("Error - you cannot update an entity that does not have a primary key. (" + (entity :> IColumnHolder).Table.FullName + ")")
             | v -> v
 
         let data =
@@ -125,7 +125,7 @@ type internal MSAccessProvider(contextSchemaPath) =
             ||> List.fold(fun (out,i) col ->
                 let name = sprintf "@param%i" i
                 let p =
-                    match entity.GetColumnOption<obj> col with
+                    match (entity :> IColumnHolder).GetColumnOption<obj> col with
                     | Some v -> OleDbParameter(name,v)
                     | None -> OleDbParameter(name,DBNull.Value)
                 (col,p)::out,i+1)
@@ -137,7 +137,7 @@ type internal MSAccessProvider(contextSchemaPath) =
         | [] -> ()
         | ks -> 
             ~~(sprintf "UPDATE [%s] SET %s WHERE "
-                (entity.Table.Name.Replace("\"", ""))
+                ((entity :> IColumnHolder).Table.Name.Replace("\"", ""))
                 ((String.concat "," (data |> Array.map(fun (c,p) -> sprintf "%s = %s" c p.ParameterName )) )))
             ~~(String.concat " AND " (ks |> List.mapi(fun i k -> (sprintf "%s = @pk%i" k i))))
 
@@ -154,12 +154,12 @@ type internal MSAccessProvider(contextSchemaPath) =
         let cmd = new OleDbCommand()
         cmd.Connection <- con :?> OleDbConnection
         sb.Clear() |> ignore
-        let haspk = schemaCache.PrimaryKeys.ContainsKey(entity.Table.FullName)
-        let pk = if haspk then schemaCache.PrimaryKeys.[entity.Table.FullName] else []
+        let haspk = schemaCache.PrimaryKeys.ContainsKey((entity :> IColumnHolder).Table.FullName)
+        let pk = if haspk then schemaCache.PrimaryKeys.[(entity :> IColumnHolder).Table.FullName] else []
         sb.Clear() |> ignore
         let pkValues =
-            match entity.GetPkColumnOption<obj> pk with
-            | [] -> failwith ("Error - you cannot delete an entity that does not have a primary key. (" + entity.Table.FullName + ")")
+            match (entity :> IColumnHolder).GetPkColumnOption<obj> pk with
+            | [] -> failwith ("Error - you cannot delete an entity that does not have a primary key. (" + (entity :> IColumnHolder).Table.FullName + ")")
             | v -> v
 
         pkValues |> List.iteri(fun i pkValue ->
@@ -168,7 +168,7 @@ type internal MSAccessProvider(contextSchemaPath) =
         match pk with
         | [] -> ()
         | ks -> 
-            ~~(sprintf "DELETE FROM [%s] WHERE " (entity.Table.Name.Replace("\"", "")))
+            ~~(sprintf "DELETE FROM [%s] WHERE " ((entity :> IColumnHolder).Table.Name.Replace("\"", "")))
             ~~(String.concat " AND " (ks |> List.mapi(fun i k -> (sprintf "%s = @id%i" k i))))
 
         cmd.CommandText <- sb.ToString()
@@ -707,7 +707,7 @@ type internal MSAccessProvider(contextSchemaPath) =
                                 cmd.CommandTimeout <- timeout.Value
                             cmd.ExecuteNonQuery() |> ignore
                             // remove the pk to prevent this attempting to be used again
-                            e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
+                            (e :> IColumnHolder).SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[(e :> IColumnHolder).Table.FullName], None)
                             e._State <- Deleted
                         | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e)
                     trnsx.Commit()
@@ -770,7 +770,7 @@ type internal MSAccessProvider(contextSchemaPath) =
                                         cmd.CommandTimeout <- timeout.Value
                                     let! c = cmd.ExecuteNonQueryAsync()
                                     // remove the pk to prevent this attempting to be used again
-                                    e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
+                                    (e :> IColumnHolder).SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[(e :> IColumnHolder).Table.FullName], None)
                                     e._State <- Deleted
                                 }
                             | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e

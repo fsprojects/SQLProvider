@@ -575,7 +575,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
         let cmd = PostgreSQL.createCommand "" con
         cmd.Connection <- con
         let haspk, pk =
-            match schemaCache.PrimaryKeys.TryGetValue entity.Table.FullName with
+            match schemaCache.PrimaryKeys.TryGetValue (entity :> IColumnHolder).Table.FullName with
             | true, pk -> true, pk
             | false, _ -> false, []
         let columnNamesWithValues = 
@@ -593,7 +593,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
         let columnNames, values = List.unzip columnNamesWithValues
 
         sb.Clear() |> ignore
-        ~~(sprintf "INSERT INTO \"%s\".\"%s\" " entity.Table.Schema entity.Table.Name)
+        ~~(sprintf "INSERT INTO \"%s\".\"%s\" " (entity :> IColumnHolder).Table.Schema (entity :> IColumnHolder).Table.Name)
 
         match columnNames with
         | [] -> ~~(sprintf "DEFAULT VALUES")
@@ -623,7 +623,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
         let cmd = PostgreSQL.createCommand "" con
         cmd.Connection <- con
         let pk =
-            match schemaCache.PrimaryKeys.TryGetValue entity.Table.FullName with
+            match schemaCache.PrimaryKeys.TryGetValue (entity :> IColumnHolder).Table.FullName with
             | true, pk -> pk
             | false, _ -> []
         sb.Clear() |> ignore
@@ -634,8 +634,8 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
         | _ -> ()
 
         let pkValues =
-            match entity.GetPkColumnOption<obj> pk with
-            | [] -> failwith ("Error - you cannot update an entity that does not have a primary key. (" + entity.Table.FullName + ")")
+            match (entity :> IColumnHolder).GetPkColumnOption<obj> pk with
+            | [] -> failwith ("Error - you cannot update an entity that does not have a primary key. (" + (entity :> IColumnHolder).Table.FullName + ")")
             | v -> v
 
         let data =
@@ -643,7 +643,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
             ||> List.fold(fun (out,i) col ->
                 let name = sprintf "@param%i" i
                 let qp, v =
-                    match entity.GetColumnOptionWithDefinition col with
+                    match (entity :> IColumnHolder).GetColumnOptionWithDefinition col with
                     | Some(v, Some(c)) -> QueryParameter.Create(name,i,c.TypeMapping), v
                     | Some(v, None) -> QueryParameter.Create(name,i), v
                     | None -> QueryParameter.Create(name,i), box DBNull.Value
@@ -657,7 +657,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
         | [] -> ()
         | ks -> 
             ~~(sprintf "UPDATE \"%s\".\"%s\" SET %s WHERE "
-                entity.Table.Schema entity.Table.Name
+                (entity :> IColumnHolder).Table.Schema (entity :> IColumnHolder).Table.Name
                 (String.concat "," (data |> Array.map(fun (c,p) -> sprintf "\"%s\" = %s" c p.ParameterName ) )))
             ~~(String.concat " AND " (ks |> List.mapi(fun i k -> (sprintf "\"%s\" = @pk%i" k i))) + ";")
 
@@ -674,13 +674,13 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
         cmd.Connection <- con
         sb.Clear() |> ignore
         let pk =
-            match schemaCache.PrimaryKeys.TryGetValue entity.Table.FullName with
+            match schemaCache.PrimaryKeys.TryGetValue (entity :> IColumnHolder).Table.FullName with
             | true, pk -> pk
             | false, _ -> []
         sb.Clear() |> ignore
         let pkValues =
-            match entity.GetPkColumnOption<obj> pk with
-            | [] -> failwith ("Error - you cannot delete an entity that does not have a primary key. (" + entity.Table.FullName + ")")
+            match (entity :> IColumnHolder).GetPkColumnOption<obj> pk with
+            | [] -> failwith ("Error - you cannot delete an entity that does not have a primary key. (" + (entity :> IColumnHolder).Table.FullName + ")")
             | v -> v
 
         pkValues |> List.iteri(fun i pkValue ->
@@ -690,7 +690,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
         match pk with
         | [] -> ()
         | ks -> 
-            ~~(sprintf "DELETE FROM \"%s\".\"%s\" WHERE " entity.Table.Schema entity.Table.Name)
+            ~~(sprintf "DELETE FROM \"%s\".\"%s\" WHERE " (entity :> IColumnHolder).Table.Schema (entity :> IColumnHolder).Table.Name)
             ~~(String.concat " AND " (ks |> List.mapi(fun i k -> (sprintf "\"%s\" = @id%i" k i))))
 
         cmd.CommandText <- sb.ToString()
@@ -1337,7 +1337,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                             cmd.CommandTimeout <- timeout.Value
                         cmd.ExecuteNonQuery() |> ignore
                         // remove the pk to prevent this attempting to be used again
-                        e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
+                        (e :> IColumnHolder).SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[(e :> IColumnHolder).Table.FullName], None)
                         e._State <- Deleted
                     | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e)
                 if not(isNull scope) then scope.Complete()
@@ -1392,7 +1392,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                                     cmd.CommandTimeout <- timeout.Value
                                 let! c = cmd.ExecuteNonQueryAsync()
                                 // remove the pk to prevent this attempting to be used again
-                                e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
+                                (e :> IColumnHolder).SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[(e :> IColumnHolder).Table.FullName], None)
                                 e._State <- Deleted
                             }
                         | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e

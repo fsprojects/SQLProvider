@@ -302,10 +302,10 @@ module internal QueryExpressionTransformer =
                 let name = $"op{abs(coltyp.GetHashCode())}"
                 let meth = 
                     if Common.Utilities.isCOpt exp.Type then
-                        typeof<SqlEntity>.GetMethod("GetColumnOption").MakeGenericMethod([|exp.Type.GetGenericArguments().[0]|])
+                        typeof<IColumnHolder>.GetMethod("GetColumnOption").MakeGenericMethod([|exp.Type.GetGenericArguments().[0]|])
                     elif Common.Utilities.isVOpt exp.Type then
-                        typeof<SqlEntity>.GetMethod("GetColumnValueOption").MakeGenericMethod([|exp.Type.GetGenericArguments().[0]|])
-                    else typeof<SqlEntity>.GetMethod("GetColumn").MakeGenericMethod([|exp.Type|])
+                        typeof<IColumnHolder>.GetMethod("GetColumnValueOption").MakeGenericMethod([|exp.Type.GetGenericArguments().[0]|])
+                    else typeof<IColumnHolder>.GetMethod("GetColumn").MakeGenericMethod([|exp.Type|])
 
                 let projection = Expression.Call(databaseParam,meth,Expression.Constant(name)) 
 
@@ -493,10 +493,10 @@ module internal QueryExpressionTransformer =
                         projectionMap.Add(al, ResizeArray<_>(seq{yield OperationColumn("result", coltyp)}))
                         let meth = 
                             if Utilities.isCOpt opType then
-                                typeof<SqlEntity>.GetMethod("GetColumnOption").MakeGenericMethod([|opType.GetGenericArguments().[0]|])
+                                typeof<IColumnHolder>.GetMethod("GetColumnOption").MakeGenericMethod([|opType.GetGenericArguments().[0]|])
                             elif Utilities.isVOpt opType then
-                                typeof<SqlEntity>.GetMethod("GetColumnValueOption").MakeGenericMethod([|opType.GetGenericArguments().[0]|])
-                            else typeof<SqlEntity>.GetMethod("GetColumn").MakeGenericMethod([|opType|])
+                                typeof<IColumnHolder>.GetMethod("GetColumnValueOption").MakeGenericMethod([|opType.GetGenericArguments().[0]|])
+                            else typeof<IColumnHolder>.GetMethod("GetColumn").MakeGenericMethod([|opType|])
                         Some meth
                     | _ -> None
                 else None

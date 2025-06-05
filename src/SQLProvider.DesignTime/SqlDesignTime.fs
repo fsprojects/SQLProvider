@@ -179,7 +179,7 @@ module DesignTimeUtils =
                                 let ret = (dcDone :> ISqlDataContext).ReadEntities(table.FullName+"_"+pkName, columns, reader)
                                 if (dbVendor <> DatabaseProviderTypes.MSACCESS) then con.Close()
                                 let mapped = ret |> Array.choose(fun e ->
-                                        match e.GetColumn pkName with
+                                        match (e :> IColumnHolder).GetColumn pkName with
                                         | FixedType pkValue -> Some (pkValue, e.ColumnValues |> dict)
                                         | _ -> None)
                                 mapped
@@ -267,26 +267,26 @@ module DesignTimeUtils =
                         match nullable with
                         | NullableColumnType.OPTION -> 
                            (fun (args:Expr list) ->
-                            let meth = typeof<SqlEntity>.GetMethod("GetColumnOption").MakeGenericMethod([|ty|])
+                            let meth = typeof<IColumnHolder>.GetMethod("GetColumnOption").MakeGenericMethod([|ty|])
                             Expr.Call(args.[0],meth,[Expr.Value name]))
                         | NullableColumnType.VALUE_OPTION -> 
                            (fun (args:Expr list) ->
-                            let meth = typeof<SqlEntity>.GetMethod("GetColumnValueOption").MakeGenericMethod([|ty|])
+                            let meth = typeof<IColumnHolder>.GetMethod("GetColumnValueOption").MakeGenericMethod([|ty|])
                             Expr.Call(args.[0],meth,[Expr.Value name]))
                         | _ ->
                            (fun (args:Expr list) ->
-                            let meth = typeof<SqlEntity>.GetMethod("GetColumn").MakeGenericMethod([|ty|])
+                            let meth = typeof<IColumnHolder>.GetMethod("GetColumn").MakeGenericMethod([|ty|])
                             Expr.Call(args.[0],meth,[Expr.Value name]))
                     ,
                     setterCode = 
                         match nullable with
                         | NullableColumnType.OPTION -> 
                            (fun (args:Expr list) ->
-                            let meth = typeof<SqlEntity>.GetMethod("SetColumnOption").MakeGenericMethod([|ty|])
+                            let meth = typeof<IColumnHolder>.GetMethod("SetColumnOption").MakeGenericMethod([|ty|])
                             Expr.Call(args.[0],meth,[Expr.Value name;args.[1]]))
                         | NullableColumnType.VALUE_OPTION -> 
                            (fun (args:Expr list) ->
-                            let meth = typeof<SqlEntity>.GetMethod("SetColumnValueOption").MakeGenericMethod([|ty|])
+                            let meth = typeof<IColumnHolder>.GetMethod("SetColumnValueOption").MakeGenericMethod([|ty|])
                             Expr.Call(args.[0],meth,[Expr.Value name;args.[1]]))
                         | _ ->
                            (fun (args:Expr list) ->
@@ -356,7 +356,7 @@ module DesignTimeUtils =
                                         ProvidedProperty(
                                             name, ty,
                                             getterCode = (fun (args:Expr list) ->
-                                                let meth = typeof<SqlEntity>.GetMethod("GetColumn").MakeGenericMethod([|ty|])
+                                                let meth = typeof<IColumnHolder>.GetMethod("GetColumn").MakeGenericMethod([|ty|])
                                                 Expr.Call(args.[0],meth,[Expr.Value name])),
                                             setterCode = (fun (args:Expr list) ->
                                                 let meth = typeof<SqlEntity>.GetMethod("SetColumn").MakeGenericMethod([|typeof<obj>|])
@@ -659,7 +659,12 @@ module DesignTimeUtils =
                             t.AddMemberDelayed(fun () -> ProvidedConstructor([ProvidedParameter("dataContext",typeof<ISqlDataContext>)],
                                                             fun args ->
                                                                 let a0 = args.[0]
-                                                                <@@ ((%%a0 : obj) :?> ISqlDataContext).CreateEntity(fullname) @@>))
+                                                                try
+                                                                    <@@ ((%%a0 : obj) :?> ISqlDataContext).CreateEntity(fullname) @@>
+                                                                with
+                                                                | :? ArgumentException ->
+                                                                    <@@ (%%a0 : ISqlDataContext).CreateEntity(fullname) @@>
+                                                                ))
                             let desc = (sprintf "An instance of the %s %s belonging to schema %s" table.Type table.Name table.Schema)
                             t.AddXmlDoc desc
                             yield table.FullName,(t,sprintf "The %s %s belonging to schema %s" table.Type table.Name table.Schema,"", table.Schema) ]
@@ -744,196 +749,21 @@ module DesignTimeUtils =
                       if not isReadonly then tableTypes
                       else [] |> dict // Readonly shares the same schema and table types.
 
+
+                  let templateContainer = ProvidedTypeDefinition("TemplateAsRecord", Some typeof<obj>, isErased=true)
+                  templateContainer.AddXmlDocDelayed(fun () -> "As this is erasing TypeProvider, you can use the generated types. However, if you need manual access to corresponding type, e.g. to use it in reflection, this will generate you a template of the runtime type. Copy and paste this to use however you will (e.g. with MapTo).")
+
+
                   for (KeyValue(key,(entityType,desc,_,schema))) in tableTypes do
-                    // collection type, individuals type
-                    let (ct,it) = baseCollectionTypes.Force().[key]
-                    let schemaType = getOrAddSchema args schema
+                      // collection type, individuals type
+                      let (ct,it) = baseCollectionTypes.Force().[key]
+                      let schemaType = getOrAddSchema args schema
 
-                    ct.AddMembersDelayed( fun () ->
-                        // creation methods.
-                        // we are forced to load the columns here, but this is ok as the user has already
-                        // pressed . on an IQueryable type so they are obviously interested in using this entity..
-                        let columns, _ = getTableData key
+                      let templateTable = ProvidedTypeDefinition(ct.Name+"Template", Some typeof<obj>, isErased=true)
+                      templateTable.AddMemberDelayed(fun () ->
 
-                        let requiredColumns =
-                            columns
-                            |> Seq.toArray
-                            |> Array.map (fun kvp -> kvp.Value)
-                            |> Array.filter (fun c-> (not c.IsNullable) && (not c.IsAutonumber) && (not c.IsComputed))
+                            let columns, _ = getTableData key
 
-                        let backwardCompatibilityOnly =
-                            requiredColumns
-                            |> Array.filter (fun c-> not c.IsPrimaryKey)
-                            |> Array.map(fun c -> ProvidedParameter(c.Name,Utilities.getType c.TypeMapping.ClrType))
-                            |> Array.sortBy(fun p -> p.Name)
-                            |> Array.toList
-
-                        let normalParameters =
-                            requiredColumns
-                            |> Array.map(fun c -> ProvidedParameter(c.Name,Utilities.getType c.TypeMapping.ClrType))
-                            |> Array.sortBy(fun p -> p.Name)
-                            |> Array.toList
-
-                        if isReadonly then
-                            seq {
-                                if not (ct.DeclaredProperties |> Seq.exists(fun m -> m.Name = "Individuals")) then
-                                    let individuals = ProvidedProperty("Individuals",Seq.head it, getterCode = fun args ->
-                                        let a0 = args.[0]
-                                        <@@ ((%%a0 : obj ):?> IWithDataContext ).DataContext @@> )
-                                    individuals.AddXmlDoc("<summary>Get individual items from the table. Requires single primary key.</summary>")
-                                    yield individuals :> MemberInfo
-                             } |> Seq.toList
-                        else
-
-                        // Create: unit -> SqlEntity
-                        let create1 = ProvidedMethod("Create", [], entityType, invokeCode = fun args ->
-                            let a0 = args.[0]
-                            <@@
-                                let e = ((%%a0 : obj ):?> IWithDataContext).DataContext.CreateEntity(key)
-                                e._State <- Created
-                                ((%%a0 : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
-                                e
-                            @@> )
-
-                        // Create: ('a * 'b * 'c * ...) -> SqlEntity
-                        let create2 =
-                            if List.isEmpty normalParameters then Unchecked.defaultof<ProvidedMethod> else
-                            ProvidedMethod("Create", normalParameters, entityType, invokeCode = fun args ->
-
-                              let dc = args.Head
-                              let args = args.Tail
-                              let columns =
-                                  Expr.NewArray(
-                                          typeof<string*obj>,
-                                          args
-                                          |> List.mapi(fun i v -> Expr.NewTuple [ Expr.Value normalParameters.[i].Name
-                                                                                  Expr.Coerce(v, typeof<obj>) ] ))
-                              <@@
-                                  let e = ((%%dc : obj ):?> IWithDataContext).DataContext.CreateEntity(key)
-                                  e._State <- Created
-                                  e.SetData(%%columns : (string *obj) array)
-                                  ((%%dc : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
-                                  e
-                              @@>)
-
-                        // Create: ('a * 'b * 'c * ...) -> SqlEntity
-                        let create2old =
-                            if List.isEmpty backwardCompatibilityOnly || normalParameters.Length = backwardCompatibilityOnly.Length then Unchecked.defaultof<ProvidedMethod> else
-                            ProvidedMethod("Create", backwardCompatibilityOnly, entityType, invokeCode = fun args ->
-
-                              let dc = args.Head
-                              let args = args.Tail
-                              let columns =
-                                  Expr.NewArray(
-                                          typeof<string*obj>,
-                                          args
-                                          |> List.mapi(fun i v -> Expr.NewTuple [ Expr.Value backwardCompatibilityOnly.[i].Name
-                                                                                  Expr.Coerce(v, typeof<obj>) ] ))
-                              <@@
-                                  let e = ((%%dc : obj ):?> IWithDataContext).DataContext.CreateEntity(key)
-                                  e._State <- Created
-                                  e.SetData(%%columns : (string *obj) array)
-                                  ((%%dc : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
-                                  e
-                              @@>)
-
-                        // Create: (data : seq<string*obj>) -> SqlEntity
-                        let create3 = ProvidedMethod("Create", [ProvidedParameter("data",typeof< (string*obj) seq >)] , entityType, invokeCode = fun args ->
-                              let dc = args.[0]
-                              let data = args.[1]
-                              <@@
-                                  let e = ((%%dc : obj ):?> IWithDataContext).DataContext.CreateEntity(key)
-                                  e._State <- Created
-                                  e.SetData(%%data : (string * obj) seq)
-                                  ((%%dc : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
-                                  e
-                              @@>)
-                        let desc3 =
-                            let cols = requiredColumns |> Seq.map(fun c -> c.Name)
-                            "Item array of database columns: \r\n" + (String.concat ","  cols)
-                        create3.AddXmlDoc (sprintf "<summary>%s</summary>" desc3)
-
-                        // ``Create(...)``: ('a * 'b * 'c * ...) -> SqlEntity
-                        let create4 =
-                            if List.isEmpty normalParameters then Unchecked.defaultof<ProvidedMethod> else
-                            let template=
-                                let cols = normalParameters |> Seq.map(fun c -> c.Name )
-                                "Create(" + (String.concat ", " cols) + ")"
-                            ProvidedMethod(template, normalParameters, entityType, invokeCode = fun args ->
-                              let dc = args.Head
-                              let args = args.Tail
-                              let columns =
-                                  Expr.NewArray(
-                                          typeof<string*obj>,
-                                          args
-                                          |> List.mapi(fun i v -> Expr.NewTuple [ Expr.Value normalParameters.[i].Name
-                                                                                  Expr.Coerce(v, typeof<obj>) ] ))
-                              <@@
-                                  let e = ((%%dc : obj ):?> IWithDataContext).DataContext.CreateEntity(key)
-                                  e._State <- Created
-                                  e.SetData(%%columns : (string *obj) array)
-                                  ((%%dc : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
-                                  e
-                              @@>)
-
-                        let minimalParameters =
-                            requiredColumns
-                            |> Array.filter (fun c-> (not c.HasDefault))
-                            |> Array.map(fun c -> ProvidedParameter(c.Name,Utilities.getType c.TypeMapping.ClrType))
-                            |> Array.sortBy(fun p -> p.Name)
-                            |> Array.toList
-
-                        // ``Create(...)``: ('a * 'b * 'c * ...) -> SqlEntity
-                        let create4old =
-                            if List.isEmpty backwardCompatibilityOnly || backwardCompatibilityOnly.Length = normalParameters.Length ||
-                                backwardCompatibilityOnly.Length = minimalParameters.Length then Unchecked.defaultof<ProvidedMethod> else
-                            let template=
-                                let cols = backwardCompatibilityOnly |> Seq.map(fun c -> c.Name )
-                                "Create(" + (String.concat ", " cols) + ")"
-                            ProvidedMethod(template, backwardCompatibilityOnly, entityType, invokeCode = fun args ->
-                              let dc = args.Head
-                              let args = args.Tail
-                              let columns =
-                                  Expr.NewArray(
-                                          typeof<string*obj>,
-                                          args
-                                          |> List.mapi(fun i v -> Expr.NewTuple [ Expr.Value backwardCompatibilityOnly.[i].Name
-                                                                                  Expr.Coerce(v, typeof<obj>) ] ))
-                              <@@
-                                  let e = ((%%dc : obj ):?> IWithDataContext).DataContext.CreateEntity(key)
-                                  e._State <- Created
-                                  e.SetData(%%columns : (string *obj) array)
-                                  ((%%dc : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
-                                  e
-                              @@>)
-
-                        // ``Create(...)``: ('a * 'b * 'c * ...) -> SqlEntity
-                        let create5 =
-                            if List.isEmpty minimalParameters || normalParameters.Length = minimalParameters.Length then Unchecked.defaultof<ProvidedMethod> else
-                            let template=
-                                let cols = minimalParameters |> Seq.map(fun c -> c.Name )
-                                "Create(" + (String.concat ", " cols) + ")"
-                            ProvidedMethod(template, minimalParameters, entityType, invokeCode = fun args ->
-                              let dc = args.Head
-                              let args = args.Tail
-                              let columns =
-                                  Expr.NewArray(
-                                          typeof<string*obj>,
-                                          args
-                                          |> List.mapi(fun i v -> Expr.NewTuple [ Expr.Value minimalParameters.[i].Name
-                                                                                  Expr.Coerce(v, typeof<obj>) ] ))
-                              <@@
-                                  let e = ((%%dc : obj ):?> IWithDataContext).DataContext.CreateEntity(key)
-                                  e._State <- Created
-                                  e.SetData(%%columns : (string *obj) array)
-                                  ((%%dc : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
-                                  e
-                              @@>)
-
-                        let templateContainer = ProvidedTypeDefinition("TemplateAsRecord", Some typeof<obj>, isErased=true)
-                        let templateCont = ProvidedProperty("TemplateAsRecord", templateContainer, getterCode = empty)
-                        templateCont.AddXmlDocDelayed(fun () -> "As this is erasing TypeProvider, you can use the generated types. However, if you need manual access to corresponding type, e.g. to use it in reflection, this will generate you a template of the runtime type. Copy and paste this to use however you will (e.g. with MapTo).")
-                        templateContainer.AddMemberDelayed(fun () ->
                             let optType =
                                 match useOptionTypes with
                                 | NullableColumnType.OPTION -> " option"
@@ -943,63 +773,247 @@ module DesignTimeUtils =
                             let template=
                                 let items = 
                                     columns
-                                    |> Seq.toArray
-                                    |> Array.map(fun kvp -> (SchemaProjections.nicePascalName kvp.Value.Name) + " : " + (Utilities.getType kvp.Value.TypeMapping.ClrType).Name + (if kvp.Value.IsNullable then optType else ""))
-                                "type " + (SchemaProjections.nicePascalName key) + " = { "  + (String.concat "; " items) + " }"
-                            ProvidedProperty(template, typeof<unit>, getterCode = empty) :> MemberInfo
+                                    |> Map.toArray
+                                    |> Array.map(fun (s,v) -> (SchemaProjections.nicePascalName v.Name) + " : " + (Utilities.getType v.TypeMapping.ClrType).Name + (if v.IsNullable then optType else ""))
+                                "type " + (SchemaProjections.nicePascalName key) + " = { " + (String.concat "; " items) + " }"
+                            let p = ProvidedProperty(template, typeof<obj>, isStatic = true, getterCode = empty)
+                            p.AddXmlDoc("Remove quotes and copy paste this to your code.")
+                            p :> MemberInfo
                         )
-                        serviceType.AddMember templateContainer
+                      templateContainer.AddMember templateTable
 
-                        seq {
-                            if not (ct.DeclaredProperties |> Seq.exists(fun m -> m.Name = "Individuals")) then
-                                let individuals = ProvidedProperty("Individuals",Seq.head it, getterCode = fun args ->
-                                    let a0 = args.[0]
-                                    <@@ ((%%a0 : obj ):?> IWithDataContext ).DataContext @@> )
-                                individuals.AddXmlDoc("<summary>Get individual items from the table. Requires single primary key.</summary>")
-                                yield individuals :> MemberInfo
-                            if normalParameters.Length > 0 then yield create2 :> MemberInfo
-                            if backwardCompatibilityOnly.Length > 0 && normalParameters.Length <> backwardCompatibilityOnly.Length then
-                               create2old.AddXmlDoc("This will be obsolete soon. Migrate away from this!")
-                               yield create2old :> MemberInfo
-                            yield create3 :> MemberInfo
-                            yield create1 :> MemberInfo
-                            if normalParameters.Length > 0 then
-                               create4.AddXmlDoc("Create version that breaks if your columns change. Only non-nullable parameters.")
-                               yield create4 :> MemberInfo
-                            if minimalParameters.Length > 0 && normalParameters.Length <> minimalParameters.Length then
-                               create5.AddXmlDoc("Create version that breaks if your columns change. No default value parameters.")
-                               yield create5 :> MemberInfo
-                            if backwardCompatibilityOnly.Length > 0 && backwardCompatibilityOnly.Length <> normalParameters.Length &&
-                               backwardCompatibilityOnly.Length <> minimalParameters.Length then
-                                   create4old.AddXmlDoc("This will be obsolete soon. Migrate away from this!")
-                                   yield create4old :> MemberInfo
-                            yield templateCont :> MemberInfo
-
-                         } |> Seq.toList
-                    )
-
-                    let buildTableName = SchemaProjections.buildTableName >> caseInsensitivityCheck
-                    let prop = ProvidedProperty(buildTableName(ct.Name),ct, getterCode = fun args ->
-                        let a0 = args.[0]
-                        <@@ ((%%a0 : obj) :?> ISqlDataContext).CreateEntities(key) @@> )
-                    let tname = ct.Name
-                    match con with
-                    | Some con ->
-                        prop.AddXmlDocDelayed (fun () ->
-                            let details = prov.GetTableDescription(con, tname).Replace("<","&lt;").Replace(">","&gt;")
-                            let separator = if (String.IsNullOrWhiteSpace desc) || (String.IsNullOrWhiteSpace details) then "" else "/"
-                            sprintf "<summary>%s %s %s</summary>" details separator desc)
-                    | None ->
-                        prop.AddXmlDocDelayed (fun () -> "<summary>Offline mode.</summary>")
-                        ()
-                    schemaType.AddMember ct
-                    if not (schemaType.DeclaredMembers |> Seq.exists(fun m -> m.Name = prop.Name)) then
-                        schemaType.AddMember prop
-
-                    yield entityType :> MemberInfo
-                    //yield ct         :> MemberInfo
-                    //yield prop       :> MemberInfo
-                    yield! Seq.cast<MemberInfo> it
+                      ct.AddMembersDelayed( fun () ->
+                          // creation methods.
+                          // we are forced to load the columns here, but this is ok as the user has already
+                          // pressed . on an IQueryable type so they are obviously interested in using this entity..
+                          let columns, _ = getTableData key
+                      
+                          let requiredColumns =
+                              columns
+                              |> Map.toArray
+                              |> Array.map (fun (s,c) -> c)
+                              |> Array.filter (fun c -> (not c.IsNullable) && (not c.IsAutonumber) && (not c.IsComputed))
+                      
+                          let backwardCompatibilityOnly =
+                              requiredColumns
+                              |> Array.filter (fun c-> not c.IsPrimaryKey)
+                              |> Array.map(fun c -> ProvidedParameter(c.Name,Utilities.getType c.TypeMapping.ClrType))
+                              |> Array.sortBy(fun p -> p.Name)
+                              |> Array.toList
+                      
+                          let normalParameters =
+                              requiredColumns
+                              |> Array.map(fun c -> ProvidedParameter(c.Name,Utilities.getType c.TypeMapping.ClrType))
+                              |> Array.sortBy(fun p -> p.Name)
+                              |> Array.toList
+                      
+                          if isReadonly then
+                      
+                              seq {
+                                  if not (ct.DeclaredProperties |> Seq.exists(fun m -> m.Name = "Individuals")) then
+                                      let individuals = ProvidedProperty("Individuals",Seq.head it, getterCode = fun args ->
+                                          let a0 = args.[0]
+                                          <@@ ((%%a0 : obj ):?> IWithDataContext ).DataContext @@> )
+                                      individuals.AddXmlDoc("<summary>Get individual items from the table. Requires single primary key.</summary>")
+                                      yield individuals :> MemberInfo
+                               } |> Seq.toList
+                      
+                          else
+                      
+                          // Create: unit -> SqlEntity
+                          let create1 = ProvidedMethod("Create", [], entityType, invokeCode = fun args ->
+                              let a0 = args.[0]
+                              <@@
+                                  let e = ((%%a0 : obj ):?> IWithDataContext).DataContext.CreateEntity(key)
+                                  e._State <- Created
+                                  ((%%a0 : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
+                                  e
+                              @@> )
+                      
+                          // Create: ('a * 'b * 'c * ...) -> SqlEntity
+                          let create2 =
+                              if List.isEmpty normalParameters then Unchecked.defaultof<ProvidedMethod> else
+                              ProvidedMethod("Create", normalParameters, entityType, invokeCode = fun args ->
+                      
+                                let dc = args.Head
+                                let args = args.Tail
+                                let columns =
+                                    Expr.NewArray(
+                                            typeof<string*obj>,
+                                            args
+                                            |> List.mapi(fun i v -> Expr.NewTuple [ Expr.Value normalParameters.[i].Name
+                                                                                    Expr.Coerce(v, typeof<obj>) ] ))
+                                <@@
+                                    let e = ((%%dc : obj ):?> IWithDataContext).DataContext.CreateEntity(key)
+                                    e._State <- Created
+                                    e.SetData(%%columns : (string *obj) array)
+                                    ((%%dc : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
+                                    e
+                                @@>)
+                      
+                          // Create: ('a * 'b * 'c * ...) -> SqlEntity
+                          let create2old =
+                              if List.isEmpty backwardCompatibilityOnly || normalParameters.Length = backwardCompatibilityOnly.Length then Unchecked.defaultof<ProvidedMethod> else
+                              ProvidedMethod("Create", backwardCompatibilityOnly, entityType, invokeCode = fun args ->
+                      
+                                let dc = args.Head
+                                let args = args.Tail
+                                let columns =
+                                    Expr.NewArray(
+                                            typeof<string*obj>,
+                                            args
+                                            |> List.mapi(fun i v -> Expr.NewTuple [ Expr.Value backwardCompatibilityOnly.[i].Name
+                                                                                    Expr.Coerce(v, typeof<obj>) ] ))
+                                <@@
+                                    let e = ((%%dc : obj ):?> IWithDataContext).DataContext.CreateEntity(key)
+                                    e._State <- Created
+                                    e.SetData(%%columns : (string *obj) array)
+                                    ((%%dc : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
+                                    e
+                                @@>)
+                      
+                          // Create: (data : seq<string*obj>) -> SqlEntity
+                          let create3 = ProvidedMethod("Create", [ProvidedParameter("data",typeof< (string*obj) seq >)] , entityType, invokeCode = fun args ->
+                                let dc = args.[0]
+                                let data = args.[1]
+                                <@@
+                                    let e = ((%%dc : obj ):?> IWithDataContext).DataContext.CreateEntity(key)
+                                    e._State <- Created
+                                    e.SetData(%%data : (string * obj) seq)
+                                    ((%%dc : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
+                                    e
+                                @@>)
+                          let desc3 =
+                              let cols = requiredColumns |> Seq.map(fun c -> c.Name)
+                              "Item array of database columns: \r\n" + (String.concat ","  cols)
+                          create3.AddXmlDoc (sprintf "<summary>%s</summary>" desc3)
+                      
+                          // ``Create(...)``: ('a * 'b * 'c * ...) -> SqlEntity
+                          let create4 =
+                              if List.isEmpty normalParameters then Unchecked.defaultof<ProvidedMethod> else
+                              let template=
+                                  let cols = normalParameters |> Seq.map(fun c -> c.Name )
+                                  "Create(" + (String.concat ", " cols) + ")"
+                              ProvidedMethod(template, normalParameters, entityType, invokeCode = fun args ->
+                                let dc = args.Head
+                                let args = args.Tail
+                                let columns =
+                                    Expr.NewArray(
+                                            typeof<string*obj>,
+                                            args
+                                            |> List.mapi(fun i v -> Expr.NewTuple [ Expr.Value normalParameters.[i].Name
+                                                                                    Expr.Coerce(v, typeof<obj>) ] ))
+                                <@@
+                                    let e = ((%%dc : obj ):?> IWithDataContext).DataContext.CreateEntity(key)
+                                    e._State <- Created
+                                    e.SetData(%%columns : (string *obj) array)
+                                    ((%%dc : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
+                                    e
+                                @@>)
+                      
+                          let minimalParameters =
+                              requiredColumns
+                              |> Array.filter (fun c-> (not c.HasDefault))
+                              |> Array.map(fun c -> ProvidedParameter(c.Name,Utilities.getType c.TypeMapping.ClrType))
+                              |> Array.sortBy(fun p -> p.Name)
+                              |> Array.toList
+                      
+                          // ``Create(...)``: ('a * 'b * 'c * ...) -> SqlEntity
+                          let create4old =
+                              if List.isEmpty backwardCompatibilityOnly || backwardCompatibilityOnly.Length = normalParameters.Length ||
+                                  backwardCompatibilityOnly.Length = minimalParameters.Length then Unchecked.defaultof<ProvidedMethod> else
+                              let template=
+                                  let cols = backwardCompatibilityOnly |> Seq.map(fun c -> c.Name )
+                                  "Create(" + (String.concat ", " cols) + ")"
+                              ProvidedMethod(template, backwardCompatibilityOnly, entityType, invokeCode = fun args ->
+                                let dc = args.Head
+                                let args = args.Tail
+                                let columns =
+                                    Expr.NewArray(
+                                            typeof<string*obj>,
+                                            args
+                                            |> List.mapi(fun i v -> Expr.NewTuple [ Expr.Value backwardCompatibilityOnly.[i].Name
+                                                                                    Expr.Coerce(v, typeof<obj>) ] ))
+                                <@@
+                                    let e = ((%%dc : obj ):?> IWithDataContext).DataContext.CreateEntity(key)
+                                    e._State <- Created
+                                    e.SetData(%%columns : (string *obj) array)
+                                    ((%%dc : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
+                                    e
+                                @@>)
+                      
+                          // ``Create(...)``: ('a * 'b * 'c * ...) -> SqlEntity
+                          let create5 =
+                              if List.isEmpty minimalParameters || normalParameters.Length = minimalParameters.Length then Unchecked.defaultof<ProvidedMethod> else
+                              let template=
+                                  let cols = minimalParameters |> Seq.map(fun c -> c.Name )
+                                  "Create(" + (String.concat ", " cols) + ")"
+                              ProvidedMethod(template, minimalParameters, entityType, invokeCode = fun args ->
+                                let dc = args.Head
+                                let args = args.Tail
+                                let columns =
+                                    Expr.NewArray(
+                                            typeof<string*obj>,
+                                            args
+                                            |> List.mapi(fun i v -> Expr.NewTuple [ Expr.Value minimalParameters.[i].Name
+                                                                                    Expr.Coerce(v, typeof<obj>) ] ))
+                                <@@
+                                    let e = ((%%dc : obj ):?> IWithDataContext).DataContext.CreateEntity(key)
+                                    e._State <- Created
+                                    e.SetData(%%columns : (string *obj) array)
+                                    ((%%dc : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
+                                    e
+                                @@>)
+                      
+                          seq {
+                              if not (ct.DeclaredProperties |> Seq.exists(fun m -> m.Name = "Individuals")) then
+                                  let individuals = ProvidedProperty("Individuals",Seq.head it, getterCode = fun args ->
+                                      let a0 = args.[0]
+                                      <@@ ((%%a0 : obj ):?> IWithDataContext ).DataContext @@> )
+                                  individuals.AddXmlDoc("<summary>Get individual items from the table. Requires single primary key.</summary>")
+                                  yield individuals :> MemberInfo
+                              if normalParameters.Length > 0 then yield create2 :> MemberInfo
+                              if backwardCompatibilityOnly.Length > 0 && normalParameters.Length <> backwardCompatibilityOnly.Length then
+                                 create2old.AddXmlDoc("This will be obsolete soon. Migrate away from this!")
+                                 yield create2old :> MemberInfo
+                              yield create3 :> MemberInfo
+                              yield create1 :> MemberInfo
+                              if normalParameters.Length > 0 then
+                                 create4.AddXmlDoc("Create version that breaks if your columns change. Only non-nullable parameters.")
+                                 yield create4 :> MemberInfo
+                              if minimalParameters.Length > 0 && normalParameters.Length <> minimalParameters.Length then
+                                 create5.AddXmlDoc("Create version that breaks if your columns change. No default value parameters.")
+                                 yield create5 :> MemberInfo
+                              if backwardCompatibilityOnly.Length > 0 && backwardCompatibilityOnly.Length <> normalParameters.Length &&
+                                 backwardCompatibilityOnly.Length <> minimalParameters.Length then
+                                     create4old.AddXmlDoc("This will be obsolete soon. Migrate away from this!")
+                                     yield create4old :> MemberInfo
+                      
+                           } |> Seq.toList
+                      )
+                      
+                      let buildTableName = SchemaProjections.buildTableName >> caseInsensitivityCheck
+                      let prop = ProvidedProperty(buildTableName(ct.Name),ct, getterCode = fun args ->
+                          let a0 = args.[0]
+                          <@@ ((%%a0 : obj) :?> ISqlDataContext).CreateEntities(key) @@> )
+                      let tname = ct.Name
+                      match con with
+                      | Some con ->
+                          prop.AddXmlDocDelayed (fun () ->
+                              let details = prov.GetTableDescription(con, tname).Replace("<","&lt;").Replace(">","&gt;")
+                              let separator = if (String.IsNullOrWhiteSpace desc) || (String.IsNullOrWhiteSpace details) then "" else "/"
+                              sprintf "<summary>%s %s %s</summary>" details separator desc)
+                      | None ->
+                          prop.AddXmlDocDelayed (fun () -> "<summary>Offline mode.</summary>")
+                          ()
+                      schemaType.AddMember ct
+                      if not (schemaType.DeclaredMembers |> Seq.exists(fun m -> m.Name = prop.Name)) then
+                          schemaType.AddMember prop
+                      
+                      yield entityType :> MemberInfo
+                      //yield ct         :> MemberInfo
+                      //yield prop       :> MemberInfo
+                      yield! Seq.cast<MemberInfo> it
 
                   if not isReadonly then
                      yield! containers |> Seq.map(fun p -> ProvidedProperty(p.Name.Replace("Container",""), p, getterCode = fun args ->
@@ -1030,16 +1044,20 @@ module DesignTimeUtils =
                       let designTimeCommandsContainer, saveResponse, mOld, designTime, invalidateActionResponse =
                             createDesignTimeCommands prov contextSchemaPath recreate invalidate
 
-                      serviceType.AddMember saveResponse
+                      designTimeCommandsContainer.AddMember saveResponse
+                      designTimeCommandsContainer.AddMember templateContainer
                       yield mOld :> MemberInfo
 
                       let clearCacheType = ProvidedTypeDefinition("ClearConnectionCache", Some typeof<obj>, isErased=true)
                       clearCacheType.AddMember(ProvidedConstructor([], empty))
                       clearCacheType.AddMembersDelayed(fun () ->
 
-                          match con with
-                          | Some con when con.State <> ConnectionState.Closed -> con.Close()
-                          | _ -> ()
+                          try
+                              match con with
+                              | Some con when con <> null && con.State <> ConnectionState.Closed -> con.Close()
+                              | _ -> ()
+                          with
+                          | :? ObjectDisposedException -> ()
 
                           invalidate()
                           DesignTimeCacheSchema.schemaMap.Clear()
@@ -1053,14 +1071,14 @@ module DesignTimeUtils =
                       clearC.AddXmlDocComputed(fun () -> "You can try to use this to refresh your database connection if you changed your database schema.")
 
                       designTimeCommandsContainer.AddMember clearC
-                      serviceType.AddMember clearCacheType
+                      designTimeCommandsContainer.AddMember clearCacheType
+
+                      match invalidateActionResponse with
+                      | Some r -> designTimeCommandsContainer.AddMember r
+                      | None -> ()
 
                       serviceType.AddMember designTimeCommandsContainer
                       yield designTime :> MemberInfo
-
-                      match invalidateActionResponse with
-                      | Some r -> serviceType.AddMember r
-                      | None -> ()
 
                  ] @ [
                     for KeyValue((cachedargs,name),pt) in DesignTimeCacheSchema.schemaMap do
@@ -1088,76 +1106,6 @@ module DesignTimeUtils =
             match con with
             | Some con -> if (dbVendor <> DatabaseProviderTypes.MSACCESS) && con.State <> ConnectionState.Closed then con.Close()
             | None -> ()
-
-            let funcType =
-                typedefof<FSharpFunc<_, _>>.MakeGenericType(serviceType, typedefof<System.Threading.Tasks.Task>)
-            let wtr = ProvidedMethod("WithTransaction", [ ProvidedParameter("func", funcType)], typedefof<System.Threading.Tasks.Task>, invokeCode = fun args ->
-                let a0 = args.[0]
-                let func = args.[1]
-                let isMono = not(isNull (Type.GetType "Mono.Runtime"))
-                <@@
-                    task {
-                        use scope =
-                            match isMono with
-                            | true -> Unchecked.defaultof<Transactions.TransactionScope> // new Transactions.TransactionScope()
-                            | false ->
-                                // Note1: On Mono, 4.6.1 or newer is requred for compiling TransactionScopeAsyncFlowOption.
-                                // Note2: We should here also set the transaction option isolation level.
-                                new Transactions.TransactionScope(System.Transactions.TransactionScopeAsyncFlowOption.Enabled)
-                    //            new Transactions.TransactionScope(
-                    //                Transactions.TransactionScopeOption.Required,
-                    //                new Transactions.TransactionOptions(
-                    //                    IsolationLevel = Transactions.IsolationLevel.RepeatableRead),
-                    //                System.Transactions.TransactionScopeAsyncFlowOption.Enabled)
-
-                        let! res = ((%%func : obj) :?> FSharpFunc<ISqlDataContext,Task<_>>) ((%%a0 : obj) :?> ISqlDataContext)
-
-                        if not (isMono || isNull scope) then
-                            try
-                                scope.Complete()
-                                scope.Dispose()
-                            with
-                            | :? ObjectDisposedException -> ()
-                        return res
-                    }
-                    @@> )
-            wtr.AddXmlDoc ("Write operations can be wrapped into a single transaction with this. Try to avoid transactions taking possibly seconds.")
-            rootType.AddMember wtr
-
-            let funcTypeA =
-                typedefof<FSharpFunc<_, _>>.MakeGenericType(serviceType, typedefof<Async>)
-            let wtra = ProvidedMethod("WithTransactionAsync", [ ProvidedParameter("func", funcTypeA)], typedefof<Async>, invokeCode = fun args ->
-                let a0 = args.[0]
-                let func = args.[1]
-                <@@
-                    task {
-                        let isMono = not(isNull (Type.GetType "Mono.Runtime"))
-                        use scope =
-                            match isMono with
-                            | true -> Unchecked.defaultof<Transactions.TransactionScope> // new Transactions.TransactionScope()
-                            | false ->
-                                // Note1: On Mono, 4.6.1 or newer is requred for compiling TransactionScopeAsyncFlowOption.
-                                // Note2: We should here also set the transaction option isolation level.
-                                new Transactions.TransactionScope(System.Transactions.TransactionScopeAsyncFlowOption.Enabled)
-                    //            new Transactions.TransactionScope(
-                    //                Transactions.TransactionScopeOption.Required,
-                    //                new Transactions.TransactionOptions(
-                    //                    IsolationLevel = Transactions.IsolationLevel.RepeatableRead),
-                    //                System.Transactions.TransactionScopeAsyncFlowOption.Enabled)
-
-                        let! res = ((%%func : obj) :?> FSharpFunc<ISqlDataContext,Async<_>>) ((%%a0 : obj) :?> ISqlDataContext)
-
-                        if not (isMono || isNull scope) then
-                            try
-                                scope.Complete()
-                                scope.Dispose()
-                            with
-                            | :? ObjectDisposedException -> ()
-                        return res
-                    }
-                    @@> )
-            wtra.AddXmlDoc ("Write operations can be wrapped into a single transaction with this. Try to avoid transactions taking possibly seconds.")
-            rootType.AddMember wtra
 
             ()
 
@@ -1241,89 +1189,89 @@ module DesignTimeUtils =
             rootType.AddMembersDelayed (fun () ->
                 [
 
-                  for overload in overloads do
-
-                    let actualParams = [|
-                      for (customParam, defaultParam) in optionPairs do
-                        match overload |> Array.exists ((=) customParam) with
-                        | true -> yield UserProvided customParam
-                        | false -> yield Default defaultParam
-                    |]
-
-                    // The code that gets actually executed
-                    let invoker (isReadOnly:bool) (args: Expr list) =
-
-                      let actualArgs =
-                        [|
-                            let mutable argPosition = 0
-                            for actualParam in actualParams do
-                                match actualParam with
-                                // if the parameter appears, we read it from the argument list and advance
-                                | UserProvided _ -> yield args.[argPosition]; argPosition <- argPosition + 1
-                                // otherwise, we use the default value
-                                | Default p -> yield p
+                    for overload in overloads do
+                   
+                        let actualParams = [|
+                            for (customParam, defaultParam) in optionPairs do
+                                match overload |> Array.exists ((=) customParam) with
+                                | true -> yield UserProvided customParam
+                                | false -> yield Default defaultParam
                         |]
-
-                      <@@
-                        let cmdTimeout =
-                          let argTimeout = %%actualArgs.[3]
-                          if argTimeout = NO_COMMAND_TIMEOUT then None else Some argTimeout
-                    
-                        // **important**: contextSchemaPath is empty because we do not want
-                        // to load the schema cache from (the developer's) local filesystem in production
-                        SqlDataContext(typeName = rootTypeName, connectionString = %%actualArgs.[0], providerType = dbVendor,
-                                        resolutionPath = %%actualArgs.[1], referencedAssemblies = %%referencedAssemblyExpr,
-                                        runtimeAssembly = resolutionFolder, owner = owner, caseSensitivity = caseSensitivity,
-                                        tableNames = tableNames, contextSchemaPath = "", odbcquote = odbcquote,
-                                        sqliteLibrary = sqliteLibrary, transactionOptions = %%actualArgs.[2],
-                                        commandTimeout = cmdTimeout, sqlOperationsInSelect = %%actualArgs.[4], ssdtPath = ssdtPath, isReadOnly=isReadOnly)
-                        :> ISqlDataContext
-                      @@>
-
-                    // builds the definitions
-                    let paramList =
-                      [ for actualParam in actualParams do
-                          match actualParam with
-                          | UserProvided(pname, pcomment, ptype) -> yield pname, pcomment, ptype
-                          | _ -> ()
-                      ]
-
-                    let providerParams =
-                      [ for (pname, _, ptype) in paramList -> ProvidedParameter(pname, ptype)]
-
-                    let xmlComments =
-                      [|  yield "<summary>Returns an instance of the SQL Provider using the static parameters</summary>"
-                          for (pname, xmlInfo, _) in paramList -> "<param name='" + pname + "'>" + xmlInfo + "</param>"
-                      |]
-
-                    let method =
-                      ProvidedMethod( methodName = "GetDataContext"
-                                    , parameters = providerParams
-                                    , returnType = serviceType
-                                    , isStatic = true
-                                    , invokeCode = invoker false
-                                    )
-
-                    method.AddXmlDoc (String.Concat xmlComments)
-                
-                    yield method
-
-                    let xmlComments2 =
-                      [|  yield "<summary>Returns an instance of the SQL Provider using the static parameters, without direct access to modify data.</summary>"
-                          for (pname, xmlInfo, _) in paramList -> "<param name='" + pname + "'>" + xmlInfo + "</param>"
-                      |]
-
-                    let rmethod =
-                      ProvidedMethod( methodName = "GetReadOnlyDataContext"
-                                    , parameters = providerParams
-                                    , returnType = readServiceType
-                                    , isStatic = true
-                                    , invokeCode = invoker true
-                                    )
-
-                    rmethod.AddXmlDoc (String.Concat xmlComments2)
-
-                    yield rmethod
+                      
+                        // The code that gets actually executed
+                        let inline invoker (isReadOnly:bool) (args: Expr list) =
+                      
+                              let actualArgs =
+                                    [|
+                                        let mutable argPosition = 0
+                                        for actualParam in actualParams do
+                                            match actualParam with
+                                            // if the parameter appears, we read it from the argument list and advance
+                                            | UserProvided _ -> yield args.[argPosition]; argPosition <- argPosition + 1
+                                            // otherwise, we use the default value
+                                            | Default p -> yield p
+                                    |]
+                      
+                              <@@
+                                  let cmdTimeout =
+                                      let argTimeout = %%actualArgs.[3]
+                                      if argTimeout = NO_COMMAND_TIMEOUT then None else Some argTimeout
+                                  
+                                  // **important**: contextSchemaPath is empty because we do not want
+                                  // to load the schema cache from (the developer's) local filesystem in production
+                                  SqlDataContext(typeName = rootTypeName, connectionString = %%actualArgs.[0], providerType = dbVendor,
+                                                  resolutionPath = %%actualArgs.[1], referencedAssemblies = %%referencedAssemblyExpr,
+                                                  runtimeAssembly = resolutionFolder, owner = owner, caseSensitivity = caseSensitivity,
+                                                  tableNames = tableNames, contextSchemaPath = "", odbcquote = odbcquote,
+                                                  sqliteLibrary = sqliteLibrary, transactionOptions = %%actualArgs.[2],
+                                                  commandTimeout = cmdTimeout, sqlOperationsInSelect = %%actualArgs.[4], ssdtPath = ssdtPath, isReadOnly=isReadOnly)
+                                  :> ISqlDataContext
+                              @@>
+                      
+                        // builds the definitions
+                        let paramList =
+                            [ for actualParam in actualParams do
+                                  match actualParam with
+                                  | UserProvided(pname, pcomment, ptype) -> yield pname, pcomment, ptype
+                                  | _ -> ()
+                            ]
+                      
+                        let providerParams =
+                            [ for (pname, _, ptype) in paramList -> ProvidedParameter(pname, ptype)]
+                      
+                        let xmlComments =
+                            [|  yield "<summary>Returns an instance of the SQL Provider using the static parameters</summary>"
+                                for (pname, xmlInfo, _) in paramList -> "<param name='" + pname + "'>" + xmlInfo + "</param>"
+                            |]
+                      
+                        let method =
+                            ProvidedMethod( methodName = "GetDataContext"
+                                          , parameters = providerParams
+                                          , returnType = serviceType
+                                          , isStatic = true
+                                          , invokeCode = invoker false
+                                          )
+                      
+                        method.AddXmlDoc (String.Concat xmlComments)
+                      
+                        yield method
+                      
+                        let xmlComments2 =
+                            [|  yield "<summary>Returns an instance of the SQL Provider using the static parameters, without direct access to modify data.</summary>"
+                                for (pname, xmlInfo, _) in paramList -> "<param name='" + pname + "'>" + xmlInfo + "</param>"
+                            |]
+                      
+                        let rmethod =
+                            ProvidedMethod( methodName = "GetReadOnlyDataContext"
+                                          , parameters = providerParams
+                                          , returnType = readServiceType
+                                          , isStatic = true
+                                          , invokeCode = invoker true
+                                          )
+                      
+                        rmethod.AddXmlDoc (String.Concat xmlComments2)
+                      
+                        yield rmethod
 
                 ])
             ()

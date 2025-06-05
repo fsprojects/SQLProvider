@@ -182,6 +182,22 @@ type ReturnValueType =
     | SingleResultSet of string * ResultSet
     | Set of seq<ReturnSetType>
 
+/// Interface to hide internal members that are typically not needed by the user
+type IColumnHolder =
+    abstract Table: Table
+    abstract GetColumn<'T>: string -> 'T
+    abstract GetColumnOption<'T>: string -> 'T option
+    abstract GetColumnValueOption<'T>: string -> 'T voption
+    abstract GetPkColumnOption<'T>: string list -> 'T list
+    abstract GetColumnOptionWithDefinition: string -> (obj * Column option) option
+    abstract SetColumnSilent<'T>: string * 'T -> unit
+    abstract SetPkColumnSilent<'T>: string list * 'T -> unit
+    abstract SetColumnOptionSilent<'T>: string * option<'T> -> unit
+    abstract SetPkColumnOptionSilent<'T>: string list * option<'T> -> unit
+    abstract SetColumnOption<'T>: string * option<'T> -> unit
+    abstract SetColumnValueOption<'T>: string * voption<'T> -> unit
+
+
 [<System.Runtime.Serialization.DataContract(Name = "SqlEntity", Namespace = "http://schemas.microsoft.com/sql/2011/Contracts"); DefaultMember("Item")>]
 type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup, activeColumnCount:int) =
 
@@ -190,6 +206,7 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup, activeColu
     let data = Dictionary<string,obj>(activeColumnCount)
     let mutable aliasCache = None
 
+    /// Internal state. Modifying not recommended!
     member val _State = Unchanged with get, set
 
     member e.Delete() =
@@ -204,55 +221,8 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup, activeColu
     member __.HasColumn(key, ?comparison)= 
         let comparisonOption = defaultArg comparison StringComparison.InvariantCulture
         columns |> Seq.exists(fun kp -> (kp.Key |> SchemaProjections.buildFieldName).Equals(key, comparisonOption))
-    member __.Table= Table.FromFullName tableName
+
     member __.DataContext with get() = dc
-
-    member __.GetColumn<'T>(key) : 'T =
-        let defaultValue() =
-            if Type.(=)(typeof<'T>, typeof<string>) then (box String.Empty) :?> 'T
-            else Unchecked.defaultof<'T>
-        match data.TryGetValue key with
-        | false, _ -> defaultValue()
-        | true, dataitem ->
-           match dataitem with
-           | null -> defaultValue()
-           | :? System.DBNull -> defaultValue()
-           // Postgres array types
-           | :? Array as arr -> 
-                unbox arr
-           // This deals with an oracle specific case where the type mappings says it returns a System.Decimal but actually returns a float!?!?!  WTF...           
-           | data when Type.(<>)(typeof<'T>, data.GetType()) && 
-                       Type.(<>)(typeof<'T>, typeof<obj>) &&
-                       (data :? IConvertible)
-                -> unbox <| Convert.ChangeType(data, typeof<'T>)
-           | data -> unbox data
-
-    member __.GetColumnOption<'T>(key) : Option<'T> =
-        match data.TryGetValue key with
-        | false, _ -> None
-        | true, dataitem ->
-           match dataitem with
-           | null -> None
-           | :? System.DBNull -> None
-           | data when Type.(<>)(data.GetType(), typeof<'T>) && Type.(<>)(typeof<'T>, typeof<obj>) -> Some(unbox<'T> <| Convert.ChangeType(data, typeof<'T>))
-           | data -> Some(unbox data)
-
-    member __.GetColumnValueOption<'T>(key) : ValueOption<'T> =
-       match data.TryGetValue key with
-       | false, _ -> ValueNone
-       | true, dataitem ->
-           match dataitem with
-           | null -> ValueNone
-           | :? System.DBNull -> ValueNone
-           | data when Type.(<>)(data.GetType(), typeof<'T>) && Type.(<>)(typeof<'T>, typeof<obj>) -> ValueSome(unbox<'T> <| Convert.ChangeType(data, typeof<'T>))
-           | data -> ValueSome(unbox data)
-
-    member __.GetPkColumnOption<'T>(keys: string list) : 'T list =
-        keys |> List.choose(fun key -> 
-            __.GetColumnOption<'T>(key)) 
-
-    member this.GetColumnOptionWithDefinition(key) =
-        this.GetColumnOption(key) |> Option.bind (fun v -> Some(box v, columns.TryFind(key)))
 
     member private e.UpdateField key =
         if dc.IsReadOnly then failwith "Context is readonly" else
@@ -266,53 +236,106 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup, activeColu
         | Deleted | Delete -> failwith ("You cannot modify an entity that is pending deletion: " + key)
         | Created -> ()
 
-    member __.SetColumnSilent(key,value) =
-        data.[key] <- value
-
-    member __.SetPkColumnSilent(keys,value) =
-        keys |> List.iter(fun x -> data.[x] <- value)
-
+    /// Prefer e.Column <- "x" over this method.
+    /// This method should be only used if you need a dynamic column name.
     member e.SetColumn<'t>(key,value : 't) =
         data.[key] <- value
         e.UpdateField key
         e.TriggerPropertyChange key
 
-    member e.SetData(data) = data |> Seq.iter e.SetColumnSilent
+    member e.SetData(data) = data |> Seq.iter (e :> IColumnHolder).SetColumnSilent
 
-    member __.SetColumnOptionSilent(key,value) =
-      match value with
-      | Some value ->
-          if data.ContainsKey key then
-              data.[key] <- value
-          else data.Add(key,value)
-      | None -> data.Remove key |> ignore
+    /// These methods should be used only internally within SQLProvider
+    interface IColumnHolder with
+        member __.Table= Table.FromFullName tableName
 
-    member __.SetPkColumnOptionSilent(keys,value) =
-        match value with
-        | Some value ->
-            keys |> List.iter(fun x -> 
-                if data.ContainsKey x then data.[x] <- value
-                else data.Add(x,value))
-        | None ->
-            keys |> List.iter(fun x -> data.Remove x |> ignore)
+        member __.GetColumn<'T>(key) : 'T =
+            let defaultValue() =
+                if Type.(=)(typeof<'T>, typeof<string>) then (box String.Empty) :?> 'T
+                else Unchecked.defaultof<'T>
+            match data.TryGetValue key with
+            | false, _ -> defaultValue()
+            | true, dataitem ->
+               match dataitem with
+               | null -> defaultValue()
+               | :? System.DBNull -> defaultValue()
+               // Postgres array types
+               | :? Array as arr -> 
+                    unbox arr
+               // This deals with an oracle specific case where the type mappings says it returns a System.Decimal but actually returns a float!?!?!  WTF...           
+               | data when Type.(<>)(typeof<'T>, data.GetType()) && 
+                           Type.(<>)(typeof<'T>, typeof<obj>) &&
+                           (data :? IConvertible)
+                    -> unbox <| Convert.ChangeType(data, typeof<'T>)
+               | data -> unbox data
 
-    member e.SetColumnOption(key,value) =
-      match value with
-      | Some value ->
-          if data.ContainsKey key then data.[key] <- value
-          else data.Add(key,value)
-          e.TriggerPropertyChange key
-      | None -> if data.Remove key then e.TriggerPropertyChange key
-      e.UpdateField key
+        member __.GetColumnOption<'T>(key) : Option<'T> =
+            match data.TryGetValue key with
+            | false, _ -> None
+            | true, dataitem ->
+               match dataitem with
+               | null -> None
+               | :? System.DBNull -> None
+               | data when Type.(<>)(data.GetType(), typeof<'T>) && Type.(<>)(typeof<'T>, typeof<obj>) -> Some(unbox<'T> <| Convert.ChangeType(data, typeof<'T>))
+               | data -> Some(unbox data)
 
-    member e.SetColumnValueOption(key,value) =
-      match value with
-      | ValueSome value ->
-          if data.ContainsKey key then data.[key] <- value
-          else data.Add(key,value)
-          e.TriggerPropertyChange key
-      | ValueNone -> if data.Remove key then e.TriggerPropertyChange key
-      e.UpdateField key
+        member __.GetColumnValueOption<'T>(key) : ValueOption<'T> =
+           match data.TryGetValue key with
+           | false, _ -> ValueNone
+           | true, dataitem ->
+               match dataitem with
+               | null -> ValueNone
+               | :? System.DBNull -> ValueNone
+               | data when Type.(<>)(data.GetType(), typeof<'T>) && Type.(<>)(typeof<'T>, typeof<obj>) -> ValueSome(unbox<'T> <| Convert.ChangeType(data, typeof<'T>))
+               | data -> ValueSome(unbox data)
+
+        member this.GetPkColumnOption<'T>(keys: string list) : 'T list =
+            keys |> List.choose(fun key -> 
+                (this :> IColumnHolder).GetColumnOption<'T>(key)) 
+
+        member this.GetColumnOptionWithDefinition(key) =
+            (this :> IColumnHolder).GetColumnOption(key) |> Option.bind (fun v -> Some(box v, columns.TryFind(key)))
+
+        member __.SetColumnSilent(key,value) =
+            data.[key] <- value
+
+        member __.SetPkColumnSilent(keys,value) =
+            keys |> List.iter(fun x -> data.[x] <- value)
+
+        member __.SetColumnOptionSilent(key,value) =
+          match value with
+          | Some value ->
+              if data.ContainsKey key then
+                  data.[key] <- value
+              else data.Add(key,value)
+          | None -> data.Remove key |> ignore
+
+        member __.SetPkColumnOptionSilent(keys,value) =
+            match value with
+            | Some value ->
+                keys |> List.iter(fun x -> 
+                    if data.ContainsKey x then data.[x] <- value
+                    else data.Add(x,value))
+            | None ->
+                keys |> List.iter(fun x -> data.Remove x |> ignore)
+
+        member e.SetColumnOption(key,value) =
+          match value with
+          | Some value ->
+              if data.ContainsKey key then data.[key] <- value
+              else data.Add(key,value)
+              e.TriggerPropertyChange key
+          | None -> if data.Remove key then e.TriggerPropertyChange key
+          e.UpdateField key
+
+        member e.SetColumnValueOption(key,value) =
+          match value with
+          | ValueSome value ->
+              if data.ContainsKey key then data.[key] <- value
+              else data.Add(key,value)
+              e.TriggerPropertyChange key
+          | ValueNone -> if data.Remove key then e.TriggerPropertyChange key
+          e.UpdateField key
 
     member __.HasValue(key) = data.ContainsKey key
 
@@ -327,7 +350,7 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup, activeColu
         match aliasCache.Value.TryGetValue alias with
         | true, entity -> entity
         | false, _ ->
-            let tableName = if tableName <> "" then tableName else e.Table.FullName
+            let tableName = if tableName <> "" then tableName else (e :> IColumnHolder).Table.FullName
             let selectedColumns = 
                 e.ColumnValues
                 |> Seq.toArray
@@ -337,7 +360,7 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup, activeColu
             // attributes names cannot have a period in them unless they are an alias
 
             selectedColumns
-            |> Array.iter( fun (k,v) -> newEntity.SetColumnSilent(k,v))
+            |> Array.iter( fun (k,v) -> (newEntity :> IColumnHolder).SetColumnSilent(k,v))
 
             aliasCache.Value.Add(alias,newEntity)
             newEntity
@@ -420,7 +443,7 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup, activeColu
     interface System.ComponentModel.ICustomTypeDescriptor with
         member e.GetComponentName() = TypeDescriptor.GetComponentName(e,true)
         member e.GetDefaultEvent() = TypeDescriptor.GetDefaultEvent(e,true)
-        member e.GetClassName() = e.Table.FullName
+        member e.GetClassName() = (e :> IColumnHolder).Table.FullName
         member e.GetEvents(_) = TypeDescriptor.GetEvents(e,true)
         member e.GetEvents() = TypeDescriptor.GetEvents(e,null,true)
         member e.GetConverter() = TypeDescriptor.GetConverter(e,true)
@@ -437,7 +460,7 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup, activeColu
                               { new PropertyDescriptor(k,[||])  with
                                  override __.PropertyType with get() = v.GetType()
                                  override __.SetValue(e,value) = (e :?> SqlEntity).SetColumn(k,value)
-                                 override __.GetValue(e) = (e:?>SqlEntity).GetColumn k
+                                 override __.GetValue(e) = (e:?>IColumnHolder).GetColumn k
                                  override __.IsReadOnly with get() = false
                                  override __.ComponentType with get () = null
                                  override __.CanResetValue(_) = false
@@ -859,15 +882,15 @@ type GroupResultItems<'key, 'SqlEntity>(keyname:String*String*String*String*Stri
 module CommonTasks =
 
     let ``ensure columns have been loaded`` (provider:ISqlProvider) (con:IDbConnection) (entities:ConcurrentDictionary<SqlEntity, DateTime>) =
-        entities |> Seq.map(fun e -> e.Key.Table)
+        entities |> Seq.map(fun e -> (e.Key :> IColumnHolder).Table)
                     |> Seq.distinct
                     |> Seq.iter(fun t -> provider.GetColumns(con,t) |> ignore )
 
     let checkKey (pkLookup:ConcurrentDictionary<string, string list>) id (e:SqlEntity) =
-        match pkLookup.TryGetValue e.Table.FullName with
+        match pkLookup.TryGetValue (e :> IColumnHolder).Table.FullName with
         | true, pkKey ->
-            match e.GetPkColumnOption pkKey with
-            | [] ->  e.SetPkColumnSilent(pkKey, id)
+            match (e :> IColumnHolder).GetPkColumnOption pkKey with
+            | [] ->  (e :> IColumnHolder).SetPkColumnSilent(pkKey, id)
             | _  -> () // if the primary key exists, do nothing
                             // this is because non-identity columns will have been set
                             // manually and in that case scope_identity would bring back 0 "" or whatever
@@ -1036,16 +1059,16 @@ module public OfflineTools =
                             else
                                 isNull (typ.GetProperty "Value")
                         if (isNull optIsNone) || optIsNone = true then
-                            entity.SetColumnOptionSilent(col, None)
+                            (entity :> IColumnHolder).SetColumnOptionSilent(col, None)
                         else
                             let optValProp = typ.GetProperty("Value")
                             if isNull optValProp then 
-                                entity.SetColumnOptionSilent(col, None)
+                                (entity :> IColumnHolder).SetColumnOptionSilent(col, None)
                             else
                                 let optVal = optValProp.GetValue(colData, null)
-                                entity.SetColumnOptionSilent(col, Some optVal)
+                                (entity :> IColumnHolder).SetColumnOptionSilent(col, Some optVal)
                     else
-                        entity.SetColumnSilent(col, colData)
+                        (entity :> IColumnHolder).SetColumnSilent(col, colData)
                 entity :?> 'T)
         MockQueryable(dc, rowData.AsQueryable()) :> IQueryable<'T>
 

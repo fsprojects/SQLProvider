@@ -59,10 +59,13 @@ module internal ProviderBuilder =
         | DatabaseProviderTypes.EXTERNAL 
         | _ -> failwith ("Unsupported database provider: " + vendor.ToString())
 
+module DcCache = 
+    let providerCache = ConcurrentDictionary<string,Lazy<ISqlProvider>>()
+
 type public SqlDataContext (typeName, connectionString:string, providerType:DatabaseProviderTypes, resolutionPath:string, referencedAssemblies:string array, runtimeAssembly: string, owner: string, caseSensitivity, tableNames:string, contextSchemaPath:string, odbcquote:OdbcQuoteCharacter, sqliteLibrary:SQLiteLibrary, transactionOptions, commandTimeout:Option<int>, sqlOperationsInSelect, ssdtPath:string, isReadOnly:bool) =
-    let pendingChanges = if isReadOnly then null else System.Collections.Concurrent.ConcurrentDictionary<SqlEntity, DateTime>()
-    static let providerCache = ConcurrentDictionary<string,Lazy<ISqlProvider>>()
+
     let myLock2 = new Object();
+    let pendingChanges = lazy (if isReadOnly then null else System.Collections.Concurrent.ConcurrentDictionary<SqlEntity, DateTime>())
 
     let provider =
         let addCache() =
@@ -84,9 +87,9 @@ type public SqlDataContext (typeName, connectionString:string, providerType:Data
                     prov.GetTables(con,caseSensitivity) |> ignore
                     if prov.CloseConnectionAfterQuery && con.State <> ConnectionState.Closed then con.Close()
                 prov
-        try providerCache.GetOrAdd(typeName, fun _ -> addCache()).Value
+        try DcCache.providerCache.GetOrAdd(typeName, fun _ -> addCache()).Value
         with | ex ->
-            let x = providerCache.TryRemove typeName
+            let x = DcCache.providerCache.TryRemove typeName
             reraise()
 
     /// IoC: A factory that can be used to extend custom SQLProvider implementations from separate Nuget packages
@@ -114,12 +117,13 @@ type public SqlDataContext (typeName, connectionString:string, providerType:Data
                     | false, _ -> None
             |> (fun x -> defaultArg x "")
 
-        member __.SubmitChangedEntity e = if isReadOnly then failwith "Context is readonly" else pendingChanges.AddOrUpdate(e, DateTime.UtcNow, fun oldE dt -> DateTime.UtcNow) |> ignore
-        member __.ClearPendingChanges() = if isReadOnly then failwith "Context is readonly" else pendingChanges.Clear()
-        member __.GetPendingEntities() = if isReadOnly then failwith "Context is readonly" else (CommonTasks.sortEntities pendingChanges) |> Seq.toList
+        member __.SubmitChangedEntity e = if isReadOnly then failwith "Context is readonly" else pendingChanges.Force().AddOrUpdate(e, DateTime.UtcNow, fun oldE dt -> DateTime.UtcNow) |> ignore
+        member __.ClearPendingChanges() = if isReadOnly then failwith "Context is readonly" else pendingChanges.Force().Clear()
+        member __.GetPendingEntities() = if isReadOnly then failwith "Context is readonly" else (CommonTasks.sortEntities (pendingChanges.Force())) |> Seq.toList
 
         member __.SubmitPendingChanges() =
             if isReadOnly then failwith "Context is readonly" else 
+            let pendingChanges = pendingChanges.Force()
             use con = provider.CreateConnection(connectionString)
             lock myLock2 (fun () ->
                 provider.ProcessUpdates(con, pendingChanges, transactionOptions, commandTimeout)
@@ -128,6 +132,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType:Data
 
         member __.SubmitPendingChangesAsync() =
             if isReadOnly then failwith "Context is readonly" else 
+            let pendingChanges = pendingChanges.Force()
             task {
                 use con = provider.CreateConnection(connectionString) :?> System.Data.Common.DbConnection
                 let maxWait = DateTime.Now.AddSeconds(3.)
@@ -154,15 +159,15 @@ type public SqlDataContext (typeName, connectionString:string, providerType:Data
             let entities =
                 match provider.ExecuteSprocCommand(com, param, retCols, values) with
                 | Unit -> () |> box
-                | Scalar(name, o) -> entity.SetColumnSilent(name, o); entity |> box
-                | SingleResultSet(name, rs) -> entity.SetColumnSilent(name, toEntityArray rs); entity |> box
+                | Scalar(name, o) -> (entity :> IColumnHolder).SetColumnSilent(name, o); entity |> box
+                | SingleResultSet(name, rs) -> (entity :> IColumnHolder).SetColumnSilent(name, toEntityArray rs); entity |> box
                 | Set(rowSet) ->
                     for row in rowSet do
                         match row with
-                        | ScalarResultSet(name, o) -> entity.SetColumnSilent(name, o);
+                        | ScalarResultSet(name, o) -> (entity :> IColumnHolder).SetColumnSilent(name, o);
                         | ResultSet(name, rs) ->
                             let data = toEntityArray rs
-                            entity.SetColumnSilent(name, data)
+                            (entity :> IColumnHolder).SetColumnSilent(name, data)
                     entity |> box
 
             if provider.CloseConnectionAfterQuery then con.Close()
@@ -188,15 +193,15 @@ type public SqlDataContext (typeName, connectionString:string, providerType:Data
                     | Choice1Of2 res ->
                         match res with
                         | Unit -> Unchecked.defaultof<SqlEntity>
-                        | Scalar(name, o) -> entity.SetColumnSilent(name, o); entity
-                        | SingleResultSet(name, rs) -> entity.SetColumnSilent(name, toEntityArray rs); entity
+                        | Scalar(name, o) -> (entity :> IColumnHolder).SetColumnSilent(name, o); entity
+                        | SingleResultSet(name, rs) -> (entity :> IColumnHolder).SetColumnSilent(name, toEntityArray rs); entity
                         | Set(rowSet) ->
                             for row in rowSet do
                                 match row with
-                                | ScalarResultSet(name, o) -> entity.SetColumnSilent(name, o);
+                                | ScalarResultSet(name, o) -> (entity :> IColumnHolder).SetColumnSilent(name, o);
                                 | ResultSet(name, rs) ->
                                     let data = toEntityArray rs
-                                    entity.SetColumnSilent(name, data)
+                                    (entity :> IColumnHolder).SetColumnSilent(name, data)
 
                             if provider.CloseConnectionAfterQuery then con.Close()
                             entity
@@ -235,8 +240,8 @@ type public SqlDataContext (typeName, connectionString:string, providerType:Data
                  let e = SqlEntity(this, name, columns, reader.FieldCount)
                  for i = 0 to reader.FieldCount - 1 do
                     match reader.GetValue i with
-                    | null | :? DBNull ->  e.SetColumnSilent(reader.GetName i,null)
-                    | value -> e.SetColumnSilent(reader.GetName i,value)
+                    | null | :? DBNull ->  (e :> IColumnHolder).SetColumnSilent(reader.GetName i,null)
+                    | value -> (e :> IColumnHolder).SetColumnSilent(reader.GetName i,value)
                  yield e
             |]
 
@@ -248,9 +253,9 @@ type public SqlDataContext (typeName, connectionString:string, providerType:Data
                     for i = 0 to reader.FieldCount - 1 do
                         let! valu = reader.GetFieldValueAsync i
                         match valu with
-                        | null ->  e.SetColumnSilent(reader.GetName i,null)
-                        | nullItm when System.Convert.IsDBNull nullItm -> e.SetColumnSilent(reader.GetName i,null)
-                        | value -> e.SetColumnSilent(reader.GetName i,value)
+                        | null ->  (e :> IColumnHolder).SetColumnSilent(reader.GetName i,null)
+                        | nullItm when System.Convert.IsDBNull nullItm -> (e :> IColumnHolder).SetColumnSilent(reader.GetName i,null)
+                        | value -> (e :> IColumnHolder).SetColumnSilent(reader.GetName i,value)
                     res.Add e
                 return res |> Seq.toArray
             }
@@ -264,7 +269,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType:Data
         member __.SqlOperationsInSelect with get() = sqlOperationsInSelect
 
         member __.SaveContextSchema(filePath) =
-            providerCache
+            DcCache.providerCache
             |> Seq.iter (fun prov -> prov.Value.Value.GetSchemaCache().Save(filePath))
 
 #if !DESIGNTIME

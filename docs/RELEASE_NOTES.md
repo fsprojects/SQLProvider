@@ -1,3 +1,9 @@
+### 1.5.9 - 05.06.2025
+* Moved internal methods from SqlEntity under a new interface IColumnHolder. 
+* ...which is potential breaking change: If you still use them, cast first (entity :> IColumnHolder).GetColumn
+* Moved TemplateAsRecord templates under DesignTimeCommands
+* Better shared caching between same connection contexts.
+
 ### 1.5.8 - 04.06.2025
 * MapTo support Option and ValueOption on target types
 * TemplateAsRecord to generate list of properies and types

@@ -50,18 +50,6 @@ let mapEmployee (dbRecord:sql.dataContext.``main.EmployeesEntity``) : Employee =
 
 (**
 
-### TemplateAsRecord
-
-If you want to copy and paste the current SQLProvider objects as separate classes, you can use `TemplateAsRecord` property of your database table:
-
-*)
-
-ctx.Main.Employees.TemplateAsRecord
-// intellisense will generate you code that you can copy and paste as template to create your own type:
-// ``type MainOrders = { CustomerId : String voption; EmployeeId : Int64 voption; Freight : Decimal voption; OrderDate : DateTime voption; OrderId : Int64; RequiredDate : DateTime voption; ShipAddress : String voption; ShipCity : String voption; ShipCountry : String voption; ShipName : String voption; ShipPostalCode : String voption; ShipRegion : String voption; ShippedDate : DateTime voption }``
-
-(**
-
 This could be useful if you e.g. want to use SQLProvider objects in some reflection based code-generator (because the normal objects are erased).
 
 
@@ -108,6 +96,22 @@ let qry2 =
 
 (**
 
+### TemplateAsRecord
+
+If you want to use SQLProvider as code-generator and copy and paste the tables as separate classes (not recommended!), you can use `TemplateAsRecord` under your database table type which is located under dataContext types:
+
+*)
+
+sql.dataContext.DesignTimeCommands.TemplateAsRecord.``main.OrdersTemplate``
+
+// intellisense will generate you code that you can copy and paste as template to create your own type:
+// ``type MainOrders = { CustomerId : String voption; EmployeeId : Int64 voption; Freight : Decimal voption; OrderDate : DateTime voption; OrderId : Int64; RequiredDate : DateTime voption; ShipAddress : String voption; ShipCity : String voption; ShipCountry : String voption; ShipName : String voption; ShipPostalCode : String voption; ShipRegion : String voption; ShippedDate : DateTime voption }``
+
+(**
+
+The main reason to do this would be to create some reflection schema or MapTo object templates without manual typing.
+
+
 ### ColumnValues
 
 Or alternatively, the ColumnValues from SQLEntity can be used to create a map, with the
@@ -121,3 +125,4 @@ let rows =
 
 let employees2map = rows |> Seq.map(fun i -> i.ColumnValues |> Map.ofSeq)
 let firstNames = employees2map |> Seq.map (fun x -> x.["FirstName"])
+

@@ -98,7 +98,7 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
 
         sb.Clear() |> ignore
         ~~(sprintf "INSERT INTO %c%s%c (%s) VALUES (%s);"
-            cOpen entity.Table.Name cClose
+            cOpen (entity :> IColumnHolder).Table.Name cClose
             (String.Join(",",columnNames))
             (String.Join(",",values |> Array.map(fun _ -> "?"))))
         cmd.Parameters.AddRange(values)
@@ -116,7 +116,7 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
         let cmd = new OdbcCommand()
         cmd.Connection <- con :?> OdbcConnection
         let pk =
-            match schemaCache.PrimaryKeys.TryGetValue entity.Table.FullName with
+            match schemaCache.PrimaryKeys.TryGetValue (entity :> IColumnHolder).Table.FullName with
             | true, pk -> pk
             | false, _ -> []
         sb.Clear() |> ignore
@@ -127,15 +127,15 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
         | _ -> ()
 
         let pkValues =
-            match entity.GetPkColumnOption<obj> pk with
-            | [] -> failwith ("Error - you cannot update an entity that does not have a primary key. (" + entity.Table.FullName + ")")
+            match (entity :> IColumnHolder).GetPkColumnOption<obj> pk with
+            | [] -> failwith ("Error - you cannot update an entity that does not have a primary key. (" + (entity :> IColumnHolder).Table.FullName + ")")
             | v -> v
 
         let data =
             (([],0),changedColumns)
             ||> List.fold(fun (out,i) col ->
                 let p =
-                    match entity.GetColumnOption<obj> col with
+                    match (entity :> IColumnHolder).GetColumnOption<obj> col with
                     | Some v -> OdbcParameter(null,v)
                     | None -> OdbcParameter(null,DBNull.Value)
                 (col,p)::out,i+1)
@@ -147,12 +147,12 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
         | [] -> ()
         | [x] ->
             ~~(sprintf "UPDATE %c%s%c SET %s WHERE %s = ?;"
-                cOpen entity.Table.Name cClose
+                cOpen (entity :> IColumnHolder).Table.Name cClose
                 (String.concat "," (data |> Array.map(fun (c,_) -> sprintf "%c%s%c = %s" cOpen c cClose "?" ) ))
                 x)
         | ks -> 
             // TODO: What is the ?-mark parameter? Look from other providers how this is done.
-            failwith ("Composite key items update is not Supported in Odbc. (" + entity.Table.FullName + ")")
+            failwith ("Composite key items update is not Supported in Odbc. (" + (entity :> IColumnHolder).Table.FullName + ")")
 
         cmd.Parameters.AddRange(data |> Array.map snd)
 
@@ -169,13 +169,13 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
         cmd.Connection <- con :?> OdbcConnection
         sb.Clear() |> ignore
         let pk =
-            match schemaCache.PrimaryKeys.TryGetValue entity.Table.FullName with
+            match schemaCache.PrimaryKeys.TryGetValue (entity :> IColumnHolder).Table.FullName with
             | true, pk -> pk
             | false, _ -> []
         sb.Clear() |> ignore
         let pkValues =
-            match entity.GetPkColumnOption<obj> pk with
-            | [] -> failwith ("Error - you cannot delete an entity that does not have a primary key. (" + entity.Table.FullName + ")")
+            match (entity :> IColumnHolder).GetPkColumnOption<obj> pk with
+            | [] -> failwith ("Error - you cannot delete an entity that does not have a primary key. (" + (entity :> IColumnHolder).Table.FullName + ")")
             | v -> v
 
         pkValues |> List.iteri(fun i pkValue ->
@@ -183,10 +183,10 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
 
         match pk with
         | [] -> ()
-        | [k] -> ~~(sprintf "DELETE FROM %c%s%c WHERE %s = ?;" cOpen entity.Table.Name cClose k )
+        | [k] -> ~~(sprintf "DELETE FROM %c%s%c WHERE %s = ?;" cOpen (entity :> IColumnHolder).Table.Name cClose k )
         | ks -> 
             // TODO: What is the ?-mark parameter? Look from other providers how this is done.
-            failwith ("Composite key items deletion is not Supported in Odbc. (" + entity.Table.FullName + ")")
+            failwith ("Composite key items deletion is not Supported in Odbc. (" + (entity :> IColumnHolder).Table.FullName + ")")
         cmd.CommandText <- sb.ToString()
         cmd
 
@@ -730,7 +730,7 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
                             cmd.CommandTimeout <- timeout.Value
                         cmd.ExecuteNonQuery() |> ignore
                         // remove the pk to prevent this attempting to be used again
-                        e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
+                        (e :> IColumnHolder).SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[(e :> IColumnHolder).Table.FullName], None)
                         e._State <- Deleted
                     | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e)
                 if not(isNull scope) then scope.Complete()
@@ -785,7 +785,7 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
                                     cmd.CommandTimeout <- timeout.Value
                                 let! c = cmd.ExecuteNonQueryAsync()
                                 // remove the pk to prevent this attempting to be used again
-                                e.SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[e.Table.FullName], None)
+                                (e :> IColumnHolder).SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[(e :> IColumnHolder).Table.FullName], None)
                                 e._State <- Deleted
                             }
                         | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e
