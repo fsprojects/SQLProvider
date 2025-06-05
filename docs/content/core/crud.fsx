@@ -315,4 +315,3 @@ let setIfExists (columnName) =
    if emp.HasColumn(columnName, StringComparison.InvariantCultureIgnoreCase) then
       emp.SetColumn(columnName, "testValue")
 
-(**
