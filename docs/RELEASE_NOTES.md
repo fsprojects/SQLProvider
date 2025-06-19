@@ -1,3 +1,6 @@
+### 1.5.10 - 19.06.2025
+* Some SQL gereration optimizations
+
 ### 1.5.9 - 05.06.2025
 * Moved internal methods from SqlEntity under a new interface IColumnHolder. 
 * ...which is potential breaking change: If you still use them, cast first (entity :> IColumnHolder).GetColumn

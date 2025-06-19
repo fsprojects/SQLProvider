@@ -1079,17 +1079,23 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                                         | FSharp.Data.Sql.IsNull -> sprintf "%s IS NULL" column
                                         | FSharp.Data.Sql.NotNull -> sprintf "%s IS NOT NULL" column
                                         | FSharp.Data.Sql.In ->
-                                            let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
-                                            Array.iter parameters.Add paras
-                                            sprintf "%s IN (%s)" column text
+                                            if Array.isEmpty paras then
+                                                " (1=0) " // nothing is in the empty set
+                                            else
+                                                let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
+                                                Array.iter parameters.Add paras
+                                                sprintf "%s IN (%s)" column text
                                         | FSharp.Data.Sql.NestedIn ->
                                             let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
                                             Array.iter parameters.Add innerpars
                                             sprintf "%s IN (%s)" column innersql
                                         | FSharp.Data.Sql.NotIn ->
-                                            let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
-                                            Array.iter parameters.Add paras
-                                            sprintf "%s NOT IN (%s)" column text
+                                            if Array.isEmpty paras then
+                                                " (1=1) "
+                                            else
+                                                let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
+                                                Array.iter parameters.Add paras
+                                                sprintf "%s NOT IN (%s)" column text
                                         | FSharp.Data.Sql.NestedNotIn ->
                                             let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
                                             Array.iter parameters.Add innerpars
