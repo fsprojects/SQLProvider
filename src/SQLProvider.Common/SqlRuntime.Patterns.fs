@@ -359,9 +359,9 @@ let (|SqlSubtableColumnGet|_|) = function
 let decimalTypes = [| typeof<decimal>; typeof<float32>; typeof<double>; typeof<float>;
                       typeof<Option<decimal>>; typeof<Option<float32>>; typeof<Option<double>>; typeof<Option<float>>;
                       typeof<ValueOption<decimal>>; typeof<ValueOption<float32>>; typeof<ValueOption<double>>; typeof<ValueOption<float>>;|]
-let integerTypes = [| typeof<Int32>; typeof<Int64>; typeof<Int16>; typeof<int8>;typeof<UInt32>; typeof<UInt64>; typeof<UInt16>; typeof<uint8>;
-                      typeof<Option<Int32>>; typeof<Option<Int64>>; typeof<Option<Int16>>; typeof<Option<int8>>; typeof<Option<UInt32>>; typeof<Option<UInt64>>; typeof<Option<UInt16>>; typeof<Option<uint8>>;
-                      typeof<ValueOption<Int32>>; typeof<ValueOption<Int64>>; typeof<ValueOption<Int16>>; typeof<ValueOption<int8>>; typeof<ValueOption<UInt32>>; typeof<ValueOption<UInt64>>; typeof<ValueOption<UInt16>>; typeof<ValueOption<uint8>>;|]
+let integerTypes = [| typeof<Int32>; typeof<Int64>; typeof<Int16>; typeof<int8>;typeof<UInt32>; typeof<UInt64>; typeof<UInt16>; typeof<uint8>; typeof<bigint>;
+                      typeof<Option<Int32>>; typeof<Option<Int64>>; typeof<Option<Int16>>; typeof<Option<int8>>; typeof<Option<UInt32>>; typeof<Option<UInt64>>; typeof<Option<UInt16>>; typeof<Option<uint8>>; typeof<Option<bigint>>;
+                      typeof<ValueOption<Int32>>; typeof<ValueOption<Int64>>; typeof<ValueOption<Int16>>; typeof<ValueOption<int8>>; typeof<ValueOption<UInt32>>; typeof<ValueOption<UInt64>>; typeof<ValueOption<UInt16>>; typeof<ValueOption<uint8>>; typeof<ValueOption<bigint>>;|]
 
 let intType (typ:Type) = 
     if (not (isNull typ)) && Common.Utilities.isCOpt typ then typeof<Option<int>>
@@ -694,6 +694,7 @@ and (|SimpleCondition|_|) exp =
             | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<Char>) -> Some((Expression.Lambda(meth).Compile() :?> Func<Char>).Invoke() |> box)
             | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<DateTimeOffset>) -> Some((Expression.Lambda(meth).Compile() :?> Func<DateTimeOffset>).Invoke() |> box)
             | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<TimeSpan>) -> Some((Expression.Lambda(meth).Compile() :?> Func<TimeSpan>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<bigint>) -> Some((Expression.Lambda(meth).Compile() :?> Func<bigint>).Invoke() |> box)
 
             | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<Int32>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Int32>>).Invoke() |> box)
             | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<Int64>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Int64>>).Invoke() |> box)
@@ -710,6 +711,7 @@ and (|SimpleCondition|_|) exp =
             | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<Char>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Char>>).Invoke() |> box)
             | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<DateTimeOffset>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<DateTimeOffset>>).Invoke() |> box)
             | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<TimeSpan>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<TimeSpan>>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<bigint>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<bigint>>).Invoke() |> box)
             | ExpressionType.MemberAccess, (:? MemberExpression as me) when Type.(=)(me.Type, typeof<DateTime>) && me.Member.Name = "Now" -> Some(DateTime.Now |> box)
             | ExpressionType.MemberAccess, (:? MemberExpression as me) when Type.(=)(me.Type, typeof<DateTime>) && me.Member.Name = "UtcNow" -> Some(DateTime.UtcNow |> box)
             | _ ->

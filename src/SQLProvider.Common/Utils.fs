@@ -106,6 +106,7 @@ module Utilities =
             | :? Char as t -> Option.Some t |> box
             | :? DateTimeOffset as t -> Option.Some t |> box
             | :? TimeSpan as t -> Option.Some t |> box
+            | :? bigint as t -> Option.Some t |> box
             | t ->
                 if isCOpt (t.GetType()) then t |> box
                 else Option.Some t |> box
@@ -130,6 +131,7 @@ module Utilities =
             | :? Char as t -> ValueOption.Some t |> box
             | :? DateTimeOffset as t -> ValueOption.Some t |> box
             | :? TimeSpan as t -> ValueOption.Some t |> box
+            | :? bigint as t -> ValueOption.Some t |> box
             | t ->
                 if isVOpt (t.GetType()) then t|> box
                 else ValueOption.Some t |> box
@@ -156,6 +158,7 @@ module Utilities =
         | :? string as s, t when Type.(=) (t, typeof<Char>) && Char.TryParse s |> fst -> Char.Parse s |> box
         | :? string as s, t when Type.(=) (t, typeof<DateTimeOffset>) && DateTimeOffset.TryParse s |> fst -> DateTimeOffset.Parse s |> box
         | :? string as s, t when Type.(=) (t, typeof<TimeSpan>) && TimeSpan.TryParse s |> fst -> TimeSpan.Parse s |> box
+        | :? string as s, t when Type.(=) (t, typeof<bigint>) && Numerics.BigInteger.TryParse s |> fst -> bigint.Parse s |> box
         | _ -> 
             if Type.(=) (returnType, typeof<String>) then Convert.ToString itm |> box
             elif Type.(=) (returnType, typeof<Int32>) then Convert.ToInt32 itm |> box

@@ -134,6 +134,7 @@ module internal QueryImplementation =
             elif Type.(=)(returnType, typeof<ValueOption<Char>>) then let invoker = projector :?> Func<SqlEntity, ValueOption<Char>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
             elif Type.(=)(returnType, typeof<ValueOption<DateTimeOffset>>) then let invoker = projector :?> Func<SqlEntity, ValueOption<DateTimeOffset>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
             elif Type.(=)(returnType, typeof<ValueOption<TimeSpan>>) then let invoker = projector :?> Func<SqlEntity, ValueOption<TimeSpan>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<ValueOption<bigint>>) then let invoker = projector :?> Func<SqlEntity, ValueOption<bigint>> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
             else
                 seq { for e in results -> projector.DynamicInvoke e } |> Seq.cache :> System.Collections.IEnumerable
         else
@@ -153,6 +154,7 @@ module internal QueryImplementation =
             elif Type.(=)(returnType, typeof<Char>) then let invoker = projector :?> Func<SqlEntity, Char> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
             elif Type.(=)(returnType, typeof<DateTimeOffset>) then let invoker = projector :?> Func<SqlEntity, DateTimeOffset> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
             elif Type.(=)(returnType, typeof<TimeSpan>) then let invoker = projector :?> Func<SqlEntity, TimeSpan> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+            elif Type.(=)(returnType, typeof<bigint>) then let invoker = projector :?> Func<SqlEntity, bigint> in seq { for e in results -> invoker.Invoke(e) } |> Seq.cache :> System.Collections.IEnumerable
             else
                 seq { for e in results -> projector.DynamicInvoke e } |> Seq.cache :> System.Collections.IEnumerable
 
