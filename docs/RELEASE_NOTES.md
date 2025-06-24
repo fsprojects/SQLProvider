@@ -1,3 +1,6 @@
+### 1.5.11 - 24.06.2025
+* Improved BigInteger support
+
 ### 1.5.10 - 19.06.2025
 * Some SQL gereration optimizations
 
