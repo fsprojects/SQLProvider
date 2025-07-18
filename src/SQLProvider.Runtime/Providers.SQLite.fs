@@ -111,7 +111,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
 #if NETSTANDARD
             | SQLiteLibrary.AutoSelect -> "Microsoft"
 #else
-            | SQLiteLibrary.AutoSelect -> if Type.GetType ("Mono.Runtime") <> null then "Mono" else "System"
+            | SQLiteLibrary.AutoSelect -> if not(isNull (Type.GetType "Mono.Runtime")) then "Mono" else "System"
 #endif
             | _ -> failwith ("Unsupported SQLiteLibrary option: " + sqliteLibrary.ToString())
         [
@@ -127,7 +127,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
 #if NETSTANDARD
             | SQLiteLibrary.AutoSelect -> true
 #else
-            | SQLiteLibrary.AutoSelect -> if Type.GetType ("Mono.Runtime") <> null then true else false
+            | SQLiteLibrary.AutoSelect -> not(isNull(Type.GetType "Mono.Runtime"))
 #endif
             | _ -> failwith ("Unsupported SQLiteLibrary option: " + sqliteLibrary.ToString())
 

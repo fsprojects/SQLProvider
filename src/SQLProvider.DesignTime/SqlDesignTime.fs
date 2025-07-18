@@ -1054,7 +1054,7 @@ module DesignTimeUtils =
 
                           try
                               match con with
-                              | Some con when con <> null && con.State <> ConnectionState.Closed -> con.Close()
+                              | Some con when not (isNull con) && con.State <> ConnectionState.Closed -> con.Close()
                               | _ -> ()
                           with
                           | :? ObjectDisposedException -> ()
