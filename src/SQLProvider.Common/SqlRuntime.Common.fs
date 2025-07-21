@@ -393,7 +393,17 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup, activeColu
 #endif
                             yield propertyTypeMapping (prop.Name, typedNone)
                         | true, dataVal -> yield propertyTypeMapping (prop.Name, (Utilities.convertTypes dataVal prop.PropertyType))
-                        | false, _ -> ()
+                        | false, _ ->
+                            if Utilities.isVOpt prop.PropertyType then
+#if NETSTANDARD21
+                                let typedNone = System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject prop.PropertyType
+#else
+                                let typedNone = FormatterServices.GetUninitializedObject prop.PropertyType
+#endif
+                                yield propertyTypeMapping (prop.Name, typedNone)
+                            else
+                                yield propertyTypeMapping (prop.Name, null)
+                            ()
                 |]
             unbox<'a> (ctor(values))
         else
