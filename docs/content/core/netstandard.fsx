@@ -19,7 +19,7 @@ Microsoft SQL Server | [x]   | [x]  | [x]        | See prebuild task. |
 Postgres             | [x]   | [x]  | [x]        | See post-build task. |
 MySQL / MariaDB      | [x]   | [x]  | [x]        | See post-build task. |
 SQLite               | [x]   |      |            | See post-build task. Builds on Win, runs on all |
-FireBird             |  ?    |  ?   |  ?         | Not tested. |
+Firebird             |  ?    |  ?   |  ?         | Not tested. |
 Oracle               |       |      |            | No ODP.NET-driver yet. |
 Odbc                 |       |      |            | Not supported. |
 Access               |       |      |            | Not supported. |

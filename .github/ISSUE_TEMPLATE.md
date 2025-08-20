@@ -32,7 +32,7 @@ Please provide a description of any known workarounds.
     - [ ] Oracle
     - [ ] Odbc
     - [ ] Microsoft Access
-    - [ ] FireBird
+    - [ ] Firebird
     - [ ] DuckDB
     - [ ] Other
 * Operating system
