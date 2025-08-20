@@ -36,7 +36,7 @@ type internal ParameterValue =
     | UserProvided of string * string * Type
     | Default of Expr
 
-module DesignTimeUtils = 
+module DesignTimeUtils =
 
 #if COMMON
         let [<Literal>] design1 = "FSharp.Data.SqlProvider.DesignTime"
@@ -81,11 +81,11 @@ module DesignTimeUtils =
         let [<Literal>] FSHARP_DATA_SQL = "FSharp.Data.Sql.SQLite"
 #endif
 #if FIREBIRD
-        let [<Literal>] design1 = "FSharp.Data.SqlProvider.FireBird.DesignTime"
-        let [<Literal>] runtime1 = "FSharp.Data.SqlProvider.FireBird"
-        let [<Literal>] design2 = "SQLProvider.FireBird.DesignTime"
-        let [<Literal>] runtime2 = "SQLProvider.FireBird.Runtime"
-        let [<Literal>] FSHARP_DATA_SQL = "FSharp.Data.Sql.FireBird"
+        let [<Literal>] design1 = "FSharp.Data.SqlProvider.Firebird.DesignTime"
+        let [<Literal>] runtime1 = "FSharp.Data.SqlProvider.Firebird"
+        let [<Literal>] design2 = "SQLProvider.Firebird.DesignTime"
+        let [<Literal>] runtime2 = "SQLProvider.Firebird.Runtime"
+        let [<Literal>] FSHARP_DATA_SQL = "FSharp.Data.Sql.Firebird"
 #endif
 #if ODBC
         let [<Literal>] design1 = "FSharp.Data.SqlProvider.Odbc.DesignTime"
@@ -265,11 +265,11 @@ module DesignTimeUtils =
                     SchemaProjections.buildFieldName(name),propTy,
                     getterCode =
                         match nullable with
-                        | NullableColumnType.OPTION -> 
+                        | NullableColumnType.OPTION ->
                            (fun (args:Expr list) ->
                             let meth = typeof<IColumnHolder>.GetMethod("GetColumnOption").MakeGenericMethod([|ty|])
                             Expr.Call(args.[0],meth,[Expr.Value name]))
-                        | NullableColumnType.VALUE_OPTION -> 
+                        | NullableColumnType.VALUE_OPTION ->
                            (fun (args:Expr list) ->
                             let meth = typeof<IColumnHolder>.GetMethod("GetColumnValueOption").MakeGenericMethod([|ty|])
                             Expr.Call(args.[0],meth,[Expr.Value name]))
@@ -278,13 +278,13 @@ module DesignTimeUtils =
                             let meth = typeof<IColumnHolder>.GetMethod("GetColumn").MakeGenericMethod([|ty|])
                             Expr.Call(args.[0],meth,[Expr.Value name]))
                     ,
-                    setterCode = 
+                    setterCode =
                         match nullable with
-                        | NullableColumnType.OPTION -> 
+                        | NullableColumnType.OPTION ->
                            (fun (args:Expr list) ->
                             let meth = typeof<IColumnHolder>.GetMethod("SetColumnOption").MakeGenericMethod([|ty|])
                             Expr.Call(args.[0],meth,[Expr.Value name;args.[1]]))
-                        | NullableColumnType.VALUE_OPTION -> 
+                        | NullableColumnType.VALUE_OPTION ->
                            (fun (args:Expr list) ->
                             let meth = typeof<IColumnHolder>.GetMethod("SetColumnValueOption").MakeGenericMethod([|ty|])
                             Expr.Call(args.[0],meth,[Expr.Value name;args.[1]]))
@@ -319,14 +319,14 @@ module DesignTimeUtils =
 
             resultType.AddMembersDelayed(fun () ->
                     let sprocParameters =
-                    
+
                         match con with
                         | None ->
                             match prov.GetSchemaCache().SprocsParams.TryGetValue sprocname with
                             | true, x -> x
                             | false, _ -> []
                         | Some con ->
-                            (lazy 
+                            (lazy
                                 Sql.ensureOpen con
                                 let ps = sproc.Params con
                                 prov.GetSchemaCache().SprocsParams.AddOrUpdate(sprocname, ps, fun _ _ -> ps) |> ignore
@@ -573,14 +573,14 @@ module DesignTimeUtils =
                             match conString, conStringName with
                             | "", "" -> failwith "No connection string or connection string name was specified."
                             | "", _ -> failwithf "Could not find a connection string with name '%s'." conStringName
-                            | _ -> 
+                            | _ ->
                                 match prov.GetSchemaCache().IsOffline with
                                 | false ->
                                     let con = prov.CreateConnection conString
                                     registerDispose (con, dbVendor)
                                     try
                                         con.Open()
-                                    with 
+                                    with
                                     | exn ->
                                         let baseError = exn.GetBaseException()
                                         failwithf $"Error opening compile-time connection. Connection string: {conString}. Error: {typeof<exn>}, {exn.Message}, inner {baseError.GetType()} {baseError.Message}"
@@ -687,7 +687,7 @@ module DesignTimeUtils =
                 t.AddMembersDelayed(fun () ->
                     let (columns,(children,parents)) = getTableData key
                     let attProps =
-                        let createCols = createColumnProperty con prov useOptionTypes key 
+                        let createCols = createColumnProperty con prov useOptionTypes key
                         List.map createCols (columns |> Seq.map (fun kvp -> kvp.Value) |> Seq.toList)
                     let relProps =
                         let getRelationshipName = Utilities.uniqueName()
@@ -745,7 +745,7 @@ module DesignTimeUtils =
                   if not isReadonly then
                       yield! containers |> Seq.cast<MemberInfo>
 
-                  let tableTypes = 
+                  let tableTypes =
                       if not isReadonly then tableTypes
                       else [] |> dict // Readonly shares the same schema and table types.
 
@@ -771,7 +771,7 @@ module DesignTimeUtils =
                                 | NullableColumnType.NO_OPTION
                                 | _ -> ""
                             let template=
-                                let items = 
+                                let items =
                                     columns
                                     |> Map.toArray
                                     |> Array.map(fun (s,v) -> (SchemaProjections.nicePascalName v.Name) + " : " + (Utilities.getType v.TypeMapping.ClrType).Name + (if v.IsNullable then optType else ""))
@@ -787,28 +787,28 @@ module DesignTimeUtils =
                           // we are forced to load the columns here, but this is ok as the user has already
                           // pressed . on an IQueryable type so they are obviously interested in using this entity..
                           let columns, _ = getTableData key
-                      
+
                           let requiredColumns =
                               columns
                               |> Map.toArray
                               |> Array.map (fun (s,c) -> c)
                               |> Array.filter (fun c -> (not c.IsNullable) && (not c.IsAutonumber) && (not c.IsComputed))
-                      
+
                           let backwardCompatibilityOnly =
                               requiredColumns
                               |> Array.filter (fun c-> not c.IsPrimaryKey)
                               |> Array.map(fun c -> ProvidedParameter(c.Name,Utilities.getType c.TypeMapping.ClrType))
                               |> Array.sortBy(fun p -> p.Name)
                               |> Array.toList
-                      
+
                           let normalParameters =
                               requiredColumns
                               |> Array.map(fun c -> ProvidedParameter(c.Name,Utilities.getType c.TypeMapping.ClrType))
                               |> Array.sortBy(fun p -> p.Name)
                               |> Array.toList
-                      
+
                           if isReadonly then
-                      
+
                               seq {
                                   if not (ct.DeclaredProperties |> Seq.exists(fun m -> m.Name = "Individuals")) then
                                       let individuals = ProvidedProperty("Individuals",Seq.head it, getterCode = fun args ->
@@ -817,9 +817,9 @@ module DesignTimeUtils =
                                       individuals.AddXmlDoc("<summary>Get individual items from the table. Requires single primary key.</summary>")
                                       yield individuals :> MemberInfo
                                } |> Seq.toList
-                      
+
                           else
-                      
+
                           // Create: unit -> SqlEntity
                           let create1 = ProvidedMethod("Create", [], entityType, invokeCode = fun args ->
                               let a0 = args.[0]
@@ -829,12 +829,12 @@ module DesignTimeUtils =
                                   ((%%a0 : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
                                   e
                               @@> )
-                      
+
                           // Create: ('a * 'b * 'c * ...) -> SqlEntity
                           let create2 =
                               if List.isEmpty normalParameters then Unchecked.defaultof<ProvidedMethod> else
                               ProvidedMethod("Create", normalParameters, entityType, invokeCode = fun args ->
-                      
+
                                 let dc = args.Head
                                 let args = args.Tail
                                 let columns =
@@ -850,12 +850,12 @@ module DesignTimeUtils =
                                     ((%%dc : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
                                     e
                                 @@>)
-                      
+
                           // Create: ('a * 'b * 'c * ...) -> SqlEntity
                           let create2old =
                               if List.isEmpty backwardCompatibilityOnly || normalParameters.Length = backwardCompatibilityOnly.Length then Unchecked.defaultof<ProvidedMethod> else
                               ProvidedMethod("Create", backwardCompatibilityOnly, entityType, invokeCode = fun args ->
-                      
+
                                 let dc = args.Head
                                 let args = args.Tail
                                 let columns =
@@ -871,7 +871,7 @@ module DesignTimeUtils =
                                     ((%%dc : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
                                     e
                                 @@>)
-                      
+
                           // Create: (data : seq<string*obj>) -> SqlEntity
                           let create3 = ProvidedMethod("Create", [ProvidedParameter("data",typeof< (string*obj) seq >)] , entityType, invokeCode = fun args ->
                                 let dc = args.[0]
@@ -887,7 +887,7 @@ module DesignTimeUtils =
                               let cols = requiredColumns |> Seq.map(fun c -> c.Name)
                               "Item array of database columns: \r\n" + (String.concat ","  cols)
                           create3.AddXmlDoc (sprintf "<summary>%s</summary>" desc3)
-                      
+
                           // ``Create(...)``: ('a * 'b * 'c * ...) -> SqlEntity
                           let create4 =
                               if List.isEmpty normalParameters then Unchecked.defaultof<ProvidedMethod> else
@@ -910,14 +910,14 @@ module DesignTimeUtils =
                                     ((%%dc : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
                                     e
                                 @@>)
-                      
+
                           let minimalParameters =
                               requiredColumns
                               |> Array.filter (fun c-> (not c.HasDefault))
                               |> Array.map(fun c -> ProvidedParameter(c.Name,Utilities.getType c.TypeMapping.ClrType))
                               |> Array.sortBy(fun p -> p.Name)
                               |> Array.toList
-                      
+
                           // ``Create(...)``: ('a * 'b * 'c * ...) -> SqlEntity
                           let create4old =
                               if List.isEmpty backwardCompatibilityOnly || backwardCompatibilityOnly.Length = normalParameters.Length ||
@@ -941,7 +941,7 @@ module DesignTimeUtils =
                                     ((%%dc : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
                                     e
                                 @@>)
-                      
+
                           // ``Create(...)``: ('a * 'b * 'c * ...) -> SqlEntity
                           let create5 =
                               if List.isEmpty minimalParameters || normalParameters.Length = minimalParameters.Length then Unchecked.defaultof<ProvidedMethod> else
@@ -964,7 +964,7 @@ module DesignTimeUtils =
                                     ((%%dc : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
                                     e
                                 @@>)
-                      
+
                           seq {
                               if not (ct.DeclaredProperties |> Seq.exists(fun m -> m.Name = "Individuals")) then
                                   let individuals = ProvidedProperty("Individuals",Seq.head it, getterCode = fun args ->
@@ -988,10 +988,10 @@ module DesignTimeUtils =
                                  backwardCompatibilityOnly.Length <> minimalParameters.Length then
                                      create4old.AddXmlDoc("This will be obsolete soon. Migrate away from this!")
                                      yield create4old :> MemberInfo
-                      
+
                            } |> Seq.toList
                       )
-                      
+
                       let buildTableName = SchemaProjections.buildTableName >> caseInsensitivityCheck
                       let prop = ProvidedProperty(buildTableName(ct.Name),ct, getterCode = fun args ->
                           let a0 = args.[0]
@@ -1009,7 +1009,7 @@ module DesignTimeUtils =
                       schemaType.AddMember ct
                       if not (schemaType.DeclaredMembers |> Seq.exists(fun m -> m.Name = prop.Name)) then
                           schemaType.AddMember prop
-                      
+
                       yield entityType :> MemberInfo
                       //yield ct         :> MemberInfo
                       //yield prop       :> MemberInfo
@@ -1040,7 +1040,7 @@ module DesignTimeUtils =
                       <@@ ((%%a0 : obj) :?> ISqlDataContext).CreateConnection() @@>)  :> MemberInfo
 
                   if not isReadonly then
-                      let recreate = fun () -> createTypes rootType serviceType readServiceType config sqlRuntimeInfo invalidate registerDispose (connectionString, conStringName,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner,caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, ssdtPath, rootTypeName)              
+                      let recreate = fun () -> createTypes rootType serviceType readServiceType config sqlRuntimeInfo invalidate registerDispose (connectionString, conStringName,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner,caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, ssdtPath, rootTypeName)
                       let designTimeCommandsContainer, saveResponse, mOld, designTime, invalidateActionResponse =
                             createDesignTimeCommands prov contextSchemaPath recreate invalidate
 
@@ -1109,7 +1109,7 @@ module DesignTimeUtils =
 
             ()
 
-        let createConstructors (config:TypeProviderConfig) (rootType:ProvidedTypeDefinition, serviceType, readServiceType, args) = 
+        let createConstructors (config:TypeProviderConfig) (rootType:ProvidedTypeDefinition, serviceType, readServiceType, args) =
             let struct(connectionString, conStringName,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner,caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, ssdtPath, rootTypeName) = args
 
             let referencedAssemblyExpr = QuotationHelpers.arrayExpr config.ReferencedAssemblies |> snd
@@ -1190,17 +1190,17 @@ module DesignTimeUtils =
                 [
 
                     for overload in overloads do
-                   
+
                         let actualParams = [|
                             for (customParam, defaultParam) in optionPairs do
                                 match overload |> Array.exists ((=) customParam) with
                                 | true -> yield UserProvided customParam
                                 | false -> yield Default defaultParam
                         |]
-                      
+
                         // The code that gets actually executed
                         let inline invoker (isReadOnly:bool) (args: Expr list) =
-                      
+
                               let actualArgs =
                                     [|
                                         let mutable argPosition = 0
@@ -1211,12 +1211,12 @@ module DesignTimeUtils =
                                             // otherwise, we use the default value
                                             | Default p -> yield p
                                     |]
-                      
+
                               <@@
                                   let cmdTimeout =
                                       let argTimeout = %%actualArgs.[3]
                                       if argTimeout = NO_COMMAND_TIMEOUT then None else Some argTimeout
-                                  
+
                                   // **important**: contextSchemaPath is empty because we do not want
                                   // to load the schema cache from (the developer's) local filesystem in production
                                   SqlDataContext(typeName = rootTypeName, connectionString = %%actualArgs.[0], providerType = dbVendor,
@@ -1227,7 +1227,7 @@ module DesignTimeUtils =
                                                   commandTimeout = cmdTimeout, sqlOperationsInSelect = %%actualArgs.[4], ssdtPath = ssdtPath, isReadOnly=isReadOnly)
                                   :> ISqlDataContext
                               @@>
-                      
+
                         // builds the definitions
                         let paramList =
                             [ for actualParam in actualParams do
@@ -1235,15 +1235,15 @@ module DesignTimeUtils =
                                   | UserProvided(pname, pcomment, ptype) -> yield pname, pcomment, ptype
                                   | _ -> ()
                             ]
-                      
+
                         let providerParams =
                             [ for (pname, _, ptype) in paramList -> ProvidedParameter(pname, ptype)]
-                      
+
                         let xmlComments =
                             [|  yield "<summary>Returns an instance of the SQL Provider using the static parameters</summary>"
                                 for (pname, xmlInfo, _) in paramList -> "<param name='" + pname + "'>" + xmlInfo + "</param>"
                             |]
-                      
+
                         let method =
                             ProvidedMethod( methodName = "GetDataContext"
                                           , parameters = providerParams
@@ -1251,16 +1251,16 @@ module DesignTimeUtils =
                                           , isStatic = true
                                           , invokeCode = invoker false
                                           )
-                      
+
                         method.AddXmlDoc (String.Concat xmlComments)
-                      
+
                         yield method
-                      
+
                         let xmlComments2 =
                             [|  yield "<summary>Returns an instance of the SQL Provider using the static parameters, without direct access to modify data.</summary>"
                                 for (pname, xmlInfo, _) in paramList -> "<param name='" + pname + "'>" + xmlInfo + "</param>"
                             |]
-                      
+
                         let rmethod =
                             ProvidedMethod( methodName = "GetReadOnlyDataContext"
                                           , parameters = providerParams
@@ -1268,9 +1268,9 @@ module DesignTimeUtils =
                                           , isStatic = true
                                           , invokeCode = invoker true
                                           )
-                      
+
                         rmethod.AddXmlDoc (String.Concat xmlComments2)
-                      
+
                         yield rmethod
 
                 ])
@@ -1278,7 +1278,7 @@ module DesignTimeUtils =
 
 open DesignTimeUtils
 
-module DesignReflection = 
+module DesignReflection =
     let execAssembly = lazy System.Reflection.Assembly.GetExecutingAssembly()
 
 type SqlRuntimeInfo (config : TypeProviderConfig) =
@@ -1400,7 +1400,7 @@ module internal FixReferenceAssemblies =
                             "linux-" + System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant()
                         else ""
                     ); "native" |]
-                    
+
                 if System.IO.Directory.Exists nativeLibrary then
                     Environment.SetEnvironmentVariable("Path", Environment.GetEnvironmentVariable("Path") + ";" + nativeLibrary) // Path for native libraries (net8.0)
 
@@ -1443,7 +1443,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
     let asm = DesignReflection.execAssembly.Force()
 
     // check we contain a copy of runtime files, and are not referencing the runtime DLL
-    do assert (typeof<SqlDataContext>.Assembly.GetName().Name = asm.GetName().Name)  
+    do assert (typeof<SqlDataContext>.Assembly.GetName().Name = asm.GetName().Name)
 #if !COMMON
     let _ = FixReferenceAssemblies.manualLoadNet8Runtime.Force()
 #endif
@@ -1515,7 +1515,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
         let addCache args =
             lazy
                 let struct(connectionString, conStringName,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner,caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, ssdtPath, rootTypeName) = args
-                
+
                 let rootType = ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly,FSHARP_DATA_SQL,rootTypeName,Some typeof<obj>, isErased=true)
                 let serviceType = ProvidedTypeDefinition( "dataContext", Some typeof<obj>, isErased=true)
                 let readServiceType = ProvidedTypeDefinition( "readDataContext", Some typeof<obj>, isErased=true)
@@ -1527,7 +1527,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                 // cache after the time-out, causing one extra hit, but this is only a design-time cache
                 // and it will work well enough to deal with Visual Studio's multi-threading problems
                 let expiration = TimeSpan.FromMinutes 3
-                let rec invalidationFunction key = 
+                let rec invalidationFunction key =
                     async {
                         do! Async.Sleep (int expiration.TotalMilliseconds)
 
@@ -1549,7 +1549,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
             let _ = DesignTimeCache.cache.TryRemove(arguments)
             let _ =
                 lock mySaveLock (fun() ->
-                    let keysToClear = 
+                    let keysToClear =
                         DesignTimeCacheSchema.schemaMap.Keys
                         |> Seq.toList
                         |> List.filter(fun (a,k) -> a = arguments)

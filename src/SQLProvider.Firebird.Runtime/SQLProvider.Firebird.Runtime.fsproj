@@ -9,8 +9,8 @@
     <PackageProjectUrl>https://fsprojects.github.io/SQLProvider</PackageProjectUrl>
     <RepositoryUrl>https://github.com/fsprojects/SQLProvider</RepositoryUrl>
     <OutputPath>..\..\bin\firebird\lib\</OutputPath>
-    <AssemblyName>FSharp.Data.SqlProvider.FireBird</AssemblyName>
-    <Name>FSharp.Data.SqlProvider.FireBird</Name>
+    <AssemblyName>FSharp.Data.SqlProvider.Firebird</AssemblyName>
+    <Name>FSharp.Data.SqlProvider.Firebird</Name>
     <PackageTags>sql, typeprovider, firebirdsql, f#, fsharp, database, dotnet</PackageTags>
     <PackageLicenseUrl>https://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt</PackageLicenseUrl>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
@@ -26,11 +26,11 @@
       <Paket>True</Paket>
       <Link>paket-files/ExpressionOptimizer.fs</Link>
     </Compile>
-    <Compile Include="..\SQLProvider.Runtime\Providers.FireBird.fs" Link="Providers.FireBird.fs" />
+    <Compile Include="..\SQLProvider.Runtime\Providers.Firebird.fs" Link="Providers.Firebird.fs" />
     <Compile Include="..\SQLProvider.Runtime\SqlRuntime.DataContext.fs" Link="SqlRuntime.DataContext.fs" />
   </ItemGroup>
   <Target Name="BeforeBuild">
-      <MSBuild Projects="..\SQLProvider.FireBird.DesignTime\SQLProvider.FireBird.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);$(TargetFramework)" />
+      <MSBuild Projects="..\SQLProvider.Firebird.DesignTime\SQLProvider.Firebird.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);$(TargetFramework)" />
   </Target>
   <ItemGroup>
     <PackageReference Include="FirebirdSql.Data.FirebirdClient" Version="10.3.2" />

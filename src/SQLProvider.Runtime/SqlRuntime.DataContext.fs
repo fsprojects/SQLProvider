@@ -56,10 +56,10 @@ module internal ProviderBuilder =
 #if DUCKDB
         | DatabaseProviderTypes.DUCKDB -> DuckDbProvider(resolutionPath, contextSchemaPath, owner, referencedAssemblies) :> ISqlProvider
 #endif
-        | DatabaseProviderTypes.EXTERNAL 
+        | DatabaseProviderTypes.EXTERNAL
         | _ -> failwith ("Unsupported database provider: " + vendor.ToString())
 
-module DcCache = 
+module DcCache =
     let providerCache = ConcurrentDictionary<string,Lazy<ISqlProvider>>()
 
 type public SqlDataContext (typeName, connectionString:string, providerType:DatabaseProviderTypes, resolutionPath:string, referencedAssemblies:string array, runtimeAssembly: string, owner: string, caseSensitivity, tableNames:string, contextSchemaPath:string, odbcquote:OdbcQuoteCharacter, sqliteLibrary:SQLiteLibrary, transactionOptions, commandTimeout:Option<int>, sqlOperationsInSelect, ssdtPath:string, isReadOnly:bool) =
@@ -80,7 +80,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType:Data
                             con
                         else
                             Stubs.connection
-                            
+
                     // create type mappings and also trigger the table info read so the provider has
                     // the minimum base set of data available
                     prov.CreateTypeMappings(con)
@@ -122,7 +122,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType:Data
         member __.GetPendingEntities() = if isReadOnly then failwith "Context is readonly" else (CommonTasks.sortEntities (pendingChanges.Force())) |> Seq.toList
 
         member __.SubmitPendingChanges() =
-            if isReadOnly then failwith "Context is readonly" else 
+            if isReadOnly then failwith "Context is readonly" else
             let pendingChanges = pendingChanges.Force()
             use con = provider.CreateConnection(connectionString)
             lock myLock2 (fun () ->
@@ -131,7 +131,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType:Data
             )
 
         member __.SubmitPendingChangesAsync() =
-            if isReadOnly then failwith "Context is readonly" else 
+            if isReadOnly then failwith "Context is readonly" else
             let pendingChanges = pendingChanges.Force()
             task {
                 use con = provider.CreateConnection(connectionString) :?> System.Data.Common.DbConnection
@@ -261,7 +261,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType:Data
             }
 
         member this.CreateEntity(tableName) =
-            if isReadOnly then failwith "Context is readonly" else 
+            if isReadOnly then failwith "Context is readonly" else
             use con = provider.CreateConnection(connectionString)
             let columns = provider.GetColumns(con, Table.FromFullName(tableName))
             new SqlEntity(this, tableName, columns, columns.Count)
@@ -310,7 +310,7 @@ do ()
     #endif
     #if FIREBIRD
 // Put the TypeProviderAssemblyAttribute in the runtime DLL, pointing to the design-time DLL
-[<assembly:CompilerServices.TypeProviderAssembly("FSharp.Data.SqlProvider.FireBird.DesignTime.dll")>]
+[<assembly:CompilerServices.TypeProviderAssembly("FSharp.Data.SqlProvider.Firebird.DesignTime.dll")>]
 do ()
     #endif
     #if ODBC
