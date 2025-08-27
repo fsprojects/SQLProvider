@@ -3,9 +3,10 @@ printfn "Building..."
 
 #if FAKE
 #r "paket: groupref build //"
-#r "./../../../../../.nuget/packages/build/System.Data.SqlClient/lib/netstandard2.0/System.Data.SqlClient.dll"
+#r "./packages/build/System.Data.SqlClient/lib/netstandard2.0/System.Data.SqlClient.dll"
 open System.Data.SqlClient
 #endif
+
 
 #if !FAKE
 //#load "./.fake/build.fsx/intellisense.fsx"
@@ -33,6 +34,9 @@ open System.Data.SqlClient
 #r "nuget: FSharp.Compiler.Service"
 #r "nuget: Microsoft.Data.SqlClient"
 #r "nuget: MSBuild.StructuredLogger, 2.2.337"
+
+#r "nuget: nuget Fake.Core.Trace"
+#r "nuget: nuget Fake.Core.Target"
 // Boilerplate
 System.Environment.GetCommandLineArgs()
 |> Array.skip 2 // skip fsi.exe; build.fsx
@@ -72,6 +76,9 @@ Target.initEnvironment()
 //#load @"packages/Build/SourceLink.Fake/tools/SourceLink.fsx"
 #endif
 
+//#r @"packages/tests/Npgsql/lib/net451/Npgsql.dll"
+#I @"./packages/build/System.Threading.Tasks.Extensions/lib/netstandard2.0/"
+#r @"./packages/tests/Npgsql/lib/netstandard2.0/Npgsql.dll"
 let environVarOrDefault varName defaultValue =
 
     try
@@ -80,9 +87,6 @@ let environVarOrDefault varName defaultValue =
     with
     | _ ->  defaultValue
 
-//#r @"packages/tests/Npgsql/lib/net451/Npgsql.dll"
-#I "./../../.nuget/packages/build/System.Data.SqlClient/lib/netstandard2.0/System.Data.SqlClient.dll"
-#r "../../../../../../tests/Npgsql/lib/netstandard2.0/Npgsql.dll"
 
 
 // Information about the project are used
