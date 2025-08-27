@@ -3,7 +3,10 @@ printfn "Building..."
 
 #if FAKE
 #r "paket: groupref build //"
-#r "../../.nuget/packages/build/System.Data.SqlClient/lib/netstandard2.0/System.Data.SqlClient.dll"
+#r "./.nuget/packages/build/System.Data.SqlClient/lib/netstandard2.0/System.Data.SqlClient.dll"
+#r "./../.nuget/packages/build/System.Data.SqlClient/lib/netstandard2.0/System.Data.SqlClient.dll"
+#r "./../../.nuget/packages/build/System.Data.SqlClient/lib/netstandard2.0/System.Data.SqlClient.dll"
+#r "./../../../.nuget/packages/build/System.Data.SqlClient/lib/netstandard2.0/System.Data.SqlClient.dll"
 open System.Data.SqlClient
 #endif
 

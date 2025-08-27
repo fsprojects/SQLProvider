@@ -20,7 +20,7 @@ nuget Microsoft.Data.SqlClient 5.2.2
 nuget System.Memory
 nuget System.Runtime.Loader 4.3
 nuget System.Text.Encodings.Web 9.0.4
-nuget System.Threading.Tasks.Extensions
+nuget System.Threading.Tasks.Extensions 4.6.3
 nuget Microsoft.Extensions.Logging.Abstractions 8.0.3
 
 group Build
