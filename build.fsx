@@ -3,7 +3,7 @@ printfn "Building..."
 
 #if FAKE
 #r "paket: groupref build //"
-#r "./packages/build/System.Data.SqlClient/lib/netstandard2.0/System.Data.SqlClient.dll"
+#r "../../.nuget/packages/build/System.Data.SqlClient/lib/netstandard2.0/System.Data.SqlClient.dll"
 open System.Data.SqlClient
 #endif
 
@@ -82,8 +82,8 @@ let environVarOrDefault varName defaultValue =
     | _ ->  defaultValue
 
 //#r @"packages/tests/Npgsql/lib/net451/Npgsql.dll"
-#I @"../.nuget/packages/build/System.Threading.Tasks.Extensions/lib/netstandard2.0/"
-#r @"../.nuget/packages/tests/Npgsql/lib/netstandard2.0/Npgsql.dll"
+#I @"../../.nuget/packages/build/System.Threading.Tasks.Extensions/lib/netstandard2.0/"
+#r @"../../.nuget/packages/tests/Npgsql/lib/netstandard2.0/Npgsql.dll"
 
 
 // Information about the project are used
