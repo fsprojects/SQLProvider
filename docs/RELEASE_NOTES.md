@@ -1,4 +1,4 @@
-### 1.5.12 - 21.07.2025
+### 1.5.13 - 21.07.2025
 * MapTo fix on special cases where database is missing fields of MapTo FSharp record target.
 
 ### 1.5.11 - 24.06.2025
