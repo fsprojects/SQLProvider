@@ -31,9 +31,9 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "SQLProvider.SQLite.DesignTi
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "SQLProvider.SQLite.Runtime", "src\SQLProvider.SQLite.Runtime\SQLProvider.SQLite.Runtime.fsproj", "{03AE8F01-38A4-12D5-FD40-0AF5CF297BD4}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "SQLProvider.FireBird.DesignTime", "src\SQLProvider.FireBird.DesignTime\SQLProvider.FireBird.DesignTime.fsproj", "{82C1A507-F1DC-9E5C-6C87-DDAF37DA4BEB}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "SQLProvider.Firebird.DesignTime", "src\SQLProvider.Firebird.DesignTime\SQLProvider.Firebird.DesignTime.fsproj", "{82C1A507-F1DC-9E5C-6C87-DDAF37DA4BEB}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "SQLProvider.FireBird.Runtime", "src\SQLProvider.FireBird.Runtime\SQLProvider.FireBird.Runtime.fsproj", "{E7CD6210-6382-799C-1C0A-4BD675FA02AB}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "SQLProvider.Firebird.Runtime", "src\SQLProvider.Firebird.Runtime\SQLProvider.Firebird.Runtime.fsproj", "{E7CD6210-6382-799C-1C0A-4BD675FA02AB}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "SQLProvider.Odbc.DesignTime", "src\SQLProvider.Odbc.DesignTime\SQLProvider.Odbc.DesignTime.fsproj", "{07F9D1E1-6D3C-1B12-9B83-69BFCFFBF219}"
 EndProject

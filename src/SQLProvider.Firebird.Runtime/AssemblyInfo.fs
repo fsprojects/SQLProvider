@@ -2,16 +2,16 @@
 namespace System
 open System.Reflection
 
-[<assembly: AssemblyTitleAttribute("SQLProvider.SQLite.Runtime")>]
+[<assembly: AssemblyTitleAttribute("SQLProvider.Firebird.Runtime")>]
 [<assembly: AssemblyProductAttribute("SQLProvider")>]
-[<assembly: AssemblyDescriptionAttribute("Type providers for SQLite database access.")>]
+[<assembly: AssemblyDescriptionAttribute("Type providers for Firebird database access.")>]
 [<assembly: AssemblyVersionAttribute("1.5.13")>]
 [<assembly: AssemblyFileVersionAttribute("1.5.13")>]
 do ()
 
 module internal AssemblyVersionInformation =
-    let [<Literal>] AssemblyTitle = "SQLProvider.SQLite.Runtime"
+    let [<Literal>] AssemblyTitle = "SQLProvider.Firebird.Runtime"
     let [<Literal>] AssemblyProduct = "SQLProvider"
-    let [<Literal>] AssemblyDescription = "Type providers for SQLite database access."
+    let [<Literal>] AssemblyDescription = "Type providers for Firebird database access."
     let [<Literal>] AssemblyVersion = "1.5.13"
     let [<Literal>] AssemblyFileVersion = "1.5.13"

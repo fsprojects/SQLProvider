@@ -1,8 +1,8 @@
 type file
 id
-    SQLProvider.FireBird
+    SQLProvider.Firebird
 title
-    SQLProvider.FireBird
+    SQLProvider.Firebird
 owners
     "Ross McKinlay, Colin Bull, Tuomas Hietanen"
 authors
@@ -32,7 +32,7 @@ files
     ../../bin/firebird/typeproviders/fsharp41/netstandard2.0/**/*.dll ==> typeproviders/fsharp41/netstandard2.0
 references
     FSharp.Data.SqlProvider.Common.dll
-    FSharp.Data.SqlProvider.FireBird.dll
+    FSharp.Data.SqlProvider.Firebird.dll
 dependencies
     FSharp.Core >= 8.0.301
     Newtonsoft.Json >= 13.0.1

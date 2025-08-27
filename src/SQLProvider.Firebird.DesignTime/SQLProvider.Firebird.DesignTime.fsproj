@@ -6,8 +6,8 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <DefineConstants>$(DefineConstants);NO_GENERATIVE;DESIGNTIME;FIREBIRD</DefineConstants>
     <OutputPath>..\..\bin\firebird\typeproviders\fsharp41\</OutputPath>
-    <AssemblyName>FSharp.Data.SqlProvider.FireBird.DesignTime</AssemblyName>
-    <Name>FSharp.Data.SqlProvider.FireBird</Name>
+    <AssemblyName>FSharp.Data.SqlProvider.Firebird.DesignTime</AssemblyName>
+    <Name>FSharp.Data.SqlProvider.Firebird</Name>
     <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
     <TargetFSharpCoreVersion>8.0.0.0</TargetFSharpCoreVersion>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
@@ -30,7 +30,7 @@
       <Paket>True</Paket>
       <Link>paket-files/ExpressionOptimizer.fs</Link>
     </Compile>
-      <Compile Include="..\SQLProvider.Runtime\Providers.FireBird.fs" Link="Providers.FireBird.fs" />
+      <Compile Include="..\SQLProvider.Runtime\Providers.Firebird.fs" Link="Providers.Firebird.fs" />
       <Compile Include="..\SQLProvider.Runtime\SqlRuntime.DataContext.fs" Link="SqlRuntime.DataContext.fs" />
       <Compile Include="..\SQLProvider.DesignTime\SqlDesignTime.fs" Link="SqlDesignTime.fs" />
   </ItemGroup>

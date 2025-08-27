@@ -19,7 +19,7 @@ let connectionString3 = @" Data Source=localhost; port=" + port + ";initial cata
 [<Literal>]
 let resolutionPath = __SOURCE_DIRECTORY__ + "/../../../packages/tests/FirebirdSql.Data.FirebirdClient/lib/net452"
 
-type HR = FSharp.Data.Sql.FireBird.SqlDataProvider<Common.DatabaseProviderTypes.FIREBIRD, connectionString1>
+type HR = FSharp.Data.Sql.Firebird.SqlDataProvider<Common.DatabaseProviderTypes.FIREBIRD, connectionString1>
 let ctx = HR.GetDataContext()
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %O")
 
@@ -27,7 +27,7 @@ let processId = System.Diagnostics.Process.GetCurrentProcess().Id;
 
 //*************** quoted table names ***********
 //just get the single existing record
-type HRCamelCase = FSharp.Data.Sql.FireBird.SqlDataProvider<Common.DatabaseProviderTypes.FIREBIRD, connectionString3,  OdbcQuote = OdbcQuoteCharacter.DOUBLE_QUOTES>
+type HRCamelCase = FSharp.Data.Sql.Firebird.SqlDataProvider<Common.DatabaseProviderTypes.FIREBIRD, connectionString3,  OdbcQuote = OdbcQuoteCharacter.DOUBLE_QUOTES>
 
 let ctxCamelCase = HRCamelCase.GetDataContext()
 let cc = query {

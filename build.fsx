@@ -118,8 +118,8 @@ let projects =
      {name="SQLProvider.DuckDb.DesignTime";summary="Type providers for DuckDb database access.";description="Type providers for DuckDb database access.";dependencies=[]};
      {name="SQLProvider.DuckDb.Runtime";summary="Type providers for DuckDb database access.";description="Type providers for DuckDb database access.";dependencies=[]};
 
-     {name="SQLProvider.FireBird.DesignTime";summary="Type providers for FireBird database access.";description="Type providers for FireBird database access.";dependencies=[]};
-     {name="SQLProvider.FireBird.Runtime";summary="Type providers for FireBird database access.";description="Type providers for FireBird database access.";dependencies=[]};
+     {name="SQLProvider.Firebird.DesignTime";summary="Type providers for Firebird database access.";description="Type providers for Firebird database access.";dependencies=[]};
+     {name="SQLProvider.Firebird.Runtime";summary="Type providers for Firebird database access.";description="Type providers for Firebird database access.";dependencies=[]};
 
      {name="SQLProvider.MsSql.DesignTime";summary="Type providers for Microsoft SQL Server database access.";description="Type providers for Microsoft SQL Server database access.";dependencies=[]};
      {name="SQLProvider.MsSql.Runtime";summary="Type providers for Microsoft SQL Server database access.";description="Type providers for Microsoft SQL Server database access.";dependencies=[]};

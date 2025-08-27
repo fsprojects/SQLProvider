@@ -2,16 +2,16 @@
 namespace System
 open System.Reflection
 
-[<assembly: AssemblyTitleAttribute("SQLProvider.FireBird.Runtime")>]
+[<assembly: AssemblyTitleAttribute("SQLProvider.Firebird.DesignTime")>]
 [<assembly: AssemblyProductAttribute("SQLProvider")>]
-[<assembly: AssemblyDescriptionAttribute("Type providers for FireBird database access.")>]
+[<assembly: AssemblyDescriptionAttribute("Type providers for Firebird database access.")>]
 [<assembly: AssemblyVersionAttribute("1.5.12")>]
 [<assembly: AssemblyFileVersionAttribute("1.5.12")>]
 do ()
 
 module internal AssemblyVersionInformation =
-    let [<Literal>] AssemblyTitle = "SQLProvider.FireBird.Runtime"
+    let [<Literal>] AssemblyTitle = "SQLProvider.Firebird.DesignTime"
     let [<Literal>] AssemblyProduct = "SQLProvider"
-    let [<Literal>] AssemblyDescription = "Type providers for FireBird database access."
+    let [<Literal>] AssemblyDescription = "Type providers for Firebird database access."
     let [<Literal>] AssemblyVersion = "1.5.12"
     let [<Literal>] AssemblyFileVersion = "1.5.12"
