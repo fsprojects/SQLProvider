@@ -162,7 +162,9 @@ let toXmlNamespaceDoc ns xml =
             
     doc, node, nodes    
 
-let attMaybe (nm: string) (node: XmlNode) = 
+let attMaybe (nm: string) (node: XmlNode) =
+    if isNull node.Attributes then None
+    else
     node.Attributes 
     |> Seq.cast<XmlAttribute> 
     |> Seq.tryFind (fun a -> a.Name = nm) 
