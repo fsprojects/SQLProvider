@@ -50,7 +50,7 @@ group Build
     nuget Fake.DotNet.FSFormatting
     nuget Fake.DotNet.Testing.NUnit
     nuget FSharp.Compiler.Service 43.8.301
-    nuget System.Data.SqlClient
+    nuget System.Data.SqlClient 4.9.0
     nuget MSBuild.StructuredLogger
 
 
