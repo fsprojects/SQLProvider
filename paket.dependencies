@@ -9,7 +9,7 @@ storage: none
 // - Nuget packages have dependencies listed, so if updated here, the paket.template needs update as well
 
 nuget FSharp.Core == 8.0.301
-nuget System.Data.SqlClient framework: net461, net472, net48, netstandard2.0, netstandard2.1, netcoreapp2.1, netcoreapp3.1
+nuget System.Data.SqlClient framework: net461, net472, net48, netstandard2.0, netstandard2.1, netcoreapp2.1, netcoreapp3.1 4.9.0
 nuget NETStandard.Library.NETFramework storage: packages
 nuget System.Runtime
 nuget System.Data.Common
