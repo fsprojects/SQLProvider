@@ -5,7 +5,7 @@ open System.Reflection
 [<assembly: AssemblyTitleAttribute("SQLProvider.Odbc.Runtime")>]
 [<assembly: AssemblyProductAttribute("SQLProvider")>]
 [<assembly: AssemblyDescriptionAttribute("Type providers for any ODBC connection database access.")>]
-[<assembly: AssemblyVersionAttribute("1.5.13")>]
+[<assembly: AssemblyVersionAttribute("1.5.14")>]
 [<assembly: AssemblyFileVersionAttribute("1.5.12")>]
 do ()
 
