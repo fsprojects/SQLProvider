@@ -247,3 +247,4 @@ docs/content/core/northwindEF.db
 TestResult.xml
 /tests/SqlProvider.Core.Tests/MsSqlSsdt/MsSqlSsdt.Tests/AdventureWorks_SSDT/AdventureWorks_SSDT.jfm
 .fsdocs/
+.github/workflows/
