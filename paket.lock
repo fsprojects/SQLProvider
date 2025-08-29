@@ -1507,10 +1507,10 @@ STORAGE: PACKAGES
 NUGET
   remote: https://api.nuget.org/v3/index.json
     BouncyCastle.Cryptography (2.5.1) - restriction: || (>= net462) (>= netstandard2.0)
-    DuckDB.NET.Bindings.Full (1.2.1)
+    DuckDB.NET.Bindings.Full (1.3.2)
       System.Runtime.CompilerServices.Unsafe (>= 6.1) - restriction: && (< net6.0) (>= netstandard2.0)
-    DuckDB.NET.Data.Full (1.2.1)
-      DuckDB.NET.Bindings.Full (>= 1.2.1) - restriction: >= netstandard2.0
+    DuckDB.NET.Data.Full (1.3.2)
+      DuckDB.NET.Bindings.Full (>= 1.3.2) - restriction: >= netstandard2.0
       System.Memory (>= 4.6) - restriction: && (< net6.0) (>= netstandard2.0)
       System.Runtime.CompilerServices.Unsafe (>= 6.1) - restriction: && (< net6.0) (>= netstandard2.0)
     FirebirdSql.Data.FirebirdClient (10.3.2)

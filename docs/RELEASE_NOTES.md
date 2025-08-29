@@ -1,3 +1,8 @@
+### 1.5.14 - 29.08.2025
+* Fix for Dacpac parsing null exception case when dependent dacpacs #848
+* Firebird naming case.
+* DuckDB dependencies update
+
 ### 1.5.13 - 21.07.2025
 * MapTo fix on special cases where database is missing fields of MapTo FSharp record target.
 
