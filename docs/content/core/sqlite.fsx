@@ -51,6 +51,10 @@ the ResolutionPath parameter at all, but you still need to copy the interop libr
 
 If you use Microsoft.Data.Sqlite driver, you still need the physical dll, (in that case e_sqlite3.dll), to be in resolutionPath or folder under operating system PATH variable.
 
+### Current build of SQLProvider with the dynamic provider
+If you are building the current system on other platforms like Linux, a tested version of SQLite.Interop.dll can be downloaded from runtimes folder of this NuGet package:
+[System.Data.SQLite.Core, 1.0.113](https://www.nuget.org/packages/System.Data.SQLite.Core/1.0.113)
+
 *)
 
 [<Literal>]
