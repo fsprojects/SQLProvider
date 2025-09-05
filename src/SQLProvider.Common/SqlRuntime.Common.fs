@@ -804,57 +804,46 @@ type GroupResultItems<'key, 'SqlEntity>(keyname:String*String*String*String*Stri
             match columnName with
             | None -> (keyname |> fun (x,_,_,_,_,_,_) -> x).ToUpperInvariant()
             | Some c -> c.ToUpperInvariant()
+        
+        // Pre-compute the filter strings to avoid repeated string operations
+        let fetchColFilter = "_" + fetchCol
+        let itemTypeFilter = itemType + "_"
+        
+        let filterColumnValues (columnValues: seq<string * obj>) =
+            columnValues |> Seq.filter(fun (s,k) -> 
+                let sUp = s.ToUpperInvariant()
+                (sUp.Contains(fetchColFilter) || columnName.IsNone) && 
+                    (sUp.Contains(itemTypeFilter)))
+        
         let itms =
             match box distinctItem with
             | :? SqlEntity ->
                 let ent = unbox<SqlEntity> distinctItem
-                ent.ColumnValues 
-                    |> Seq.filter(fun (s,k) -> 
-                        let sUp = s.ToUpperInvariant()
-                        (sUp.Contains("_"+fetchCol) || columnName.IsNone) && 
-                            (sUp.Contains(itemType+"_")))
+                filterColumnValues ent.ColumnValues
             | :? Tuple<SqlEntity,SqlEntity> ->
                 let ent1, ent2 = unbox<SqlEntity*SqlEntity> distinctItem
                 Seq.concat [| ent1.ColumnValues; ent2.ColumnValues; |]
-                    |> Seq.distinct |> Seq.filter(fun (s,k) -> 
-                        let sUp = s.ToUpperInvariant()
-                        (sUp.Contains("_"+fetchCol) || columnName.IsNone) && 
-                            (sUp.Contains(itemType+"_")))
+                    |> Seq.distinct |> filterColumnValues
             | :? Tuple<SqlEntity,SqlEntity,SqlEntity> ->
                 let ent1, ent2, ent3 = unbox<SqlEntity*SqlEntity*SqlEntity> distinctItem
                 Seq.concat [| ent1.ColumnValues; ent2.ColumnValues; ent3.ColumnValues;|]
-                    |> Seq.distinct |> Seq.filter(fun (s,k) -> 
-                        let sUp = s.ToUpperInvariant()
-                        (sUp.Contains("_"+fetchCol) || columnName.IsNone) && 
-                            (sUp.Contains(itemType+"_")))
+                    |> Seq.distinct |> filterColumnValues
             | :? Tuple<SqlEntity,SqlEntity,SqlEntity,SqlEntity> ->
                 let ent1, ent2, ent3, ent4 = unbox<SqlEntity*SqlEntity*SqlEntity*SqlEntity> distinctItem
                 Seq.concat [| ent1.ColumnValues; ent2.ColumnValues; ent3.ColumnValues;ent4.ColumnValues;|]
-                    |> Seq.distinct |> Seq.filter(fun (s,k) -> 
-                        let sUp = s.ToUpperInvariant()
-                        (sUp.Contains("_"+fetchCol) || columnName.IsNone) && 
-                            (sUp.Contains(itemType+"_")))
+                    |> Seq.distinct |> filterColumnValues
             | :? Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity> ->
                 let ent = unbox<Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity>> distinctItem
                 Seq.concat [| ent.Item1.ColumnValues; ent.Item2.ColumnValues; |]
-                    |> Seq.distinct |> Seq.filter(fun (s,k) -> 
-                        let sUp = s.ToUpperInvariant()
-                        (sUp.Contains("_"+fetchCol) || columnName.IsNone) && 
-                            (sUp.Contains(itemType+"_")))
+                    |> Seq.distinct |> filterColumnValues
             | :? Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity,SqlEntity> ->
                 let ent = unbox<Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity,SqlEntity>> distinctItem
                 Seq.concat [| ent.Item1.ColumnValues; ent.Item2.ColumnValues; ent.Item3.ColumnValues; |]
-                    |> Seq.distinct |> Seq.filter(fun (s,k) -> 
-                        let sUp = s.ToUpperInvariant()
-                        (sUp.Contains("_"+fetchCol) || columnName.IsNone) && 
-                            (sUp.Contains(itemType+"_")))
+                    |> Seq.distinct |> filterColumnValues
             | :? Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity,SqlEntity,SqlEntity> ->
                 let ent = unbox<Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity,SqlEntity,SqlEntity>> distinctItem
                 Seq.concat [| ent.Item1.ColumnValues; ent.Item2.ColumnValues; ent.Item3.ColumnValues; ent.Item4.ColumnValues; |]
-                    |> Seq.distinct |> Seq.filter(fun (s,k) -> 
-                        let sUp = s.ToUpperInvariant()
-                        (sUp.Contains("_"+fetchCol) || columnName.IsNone) && 
-                            (sUp.Contains(itemType+"_")))
+                    |> Seq.distinct |> filterColumnValues
             | _ -> failwith ("Unknown aggregate item: " + typeof<'SqlEntity>.Name)
         let itm = 
             if Seq.isEmpty itms then
@@ -986,28 +975,43 @@ module public OfflineTools =
             System.IO.File.Delete targetfile
         let s1 = SchemaCache.Load sourcefile1
         let s2 = SchemaCache.Load sourcefile2
+        
+        // More efficient merging - avoid intermediate sequences and multiple enumerations
+        let mergeDictionaries (dict1: ConcurrentDictionary<'K, 'V>) (dict2: ConcurrentDictionary<'K, 'V>) =
+            let result = ConcurrentDictionary<'K, 'V>(dict1)
+            for kvp in dict2 do
+                result.TryAdd(kvp.Key, kvp.Value) |> ignore
+            result
+            
+        let mergeResizeArrays (arr1: ResizeArray<'T>) (arr2: ResizeArray<'T>) (keySelector: 'T -> string) =
+            let seen = System.Collections.Generic.HashSet<string>()
+            let result = ResizeArray<'T>()
+            for item in arr1 do
+                let key = keySelector item
+                if seen.Add(key) then
+                    result.Add(item)
+            for item in arr2 do
+                let key = keySelector item
+                if seen.Add(key) then
+                    result.Add(item)
+            result
+
         let merged = 
-            {   PrimaryKeys = System.Collections.Concurrent.ConcurrentDictionary( 
-                                Seq.concat [|s1.PrimaryKeys ; s2.PrimaryKeys |] |> Seq.distinctBy(fun d -> d.Key));
-                Tables = System.Collections.Concurrent.ConcurrentDictionary( 
-                                Seq.concat [|s1.Tables ; s2.Tables |] |> Seq.distinctBy(fun d -> d.Key));
-                Columns = System.Collections.Concurrent.ConcurrentDictionary( 
-                                Seq.concat [|s1.Columns ; s2.Columns |] |> Seq.distinctBy(fun d -> d.Key));
-                Relationships = System.Collections.Concurrent.ConcurrentDictionary( 
-                                    Seq.concat [|s1.Relationships ; s2.Relationships |] |> Seq.distinctBy(fun d -> d.Key));
-                Sprocs = ResizeArray(Seq.concat [| s1.Sprocs ; s2.Sprocs |] |> Seq.distinctBy(fun s ->
+            {   PrimaryKeys = mergeDictionaries s1.PrimaryKeys s2.PrimaryKeys;
+                Tables = mergeDictionaries s1.Tables s2.Tables;
+                Columns = mergeDictionaries s1.Columns s2.Columns;
+                Relationships = mergeDictionaries s1.Relationships s2.Relationships;
+                Sprocs = mergeResizeArrays s1.Sprocs s2.Sprocs (fun s ->
                                         let rec getName = 
                                             function
                                             | Root(name, sp) -> name + "_" + (getName sp)
                                             | Package(n, ctpd) -> n + "_" + ctpd.ToString()
                                             | Sproc ctpd -> ctpd.ToString()
                                             | Empty -> ""
-                                        getName s));
-                SprocsParams = System.Collections.Concurrent.ConcurrentDictionary( 
-                                Seq.concat [|s1.SprocsParams ; s2.SprocsParams |] |> Seq.distinctBy(fun d -> d.Key));
-                Packages = ResizeArray(Seq.concat [| s1.Packages ; s2.Packages |] |> Seq.distinctBy(fun s -> s.ToString()));
-                Individuals = System.Collections.Concurrent.ConcurrentDictionary( 
-                                Seq.concat [|s1.Individuals ; s2.Individuals |] |> Seq.distinctBy(fun d -> d.Key));
+                                        getName s);
+                SprocsParams = mergeDictionaries s1.SprocsParams s2.SprocsParams;
+                Packages = mergeResizeArrays s1.Packages s2.Packages (fun s -> s.ToString());
+                Individuals = mergeDictionaries s1.Individuals s2.Individuals;
                 IsOffline = s1.IsOffline || s2.IsOffline}
         merged.Save targetfile
         "Merge saved " + targetfile + " at " + DateTime.Now.ToString("hh:mm:ss")
