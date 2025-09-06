@@ -688,55 +688,50 @@ let private evaluateMethodCall (mce: MethodCallExpression) : obj option =
         | "get_Today" -> Some(DateTime.Today :> obj)
         | _ -> None
     else
-        // Use generic evaluation for better performance
-        let evalGeneric<'T> () = 
-            tryEvaluateExpression<'T> mce |> Option.map box
-            
-        match returnType with
-        | t when t = typeof<int> -> evalGeneric<int>()
-        | t when t = typeof<int64> -> evalGeneric<int64>()
-        | t when t = typeof<decimal> -> evalGeneric<decimal>()
-        | t when t = typeof<DateTime> -> evalGeneric<DateTime>()
-        | t when t = typeof<bool> -> evalGeneric<bool>()
-        | t when t = typeof<string> -> evalGeneric<string>()
-        | t when t = typeof<float32> -> evalGeneric<float32>()
-        | t when t = typeof<int16> -> evalGeneric<int16>()
-        | t when t = typeof<uint32> -> evalGeneric<uint32>()
-        | t when t = typeof<uint16> -> evalGeneric<uint16>()
-        | t when t = typeof<uint64> -> evalGeneric<uint64>()
-        | t when t = typeof<byte> -> evalGeneric<byte>()
-        | t when t = typeof<char> -> evalGeneric<char>()
-        | t when t = typeof<DateTimeOffset> -> evalGeneric<DateTimeOffset>()
-        | t when t = typeof<TimeSpan> -> evalGeneric<TimeSpan>()
-        | t when t = typeof<System.Numerics.BigInteger> -> evalGeneric<System.Numerics.BigInteger>()
-        | t when t = typeof<Guid> -> evalGeneric<Guid>()
+        // Use specific type evaluation for better performance
+        if returnType = typeof<int> then tryEvaluateExpression<int> mce |> Option.map box
+        elif returnType = typeof<int64> then tryEvaluateExpression<int64> mce |> Option.map box
+        elif returnType = typeof<decimal> then tryEvaluateExpression<decimal> mce |> Option.map box
+        elif returnType = typeof<DateTime> then tryEvaluateExpression<DateTime> mce |> Option.map box
+        elif returnType = typeof<bool> then tryEvaluateExpression<bool> mce |> Option.map box
+        elif returnType = typeof<string> then tryEvaluateExpression<string> mce |> Option.map box
+        elif returnType = typeof<float32> then tryEvaluateExpression<float32> mce |> Option.map box
+        elif returnType = typeof<int16> then tryEvaluateExpression<int16> mce |> Option.map box
+        elif returnType = typeof<uint32> then tryEvaluateExpression<uint32> mce |> Option.map box
+        elif returnType = typeof<uint16> then tryEvaluateExpression<uint16> mce |> Option.map box
+        elif returnType = typeof<uint64> then tryEvaluateExpression<uint64> mce |> Option.map box
+        elif returnType = typeof<byte> then tryEvaluateExpression<byte> mce |> Option.map box
+        elif returnType = typeof<char> then tryEvaluateExpression<char> mce |> Option.map box
+        elif returnType = typeof<DateTimeOffset> then tryEvaluateExpression<DateTimeOffset> mce |> Option.map box
+        elif returnType = typeof<TimeSpan> then tryEvaluateExpression<TimeSpan> mce |> Option.map box
+        elif returnType = typeof<System.Numerics.BigInteger> then tryEvaluateExpression<System.Numerics.BigInteger> mce |> Option.map box
+        elif returnType = typeof<Guid> then tryEvaluateExpression<Guid> mce |> Option.map box
         // Handle ValueOption types
-        | t when t.IsGenericType && t.GetGenericTypeDefinition() = typeof<ValueOption<_>>.GetGenericTypeDefinition() ->
-            let innerType = t.GetGenericArguments().[0]
-            match innerType with
-            | t when t = typeof<int> -> evalGeneric<ValueOption<int>>()
-            | t when t = typeof<int64> -> evalGeneric<ValueOption<int64>>()
-            | t when t = typeof<decimal> -> evalGeneric<ValueOption<decimal>>()
-            | t when t = typeof<DateTime> -> evalGeneric<ValueOption<DateTime>>()
-            | t when t = typeof<bool> -> evalGeneric<ValueOption<bool>>()
-            | t when t = typeof<string> -> evalGeneric<ValueOption<string>>()
-            | t when t = typeof<float32> -> evalGeneric<ValueOption<float32>>()
-            | t when t = typeof<int16> -> evalGeneric<ValueOption<int16>>()
-            | t when t = typeof<uint32> -> evalGeneric<ValueOption<uint32>>()
-            | t when t = typeof<uint16> -> evalGeneric<ValueOption<uint16>>()
-            | t when t = typeof<uint64> -> evalGeneric<ValueOption<uint64>>()
-            | t when t = typeof<byte> -> evalGeneric<ValueOption<byte>>()
-            | t when t = typeof<char> -> evalGeneric<ValueOption<char>>()
-            | t when t = typeof<DateTimeOffset> -> evalGeneric<ValueOption<DateTimeOffset>>()
-            | t when t = typeof<TimeSpan> -> evalGeneric<ValueOption<TimeSpan>>()
-            | t when t = typeof<System.Numerics.BigInteger> -> evalGeneric<ValueOption<System.Numerics.BigInteger>>()
-            | t when t = typeof<Guid> -> evalGeneric<ValueOption<Guid>>()
-            | _ -> None
-        | t when t.IsClass -> 
+        elif returnType.IsGenericType && returnType.GetGenericTypeDefinition() = typeof<ValueOption<_>>.GetGenericTypeDefinition() then
+            let innerType = returnType.GetGenericArguments().[0]
+            if innerType = typeof<int> then tryEvaluateExpression<ValueOption<int>> mce |> Option.map box
+            elif innerType = typeof<int64> then tryEvaluateExpression<ValueOption<int64>> mce |> Option.map box
+            elif innerType = typeof<decimal> then tryEvaluateExpression<ValueOption<decimal>> mce |> Option.map box
+            elif innerType = typeof<DateTime> then tryEvaluateExpression<ValueOption<DateTime>> mce |> Option.map box
+            elif innerType = typeof<bool> then tryEvaluateExpression<ValueOption<bool>> mce |> Option.map box
+            elif innerType = typeof<string> then tryEvaluateExpression<ValueOption<string>> mce |> Option.map box
+            elif innerType = typeof<float32> then tryEvaluateExpression<ValueOption<float32>> mce |> Option.map box
+            elif innerType = typeof<int16> then tryEvaluateExpression<ValueOption<int16>> mce |> Option.map box
+            elif innerType = typeof<uint32> then tryEvaluateExpression<ValueOption<uint32>> mce |> Option.map box
+            elif innerType = typeof<uint16> then tryEvaluateExpression<ValueOption<uint16>> mce |> Option.map box
+            elif innerType = typeof<uint64> then tryEvaluateExpression<ValueOption<uint64>> mce |> Option.map box
+            elif innerType = typeof<byte> then tryEvaluateExpression<ValueOption<byte>> mce |> Option.map box
+            elif innerType = typeof<char> then tryEvaluateExpression<ValueOption<char>> mce |> Option.map box
+            elif innerType = typeof<DateTimeOffset> then tryEvaluateExpression<ValueOption<DateTimeOffset>> mce |> Option.map box
+            elif innerType = typeof<TimeSpan> then tryEvaluateExpression<ValueOption<TimeSpan>> mce |> Option.map box
+            elif innerType = typeof<System.Numerics.BigInteger> then tryEvaluateExpression<ValueOption<System.Numerics.BigInteger>> mce |> Option.map box
+            elif innerType = typeof<Guid> then tryEvaluateExpression<ValueOption<Guid>> mce |> Option.map box
+            else None
+        elif returnType.IsClass then 
             try
                 Some(Expression.Lambda(mce).Compile().DynamicInvoke())
             with _ -> None
-        | _ -> None
+        else None
 
 //Simpler version of where Condition-pattern, used on case-when-clause
 and (|SimpleCondition|_|) exp =
