@@ -330,11 +330,11 @@ let setupMssql url saPassword =
     (url,saPassword) |> ignore
 
 Target.create "SetupMSSQL2008R2" (fun _ ->
-    setupMssql "(local)\\SQL2008R2SP2" "Password12!"
+    setupMssql "(local)\\SQL2022" "Password12!"
 )
 
 Target.create "SetupMSSQL2017" (fun _ ->
-    setupMssql "(local)\\SQL2017" "Password12!"
+    setupMssql "(local)\\SQL2022" "Password12!"
 )
 
 
