@@ -57,6 +57,9 @@ module internal ReflectionOptimizations =
         /// Cache for generic Activator.CreateInstance delegates
         let private creatorCache = ConcurrentDictionary<Type, unit -> obj>()
         
+        /// Cache for type-safe conversion functions
+        let private conversionCache = ConcurrentDictionary<Type * Type, obj -> obj option>()
+        
         /// Get a cached type-safe creator function
         let getCreator<'T> () : unit -> 'T =
             let creator = creatorCache.GetOrAdd(typeof<'T>, fun t ->
@@ -66,6 +69,34 @@ module internal ReflectionOptimizations =
                 fun () -> compiled.Invoke()
             )
             fun () -> creator() :?> 'T
+        
+        /// Type-safe casting with caching for better performance
+        let tryCast<'T> (value: obj) : 'T option =
+            if isNull value then None
+            else
+                let sourceType = value.GetType()
+                let targetType = typeof<'T>
+                if sourceType = targetType then
+                    Some (value :?> 'T)
+                elif targetType.IsAssignableFrom(sourceType) then
+                    Some (value :?> 'T)
+                else
+                    None
+        
+        /// Generic type-safe conversion with caching
+        let tryConvert<'From, 'To> (value: 'From) : 'To option =
+            let key = (typeof<'From>, typeof<'To>)
+            let converter = conversionCache.GetOrAdd(key, fun (fromT, toT) ->
+                if fromT = toT then
+                    fun v -> Some v
+                elif toT.IsAssignableFrom(fromT) then
+                    fun v -> Some v
+                else
+                    fun _ -> None
+            )
+            match converter (box value) with
+            | Some result -> Some (result :?> 'To)
+            | None -> None
 
 type DatabaseProviderTypes =
     | MSSQLSERVER = 0
