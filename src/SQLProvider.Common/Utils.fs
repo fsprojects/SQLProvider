@@ -464,14 +464,21 @@ module Reflection =
     let execAssembly = lazy System.Reflection.Assembly.GetExecutingAssembly()
     //let mutable resourceLinkedFiles = Set.empty
 
+    /// Cache for assembly platform information to avoid repeated reflection calls
+    let private platformCache = System.Collections.Concurrent.ConcurrentDictionary<Assembly, string>()
+
     let getPlatform (a:Assembly) =
         match a with
         | null -> ""
+        | x when platformCache.ContainsKey(x) -> platformCache.[x]
         | x ->
-            match x.GetCustomAttributes(typeof<System.Runtime.Versioning.TargetFrameworkAttribute>, false) with
-            | null -> ""
-            | itms when itms.Length > 0 -> (itms |> Seq.head :?> System.Runtime.Versioning.TargetFrameworkAttribute).FrameworkName
-            | _ -> ""
+            let result =
+                match x.GetCustomAttributes(typeof<System.Runtime.Versioning.TargetFrameworkAttribute>, false) with
+                | null -> ""
+                | itms when itms.Length > 0 -> (itms |> Seq.head :?> System.Runtime.Versioning.TargetFrameworkAttribute).FrameworkName
+                | _ -> ""
+            platformCache.TryAdd(x, result) |> ignore
+            result
 
     let listResolutionFullPaths (resolutionPathSemicoloned:string) =
         if resolutionPathSemicoloned.Contains ";" then

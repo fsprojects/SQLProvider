@@ -6,6 +6,37 @@ open System.Reflection
 open FSharp.Data.Sql
 open FSharp.Data.Sql.Schema
 
+/// Performance optimizations for pattern matching and expression compilation
+module internal PatternOptimizations =
+    
+    /// Cache for type equality checks to avoid repeated Type.(=) calls
+    let private typeEqualityCache = System.Collections.Concurrent.ConcurrentDictionary<Type * Type, bool>()
+    
+    /// Cache for compiled expression delegates to avoid repeated compilation
+    let private compiledExpressionCache = System.Collections.Concurrent.ConcurrentDictionary<Expression, obj>()
+    
+    /// Fast type equality check with caching
+    let inline isTypeEqual (t1: Type) (t2: Type) : bool =
+        if Object.ReferenceEquals(t1, t2) then true
+        else typeEqualityCache.GetOrAdd((t1, t2), fun (x, y) -> Type.(=)(x, y))
+    
+    /// Compile and cache expression delegates for better performance
+    let compileAndCache<'T> (expr: Expression) : 'T =
+        let cached = compiledExpressionCache.GetOrAdd(expr, fun e ->
+            Expression.Lambda<'T>(e).Compile() :> obj
+        )
+        cached :?> 'T
+    
+    /// Type-safe pattern matching helpers
+    module TypeSafePatterns =
+        let inline isStringType (t: Type) = isTypeEqual t typeof<string>
+        let inline isDateTimeType (t: Type) = isTypeEqual t typeof<DateTime>
+        let inline isInt32Type (t: Type) = isTypeEqual t typeof<int32>
+        let inline isInt64Type (t: Type) = isTypeEqual t typeof<int64>
+        let inline isDecimalType (t: Type) = isTypeEqual t typeof<decimal>
+        let inline isGuidType (t: Type) = isTypeEqual t typeof<Guid>
+        let inline isBooleanType (t: Type) = isTypeEqual t typeof<bool>
+
 /// Marker interface
 type ISqlQueryable = interface end
 
@@ -678,42 +709,75 @@ and (|SimpleCondition|_|) exp =
                         propInfo.GetValue(ceVal, null)
                     | _ -> ceVal
                 Some myVal
-            | ExpressionType.Call, (:? MethodCallExpression as e) when e.Method.ReturnType.IsClass -> Some((Expression.Lambda(meth).Compile() :?> Func<_>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<Int32>) -> Some((Expression.Lambda(meth).Compile() :?> Func<Int32>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<Int64>) -> Some((Expression.Lambda(meth).Compile() :?> Func<Int64>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<Decimal>) -> Some((Expression.Lambda(meth).Compile() :?> Func<Decimal>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<DateTime>) -> Some((Expression.Lambda(meth).Compile() :?> Func<DateTime>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<Guid>) -> Some((Expression.Lambda(meth).Compile() :?> Func<Guid>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<Boolean>) -> Some((Expression.Lambda(meth).Compile() :?> Func<Boolean>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<Single>) -> Some((Expression.Lambda(meth).Compile() :?> Func<Single>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<Int16>) -> Some((Expression.Lambda(meth).Compile() :?> Func<Int16>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<UInt32>) -> Some((Expression.Lambda(meth).Compile() :?> Func<UInt32>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<UInt16>) -> Some((Expression.Lambda(meth).Compile() :?> Func<UInt16>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<UInt64>) -> Some((Expression.Lambda(meth).Compile() :?> Func<UInt64>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<Byte>) -> Some((Expression.Lambda(meth).Compile() :?> Func<Byte>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<Char>) -> Some((Expression.Lambda(meth).Compile() :?> Func<Char>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<DateTimeOffset>) -> Some((Expression.Lambda(meth).Compile() :?> Func<DateTimeOffset>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<TimeSpan>) -> Some((Expression.Lambda(meth).Compile() :?> Func<TimeSpan>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<bigint>) -> Some((Expression.Lambda(meth).Compile() :?> Func<bigint>).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when e.Method.ReturnType.IsClass -> 
+                Some(PatternOptimizations.compileAndCache<Func<obj>>(meth).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when PatternOptimizations.TypeSafePatterns.isInt32Type e.Method.ReturnType -> 
+                Some(PatternOptimizations.compileAndCache<Func<Int32>>(meth).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when PatternOptimizations.TypeSafePatterns.isInt64Type e.Method.ReturnType -> 
+                Some(PatternOptimizations.compileAndCache<Func<Int64>>(meth).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when PatternOptimizations.TypeSafePatterns.isDecimalType e.Method.ReturnType -> 
+                Some(PatternOptimizations.compileAndCache<Func<Decimal>>(meth).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when PatternOptimizations.TypeSafePatterns.isDateTimeType e.Method.ReturnType -> 
+                Some(PatternOptimizations.compileAndCache<Func<DateTime>>(meth).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when PatternOptimizations.TypeSafePatterns.isGuidType e.Method.ReturnType -> 
+                Some(PatternOptimizations.compileAndCache<Func<Guid>>(meth).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when PatternOptimizations.TypeSafePatterns.isBooleanType e.Method.ReturnType -> 
+                Some(PatternOptimizations.compileAndCache<Func<Boolean>>(meth).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when PatternOptimizations.isTypeEqual e.Method.ReturnType typeof<Single> -> 
+                Some(PatternOptimizations.compileAndCache<Func<Single>>(meth).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when PatternOptimizations.isTypeEqual e.Method.ReturnType typeof<Int16> -> 
+                Some(PatternOptimizations.compileAndCache<Func<Int16>>(meth).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when PatternOptimizations.isTypeEqual e.Method.ReturnType typeof<UInt32> -> 
+                Some(PatternOptimizations.compileAndCache<Func<UInt32>>(meth).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when PatternOptimizations.isTypeEqual e.Method.ReturnType typeof<UInt16> -> 
+                Some(PatternOptimizations.compileAndCache<Func<UInt16>>(meth).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when PatternOptimizations.isTypeEqual e.Method.ReturnType typeof<UInt64> -> 
+                Some(PatternOptimizations.compileAndCache<Func<UInt64>>(meth).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when PatternOptimizations.isTypeEqual e.Method.ReturnType typeof<Byte> -> 
+                Some(PatternOptimizations.compileAndCache<Func<Byte>>(meth).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when PatternOptimizations.isTypeEqual e.Method.ReturnType typeof<Char> -> 
+                Some(PatternOptimizations.compileAndCache<Func<Char>>(meth).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when PatternOptimizations.isTypeEqual e.Method.ReturnType typeof<DateTimeOffset> -> 
+                Some(PatternOptimizations.compileAndCache<Func<DateTimeOffset>>(meth).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when PatternOptimizations.isTypeEqual e.Method.ReturnType typeof<TimeSpan> -> 
+                Some(PatternOptimizations.compileAndCache<Func<TimeSpan>>(meth).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when PatternOptimizations.isTypeEqual e.Method.ReturnType typeof<bigint> -> 
+                Some(PatternOptimizations.compileAndCache<Func<bigint>>(meth).Invoke() |> box)
 
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<Int32>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Int32>>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<Int64>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Int64>>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<Decimal>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Decimal>>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<DateTime>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<DateTime>>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<Guid>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Guid>>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<Boolean>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Boolean>>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<Single>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Single>>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<Int16>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Int16>>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<UInt32>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<UInt32>>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<UInt16>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<UInt16>>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<UInt64>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<UInt64>>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<Byte>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Byte>>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<Char>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Char>>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<DateTimeOffset>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<DateTimeOffset>>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<TimeSpan>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<TimeSpan>>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<bigint>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<bigint>>).Invoke() |> box)
-            | ExpressionType.MemberAccess, (:? MemberExpression as me) when Type.(=)(me.Type, typeof<DateTime>) && me.Member.Name = "Now" -> Some(DateTime.Now |> box)
-            | ExpressionType.MemberAccess, (:? MemberExpression as me) when Type.(=)(me.Type, typeof<DateTime>) && me.Member.Name = "UtcNow" -> Some(DateTime.UtcNow |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when PatternOptimizations.isTypeEqual e.Method.ReturnType typeof<ValueOption<Int32>> -> 
+                Some(PatternOptimizations.compileAndCache<Func<ValueOption<Int32>>>(meth).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when PatternOptimizations.isTypeEqual e.Method.ReturnType typeof<ValueOption<Int64>> -> 
+                Some(PatternOptimizations.compileAndCache<Func<ValueOption<Int64>>>(meth).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when PatternOptimizations.isTypeEqual e.Method.ReturnType typeof<ValueOption<Decimal>> -> 
+                Some(PatternOptimizations.compileAndCache<Func<ValueOption<Decimal>>>(meth).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when PatternOptimizations.isTypeEqual e.Method.ReturnType typeof<ValueOption<DateTime>> -> 
+                Some(PatternOptimizations.compileAndCache<Func<ValueOption<DateTime>>>(meth).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when PatternOptimizations.isTypeEqual e.Method.ReturnType typeof<ValueOption<Guid>> -> 
+                Some(PatternOptimizations.compileAndCache<Func<ValueOption<Guid>>>(meth).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when PatternOptimizations.isTypeEqual e.Method.ReturnType typeof<ValueOption<Boolean>> -> 
+                Some(PatternOptimizations.compileAndCache<Func<ValueOption<Boolean>>>(meth).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when PatternOptimizations.isTypeEqual e.Method.ReturnType typeof<ValueOption<Single>> -> 
+                Some(PatternOptimizations.compileAndCache<Func<ValueOption<Single>>>(meth).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when PatternOptimizations.isTypeEqual e.Method.ReturnType typeof<ValueOption<Int16>> -> 
+                Some(PatternOptimizations.compileAndCache<Func<ValueOption<Int16>>>(meth).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when PatternOptimizations.isTypeEqual e.Method.ReturnType typeof<ValueOption<UInt32>> -> 
+                Some(PatternOptimizations.compileAndCache<Func<ValueOption<UInt32>>>(meth).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when PatternOptimizations.isTypeEqual e.Method.ReturnType typeof<ValueOption<UInt16>> -> 
+                Some(PatternOptimizations.compileAndCache<Func<ValueOption<UInt16>>>(meth).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when PatternOptimizations.isTypeEqual e.Method.ReturnType typeof<ValueOption<UInt64>> -> 
+                Some(PatternOptimizations.compileAndCache<Func<ValueOption<UInt64>>>(meth).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when PatternOptimizations.isTypeEqual e.Method.ReturnType typeof<ValueOption<Byte>> -> 
+                Some(PatternOptimizations.compileAndCache<Func<ValueOption<Byte>>>(meth).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when PatternOptimizations.isTypeEqual e.Method.ReturnType typeof<ValueOption<Char>> -> 
+                Some(PatternOptimizations.compileAndCache<Func<ValueOption<Char>>>(meth).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when PatternOptimizations.isTypeEqual e.Method.ReturnType typeof<ValueOption<DateTimeOffset>> -> 
+                Some(PatternOptimizations.compileAndCache<Func<ValueOption<DateTimeOffset>>>(meth).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when PatternOptimizations.isTypeEqual e.Method.ReturnType typeof<ValueOption<TimeSpan>> -> 
+                Some(PatternOptimizations.compileAndCache<Func<ValueOption<TimeSpan>>>(meth).Invoke() |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) when PatternOptimizations.isTypeEqual e.Method.ReturnType typeof<ValueOption<bigint>> -> 
+                Some(PatternOptimizations.compileAndCache<Func<ValueOption<bigint>>>(meth).Invoke() |> box)
+            | ExpressionType.MemberAccess, (:? MemberExpression as me) when PatternOptimizations.TypeSafePatterns.isDateTimeType me.Type && me.Member.Name = "Now" -> Some(DateTime.Now |> box)
+            | ExpressionType.MemberAccess, (:? MemberExpression as me) when PatternOptimizations.TypeSafePatterns.isDateTimeType me.Type && me.Member.Name = "UtcNow" -> Some(DateTime.UtcNow |> box)
             | _ ->
                 // In case user feeds us incomplete lambda, we will not execute: the user might have a context needed for the compilation.
                 try

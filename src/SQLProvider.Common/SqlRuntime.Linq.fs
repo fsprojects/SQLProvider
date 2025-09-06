@@ -11,6 +11,62 @@ open FSharp.Data.Sql.Common.Utilities
 open FSharp.Data.Sql.QueryExpression
 open FSharp.Data.Sql.Schema
 
+/// Performance optimizations for LINQ reflection patterns
+module internal LinqReflectionOptimizations =
+    
+    /// Cache for generic type constructors to avoid repeated reflection
+    let private typeConstructorCache = System.Collections.Concurrent.ConcurrentDictionary<Type * Type[], System.Reflection.ConstructorInfo[]>()
+    
+    /// Cache for constructed types to avoid repeated MakeGenericType calls
+    let private constructedTypeCache = System.Collections.Concurrent.ConcurrentDictionary<Type * Type[], Type>()
+    
+    /// Cache for tuple creation delegates
+    let private tupleCreatorCache = System.Collections.Concurrent.ConcurrentDictionary<Type[], obj[] -> obj>()
+    
+    /// Get cached constructors for a generic type
+    let getConstructors (genericTypeDef: Type) (typeArgs: Type[]) : System.Reflection.ConstructorInfo[] =
+        typeConstructorCache.GetOrAdd((genericTypeDef, typeArgs), fun (gtd, args) ->
+            let constructedType = gtd.MakeGenericType(args)
+            constructedType.GetConstructors()
+        )
+    
+    /// Get cached constructed type
+    let getConstructedType (genericTypeDef: Type) (typeArgs: Type[]) : Type =
+        constructedTypeCache.GetOrAdd((genericTypeDef, typeArgs), fun (gtd, args) ->
+            gtd.MakeGenericType(args)
+        )
+    
+    /// Get cached tuple creator
+    let getTupleCreator (types: Type[]) : obj[] -> obj =
+        tupleCreatorCache.GetOrAdd(types, fun ts ->
+            match ts.Length with
+            | 2 -> 
+                let tupleType = typedefof<Tuple<_,_>>.MakeGenericType(ts)
+                let ctor = tupleType.GetConstructor(ts)
+                fun values -> ctor.Invoke(values)
+            | 3 -> 
+                let tupleType = typedefof<Tuple<_,_,_>>.MakeGenericType(ts)
+                let ctor = tupleType.GetConstructor(ts)
+                fun values -> ctor.Invoke(values)
+            | 4 -> 
+                let tupleType = typedefof<Tuple<_,_,_,_>>.MakeGenericType(ts)
+                let ctor = tupleType.GetConstructor(ts)
+                fun values -> ctor.Invoke(values)
+            | 5 -> 
+                let tupleType = typedefof<Tuple<_,_,_,_,_>>.MakeGenericType(ts)
+                let ctor = tupleType.GetConstructor(ts)
+                fun values -> ctor.Invoke(values)
+            | 6 -> 
+                let tupleType = typedefof<Tuple<_,_,_,_,_,_>>.MakeGenericType(ts)
+                let ctor = tupleType.GetConstructor(ts)
+                fun values -> ctor.Invoke(values)
+            | 7 -> 
+                let tupleType = typedefof<Tuple<_,_,_,_,_,_,_>>.MakeGenericType(ts)
+                let ctor = tupleType.GetConstructor(ts)
+                fun values -> ctor.Invoke(values)
+            | n -> failwithf "Tuple arity %d not optimized yet" n
+        )
+
 type CastTupleMaker<'T1,'T2,'T3,'T4,'T5,'T6,'T7> = 
     static member makeTuple2(t1:obj, t2:obj) = 
         (t1 :?> 'T1, t2 :?> 'T2) |> box
@@ -252,9 +308,10 @@ module internal QueryImplementation =
                                 keyConstructor.Value.[2].Invoke [|(kn1,kn2); tup2.Invoke(null, [|v1;v2|]); entity;|]
                             | None ->
                                 let kv1Type, kv2Type = kv1.GetType(),kv2.GetType()
-                                let tRes = typedefof<Tuple<_,_>>.MakeGenericType(kv1Type,kv2Type)
-                                let ty = typedefof<GroupResultItems<_,_>>.MakeGenericType(tRes, itemEntityType)
-                                ty.GetConstructors().[2].Invoke [|(kn1,kn2); Activator.CreateInstance(tRes, [|kv1; kv2|]); entity;|]
+                                let tupleCreator = LinqReflectionOptimizations.getTupleCreator [|kv1Type; kv2Type|]
+                                let ty = LinqReflectionOptimizations.getConstructedType (typedefof<GroupResultItems<_,_>>) [|typedefof<Tuple<_,_>>.MakeGenericType(kv1Type,kv2Type); itemEntityType|]
+                                let ctors = LinqReflectionOptimizations.getConstructors (typedefof<GroupResultItems<_,_>>) [|typedefof<Tuple<_,_>>.MakeGenericType(kv1Type,kv2Type); itemEntityType|]
+                                ctors.[2].Invoke [|(kn1,kn2); tupleCreator [|kv1; kv2|]; entity;|]
                         | [|kn1, kv1; kn2, kv2; kn3, kv3|] ->
                             match keyType with
                             | Some _ ->
@@ -262,9 +319,10 @@ module internal QueryImplementation =
                                 keyConstructor.Value.[3].Invoke [|(kn1,kn2,kn3); tup3.Invoke(null, [|v1;v2;v3|]); entity;|]
                             | None ->
                                 let kv1Type, kv2Type, kv3Type = kv1.GetType(),kv2.GetType(),kv3.GetType()
-                                let tRes = typedefof<Tuple<_,_,_>>.MakeGenericType(kv1Type,kv2Type,kv3Type)
-                                let ty = typedefof<GroupResultItems<_,_>>.MakeGenericType(tRes, itemEntityType)
-                                ty.GetConstructors().[3].Invoke [|(kn1,kn2,kn3); Activator.CreateInstance(tRes, [|kv1; kv2; kv3|]); entity;|]
+                                let tupleCreator = LinqReflectionOptimizations.getTupleCreator [|kv1Type; kv2Type; kv3Type|]
+                                let ty = LinqReflectionOptimizations.getConstructedType (typedefof<GroupResultItems<_,_>>) [|typedefof<Tuple<_,_,_>>.MakeGenericType(kv1Type,kv2Type,kv3Type); itemEntityType|]
+                                let ctors = LinqReflectionOptimizations.getConstructors (typedefof<GroupResultItems<_,_>>) [|typedefof<Tuple<_,_,_>>.MakeGenericType(kv1Type,kv2Type,kv3Type); itemEntityType|]
+                                ctors.[3].Invoke [|(kn1,kn2,kn3); tupleCreator [|kv1; kv2; kv3|]; entity;|]
                         | [|kn1, kv1; kn2, kv2; kn3, kv3; kn4, kv4|] ->
                             match keyType with
                             | Some _ ->
@@ -272,9 +330,10 @@ module internal QueryImplementation =
                                 keyConstructor.Value.[4].Invoke [|(kn1,kn2,kn3,kn4); tup4.Invoke(null, [|v1;v2;v3;v4|]); entity;|]
                             | None ->
                                 let kv1Type, kv2Type, kv3Type, kv4Type = kv1.GetType(),kv2.GetType(),kv3.GetType(),kv4.GetType()
-                                let tRes = typedefof<Tuple<_,_,_,_>>.MakeGenericType(kv1Type,kv2Type,kv3Type,kv4Type)
-                                let ty = typedefof<GroupResultItems<_,_>>.MakeGenericType(tRes, itemEntityType)
-                                ty.GetConstructors().[4].Invoke [|(kn1,kn2,kn3,kn4); Activator.CreateInstance(tRes, [|kv1; kv2; kv3; kv4|]); entity;|]
+                                let tupleCreator = LinqReflectionOptimizations.getTupleCreator [|kv1Type; kv2Type; kv3Type; kv4Type|]
+                                let ty = LinqReflectionOptimizations.getConstructedType (typedefof<GroupResultItems<_,_>>) [|typedefof<Tuple<_,_,_,_>>.MakeGenericType(kv1Type,kv2Type,kv3Type,kv4Type); itemEntityType|]
+                                let ctors = LinqReflectionOptimizations.getConstructors (typedefof<GroupResultItems<_,_>>) [|typedefof<Tuple<_,_,_,_>>.MakeGenericType(kv1Type,kv2Type,kv3Type,kv4Type); itemEntityType|]
+                                ctors.[4].Invoke [|(kn1,kn2,kn3,kn4); tupleCreator [|kv1; kv2; kv3; kv4|]; entity;|]
                         | [|kn1, kv1; kn2, kv2; kn3, kv3; kn4, kv4; kn5, kv5|] when keyType.IsSome ->
                             let v1, v2, v3, v4, v5 = getval kv1 0, getval kv2 1, getval kv3 2, getval kv4 3, getval kv5 4
                             keyConstructor.Value.[5].Invoke [|(kn1,kn2,kn3,kn4,kn5); tup5.Invoke(null, [|v1;v2;v3;v4;v5|]); entity;|]
