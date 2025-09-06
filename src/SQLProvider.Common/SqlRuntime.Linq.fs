@@ -36,7 +36,15 @@ module internal QueryImplementation =
         abstract TupleIndex : string ResizeArray // indexes where in the anonymous object created by the compiler during a select many that each entity alias appears
         abstract Provider : ISqlProvider
     
-    /// Interface for async enumerations as .NET doesn't have it out-of-the-box
+    /// Generic helper to create SqlQueryable instances without reflection
+    let inline internal createSqlQueryable<'T> dataContext provider sqlExpression tupleIndex =
+        let ty = typeof<SqlQueryable<'T>>
+        Activator.CreateInstance(ty, [| dataContext; provider; sqlExpression; tupleIndex |]) :?> IQueryable<'T>
+
+    /// Fallback helper using reflection for non-generic contexts
+    let inline internal createSqlQueryableFromType (elementType: Type) dataContext provider sqlExpression tupleIndex =
+        let ty = typedefof<SqlQueryable<_>>.MakeGenericType(elementType)
+        ty.GetConstructors().[0].Invoke [| dataContext; provider; sqlExpression; tupleIndex |] :?> IQueryable<_>
     type IAsyncEnumerable<'T> =
         abstract GetAsyncEnumerator : unit -> System.Threading.Tasks.Task<IEnumerator<'T>>
     type IAsyncEnumerable =
@@ -713,8 +721,7 @@ module internal QueryImplementation =
                             if isHaving then HavingClause(filter,current)
                             else FilterClause(filter,current)
 
-                    let ty = typedefof<SqlQueryable<_>>.MakeGenericType(meth.GetGenericArguments().[0])
-                    ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; sqlExpression; source.TupleIndex; |] :?> IQueryable<_>
+                    createSqlQueryableFromType (meth.GetGenericArguments().[0]) source.DataContext source.Provider sqlExpression source.TupleIndex
                 | _ -> failwith "only support lambdas in a where"
 
              let parseGroupBy (meth:Reflection.MethodInfo) (source:IWithSqlService) sourceAlias destAlias (lambdas: LambdaExpression list) (exp:Expression) (sourceTi:string)=
@@ -923,12 +930,10 @@ module internal QueryImplementation =
                     Common.QueryEvents.PublishExpression e
                     match e with
                     | MethodCall(None, (MethodWithName "Skip" as meth), [SourceWithQueryData source; Int amount]) ->
-                        let ty = typedefof<SqlQueryable<_>>.MakeGenericType(meth.GetGenericArguments().[0])
-                        ty.GetConstructors().[0].Invoke [| source.DataContext ; source.Provider; Skip(amount,source.SqlExpression) ; source.TupleIndex; |] :?> IQueryable<_>
+                        createSqlQueryableFromType (meth.GetGenericArguments().[0]) source.DataContext source.Provider (Skip(amount,source.SqlExpression)) source.TupleIndex
 
                     | MethodCall(None, (MethodWithName "Take" as meth), [SourceWithQueryData source; Int amount]) ->
-                        let ty = typedefof<SqlQueryable<_>>.MakeGenericType(meth.GetGenericArguments().[0])
-                        ty.GetConstructors().[0].Invoke [| source.DataContext ; source.Provider; Take(amount,source.SqlExpression) ; source.TupleIndex; |] :?> IQueryable<_>
+                        createSqlQueryableFromType (meth.GetGenericArguments().[0]) source.DataContext source.Provider (Take(amount,source.SqlExpression)) source.TupleIndex
 
                     | MethodCall(None, (MethodWithName "OrderBy" | MethodWithName "OrderByDescending" as meth), [SourceWithQueryData source; OptionalQuote (Lambda([ParamName param], OptionalConvertOrTypeAs (SqlColumnGet(entity,key,_)))) ]) ->
                         let alias =
@@ -984,8 +989,7 @@ module internal QueryImplementation =
                         let ty = typedefof<SqlOrderedQueryable<_>>.MakeGenericType(meth.GetGenericArguments().[0]) // Sort by constant can be ignored, except it changes the return type
                         ty.GetConstructors().[0].Invoke [| source.DataContext ; source.Provider; source.SqlExpression ; source.TupleIndex; |] :?> IQueryable<_>
                     | MethodCall(None, (MethodWithName "Distinct" as meth), [ SourceWithQueryData source ]) ->
-                        let ty = typedefof<SqlQueryable<_>>.MakeGenericType(meth.GetGenericArguments().[0])
-                        ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; Distinct(source.SqlExpression) ; source.TupleIndex; |] :?> IQueryable<_>
+                        createSqlQueryableFromType (meth.GetGenericArguments().[0]) source.DataContext source.Provider (Distinct(source.SqlExpression)) source.TupleIndex
 
                     | MethodCall(None, (MethodWithName "Where" as meth), [ SourceWithQueryData source; OptionalQuote qual ]) ->
                         parseWhere meth source qual
