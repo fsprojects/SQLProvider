@@ -16,6 +16,57 @@ open Microsoft.FSharp.Reflection
 open System.Collections.Concurrent
 open System.Runtime.Serialization
 
+/// Performance optimizations for reflection-based operations
+module internal ReflectionOptimizations = 
+    
+    /// Cache for typed None values to avoid repeated reflection calls
+    let private typedNoneCache = ConcurrentDictionary<Type, obj>()
+    
+    /// Cache for record constructors to avoid repeated precomputation
+    let private recordConstructorCache = ConcurrentDictionary<Type, obj[] -> obj>()
+    
+    /// Cache for property setters to avoid repeated reflection calls
+    let private propertySetterCache = ConcurrentDictionary<PropertyInfo, obj -> obj -> unit>()
+    
+    /// Get a cached typed None value for ValueOption types
+    let getTypedNone (voptType: Type) : obj =
+        typedNoneCache.GetOrAdd(voptType, fun t ->
+#if NETSTANDARD21
+            System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject t
+#else
+            FormatterServices.GetUninitializedObject t
+#endif
+        )
+    
+    /// Get a cached record constructor
+    let getRecordConstructor (recordType: Type) : obj[] -> obj =
+        recordConstructorCache.GetOrAdd(recordType, fun t ->
+            FSharpValue.PreComputeRecordConstructor t
+        )
+    
+    /// Get a cached property setter
+    let getPropertySetter (prop: PropertyInfo) : obj -> obj -> unit =
+        propertySetterCache.GetOrAdd(prop, fun p ->
+            let setter = p.GetSetMethod()
+            fun instance value -> setter.Invoke(instance, [|value|]) |> ignore
+        )
+    
+    /// Type-safe alternatives to Activator.CreateInstance for common scenarios
+    module TypeSafeCreation =
+        
+        /// Cache for generic Activator.CreateInstance delegates
+        let private creatorCache = ConcurrentDictionary<Type, unit -> obj>()
+        
+        /// Get a cached type-safe creator function
+        let getCreator<'T> () : unit -> 'T =
+            let creator = creatorCache.GetOrAdd(typeof<'T>, fun t ->
+                let method = typeof<Activator>.GetMethod("CreateInstance", [||]).MakeGenericMethod(t)
+                let lambda = Expression.Lambda<Func<obj>>(Expression.Call(method))
+                let compiled = lambda.Compile()
+                fun () -> compiled.Invoke()
+            )
+            fun () -> creator() :?> 'T
+
 type DatabaseProviderTypes =
     | MSSQLSERVER = 0
     | SQLITE = 1
@@ -379,27 +430,19 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup, activeColu
         let dataMap = x.ColumnValues |> Seq.map (fun (n,v) -> cleanName n, v) |> dict
         if FSharpType.IsRecord typ
         then
-            let ctor = FSharpValue.PreComputeRecordConstructor(typ)
+            let ctor = ReflectionOptimizations.getRecordConstructor typ
             let fields = FSharpType.GetRecordFields(typ)
             let values =
                 [|
                     for prop in fields do
                         match dataMap.TryGetValue(clean prop) with
                         | true, null when Utilities.isVOpt prop.PropertyType ->
-#if NETSTANDARD21
-                            let typedNone = System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject prop.PropertyType
-#else
-                            let typedNone = FormatterServices.GetUninitializedObject prop.PropertyType
-#endif
+                            let typedNone = ReflectionOptimizations.getTypedNone prop.PropertyType
                             yield propertyTypeMapping (prop.Name, typedNone)
                         | true, dataVal -> yield propertyTypeMapping (prop.Name, (Utilities.convertTypes dataVal prop.PropertyType))
                         | false, _ ->
                             if Utilities.isVOpt prop.PropertyType then
-#if NETSTANDARD21
-                                let typedNone = System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject prop.PropertyType
-#else
-                                let typedNone = FormatterServices.GetUninitializedObject prop.PropertyType
-#endif
+                                let typedNone = ReflectionOptimizations.getTypedNone prop.PropertyType
                                 yield propertyTypeMapping (prop.Name, typedNone)
                             else
                                 yield propertyTypeMapping (prop.Name, null)
@@ -411,13 +454,12 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup, activeColu
             for prop in typ.GetProperties() do
                 match dataMap.TryGetValue(clean prop) with
                 | true, null when Utilities.isVOpt prop.PropertyType ->
-#if NETSTANDARD21
-                    let typedNone = System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject prop.PropertyType
-#else
-                    let typedNone = FormatterServices.GetUninitializedObject prop.PropertyType
-#endif
-                    prop.GetSetMethod().Invoke(instance, [|propertyTypeMapping (prop.Name, typedNone)|]) |> ignore
-                | true, dataVal -> prop.GetSetMethod().Invoke(instance, [|propertyTypeMapping (prop.Name, (Utilities.convertTypes dataVal prop.PropertyType))|]) |> ignore
+                    let typedNone = ReflectionOptimizations.getTypedNone prop.PropertyType
+                    let setter = ReflectionOptimizations.getPropertySetter prop
+                    setter instance (propertyTypeMapping (prop.Name, typedNone))
+                | true, dataVal -> 
+                    let setter = ReflectionOptimizations.getPropertySetter prop
+                    setter instance (propertyTypeMapping (prop.Name, (Utilities.convertTypes dataVal prop.PropertyType)))
                 | false, _ -> ()
             instance
     
