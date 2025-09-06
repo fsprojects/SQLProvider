@@ -19,13 +19,13 @@ let inline (|MemberAccess|_|) (e:Expression) =
     | ExpressionType.MemberAccess, ( :? MemberExpression as me) -> Some me
     | _ -> None
 
-let (|MethodCall|_|) (e:Expression) = 
+let inline (|MethodCall|_|) (e:Expression) = 
     match e.NodeType, e with 
     | ExpressionType.Call, (:? MethodCallExpression as e) -> 
         Some ((match e.Object with null -> None | obj -> Some obj), e.Method, Seq.toList e.Arguments)
     | _ -> None
 
-let (|NewExpr|_|) (e:Expression) = 
+let inline (|NewExpr|_|) (e:Expression) = 
     match e.NodeType, e with 
     | ExpressionType.New , (:? NewExpression as e) -> 
         Some (e.Constructor, Seq.toList e.Arguments)
@@ -63,13 +63,13 @@ let (|SeqValuesQueryable|_|) (e:Expression) =
         | ExpressionType.Constant, (:? ConstantExpression as ce) ->
             match ce.Value with
             | :? ISqlQueryable ->
-                let values = (Expression.Lambda(e).Compile() :?> Func<System.Linq.IQueryable>).Invoke()
-                Some values
+                let values = tryEvaluateExpression<System.Linq.IQueryable> e
+                values
             | _ -> None
         | _ ->
-            let values = (Expression.Lambda(e).Compile() :?> Func<System.Linq.IQueryable>).Invoke()
+            let values = tryEvaluateExpression<System.Linq.IQueryable> e
             match values with
-            | :? ISqlQueryable -> Some values
+            | Some v when v :? ISqlQueryable -> Some v
             | _ -> None
 
 let (|SeqValues|_|) (e:Expression) =
@@ -101,7 +101,9 @@ let (|SeqValues|_|) (e:Expression) =
                     | _ -> ceVal
                 myVal :?> System.Collections.IEnumerable
             | _ ->
-                (Expression.Lambda(e).Compile() :?> Func<System.Collections.IEnumerable>).Invoke()
+                match tryEvaluateExpression<System.Collections.IEnumerable> e with
+                | Some enumerable -> enumerable
+                | None -> Seq.empty<obj> :> System.Collections.IEnumerable
 
         // Working with untyped IEnumerable so need to do a lot manually instead of using Seq
         // Work out the size the sequence
@@ -165,7 +167,10 @@ let (|ConstantOrNullableConstant|_|) (e:Expression) =
     | ExpressionType.Convert, (:? UnaryExpression as ue ) -> 
         match ue.Operand.NodeType, ue.Operand with
         | ExpressionType.Constant, (:? ConstantExpression as ce) -> if isNull ce.Value then Some(None) else Some(Some(ce.Value))
-        | ExpressionType.New, (:? NewExpression as ne) -> Some(Some(Expression.Lambda(ne).Compile().DynamicInvoke()))
+        | ExpressionType.New, (:? NewExpression as ne) -> 
+            try
+                Some(Some(Expression.Lambda(ne).Compile().DynamicInvoke()))
+            with _ -> failwith ("unsupported nullable new expression " + ne.ToString())
         | _ -> failwith ("unsupported nullable expression " + e.ToString())
     | _ -> None
 
@@ -381,7 +386,8 @@ let inline internal getRightFromOp (right:Expression) =
                 propInfo.GetValue(ceVal, null)
             | _ -> ceVal
         myVal
-    | ExpressionType.Call, (:? MethodCallExpression as e) when e.Method.ReturnType.IsClass -> (Expression.Lambda(right).Compile() :?> Func<_>).Invoke() |> box
+    | ExpressionType.Call, (:? MethodCallExpression as e) -> 
+        evaluateMethodCall e |> Option.defaultWith (fun () -> Expression.Lambda(right).Compile().DynamicInvoke())
     | _ -> Expression.Lambda(right).Compile().DynamicInvoke()
 
 let rec (|SqlColumnGet|_|) (ex:Expression) =
@@ -662,6 +668,76 @@ and (|SqlNegativeBooleanColumn|_|) (e:Expression) =
         | _ -> None
     | _ -> None
 
+// Optimized helper function to evaluate expressions without dynamic compilation
+let inline private tryEvaluateExpression<'T> (expr: Expression) : 'T option =
+    try
+        let lambda = Expression.Lambda<Func<'T>>(expr)
+        let compiled = lambda.Compile()
+        Some(compiled.Invoke())
+    with _ -> None
+
+// Fast type-safe evaluation without boxing for common types
+let private evaluateMethodCall (mce: MethodCallExpression) : obj option =
+    let returnType = mce.Method.ReturnType
+    
+    // Handle special DateTime static properties
+    if returnType = typeof<DateTime> && isNull mce.Object then
+        match mce.Method.Name with
+        | "get_Now" -> Some(DateTime.Now :> obj)
+        | "get_UtcNow" -> Some(DateTime.UtcNow :> obj) 
+        | "get_Today" -> Some(DateTime.Today :> obj)
+        | _ -> None
+    else
+        // Use generic evaluation for better performance
+        let evalGeneric<'T> () = 
+            tryEvaluateExpression<'T> mce |> Option.map box
+            
+        match returnType with
+        | t when t = typeof<int> -> evalGeneric<int>()
+        | t when t = typeof<int64> -> evalGeneric<int64>()
+        | t when t = typeof<decimal> -> evalGeneric<decimal>()
+        | t when t = typeof<DateTime> -> evalGeneric<DateTime>()
+        | t when t = typeof<bool> -> evalGeneric<bool>()
+        | t when t = typeof<string> -> evalGeneric<string>()
+        | t when t = typeof<float32> -> evalGeneric<float32>()
+        | t when t = typeof<int16> -> evalGeneric<int16>()
+        | t when t = typeof<uint32> -> evalGeneric<uint32>()
+        | t when t = typeof<uint16> -> evalGeneric<uint16>()
+        | t when t = typeof<uint64> -> evalGeneric<uint64>()
+        | t when t = typeof<byte> -> evalGeneric<byte>()
+        | t when t = typeof<char> -> evalGeneric<char>()
+        | t when t = typeof<DateTimeOffset> -> evalGeneric<DateTimeOffset>()
+        | t when t = typeof<TimeSpan> -> evalGeneric<TimeSpan>()
+        | t when t = typeof<System.Numerics.BigInteger> -> evalGeneric<System.Numerics.BigInteger>()
+        | t when t = typeof<Guid> -> evalGeneric<Guid>()
+        // Handle ValueOption types
+        | t when t.IsGenericType && t.GetGenericTypeDefinition() = typeof<ValueOption<_>>.GetGenericTypeDefinition() ->
+            let innerType = t.GetGenericArguments().[0]
+            match innerType with
+            | t when t = typeof<int> -> evalGeneric<ValueOption<int>>()
+            | t when t = typeof<int64> -> evalGeneric<ValueOption<int64>>()
+            | t when t = typeof<decimal> -> evalGeneric<ValueOption<decimal>>()
+            | t when t = typeof<DateTime> -> evalGeneric<ValueOption<DateTime>>()
+            | t when t = typeof<bool> -> evalGeneric<ValueOption<bool>>()
+            | t when t = typeof<string> -> evalGeneric<ValueOption<string>>()
+            | t when t = typeof<float32> -> evalGeneric<ValueOption<float32>>()
+            | t when t = typeof<int16> -> evalGeneric<ValueOption<int16>>()
+            | t when t = typeof<uint32> -> evalGeneric<ValueOption<uint32>>()
+            | t when t = typeof<uint16> -> evalGeneric<ValueOption<uint16>>()
+            | t when t = typeof<uint64> -> evalGeneric<ValueOption<uint64>>()
+            | t when t = typeof<byte> -> evalGeneric<ValueOption<byte>>()
+            | t when t = typeof<char> -> evalGeneric<ValueOption<char>>()
+            | t when t = typeof<DateTimeOffset> -> evalGeneric<ValueOption<DateTimeOffset>>()
+            | t when t = typeof<TimeSpan> -> evalGeneric<ValueOption<TimeSpan>>()
+            | t when t = typeof<System.Numerics.BigInteger> -> evalGeneric<ValueOption<System.Numerics.BigInteger>>()
+            | t when t = typeof<Guid> -> evalGeneric<ValueOption<Guid>>()
+            | _ -> None
+        | t when t.IsClass -> 
+            try
+                Some(Expression.Lambda(mce).Compile().DynamicInvoke())
+            with _ -> None
+        | _ -> None
+
 //Simpler version of where Condition-pattern, used on case-when-clause
 and (|SimpleCondition|_|) exp =
     let extractProperty op (meth:Expression) ti key =
@@ -678,47 +754,14 @@ and (|SimpleCondition|_|) exp =
                         propInfo.GetValue(ceVal, null)
                     | _ -> ceVal
                 Some myVal
-            | ExpressionType.Call, (:? MethodCallExpression as e) when e.Method.ReturnType.IsClass -> Some((Expression.Lambda(meth).Compile() :?> Func<_>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<Int32>) -> Some((Expression.Lambda(meth).Compile() :?> Func<Int32>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<Int64>) -> Some((Expression.Lambda(meth).Compile() :?> Func<Int64>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<Decimal>) -> Some((Expression.Lambda(meth).Compile() :?> Func<Decimal>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<DateTime>) -> Some((Expression.Lambda(meth).Compile() :?> Func<DateTime>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<Guid>) -> Some((Expression.Lambda(meth).Compile() :?> Func<Guid>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<Boolean>) -> Some((Expression.Lambda(meth).Compile() :?> Func<Boolean>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<Single>) -> Some((Expression.Lambda(meth).Compile() :?> Func<Single>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<Int16>) -> Some((Expression.Lambda(meth).Compile() :?> Func<Int16>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<UInt32>) -> Some((Expression.Lambda(meth).Compile() :?> Func<UInt32>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<UInt16>) -> Some((Expression.Lambda(meth).Compile() :?> Func<UInt16>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<UInt64>) -> Some((Expression.Lambda(meth).Compile() :?> Func<UInt64>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<Byte>) -> Some((Expression.Lambda(meth).Compile() :?> Func<Byte>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<Char>) -> Some((Expression.Lambda(meth).Compile() :?> Func<Char>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<DateTimeOffset>) -> Some((Expression.Lambda(meth).Compile() :?> Func<DateTimeOffset>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<TimeSpan>) -> Some((Expression.Lambda(meth).Compile() :?> Func<TimeSpan>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<bigint>) -> Some((Expression.Lambda(meth).Compile() :?> Func<bigint>).Invoke() |> box)
-
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<Int32>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Int32>>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<Int64>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Int64>>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<Decimal>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Decimal>>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<DateTime>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<DateTime>>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<Guid>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Guid>>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<Boolean>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Boolean>>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<Single>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Single>>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<Int16>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Int16>>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<UInt32>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<UInt32>>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<UInt16>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<UInt16>>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<UInt64>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<UInt64>>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<Byte>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Byte>>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<Char>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Char>>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<DateTimeOffset>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<DateTimeOffset>>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<TimeSpan>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<TimeSpan>>).Invoke() |> box)
-            | ExpressionType.Call, (:? MethodCallExpression as e) when Type.(=)(e.Method.ReturnType, typeof<ValueOption<bigint>>) -> Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<bigint>>).Invoke() |> box)
-            | ExpressionType.MemberAccess, (:? MemberExpression as me) when Type.(=)(me.Type, typeof<DateTime>) && me.Member.Name = "Now" -> Some(DateTime.Now |> box)
-            | ExpressionType.MemberAccess, (:? MemberExpression as me) when Type.(=)(me.Type, typeof<DateTime>) && me.Member.Name = "UtcNow" -> Some(DateTime.UtcNow |> box)
+            | ExpressionType.Call, (:? MethodCallExpression as e) -> evaluateMethodCall e
+            | ExpressionType.MemberAccess, (:? MemberExpression as me) when me.Type = typeof<DateTime> && me.Member.Name = "Now" -> Some(DateTime.Now :> obj)
+            | ExpressionType.MemberAccess, (:? MemberExpression as me) when me.Type = typeof<DateTime> && me.Member.Name = "UtcNow" -> Some(DateTime.UtcNow :> obj)
             | _ ->
                 // In case user feeds us incomplete lambda, we will not execute: the user might have a context needed for the compilation.
                 try
                     Some(Expression.Lambda(meth).Compile().DynamicInvoke())
-                with err -> None
+                with _ -> None
         match invokation with
         | None -> None
         | Some invokedResult -> 
