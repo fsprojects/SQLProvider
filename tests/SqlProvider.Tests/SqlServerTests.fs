@@ -12,8 +12,8 @@ let runtimeConnStr = connStr2008R2
 #else
 module SqlServerTests
 
-let [<Literal>] connStr2008R2 = "Data Source=(local)\SQL2022;User Id=sa;Password=Password12!; Initial Catalog=sqlprovider;"
-let [<Literal>] connStr2017 = "Data Source=(local)\SQL2022;User Id=sa;Password=Password12!; Initial Catalog=sqlprovider;"
+let [<Literal>] connStr2008R2 = "Data Source=(local)\SQL2022;User Id=sa;Password=Password12!; Initial Catalog=sqlprovider; TrustServerCertificate=true;"
+let [<Literal>] connStr2017 = "Data Source=(local)\SQL2022;User Id=sa;Password=Password12!; Initial Catalog=sqlprovider; TrustServerCertificate=true;"
 
 #endif
 

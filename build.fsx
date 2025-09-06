@@ -285,9 +285,11 @@ let setupMssql url saPassword =
     connBuilder.UserID <- "sa"
     connBuilder.DataSource <- url
     connBuilder.Password <- saPassword
+    connBuilder.TrustServerCertificate <- true
 
     let runCmd query =
-      // We wait up to 30 seconds for MSSQL to be initialized
+      // We wait up to 60 seconds for MSSQL to be initialized on AppVeyor
+      let maxAttempts = if Fake.Core.BuildServer.buildServer = AppVeyor then 60 else 30
       let rec runCmd' attempt =
         try
           use conn = new SqlConnection(connBuilder.ConnectionString)
@@ -295,11 +297,15 @@ let setupMssql url saPassword =
           use cmd = new SqlCommand(query, conn)
           cmd.ExecuteNonQuery() |> ignore
         with e ->
-          printfn "Connection attempt %i: %A" attempt e
-          Threading.Thread.Sleep 1000
-          if attempt < 30 then runCmd' (attempt + 1)
+          printfn "Connection attempt %i/%i: %A" attempt maxAttempts e
+          if attempt < maxAttempts then
+            Threading.Thread.Sleep 1000
+            runCmd' (attempt + 1)
+          else
+            printfn "Failed to connect to SQL Server after %i attempts. Last error: %A" maxAttempts e
+            reraise()
 
-      runCmd' 0
+      runCmd' 1
 
     let runScript fileLines =
 
@@ -330,10 +336,12 @@ let setupMssql url saPassword =
     (url,saPassword) |> ignore
 
 Target.create "SetupMSSQL2008R2" (fun _ ->
+    printfn "Setting up MSSQL for AppVeyor (compatibility target for SQL2008R2)"
     setupMssql "(local)\\SQL2022" "Password12!"
 )
 
 Target.create "SetupMSSQL2017" (fun _ ->
+    printfn "Setting up MSSQL for AppVeyor (compatibility target for SQL2017)"
     setupMssql "(local)\\SQL2022" "Password12!"
 )
 
