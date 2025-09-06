@@ -212,17 +212,17 @@ let inline (|OptionalQuote|) (e:Expression) =
     | ExpressionType.Quote, (:? UnaryExpression as ce) ->  ce.Operand
     | _ -> e
 
-let (|OptionalCopyOfStruct|) (e:Expression) = 
+let inline (|OptionalCopyOfStruct|) (e:Expression) = 
     match e.NodeType, e with 
     | ExpressionType.Call, MethodCall(Some (Lambda([ParamName para], (:? MemberExpression as me))),MethodWithName("Invoke"),[inner]) when para = "copyOfStruct" && me.Member.Name = "Value" -> inner
     | _ -> e
 
-let (|CopyOfStruct|_|) (membername:String) (e:Expression) = 
+let inline (|CopyOfStruct|_|) (membername:String) (e:Expression) = 
     match e.NodeType, e with 
     | ExpressionType.Call, MethodCall(Some (Lambda([ParamName para], (:? MemberExpression as me))),MethodWithName("Invoke"),[inner]) when para = "copyOfStruct" && me.Member.Name = membername -> Some inner
     | _ -> None
 
-let (|OptionalFSharpOptionValue|) (e:Expression) = 
+let inline (|OptionalFSharpOptionValue|) (e:Expression) = 
     match e.NodeType, e with
     | ExpressionType.MemberAccess, ( :? MemberExpression as e) -> 
         match e.Member with 
@@ -232,17 +232,17 @@ let (|OptionalFSharpOptionValue|) (e:Expression) =
         when e.Method.Name = "Some" && Common.Utilities.isOpt e.Method.DeclaringType -> e.Arguments.[0]
     | _, OptionalCopyOfStruct n -> n
 
-let (|AndAlso|_|) (e:Expression) =
+let inline (|AndAlso|_|) (e:Expression) =
     match e.NodeType, e with
     | ExpressionType.AndAlso, ( :? BinaryExpression as be) -> Some(be.Left,be.Right)
     | _ -> None
     
-let (|OrElse|_|) (e:Expression) =
+let inline (|OrElse|_|) (e:Expression) =
     match e.NodeType, e with
     | ExpressionType.OrElse, ( :? BinaryExpression as be) -> Some(be.Left,be.Right)
     | _ -> None
     
-let (|AndAlsoOrElse|_|) (e:Expression) =
+let inline (|AndAlsoOrElse|_|) (e:Expression) =
     match e.NodeType, e with
     | ExpressionType.OrElse,  ( :? BinaryExpression as be) 
     | ExpressionType.AndAlso, ( :? BinaryExpression as be)  -> Some(be.Left,be.Right)
