@@ -1,0 +1,46 @@
+name: .NET
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_PASSWORD: Password12!
+          POSTGRES_USER: postgres
+          POSTGRES_DB: sqlprovider
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+        
+    - name: Restore tools
+      run: dotnet tool restore
+      
+    - name: Restore dependencies  
+      run: dotnet paket restore
+      
+    - name: Build
+      run: dotnet fake run build.fsx -t Build
+      
+    - name: Test
+      run: dotnet fake run build.fsx -t RunTests
