@@ -804,57 +804,46 @@ type GroupResultItems<'key, 'SqlEntity>(keyname:String*String*String*String*Stri
             match columnName with
             | None -> (keyname |> fun (x,_,_,_,_,_,_) -> x).ToUpperInvariant()
             | Some c -> c.ToUpperInvariant()
+
+        // Pre-compute the filter strings to avoid repeated string operations
+        let fetchColFilter = "_" + fetchCol
+        let itemTypeFilter = itemType + "_"
+
+        let filterColumnValues (columnValues: seq<string * obj>) =
+            columnValues |> Seq.filter(fun (s,k) -> 
+                let sUp = s.ToUpperInvariant()
+                (sUp.Contains fetchColFilter || columnName.IsNone) && 
+                    sUp.Contains itemTypeFilter)
+
         let itms =
             match box distinctItem with
             | :? SqlEntity ->
                 let ent = unbox<SqlEntity> distinctItem
-                ent.ColumnValues 
-                    |> Seq.filter(fun (s,k) -> 
-                        let sUp = s.ToUpperInvariant()
-                        (sUp.Contains("_"+fetchCol) || columnName.IsNone) && 
-                            (sUp.Contains(itemType+"_")))
+                filterColumnValues ent.ColumnValues
             | :? Tuple<SqlEntity,SqlEntity> ->
                 let ent1, ent2 = unbox<SqlEntity*SqlEntity> distinctItem
                 Seq.concat [| ent1.ColumnValues; ent2.ColumnValues; |]
-                    |> Seq.distinct |> Seq.filter(fun (s,k) -> 
-                        let sUp = s.ToUpperInvariant()
-                        (sUp.Contains("_"+fetchCol) || columnName.IsNone) && 
-                            (sUp.Contains(itemType+"_")))
+                    |> Seq.distinct |> filterColumnValues
             | :? Tuple<SqlEntity,SqlEntity,SqlEntity> ->
                 let ent1, ent2, ent3 = unbox<SqlEntity*SqlEntity*SqlEntity> distinctItem
                 Seq.concat [| ent1.ColumnValues; ent2.ColumnValues; ent3.ColumnValues;|]
-                    |> Seq.distinct |> Seq.filter(fun (s,k) -> 
-                        let sUp = s.ToUpperInvariant()
-                        (sUp.Contains("_"+fetchCol) || columnName.IsNone) && 
-                            (sUp.Contains(itemType+"_")))
+                    |> Seq.distinct |> filterColumnValues
             | :? Tuple<SqlEntity,SqlEntity,SqlEntity,SqlEntity> ->
                 let ent1, ent2, ent3, ent4 = unbox<SqlEntity*SqlEntity*SqlEntity*SqlEntity> distinctItem
                 Seq.concat [| ent1.ColumnValues; ent2.ColumnValues; ent3.ColumnValues;ent4.ColumnValues;|]
-                    |> Seq.distinct |> Seq.filter(fun (s,k) -> 
-                        let sUp = s.ToUpperInvariant()
-                        (sUp.Contains("_"+fetchCol) || columnName.IsNone) && 
-                            (sUp.Contains(itemType+"_")))
+                    |> Seq.distinct |> filterColumnValues
             | :? Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity> ->
                 let ent = unbox<Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity>> distinctItem
                 Seq.concat [| ent.Item1.ColumnValues; ent.Item2.ColumnValues; |]
-                    |> Seq.distinct |> Seq.filter(fun (s,k) -> 
-                        let sUp = s.ToUpperInvariant()
-                        (sUp.Contains("_"+fetchCol) || columnName.IsNone) && 
-                            (sUp.Contains(itemType+"_")))
+                    |> Seq.distinct |> filterColumnValues
             | :? Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity,SqlEntity> ->
                 let ent = unbox<Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity,SqlEntity>> distinctItem
                 Seq.concat [| ent.Item1.ColumnValues; ent.Item2.ColumnValues; ent.Item3.ColumnValues; |]
-                    |> Seq.distinct |> Seq.filter(fun (s,k) -> 
-                        let sUp = s.ToUpperInvariant()
-                        (sUp.Contains("_"+fetchCol) || columnName.IsNone) && 
-                            (sUp.Contains(itemType+"_")))
+                    |> Seq.distinct |> filterColumnValues
             | :? Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity,SqlEntity,SqlEntity> ->
                 let ent = unbox<Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity,SqlEntity,SqlEntity>> distinctItem
                 Seq.concat [| ent.Item1.ColumnValues; ent.Item2.ColumnValues; ent.Item3.ColumnValues; ent.Item4.ColumnValues; |]
-                    |> Seq.distinct |> Seq.filter(fun (s,k) -> 
-                        let sUp = s.ToUpperInvariant()
-                        (sUp.Contains("_"+fetchCol) || columnName.IsNone) && 
-                            (sUp.Contains(itemType+"_")))
+                    |> Seq.distinct |> filterColumnValues
             | _ -> failwith ("Unknown aggregate item: " + typeof<'SqlEntity>.Name)
         let itm = 
             if Seq.isEmpty itms then

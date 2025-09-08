@@ -140,25 +140,31 @@ module Utilities =
             if isNull itm then null |> box
             else convertTypes itm (returnType.GenericTypeArguments.[0])
         else
-        match itm, returnType with
-        | :? string as s, t when Type.(=) (t, typeof<String>) -> s |> box
-        | :? string as s, t when Type.(=) (t, typeof<Int32>) && Int32.TryParse s |> fst -> Int32.Parse s |> box
-        | :? string as s, t when Type.(=) (t, typeof<Decimal>) && Decimal.TryParse s |> fst -> Decimal.Parse s |> box
-        | :? string as s, t when Type.(=) (t, typeof<Int64>) && Int64.TryParse s |> fst -> Int64.Parse s |> box
-        | :? string as s, t when Type.(=) (t, typeof<Single>) && Single.TryParse s |> fst -> Single.Parse s |> box
-        | :? string as s, t when Type.(=) (t, typeof<UInt32>) && UInt32.TryParse s |> fst -> UInt32.Parse s |> box
-        | :? string as s, t when Type.(=) (t, typeof<Double>) && Double.TryParse s |> fst -> Double.Parse s |> box
-        | :? string as s, t when Type.(=) (t, typeof<UInt64>) && UInt64.TryParse s |> fst -> UInt64.Parse s |> box
-        | :? string as s, t when Type.(=) (t, typeof<Int16>) && Int16.TryParse s |> fst -> Int16.Parse s |> box
-        | :? string as s, t when Type.(=) (t, typeof<UInt16>) && UInt16.TryParse s |> fst -> UInt16.Parse s |> box
-        | :? string as s, t when Type.(=) (t, typeof<DateTime>) && DateTime.TryParse s |> fst -> DateTime.Parse s |> box
-        | :? string as s, t when Type.(=) (t, typeof<Boolean>) && Boolean.TryParse s |> fst -> Boolean.Parse s |> box
-        | :? string as s, t when Type.(=) (t, typeof<Byte>) && Byte.TryParse s |> fst -> Byte.Parse s |> box
-        | :? string as s, t when Type.(=) (t, typeof<SByte>) && SByte.TryParse s |> fst -> SByte.Parse s |> box
-        | :? string as s, t when Type.(=) (t, typeof<Char>) && Char.TryParse s |> fst -> Char.Parse s |> box
-        | :? string as s, t when Type.(=) (t, typeof<DateTimeOffset>) && DateTimeOffset.TryParse s |> fst -> DateTimeOffset.Parse s |> box
-        | :? string as s, t when Type.(=) (t, typeof<TimeSpan>) && TimeSpan.TryParse s |> fst -> TimeSpan.Parse s |> box
-        | :? string as s, t when Type.(=) (t, typeof<bigint>) && Numerics.BigInteger.TryParse s |> fst -> bigint.Parse s |> box
+
+        let ok, s = 
+            match itm with
+            | :? string as s -> true, s
+            | _ -> false, ""
+
+        match ok, returnType with
+        | true, t when Type.(=) (t, typeof<String>) -> s |> box
+        | true, t when Type.(=) (t, typeof<Int32>) && Int32.TryParse s |> fst -> Int32.Parse s |> box
+        | true, t when Type.(=) (t, typeof<Decimal>) && Decimal.TryParse s |> fst -> Decimal.Parse s |> box
+        | true, t when Type.(=) (t, typeof<Int64>) && Int64.TryParse s |> fst -> Int64.Parse s |> box
+        | true, t when Type.(=) (t, typeof<Single>) && Single.TryParse s |> fst -> Single.Parse s |> box
+        | true, t when Type.(=) (t, typeof<UInt32>) && UInt32.TryParse s |> fst -> UInt32.Parse s |> box
+        | true, t when Type.(=) (t, typeof<Double>) && Double.TryParse s |> fst -> Double.Parse s |> box
+        | true, t when Type.(=) (t, typeof<UInt64>) && UInt64.TryParse s |> fst -> UInt64.Parse s |> box
+        | true, t when Type.(=) (t, typeof<Int16>) && Int16.TryParse s |> fst -> Int16.Parse s |> box
+        | true, t when Type.(=) (t, typeof<UInt16>) && UInt16.TryParse s |> fst -> UInt16.Parse s |> box
+        | true, t when Type.(=) (t, typeof<DateTime>) && DateTime.TryParse s |> fst -> DateTime.Parse s |> box
+        | true, t when Type.(=) (t, typeof<Boolean>) && Boolean.TryParse s |> fst -> Boolean.Parse s |> box
+        | true, t when Type.(=) (t, typeof<Byte>) && Byte.TryParse s |> fst -> Byte.Parse s |> box
+        | true, t when Type.(=) (t, typeof<SByte>) && SByte.TryParse s |> fst -> SByte.Parse s |> box
+        | true, t when Type.(=) (t, typeof<Char>) && Char.TryParse s |> fst -> Char.Parse s |> box
+        | true, t when Type.(=) (t, typeof<DateTimeOffset>) && DateTimeOffset.TryParse s |> fst -> DateTimeOffset.Parse s |> box
+        | true, t when Type.(=) (t, typeof<TimeSpan>) && TimeSpan.TryParse s |> fst -> TimeSpan.Parse s |> box
+        | true, t when Type.(=) (t, typeof<bigint>) && Numerics.BigInteger.TryParse s |> fst -> bigint.Parse s |> box
         | _ -> 
             if Type.(=) (returnType, typeof<String>) then Convert.ToString itm |> box
             elif Type.(=) (returnType, typeof<Int32>) then Convert.ToInt32 itm |> box
