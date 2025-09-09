@@ -302,7 +302,7 @@ module MySql =
         getSchema "Procedures" [||] con
         |> DataTable.map (fun row ->
                             let name = getSprocName row
-                            match (Sql.dbUnbox<string> row.["routine_type"]).ToUpper() with
+                            match (Sql.dbUnbox<string> row.["routine_type"]).ToUpperInvariant() with
                             | "FUNCTION" -> Root("Functions", Sproc({ Name = name; Params = (fun con -> getSprocParameters con name); ReturnColumns = (fun _ name -> getSprocReturnCols name) }))
                             | "PROCEDURE" ->  Root("Procedures", Sproc({ Name = name; Params = (fun con -> getSprocParameters con name); ReturnColumns = (fun _ name -> getSprocReturnCols name) }))
                             | _ -> Empty
@@ -633,7 +633,7 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                         let maxlen =
                             if reader.IsDBNull(2) then ""
                             else reader.GetValue(2).ToString()
-                        let isUnsigned = not(reader.IsDBNull 6) && reader.GetString(6).ToUpper().Contains("UNSIGNED")
+                        let isUnsigned = not(reader.IsDBNull 6) && reader.GetString(6).ToUpperInvariant().Contains("UNSIGNED")
                         let udt = if isUnsigned then dt + " unsigned" else dt
                         match MySql.findDbType udt with
                         | Some(m) ->

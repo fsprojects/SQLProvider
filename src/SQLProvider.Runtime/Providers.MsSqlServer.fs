@@ -253,7 +253,7 @@ module MSSqlServer =
             not <| Set.contains name toFilter)
         |> DataTable.map (fun row -> getSprocName row, dbUnbox<string> row.["routine_type"])
         |> Seq.map (fun (name, routineType) ->
-             match routineType.ToUpper() with
+             match routineType.ToUpperInvariant() with
              | "FUNCTION" -> Root("Functions",  Sproc({ Name = name; Params = (fun con -> getSprocParameters con name); ReturnColumns = (fun con sparams -> getSprocReturnCols con name sparams) }))
              | "PROCEDURE" ->  Root("Procedures", Sproc({ Name = name; Params = (fun con -> getSprocParameters con name); ReturnColumns = (fun con sparams -> getSprocReturnCols con name sparams) }))
              | _ -> Empty

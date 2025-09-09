@@ -260,11 +260,11 @@ let parseXml(xml: string) =
             let annotation = RegexParsers.parseTableColumnAnnotation colName colExpr
             let dataType =
                 annotation
-                |> ValueOption.map (fun a -> a.DataType.ToUpper()) // Ucase to match typeMappings
+                |> ValueOption.map (fun a -> a.DataType.ToUpperInvariant()) // Ucase to match typeMappings
                 |> ValueOption.defaultValue "SQL_VARIANT"
             let allowNulls =
                 match annotation with
-                | ValueSome { Nullability = ValueSome nlb } -> nlb.ToUpper() = "NULL"
+                | ValueSome { Nullability = ValueSome nlb } -> nlb.ToUpperInvariant() = "NULL"
                 | ValueSome { Nullability = ValueNone } -> true // Sql Server column declarations allow nulls by default
                 | ValueNone -> false // Default to "SQL_VARIANT" (obj) with no nulls if annotation is not found
             
@@ -411,7 +411,7 @@ let parseXml(xml: string) =
 
     let parseUserDefinedDataType (uddts: XmlNode) =
         let name = uddts |> att "Name"
-        let name = name |> RegexParsers.splitFullName |> fun parsed -> (String.concat "." parsed).ToUpper() |> UDDTName
+        let name = name |> RegexParsers.splitFullName |> fun parsed -> (String.concat "." parsed).ToUpperInvariant() |> UDDTName
         let inheritedType =
             uddts
             |> nodes "x:Relationship"
@@ -420,7 +420,7 @@ let parseXml(xml: string) =
             |> att "Name"
             |> RegexParsers.splitFullName
             |> fun parsed -> String.concat "." parsed
-            |> fun t -> t.ToUpper()
+            |> fun t -> t.ToUpperInvariant()
             |> UDDTInheritedType
         (name, inheritedType)
 
@@ -490,11 +490,11 @@ let parseXml(xml: string) =
                     // Can't resolve column, or annotation override: try to find a commented type annotation
                     let dataType =
                         annotation
-                        |> Option.map (fun a -> a.DataType.ToUpper()) // Ucase to match typeMappings
+                        |> Option.map (fun a -> a.DataType.ToUpperInvariant()) // Ucase to match typeMappings
                         |> Option.defaultValue "SQL_VARIANT"
                     let allowNulls =
                         match annotation with
-                        | Some { Nullability = ValueSome nlb } -> nlb.ToUpper() = "NULL"
+                        | Some { Nullability = ValueSome nlb } -> nlb.ToUpperInvariant() = "NULL"
                         | Some { Nullability = ValueNone } -> true // Sql Server column declarations allow nulls by default
                         | None -> false // Default to "SQL_VARIANT" (obj) with no nulls if annotation is not found
                     let description =
