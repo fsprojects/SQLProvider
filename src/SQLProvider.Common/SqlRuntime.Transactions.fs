@@ -2,24 +2,43 @@ namespace FSharp.Data.Sql.Transactions
 
 open System
 
-/// Corresponds to the System.Transactions.IsolationLevel.
+/// <summary>
+/// Transaction isolation level for database operations.
+/// Corresponds to the System.Transactions.IsolationLevel but provides SQL provider specific functionality.
+/// </summary>
 type IsolationLevel =
+    /// Highest isolation level - transactions are completely isolated from each other
     | Serializable = 0
+    /// Prevents dirty reads and non-repeatable reads, but phantom reads can occur
     | RepeatableRead = 1
+    /// Prevents dirty reads but allows non-repeatable reads and phantom reads (default for most databases)
     | ReadCommitted = 2
+    /// Allows dirty reads, non-repeatable reads, and phantom reads (fastest but least safe)
     | ReadUncommitted = 3
+    /// SQL Server specific - provides statement-level read consistency using versioning
     | Snapshot = 4
+    /// Allows any level of isolation, including overlapping changes (SQL Server specific)
     | Chaos = 5
+    /// Use the default isolation level of the database
     | Unspecified = 6
+    /// Special value to indicate that no transaction should be created
     | DontCreateTransaction = 99
 
+/// <summary>
+/// Configuration options for database transactions.
 /// Corresponds to the System.Transactions.TransactionOptions.
+/// </summary>
 [<Struct>]
 type TransactionOptions = {
+    /// Maximum time the transaction can remain active before timing out
     Timeout : TimeSpan
+    /// The isolation level for the transaction
     IsolationLevel : IsolationLevel
 }
 
+/// <summary>
+/// Utility functions for converting between different transaction isolation level representations.
+/// </summary>
 module TransactionUtils =
     let internal toSystemTransactionsIsolationLevel isolationLevel =
         match isolationLevel with
@@ -32,6 +51,12 @@ module TransactionUtils =
         | IsolationLevel.Unspecified -> System.Transactions.IsolationLevel.Unspecified
         | _ -> failwithf "Unhandled IsolationLevel value: %A." isolationLevel
 
+    /// <summary>
+    /// Converts SQL provider isolation level to System.Data.IsolationLevel.
+    /// Use this when you need to work directly with ADO.NET connection transactions.
+    /// </summary>
+    /// <param name="isolationLevel">The SQL provider isolation level</param>
+    /// <returns>The corresponding System.Data.IsolationLevel</returns>
     let toSystemDataIsolationLevel isolationLevel =
         match isolationLevel with
         | IsolationLevel.Serializable -> System.Data.IsolationLevel.Serializable

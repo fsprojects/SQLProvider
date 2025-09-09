@@ -17,11 +17,19 @@ module internal Patterns =
             | _ -> ValueNone
         else ValueNone
 
+/// <summary>
+/// Represents the mapping between database types and .NET CLR types.
+/// Used to translate between database-specific types and .NET types during query execution.
+/// </summary>
 [<Struct>]
 type TypeMapping =
+    /// The database provider's specific type name (e.g., "varchar", "int")
     { ProviderTypeName: string voption
+      /// The corresponding .NET CLR type name
       ClrType: string
+      /// The database provider's numeric type identifier
       ProviderType: int voption
+      /// The standard .NET DbType enumeration value
       DbType: DbType }
     with
         static member Create(?clrType, ?dbType, ?providerTypeName, ?providerType) =
@@ -30,12 +38,21 @@ type TypeMapping =
               ProviderTypeName = match providerTypeName with Some x -> ValueSome x | None -> ValueNone
               ProviderType = match providerType with Some x -> ValueSome x | None -> ValueNone }
 
+/// <summary>
+/// Represents a parameter used in SQL queries, stored procedures, or functions.
+/// Contains all metadata needed to properly bind .NET values to database parameters.
+/// </summary>
 [<Struct>]
 type QueryParameter =
+    /// The parameter name as used in the SQL query
     { Name: string
+      /// Type mapping information for converting between .NET and database types
       TypeMapping: TypeMapping
+      /// Whether the parameter is input, output, or bidirectional
       Direction: ParameterDirection
+      /// Maximum length for string/binary parameters
       Length: int voption
+      /// Position of the parameter in the parameter list (zero-based)
       Ordinal: int }
     with
         static member Create(name, ordinal, ?typeMapping, ?direction, ?length) =
@@ -45,15 +62,27 @@ type QueryParameter =
               Direction = defaultArg direction ParameterDirection.Input
               Length = match length with Some x -> ValueSome x | None -> ValueNone }
 
+/// <summary>
+/// Represents a database table column with its metadata and characteristics.
+/// Contains all information needed to generate typed properties and handle data conversion.
+/// </summary>
 [<Struct>]
 type Column =
+    /// The column name as it appears in the database
     { Name: string
+      /// Type mapping information for converting between .NET and database types
       TypeMapping: TypeMapping
+      /// True if this column is part of the table's primary key
       IsPrimaryKey: bool
+      /// True if this column can contain NULL values
       IsNullable: bool
+      /// True if this column has an auto-increment/identity specification
       IsAutonumber: bool
+      /// True if this column has a default value defined
       HasDefault: bool
+      /// True if this column is computed/calculated by the database
       IsComputed: bool
+      /// Additional type information specific to the database provider
       TypeInfo: string voption }
     with
         static member FromQueryParameter(q: QueryParameter) =
@@ -66,19 +95,36 @@ type Column =
               IsComputed = false
               TypeInfo = ValueNone }
 
+/// <summary>Lookup table for quickly finding column information by name.</summary>
 type ColumnLookup = Map<string,Column>
 
+/// <summary>
+/// Represents a foreign key relationship between two database tables.
+/// Used for automatic navigation property generation and join optimization.
+/// </summary>
 [<Struct>]
 type Relationship =
+    /// A descriptive name for this relationship
     { Name: string
+      /// The name of the table containing the primary key
       PrimaryTable: string
+      /// The column name of the primary key
       PrimaryKey: string
+      /// The name of the table containing the foreign key
       ForeignTable: string
+      /// The column name of the foreign key
       ForeignKey: string }
 
+/// <summary>
+/// Represents the name of a stored procedure, including schema and package information.
+/// Handles different database naming conventions (e.g., Oracle packages, SQL Server schemas).
+/// </summary>
 type SprocName =
+    /// The procedure name
     { ProcName: string
+      /// The schema or owner name
       Owner: string
+      /// The package name (primarily for Oracle)
       PackageName: string }
     with
         member x.ToList() =
@@ -117,9 +163,16 @@ type Sproc =
         typedefof<Sproc>.GetNestedTypes(BindingFlags.Public ||| BindingFlags.NonPublic)
         |> Array.filter Microsoft.FSharp.Reflection.FSharpType.IsUnion
 
+/// <summary>
+/// Represents a database table with its schema information.
+/// Provides methods for generating properly quoted table names for different database providers.
+/// </summary>
 type Table =
+    /// The schema name (may be empty for databases that don't use schemas)
     { Schema: string
+      /// The table name
       Name: string
+      /// The table type (e.g., "TABLE", "VIEW", "SYSTEM TABLE")
       Type: string }
     with
         static member CreateQuotedFullName(schema, name, startQuote, endQuote) =
