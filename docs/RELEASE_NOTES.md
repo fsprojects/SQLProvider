@@ -1,4 +1,4 @@
-### 1.5.15 - 09.09.2025
+### 1.5.16 - 09.09.2025
 * XML documentation updates
 * Minor memory and performance improvements
 

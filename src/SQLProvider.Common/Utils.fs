@@ -743,7 +743,25 @@ module Sql =
     let dbUnboxWithDefault<'a> def (v:obj) : 'a = 
         if Convert.IsDBNull(v) then def else unbox v
 
+    /// Note: SQLProvider reuses the connection through multiple instances, so you can't dispose it here.
+    /// Instead it's created with ISQLProvider's CreateConnection method, and that is having always "use" to ensure it is disposed properly on "finally".
     let connect (con:IDbConnection) f =
+        if con.State <> ConnectionState.Open then con.Open()
+        let result = f con
+        con.Close(); result
+
+    /// Note: SQLProvider reuses the connection through multiple instances, so you can't dispose it here.
+    /// Instead it's created with ISQLProvider's CreateConnection method, and that is having always "use" to ensure it is disposed properly on "finally".
+    let connectAsync (con:System.Data.Common.DbConnection) (f: System.Data.Common.DbConnection -> System.Threading.Tasks.Task<'a>) =
+        task {
+            if con.State <> ConnectionState.Open then 
+                do! con.OpenAsync()
+            let result = f con
+            con.Close()
+            return result
+        }
+
+    let connectAndClose (con:IDbConnection) f =
         use connection = con
         try
             if connection.State <> ConnectionState.Open then connection.Open()
@@ -751,13 +769,13 @@ module Sql =
         finally
             if connection.State = ConnectionState.Open then connection.Close()
 
-    let connectAsync (con:System.Data.Common.DbConnection) f =
+    let connectAndCloseAsync (con:System.Data.Common.DbConnection) (f: System.Data.Common.DbConnection -> System.Threading.Tasks.Task<'a>) =
         task {
             use connection = con
             try
                 if connection.State <> ConnectionState.Open then
                     do! connection.OpenAsync()
-                f connection
+                return! f connection
             finally
                 if connection.State = ConnectionState.Open then connection.Close()
         }
