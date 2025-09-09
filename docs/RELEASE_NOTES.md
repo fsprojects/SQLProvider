@@ -1,3 +1,7 @@
+### 1.5.15 - 09.09.2025
+* XML documentation updates
+* Minor memory and performance improvements
+
 ### 1.5.14 - 29.08.2025
 * Fix for Dacpac parsing null exception case when dependent dacpacs #848
 * Firebird naming case.
