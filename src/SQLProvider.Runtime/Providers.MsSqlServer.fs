@@ -110,11 +110,6 @@ module MSSqlServer =
     let dbUnboxWithDefault<'a> def (v:obj) : 'a =
         if Convert.IsDBNull(v) then def else unbox v
 
-    let connect (con:IDbConnection) f =
-        if con.State <> ConnectionState.Open then con.Open()
-        let result = f con
-        con.Close(); result
-
     let executeSql sql (con:IDbConnection) =
         use com = new SqlCommand(sql,con:?>SqlConnection)
         com.ExecuteReader()
@@ -164,7 +159,7 @@ module MSSqlServer =
         let query = sprintf "SET NO_BROWSETABLE ON; SET FMTONLY ON; exec %s %s" sname.DbName parameterStr
         let derivedCols =
             let initialSchemas =
-                connect con (fun con ->
+                Sql.connect con (fun con ->
                     try
                         let dr = executeSql query con
                         [ yield dr.GetSchemaTable();
@@ -568,7 +563,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                 match tableNames with 
                 | "" -> ""
                 | x -> " where 1=1 " + (SchemaProjections.buildTableNameWhereFilter "TABLE_NAME" tableNames)
-            MSSqlServer.connect con (fun con ->
+            Sql.connect con (fun con ->
             use reader = MSSqlServer.executeSql ("select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES" + tableNamesFilter) con
             [ while reader.Read() do
                 let table ={ Schema = reader.GetSqlString(0).Value ; Name = reader.GetSqlString(1).Value ; Type=reader.GetSqlString(2).Value.ToLower() }
@@ -684,7 +679,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                                 AND KCU2.CONSTRAINT_NAME = RC.UNIQUE_CONSTRAINT_NAME
                                 AND KCU2.ORDINAL_POSITION = KCU1.ORDINAL_POSITION "
 
-            let res = MSSqlServer.connect con (fun con ->
+            let res = Sql.connect con (fun con ->
                 let baseq1 = sprintf "%s WHERE KCU2.TABLE_NAME = @tblName" baseQuery 
                 use com1 = new SqlCommand(baseq1,con:?>SqlConnection)
                 com1.Parameters.AddWithValue("@tblName",table.Name) |> ignore 
@@ -713,7 +708,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                 (children,parents))
             res)
 
-        member __.GetSprocs(con) = MSSqlServer.connect con MSSqlServer.getSprocs
+        member __.GetSprocs(con) = Sql.connect con MSSqlServer.getSprocs
         member __.GetIndividualsQueryText(table,amount) = sprintf "SELECT TOP %i * FROM %s" amount table.FullName
         member __.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM [%s].[%s] WHERE [%s].[%s].[%s] = @id" table.Schema table.Name table.Schema table.Name column
 

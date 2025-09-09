@@ -744,16 +744,22 @@ module Sql =
         if Convert.IsDBNull(v) then def else unbox v
 
     let connect (con:IDbConnection) f =
-        if con.State <> ConnectionState.Open then con.Open()
-        let result = f con
-        con.Close(); result
+        use connection = con
+        try
+            if connection.State <> ConnectionState.Open then connection.Open()
+            f connection
+        finally
+            if connection.State = ConnectionState.Open then connection.Close()
 
     let connectAsync (con:System.Data.Common.DbConnection) f =
         task {
-            if con.State <> ConnectionState.Open then 
-                do! con.OpenAsync()
-            let result = f con
-            con.Close(); result
+            use connection = con
+            try
+                if connection.State <> ConnectionState.Open then
+                    do! connection.OpenAsync()
+                f connection
+            finally
+                if connection.State = ConnectionState.Open then connection.Close()
         }
 
     let executeSql createCommand sql (con:IDbConnection) = 
