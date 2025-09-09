@@ -1,50 +1,94 @@
+/// <summary>
+/// Module for parsing SQL Server Data Tools (SSDT) .dacpac files to extract database schema information.
+/// Provides functionality to read and parse the model.xml file contained within .dacpac packages.
+/// </summary>
 module FSharp.Data.Sql.Ssdt.DacpacParser
 
 open System
 open System.Xml
 open System.IO.Compression
 
+/// <summary>Represents a database table column from SSDT schema.</summary>
 type [<Struct>] SsdtColumn = {
+    /// The fully qualified column name (schema.table.column)
     FullName: string
+    /// The column name without qualification
     Name: string
+    /// Extended description/comment for the column
     Description: string
+    /// The SQL data type (e.g., varchar, int, datetime)
     DataType: string
+    /// True if the column allows NULL values
     AllowNulls: bool
+    /// True if the column is an identity/auto-increment column
     IsIdentity: bool
+    /// True if the column has a default value constraint
     HasDefault: bool
+    /// True if the column is computed/calculated
     ComputedColumn: bool
 }
+
+/// <summary>Represents a view column from SSDT schema.</summary>
 type [<Struct>] SsdtViewColumn = {
+    /// The fully qualified column name
     FullName: string
+    /// Optional reference path for complex column definitions
     ColumnRefPath: string voption
 }
+
+/// <summary>Represents a comment annotation for schema documentation.</summary>
 type [<Struct>] CommentAnnotation = {
+    /// The column name the annotation applies to
     Column: string
+    /// The data type information
     DataType: string
+    /// Optional nullability information
     Nullability: string voption
 }
+
+/// <summary>Represents a database view from SSDT schema.</summary>
 type SsdtView = {
+    /// The fully qualified view name (schema.view)
     FullName: string
+    /// The schema name
     Schema: string
+    /// The view name without schema
     Name: string
+    /// Array of regular columns in the view
     Columns: SsdtViewColumn array
+    /// Array of dynamically generated columns
     DynamicColumns: SsdtViewColumn array
+    /// Array of comment annotations for documentation
     Annotations: CommentAnnotation array
 }
+
+/// <summary>Represents a column in a constraint definition.</summary>
 type [<Struct>] ConstraintColumn = {
+    /// The fully qualified column name
     FullName: string
+    /// The column name without qualification
     Name: string
 }
+
+/// <summary>Represents a table reference in relationship definitions.</summary>
 type RefTable = {
+    /// The fully qualified table name
     FullName: string
+    /// The schema name
     Schema: string
+    /// The table name without schema
     Name: string
+    /// Array of columns involved in the reference
     Columns: ConstraintColumn array
 }
 
+/// <summary>Represents a foreign key relationship between tables.</summary>
 type SsdtRelationship = {
+    /// The name of the relationship/constraint
     Name: string
+    /// The table that defines the primary key
     DefiningTable: RefTable
+    /// The table that contains the foreign key
     ForeignTable: RefTable
 }
 
@@ -138,7 +182,12 @@ module RegexParsers =
         )
         |> Seq.toArray
     
-/// Extracts model.xml from the given .dacpac file path.
+/// <summary>
+/// Extracts the model.xml file from a SQL Server Data Tools (SSDT) .dacpac package.
+/// The model.xml contains the complete database schema definition.
+/// </summary>
+/// <param name="dacPacPath">Path to the .dacpac file</param>
+/// <returns>The XML content of the model.xml file as a string</returns>
 let extractModelXml (dacPacPath: string) = 
     use stream = new IO.FileStream(dacPacPath, IO.FileMode.Open, IO.FileAccess.Read)
     use zip = new ZipArchive(stream, ZipArchiveMode.Read, false)
@@ -147,7 +196,13 @@ let extractModelXml (dacPacPath: string) =
     use rdr = new IO.StreamReader(modelStream)
     rdr.ReadToEnd()
 
-/// Returns a doc and node/nodes ns helper fns
+/// <summary>
+/// Creates an XML document with namespace support and returns helper functions for node selection.
+/// This is specifically designed for parsing SSDT model.xml files with their Microsoft namespace.
+/// </summary>
+/// <param name="ns">The XML namespace URI</param>
+/// <param name="xml">The XML content to parse</param>
+/// <returns>A tuple containing (XmlDocument, single node selector function, multiple nodes selector function)</returns>
 let toXmlNamespaceDoc ns xml =
     let doc = XmlDocument()
     let nsMgr = XmlNamespaceManager(doc.NameTable)
@@ -162,6 +217,12 @@ let toXmlNamespaceDoc ns xml =
             
     doc, node, nodes    
 
+/// <summary>
+/// Safely extracts an XML attribute value from a node, returning None if the attribute doesn't exist.
+/// </summary>
+/// <param name="nm">The attribute name to extract</param>
+/// <param name="node">The XML node to extract from</param>
+/// <returns>Some(attribute value) if found, None otherwise</returns>
 let attMaybe (nm: string) (node: XmlNode) =
     if isNull node.Attributes then None
     else
@@ -170,10 +231,22 @@ let attMaybe (nm: string) (node: XmlNode) =
     |> Seq.tryFind (fun a -> a.Name = nm) 
     |> Option.map (fun a -> a.Value) 
 
+/// <summary>
+/// Extracts an XML attribute value from a node, returning an empty string if the attribute doesn't exist.
+/// This is a convenience function for cases where a default empty value is acceptable.
+/// </summary>
+/// <param name="nm">The attribute name to extract</param>
+/// <param name="node">The XML node to extract from</param>
+/// <returns>The attribute value, or empty string if not found</returns>
 let att (nm: string) (node: XmlNode) = 
     attMaybe nm node |> Option.defaultValue ""
 
-/// Parses the xml that is extracted from a .dacpac file.
+/// <summary>
+/// Parses the model.xml content extracted from a SQL Server Data Tools (SSDT) .dacpac file.
+/// Extracts database schema information including tables, views, columns, relationships, and stored procedures.
+/// </summary>
+/// <param name="xml">The XML content from the model.xml file</param>
+/// <returns>A parsed representation of the database schema</returns>
 let parseXml(xml: string) =
     let removeBrackets (s: string) = s.Replace("[", "").Replace("]", "")
 
