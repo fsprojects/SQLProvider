@@ -583,7 +583,7 @@ module DesignTimeUtils =
                                     with
                                     | exn ->
                                         let baseError = exn.GetBaseException()
-                                        failwithf $"Error opening compile-time connection. Connection string: {conString}. Error: {typeof<exn>}, {exn.Message}, inner {baseError.GetType()} {baseError.Message}"
+                                        failwithf $"Error opening compile-time connection. Connection string: {conString}. Error: {exn.GetType()}, {exn.Message}, inner {baseError.GetType()} {baseError.Message}"
                                     prov.CreateTypeMappings con
                                     Some con
                                 | true ->

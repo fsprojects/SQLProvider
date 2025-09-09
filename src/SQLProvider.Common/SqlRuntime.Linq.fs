@@ -713,9 +713,6 @@ module internal QueryImplementation =
                             if isHaving then HavingClause(filter,current)
                             else FilterClause(filter,current)
 
-                    //let ty = typedefof<SqlQueryable<_>>.MakeGenericType(meth.GetGenericArguments().[0])
-                    //ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; sqlExpression; source.TupleIndex; |] :?> IQueryable<_>
-
                     let ty = typeof<SqlQueryable<'T>>
                     Activator.CreateInstance(ty, [| source.DataContext |> box; source.Provider; sqlExpression; source.TupleIndex |]) :?> IQueryable<'T>
                     
@@ -930,14 +927,10 @@ module internal QueryImplementation =
                     Common.QueryEvents.PublishExpression e
                     match e with
                     | MethodCall(None, (MethodWithName "Skip" as meth), [SourceWithQueryData source; Int amount]) ->
-                        //let ty = typedefof<SqlQueryable<_>>.MakeGenericType(meth.GetGenericArguments().[0])
-                        //ty.GetConstructors().[0].Invoke [| source.DataContext ; source.Provider; Skip(amount,source.SqlExpression) ; source.TupleIndex; |] :?> IQueryable<_>
                         let ty = typeof<SqlQueryable<'T>>
                         Activator.CreateInstance(ty, [| source.DataContext |> box; source.Provider; Skip(amount,source.SqlExpression); source.TupleIndex |]) :?> IQueryable<_>
 
                     | MethodCall(None, (MethodWithName "Take" as meth), [SourceWithQueryData source; Int amount]) ->
-                        //let ty = typedefof<SqlQueryable<_>>.MakeGenericType(meth.GetGenericArguments().[0])
-                        //ty.GetConstructors().[0].Invoke [| source.DataContext ; source.Provider; Take(amount,source.SqlExpression) ; source.TupleIndex; |] :?> IQueryable<_>
                         let ty = typeof<SqlQueryable<'T>>
                         Activator.CreateInstance(ty, [| source.DataContext |> box; source.Provider; Take(amount,source.SqlExpression); source.TupleIndex |]) :?> IQueryable<'T>
 
@@ -956,9 +949,6 @@ module internal QueryImplementation =
                                     gbv |> snd |> List.fold(fun exprstate (al,itm) ->
                                         OrderBy(al,itm,ascending,exprstate)) source.SqlExpression
                                | _ ->  OrderBy(alias,key,ascending,source.SqlExpression)
-                        //let ty = typedefof<SqlOrderedQueryable<_>>.MakeGenericType(meth.GetGenericArguments().[0])
-                        //let x = ty.GetConstructors().[0].Invoke [| source.DataContext ; source.Provider; sqlExpression; source.TupleIndex; |]
-                        //x :?> IQueryable<_>
                         let ty = typeof<SqlOrderedQueryable<'T>>
                         Activator.CreateInstance(ty, [| source.DataContext |> box; source.Provider; sqlExpression; source.TupleIndex |]) :?> IQueryable<'T>
 
@@ -982,8 +972,6 @@ module internal QueryImplementation =
                                | _ -> OrderBy(alias,key,ascending,source.SqlExpression)
 
                             Activator.CreateInstance(ty, [| source.DataContext |> box; source.Provider; sqlExpression; source.TupleIndex |]) :?> IQueryable<'T>
-                            //let x = ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; sqlExpression ; source.TupleIndex; |]
-                            //x :?> IQueryable<_>
                         | _ when source.SqlExpression.hasSortBy() ->  failwith (sprintf "'thenBy' operations must come immediately after a 'sortBy' operation in a query")
                         | _ -> // Then by alone works as OrderBy
                             let sqlExpression =
@@ -994,18 +982,12 @@ module internal QueryImplementation =
                                             OrderBy(al,itm,ascending,exprstate)) source.SqlExpression
                                    | _ ->  OrderBy(alias,key,ascending,source.SqlExpression)
                             Activator.CreateInstance(ty, [| source.DataContext |> box; source.Provider; sqlExpression; source.TupleIndex |]) :?> IQueryable<'T>
-                            //let x = ty.GetConstructors().[0].Invoke [| source.DataContext ; source.Provider; sqlExpression; source.TupleIndex; |]
-                            //x :?> IQueryable<_>
                     | MethodCall(None, (MethodWithName "OrderBy" | MethodWithName "OrderByDescending" as meth), [SourceWithQueryData source; OptionalQuote (Lambda([ParamName param], OptionalConvertOrTypeAs (Constant(v,t))))])
                     | MethodCall(None, (MethodWithName "ThenBy" | MethodWithName "ThenByDescending" as meth), [SourceWithQueryData source; OptionalQuote (Lambda([ParamName param], OptionalConvertOrTypeAs (Constant(v,t)))) ]) ->
-                        //let ty = typedefof<SqlOrderedQueryable<_>>.MakeGenericType(meth.GetGenericArguments().[0]) // Sort by constant can be ignored, except it changes the return type
-                        //ty.GetConstructors().[0].Invoke [| source.DataContext ; source.Provider; source.SqlExpression ; source.TupleIndex; |] :?> IQueryable<_>
                         let ty = typeof<SqlOrderedQueryable<'T>>
                         Activator.CreateInstance(ty, [| source.DataContext |> box; source.Provider; source.SqlExpression; source.TupleIndex |]) :?> IQueryable<'T>
                         
                     | MethodCall(None, (MethodWithName "Distinct" as meth), [ SourceWithQueryData source ]) ->
-                        //let ty = typedefof<SqlQueryable<_>>.MakeGenericType(meth.GetGenericArguments().[0])
-                        //ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; Distinct(source.SqlExpression) ; source.TupleIndex; |] :?> IQueryable<_>
                         let ty = typeof<SqlOrderedQueryable<'T>>
                         Activator.CreateInstance(ty, [| source.DataContext |> box; source.Provider; Distinct(source.SqlExpression); source.TupleIndex |]) :?> IQueryable<'T>
 
@@ -1076,11 +1058,6 @@ module internal QueryImplementation =
                                              OuterJoin = isOuter; RelDirection = RelationshipDirection.Parents }
                                 SelectMany(sourceAlias,destAlias,LinkQuery(data),source.SqlExpression)
 
-                        //let ty =
-                        //    match projection with
-                        //        | :? LambdaExpression as meth -> typedefof<SqlQueryable<_>>.MakeGenericType(meth.ReturnType)
-                        //        | _ -> failwith "unsupported projection in join"
-                        //ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; sqlExpression; source.TupleIndex; |] :?> IQueryable<_>
                         let ty = typeof<SqlQueryable<'T>>
                         Activator.CreateInstance(ty, [| source.DataContext |> box; source.Provider; sqlExpression; source.TupleIndex |]) :?> IQueryable<'T>
 
@@ -1117,11 +1094,6 @@ module internal QueryImplementation =
                                              OuterJoin = isOuter; RelDirection = RelationshipDirection.Parents }
                                 SelectMany(sourceAlias,destAlias,LinkQuery(data),source.SqlExpression)
 
-                        //let ty =
-                        //    match projection with
-                        //        | :? LambdaExpression as meth -> typedefof<SqlQueryable<_>>.MakeGenericType(meth.ReturnType)
-                        //        | _ -> failwithf "unsupported projection in join (%O)" projection
-                        //ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; sqlExpression; source.TupleIndex; |] :?> IQueryable<_>
 
                         let ty = typeof<SqlQueryable<'T>>
                         Activator.CreateInstance(ty, [| source.DataContext |> box; source.Provider; sqlExpression; source.TupleIndex |]) :?> IQueryable<'T>
@@ -1138,7 +1110,6 @@ module internal QueryImplementation =
                         let ex = processSelectManys projectionParams.[1].Name inner source.SqlExpression projectionParams source 
                         let ty = typeof<SqlQueryable<'T>>
                         Activator.CreateInstance(ty, [| source.DataContext |> box; source.Provider; ex; source.TupleIndex |]) :?> IQueryable<'T>
-                        //ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; ex; source.TupleIndex;|] :?> IQueryable<_>
 
                     | MethodCall(None, (MethodWithName "Select"), [ SourceWithQueryData source; OptionalQuote (Lambda([ v1 ], _) as lambda) ]) as whole ->
                         let ty = typedefof<SqlQueryable<_>>.MakeGenericType((lambda :?> LambdaExpression).ReturnType )
@@ -1180,7 +1151,6 @@ module internal QueryImplementation =
                             | _ -> failwithf "Unsupported union type: %s" meth.Name
 
 
-                        //ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; Union(utyp,subquery,modified,source.SqlExpression) ; source.TupleIndex; |] :?> IQueryable<_>
                         let ty = typeof<SqlQueryable<'T>>
                         Activator.CreateInstance(ty, [| source.DataContext |> box; source.Provider; Union(utyp,subquery,modified,source.SqlExpression); source.TupleIndex |]) :?> IQueryable<'T>
 
