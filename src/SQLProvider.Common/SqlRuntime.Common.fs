@@ -1100,7 +1100,7 @@ module public OfflineTools =
                             match dummydata.TryGetValue(arg1.ToLower()) with
                             | true, tableData -> createMockEntitiesDc this arg1 tableData
                             | false, _ ->
-                                match dummydata |> Map.toSeq |> Seq.tryFind(fun (k,v) -> k.ToUpper() = arg1.ToUpper()) with
+                                match dummydata |> Map.toSeq |> Seq.tryFind(fun (k,v) -> k.ToUpperInvariant() = arg1.ToUpperInvariant()) with
                                 | Some (k, tableData) -> createMockEntitiesDc this arg1 tableData
                                 | None -> failwith ("Add table to dummydata: " + arg1) 
                     member this.CreateEntity(arg1: string): SqlEntity =

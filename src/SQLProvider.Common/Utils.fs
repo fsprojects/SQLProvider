@@ -270,7 +270,7 @@ module Utilities =
         let prefix2 = alias + "."
         let prefix3 = "`" + alias + "`."
         let prefix4 = alias + "_"
-        let prefix5 = alias.ToUpper() + "_"
+        let prefix5 = alias.ToUpperInvariant() + "_"
         let prefix6 = "\"" + alias + "\"."
         (fun (k:string,v) ->
             if k.StartsWith prefix then

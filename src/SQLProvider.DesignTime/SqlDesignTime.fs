@@ -554,7 +554,7 @@ module DesignTimeUtils =
             let caseInsensitivityCheck =
                 match caseSensitivity with
                 | CaseSensitivityChange.TOLOWER -> (fun (x:string) -> x.ToLower())
-                | CaseSensitivityChange.TOUPPER -> (fun (x:string) -> x.ToUpper())
+                | CaseSensitivityChange.TOUPPER -> (fun (x:string) -> x.ToUpperInvariant())
                 | _ -> id
 
             let conString = ConfigHelpers.tryGetConnectionString false config.ResolutionFolder conStringName connectionString

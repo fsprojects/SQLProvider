@@ -160,10 +160,10 @@ module MSSqlServerSsdt =
         |> Map.ofList
 
     let tryFindMapping (dataType: string) =
-        typeMappingsByName.TryFind (dataType.ToUpper())
+        typeMappingsByName.TryFind (dataType.ToUpperInvariant())
 
     let rec tryFindMappingOrVariant (uddts: SsdtUserDefinedDataType) (dataType: string) =
-        let dataType = dataType.ToUpper()
+        let dataType = dataType.ToUpperInvariant()
         match typeMappingsByName.TryFind dataType with
         | Some tm -> tm
         | None ->

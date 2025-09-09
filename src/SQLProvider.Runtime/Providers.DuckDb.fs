@@ -202,7 +202,7 @@ module DuckDb =
 
         let dbMappings =
             mappings
-            |> List.map (fun m -> (match m.ProviderTypeName with ValueSome x -> x | ValueNone -> "").ToUpper(), m)
+            |> List.map (fun m -> (match m.ProviderTypeName with ValueSome x -> x | ValueNone -> "").ToUpperInvariant(), m)
             |> Map.ofList
 
         typeMappings <- mappings
@@ -589,7 +589,7 @@ type internal DuckDbProvider(resolutionPath, contextSchemaPath, owner:string, re
                         let maxlen =
                             if reader.IsDBNull(2) then ""
                             else reader.GetValue(2).ToString()
-                        let isUnsigned = not(reader.IsDBNull 6) && reader.GetString(6).ToUpper().Contains("UNSIGNED")
+                        let isUnsigned = not(reader.IsDBNull 6) && reader.GetString(6).ToUpperInvariant().Contains("UNSIGNED")
                         let udt = if isUnsigned then dt + " unsigned" else dt
                         match DuckDb.findDbType udt with
                         | Some(m) ->
