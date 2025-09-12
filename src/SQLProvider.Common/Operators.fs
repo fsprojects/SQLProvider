@@ -100,10 +100,8 @@ type SelectOperations =
 module ColumnSchema =
 
     type alias = string
-    /// <summary>
     /// Represents WHERE clause conditions for SQL queries.
     /// Supports complex boolean expressions with AND/OR operators and nested conditions.
-    /// </summary>
     type Condition =
         // this is  (table alias * column name * operator * right hand value ) list  * (the same again list)
         // basically any AND or OR expression can have N terms and can have N nested condition children
@@ -121,10 +119,8 @@ module ColumnSchema =
         /// Expression that cannot be translated to SQL
         | NotSupported of System.Linq.Expressions.Expression
 
-    /// <summary>
     /// Represents SQL functions and operations that can be applied to columns.
     /// These operations are translated to database-specific SQL functions.
-    /// </summary>
     and CanonicalOp =
     //String functions
     /// Extracts a substring from the specified position to the end
@@ -230,9 +226,7 @@ module ColumnSchema =
     /// Casts a value to INTEGER type
     | CastInt
 
-    /// <summary>
     /// Represents a column with optional operations applied to it.
-    /// </summary>
     and SqlColumnType =
     /// A key column used for grouping or joining
     | KeyColumn of string
@@ -241,9 +235,7 @@ module ColumnSchema =
     /// A column used in aggregate operations
     | GroupColumn of AggregateOperation * SqlColumnType
 
-    /// <summary>
     /// Represents either a database column or a constant value in SQL expressions.
-    /// </summary>
     // More recursion, because you mighn want to say e.g.
     // where (x.Substring(x.IndexOf("."), (x.Length-x.IndexOf("."))
     and SqlItemOrColumn =
@@ -252,9 +244,7 @@ module ColumnSchema =
     /// A constant value to be used in SQL expressions
     | SqlConstant of obj
 
-    /// <summary>
     /// Represents parameters for SQL projections (SELECT clause elements).
-    /// </summary>
     type ProjectionParameter =
     /// A direct entity column reference
     | EntityColumn of string
@@ -263,72 +253,52 @@ module ColumnSchema =
 
 // Dummy operators, these are placeholders that are replaced in the expression tree traversal with special server-side operations such as In, Like
 // The operators here are used to force the compiler to statically check against the correct types
-/// <summary>
+
 /// Contains custom SQL operators for use in query expressions.
 /// These operators are translated to their SQL equivalents during query compilation.
-/// </summary>
 [<AutoOpenAttribute>]
 module Operators =
-    /// <summary>
     /// SQL IN operator. Tests if a value exists in a sequence.
-    /// Example: where (customer.Country |=| ["USA"; "Canada"])
-    /// </summary>
-    /// <param name="a">The value to test</param>
-    /// <param name="b">The sequence to search in</param>
-    /// <returns>Always false at compile time - replaced with SQL IN during query execution</returns>
+    /// param a: The value to test
+    /// param b: The sequence to search in
+    /// returns: Always false at compile time - replaced with SQL IN during query execution
     let (|=|) (a:'a) (b:'a seq) = false
     
-    /// <summary>
     /// SQL NOT IN operator. Tests if a value does not exist in a sequence.
-    /// Example: where (customer.Country |<>| ["USA"; "Canada"])
-    /// </summary>
-    /// <param name="a">The value to test</param>
-    /// <param name="b">The sequence to search in</param>
-    /// <returns>Always false at compile time - replaced with SQL NOT IN during query execution</returns>
+    /// param a: The value to test
+    /// param b: The sequence to search in
+    /// returns: Always false at compile time - replaced with SQL NOT IN during query execution
     let (|<>|) (a:'a) (b:'a seq) = false
     
-    /// <summary>
     /// SQL LIKE operator for pattern matching with wildcards.
-    /// Example: where (customer.Name =% "John%")
-    /// </summary>
-    /// <param name="a">The value to test</param>
-    /// <param name="b">The pattern to match (use % and _ as wildcards)</param>
-    /// <returns>Always false at compile time - replaced with SQL LIKE during query execution</returns>
+    /// param a: The value to test
+    /// param b: The pattern to match
+    /// returns: Always false at compile time - replaced with SQL LIKE during query execution
     let (=%) (a:'a) (b:string) = false
     
-    /// <summary>
     /// SQL NOT LIKE operator for negated pattern matching.
-    /// Example: where (customer.Name <>% "John%")
-    /// </summary>
-    /// <param name="a">The value to test</param>
-    /// <param name="b">The pattern to reject</param>
-    /// <returns>Always false at compile time - replaced with SQL NOT LIKE during query execution</returns>
+    /// param a: The value to test
+    /// param b: The pattern to reject
+    /// returns>Always false at compile time - replaced with SQL NOT LIKE during query execution
     let (<>%) (a:'a) (b:string) = false
     
     /// Left join helper function for internal use
     let private leftJoin (a:'a) = a
     
-    /// <summary>
     /// Left outer join operator. Performs a left join on a related table.
-    /// Example: for customer in ctx.Main.Customers do
-    ///          for order in (!!) customer.``main.Orders by CustomerID`` do
-    /// </summary>
-    /// <param name="a">The related table queryable</param>
-    /// <returns>A queryable that performs a left outer join</returns>
+    /// Used after "in" and before the context.tablename
+    /// param a: The related table queryable
+    /// A queryable that performs a left outer join
     let (!!) (a:IQueryable<'a>) = query { for x in a do select (leftJoin x) } 
     
-    /// <summary>
     /// Calculates the standard deviation of numeric values in a column.
     /// Used in aggregate queries with groupBy.
-    /// </summary>
-    /// <param name="a">The column value</param>
-    /// <returns>Always 1m at compile time - replaced with SQL STDDEV during query execution</returns>
+    /// param a: The column value
+    /// returns: Always 1m at compile time - replaced with SQL STDDEV during query execution
     let StdDev (a:'a) = 1m
 
-    /// <summary>
     /// Calculates the variance of numeric values in a column.
     /// Used in aggregate queries with groupBy.
-    /// </summary>
-    /// <param name="a">The column value</param>
-    /// <returns>Always 1m at compile time - replaced with SQL VARIANCE during query execution</returns>
+    /// param a: The column value
+    /// returns: Always 1m at compile time - replaced with SQL VARIANCE during query execution
     let Variance (a:'a) = 1m

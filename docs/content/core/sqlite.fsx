@@ -1,4 +1,4 @@
-﻿(*** hide ***)
+(*** hide ***)
 #I @"../../../bin/lib/netstandard2.0"
 #r "FSharp.Data.SqlProvider.Common.dll"
 #r "FSharp.Data.SqlProvider.dll"
@@ -95,8 +95,10 @@ let customers =
 
 When you do insert operation, after .SubmitUpdates call you can get inserted rowid like this:
 
-*)
-
+```fsharp
 let myCustomer = ctx.Main.Customers.``Create(CompanyName)``("MyCompany")
 ctx.SubmitUpdates()
 let rowid = myCustomer.GetColumn("rowid") : int
+```
+
+*)

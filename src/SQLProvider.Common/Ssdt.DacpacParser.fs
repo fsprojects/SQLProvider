@@ -1,14 +1,12 @@
-/// <summary>
 /// Module for parsing SQL Server Data Tools (SSDT) .dacpac files to extract database schema information.
 /// Provides functionality to read and parse the model.xml file contained within .dacpac packages.
-/// </summary>
 module FSharp.Data.Sql.Ssdt.DacpacParser
 
 open System
 open System.Xml
 open System.IO.Compression
 
-/// <summary>Represents a database table column from SSDT schema.</summary>
+/// Represents a database table column from SSDT schema.
 type [<Struct>] SsdtColumn = {
     /// The fully qualified column name (schema.table.column)
     FullName: string
@@ -28,7 +26,7 @@ type [<Struct>] SsdtColumn = {
     ComputedColumn: bool
 }
 
-/// <summary>Represents a view column from SSDT schema.</summary>
+/// Represents a view column from SSDT schema.
 type [<Struct>] SsdtViewColumn = {
     /// The fully qualified column name
     FullName: string
@@ -36,7 +34,7 @@ type [<Struct>] SsdtViewColumn = {
     ColumnRefPath: string voption
 }
 
-/// <summary>Represents a comment annotation for schema documentation.</summary>
+/// Represents a comment annotation for schema documentation.
 type [<Struct>] CommentAnnotation = {
     /// The column name the annotation applies to
     Column: string
@@ -46,7 +44,7 @@ type [<Struct>] CommentAnnotation = {
     Nullability: string voption
 }
 
-/// <summary>Represents a database view from SSDT schema.</summary>
+/// Represents a database view from SSDT schema.
 type SsdtView = {
     /// The fully qualified view name (schema.view)
     FullName: string
@@ -62,7 +60,7 @@ type SsdtView = {
     Annotations: CommentAnnotation array
 }
 
-/// <summary>Represents a column in a constraint definition.</summary>
+/// Represents a column in a constraint definition.
 type [<Struct>] ConstraintColumn = {
     /// The fully qualified column name
     FullName: string
@@ -70,7 +68,7 @@ type [<Struct>] ConstraintColumn = {
     Name: string
 }
 
-/// <summary>Represents a table reference in relationship definitions.</summary>
+/// Represents a table reference in relationship definitions.
 type RefTable = {
     /// The fully qualified table name
     FullName: string
@@ -82,7 +80,7 @@ type RefTable = {
     Columns: ConstraintColumn array
 }
 
-/// <summary>Represents a foreign key relationship between tables.</summary>
+/// Represents a foreign key relationship between tables.
 type SsdtRelationship = {
     /// The name of the relationship/constraint
     Name: string
@@ -182,12 +180,10 @@ module RegexParsers =
         )
         |> Seq.toArray
     
-/// <summary>
 /// Extracts the model.xml file from a SQL Server Data Tools (SSDT) .dacpac package.
 /// The model.xml contains the complete database schema definition.
-/// </summary>
-/// <param name="dacPacPath">Path to the .dacpac file</param>
-/// <returns>The XML content of the model.xml file as a string</returns>
+/// param dacPacPath: Path to the .dacpac file
+/// returns: The XML content of the model.xml file as a string
 let extractModelXml (dacPacPath: string) = 
     use stream = new IO.FileStream(dacPacPath, IO.FileMode.Open, IO.FileAccess.Read)
     use zip = new ZipArchive(stream, ZipArchiveMode.Read, false)
@@ -196,13 +192,11 @@ let extractModelXml (dacPacPath: string) =
     use rdr = new IO.StreamReader(modelStream)
     rdr.ReadToEnd()
 
-/// <summary>
 /// Creates an XML document with namespace support and returns helper functions for node selection.
 /// This is specifically designed for parsing SSDT model.xml files with their Microsoft namespace.
-/// </summary>
-/// <param name="ns">The XML namespace URI</param>
-/// <param name="xml">The XML content to parse</param>
-/// <returns>A tuple containing (XmlDocument, single node selector function, multiple nodes selector function)</returns>
+/// param ns: The XML namespace URI
+/// param xml: The XML content to parse
+/// returns: A tuple containing (XmlDocument, single node selector function, multiple nodes selector function)
 let toXmlNamespaceDoc ns xml =
     let doc = XmlDocument()
     let nsMgr = XmlNamespaceManager(doc.NameTable)
@@ -217,12 +211,10 @@ let toXmlNamespaceDoc ns xml =
             
     doc, node, nodes    
 
-/// <summary>
 /// Safely extracts an XML attribute value from a node, returning None if the attribute doesn't exist.
-/// </summary>
-/// <param name="nm">The attribute name to extract</param>
-/// <param name="node">The XML node to extract from</param>
-/// <returns>Some(attribute value) if found, None otherwise</returns>
+/// param nm: The attribute name to extract
+/// param node: The XML node to extract from
+/// returns: Some(attribute value) if found, None otherwise
 let attMaybe (nm: string) (node: XmlNode) =
     if isNull node.Attributes then None
     else
@@ -231,22 +223,18 @@ let attMaybe (nm: string) (node: XmlNode) =
     |> Seq.tryFind (fun a -> a.Name = nm) 
     |> Option.map (fun a -> a.Value) 
 
-/// <summary>
 /// Extracts an XML attribute value from a node, returning an empty string if the attribute doesn't exist.
 /// This is a convenience function for cases where a default empty value is acceptable.
-/// </summary>
-/// <param name="nm">The attribute name to extract</param>
-/// <param name="node">The XML node to extract from</param>
-/// <returns>The attribute value, or empty string if not found</returns>
+/// param nm: The attribute name to extract
+/// param node: The XML node to extract from
+/// returns: The attribute value, or empty string if not found
 let att (nm: string) (node: XmlNode) = 
     attMaybe nm node |> Option.defaultValue ""
 
-/// <summary>
 /// Parses the model.xml content extracted from a SQL Server Data Tools (SSDT) .dacpac file.
 /// Extracts database schema information including tables, views, columns, relationships, and stored procedures.
-/// </summary>
-/// <param name="xml">The XML content from the model.xml file</param>
-/// <returns>A parsed representation of the database schema</returns>
+/// param xml: The XML content from the model.xml file
+/// returns: A parsed representation of the database schema
 let parseXml(xml: string) =
     let removeBrackets (s: string) = s.Replace("[", "").Replace("]", "")
 

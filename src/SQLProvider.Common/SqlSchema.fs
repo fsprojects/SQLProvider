@@ -17,10 +17,8 @@ module internal Patterns =
             | _ -> ValueNone
         else ValueNone
 
-/// <summary>
 /// Represents the mapping between database types and .NET CLR types.
 /// Used to translate between database-specific types and .NET types during query execution.
-/// </summary>
 [<Struct>]
 type TypeMapping =
     /// The database provider's specific type name (e.g., "varchar", "int")
@@ -38,10 +36,8 @@ type TypeMapping =
               ProviderTypeName = match providerTypeName with Some x -> ValueSome x | None -> ValueNone
               ProviderType = match providerType with Some x -> ValueSome x | None -> ValueNone }
 
-/// <summary>
 /// Represents a parameter used in SQL queries, stored procedures, or functions.
 /// Contains all metadata needed to properly bind .NET values to database parameters.
-/// </summary>
 [<Struct>]
 type QueryParameter =
     /// The parameter name as used in the SQL query
@@ -62,10 +58,8 @@ type QueryParameter =
               Direction = defaultArg direction ParameterDirection.Input
               Length = match length with Some x -> ValueSome x | None -> ValueNone }
 
-/// <summary>
 /// Represents a database table column with its metadata and characteristics.
 /// Contains all information needed to generate typed properties and handle data conversion.
-/// </summary>
 [<Struct>]
 type Column =
     /// The column name as it appears in the database
@@ -95,13 +89,11 @@ type Column =
               IsComputed = false
               TypeInfo = ValueNone }
 
-/// <summary>Lookup table for quickly finding column information by name.</summary>
+/// Lookup table for quickly finding column information by name.
 type ColumnLookup = Map<string,Column>
 
-/// <summary>
 /// Represents a foreign key relationship between two database tables.
 /// Used for automatic navigation property generation and join optimization.
-/// </summary>
 [<Struct>]
 type Relationship =
     /// A descriptive name for this relationship
@@ -115,10 +107,8 @@ type Relationship =
       /// The column name of the foreign key
       ForeignKey: string }
 
-/// <summary>
 /// Represents the name of a stored procedure, including schema and package information.
 /// Handles different database naming conventions (e.g., Oracle packages, SQL Server schemas).
-/// </summary>
 type SprocName =
     /// The procedure name
     { ProcName: string
@@ -163,10 +153,8 @@ type Sproc =
         typedefof<Sproc>.GetNestedTypes(BindingFlags.Public ||| BindingFlags.NonPublic)
         |> Array.filter Microsoft.FSharp.Reflection.FSharpType.IsUnion
 
-/// <summary>
 /// Represents a database table with its schema information.
 /// Provides methods for generating properly quoted table names for different database providers.
-/// </summary>
 type Table =
     /// The schema name (may be empty for databases that don't use schemas)
     { Schema: string

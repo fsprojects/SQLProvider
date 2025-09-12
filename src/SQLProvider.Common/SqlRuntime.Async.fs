@@ -8,18 +8,14 @@ open FSharp.Data.Sql.Common
 open FSharp.Data.Sql.Patterns
 open System.Linq
 
-/// <summary>
 /// Provides asynchronous operations for SQL queries.
 /// Use these functions when you need to execute queries asynchronously to avoid blocking threads.
-/// </summary>
 module AsyncOperations =
 
-    /// <summary>
     /// Executes a queryable asynchronously and returns the results as a sequence.
     /// This is useful for executing large queries without blocking the calling thread.
-    /// </summary>
-    /// <param name="s">The queryable to execute</param>
-    /// <returns>A task that yields a sequence of results</returns>
+    /// param s: The queryable to execute
+    /// returns: A task that yields a sequence of results
     let executeAsync (s:Linq.IQueryable<'T>) =
         let inline yieldseq (en: IEnumerator<'T>) =
             seq {

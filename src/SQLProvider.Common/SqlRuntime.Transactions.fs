@@ -2,10 +2,8 @@ namespace FSharp.Data.Sql.Transactions
 
 open System
 
-/// <summary>
 /// Transaction isolation level for database operations.
 /// Corresponds to the System.Transactions.IsolationLevel but provides SQL provider specific functionality.
-/// </summary>
 type IsolationLevel =
     /// Highest isolation level - transactions are completely isolated from each other
     | Serializable = 0
@@ -24,10 +22,8 @@ type IsolationLevel =
     /// Special value to indicate that no transaction should be created
     | DontCreateTransaction = 99
 
-/// <summary>
 /// Configuration options for database transactions.
 /// Corresponds to the System.Transactions.TransactionOptions.
-/// </summary>
 [<Struct>]
 type TransactionOptions = {
     /// Maximum time the transaction can remain active before timing out
@@ -36,9 +32,7 @@ type TransactionOptions = {
     IsolationLevel : IsolationLevel
 }
 
-/// <summary>
 /// Utility functions for converting between different transaction isolation level representations.
-/// </summary>
 module TransactionUtils =
     let internal toSystemTransactionsIsolationLevel isolationLevel =
         match isolationLevel with
@@ -51,12 +45,10 @@ module TransactionUtils =
         | IsolationLevel.Unspecified -> System.Transactions.IsolationLevel.Unspecified
         | _ -> failwithf "Unhandled IsolationLevel value: %A." isolationLevel
 
-    /// <summary>
     /// Converts SQL provider isolation level to System.Data.IsolationLevel.
     /// Use this when you need to work directly with ADO.NET connection transactions.
-    /// </summary>
-    /// <param name="isolationLevel">The SQL provider isolation level</param>
-    /// <returns>The corresponding System.Data.IsolationLevel</returns>
+    /// param isolationLevel: The SQL provider isolation level
+    /// returns: The corresponding System.Data.IsolationLevel
     let toSystemDataIsolationLevel isolationLevel =
         match isolationLevel with
         | IsolationLevel.Serializable -> System.Data.IsolationLevel.Serializable
