@@ -285,6 +285,9 @@ on Windows: copy <code>x64</code> and <code>x86</code> subdirectories from SQLit
 <p>If <code>System.Data.SQLite.dll</code> is in the location where NuGet places it by default, you don't have to submit
 the ResolutionPath parameter at all, but you still need to copy the interop libraries as described above.</p>
 <p>If you use Microsoft.Data.Sqlite driver, you still need the physical dll, (in that case e_sqlite3.dll), to be in resolutionPath or folder under operating system PATH variable.</p>
+<h3><a name="Current-build-of-SQLProvider-with-the-dynamic-provider" class="anchor" href="#Current-build-of-SQLProvider-with-the-dynamic-provider">Current build of SQLProvider with the dynamic provider</a></h3>
+<p>If you are building the current system on other platforms like Linux, a tested version of SQLite.Interop.dll can be downloaded from runtimes folder of this NuGet package:
+<a href="https://www.nuget.org/packages/System.Data.SQLite.Core/1.0.113">System.Data.SQLite.Core, 1.0.113</a></p>
 <pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs5', 7)" onmouseover="showTip(event, 'fs5', 7)" class="rt">Literal</span><span class="pn">&gt;]</span>
 <span class="k">let</span> <span onmouseout="hideTip(event, 'fs7', 8)" onmouseover="showTip(event, 'fs7', 8)" class="prop">resolutionPath</span> <span class="o">=</span> <span class="k">__SOURCE_DIRECTORY__</span> <span class="o">+</span> <span class="s">@&quot;/../../../tests/SqlProvider.Tests/libs&quot;</span>
 </code></pre>
@@ -314,9 +317,9 @@ namespace, which has the following members:</p>
 </code></pre>
 <h1><a name="CRUD" class="anchor" href="#CRUD">CRUD</a></h1>
 <p>When you do insert operation, after .SubmitUpdates call you can get inserted rowid like this:</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs27', 36)" onmouseover="showTip(event, 'fs27', 36)" class="id">myCustomer</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs17', 37)" onmouseover="showTip(event, 'fs17', 37)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs20', 38)" onmouseover="showTip(event, 'fs20', 38)" class="prop">Main</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs21', 39)" onmouseover="showTip(event, 'fs21', 39)" class="prop">Customers</span><span class="pn">.</span><span class="id">``Create(CompanyName)``</span><span class="pn">(</span><span class="s">&quot;MyCompany&quot;</span><span class="pn">)</span>
-<span onmouseout="hideTip(event, 'fs17', 40)" onmouseover="showTip(event, 'fs17', 40)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs28', 41)" onmouseover="showTip(event, 'fs28', 41)" class="id">SubmitUpdates</span><span class="pn">(</span><span class="pn">)</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs29', 42)" onmouseover="showTip(event, 'fs29', 42)" class="id">rowid</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs27', 43)" onmouseover="showTip(event, 'fs27', 43)" class="id">myCustomer</span><span class="pn">.</span><span class="id">GetColumn</span><span class="pn">(</span><span class="s">&quot;rowid&quot;</span><span class="pn">)</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs30', 44)" onmouseover="showTip(event, 'fs30', 44)" class="vt">int</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs27', 36)" onmouseover="showTip(event, 'fs27', 36)" class="id">myCustomer</span> <span class="o">=</span> <span class="id">ctx</span><span class="pn">.</span><span class="id">Main</span><span class="pn">.</span><span class="id">Customers</span><span class="pn">.</span><span class="id">``Create(CompanyName)``</span><span class="pn">(</span><span class="s">&quot;MyCompany&quot;</span><span class="pn">)</span>
+<span class="id">ctx</span><span class="pn">.</span><span class="id">SubmitUpdates</span><span class="pn">(</span><span class="pn">)</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs28', 37)" onmouseover="showTip(event, 'fs28', 37)" class="id">rowid</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs27', 38)" onmouseover="showTip(event, 'fs27', 38)" class="id">myCustomer</span><span class="pn">.</span><span class="id">GetColumn</span><span class="pn">(</span><span class="s">&quot;rowid&quot;</span><span class="pn">)</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs29', 39)" onmouseover="showTip(event, 'fs29', 39)" class="vt">int</span>
 </code></pre>
 
         <div class="fsdocs-tip" id="fs1">namespace System</div>
@@ -360,14 +363,22 @@ type DatabaseProviderTypes =
   | MSSQLSERVER_DYNAMIC = 8
   | MSSQLSERVER_SSDT = 9
   | DUCKDB = 10
-  | EXTERNAL = 11</div>
-<div class="fsdocs-tip" id="fs12">Common.DatabaseProviderTypes.SQLITE: Common.DatabaseProviderTypes = 1</div>
+  | EXTERNAL = 11<br /><em>&lt;summary&gt;
+ Specifies the database provider type for the SQL type provider.
+ Each provider has its own specific implementation for SQL generation and data type mapping.
+&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs12">Common.DatabaseProviderTypes.SQLITE: Common.DatabaseProviderTypes = 1<br /><em>&lt;summary&gt;
+ SQLite database using System.Data.SQLite or Microsoft.Data.Sqlite
+&lt;/summary&gt;</em></div>
 <div class="fsdocs-tip" id="fs13">[&lt;Struct&gt;]
 type SQLiteLibrary =
   | SystemDataSQLite = 0
   | MonoDataSQLite = 1
   | AutoSelect = 2
-  | MicrosoftDataSqlite = 3</div>
+  | MicrosoftDataSqlite = 3<br /><em>&lt;summary&gt;
+ Specifies which SQLite library to use for connections.
+ Different libraries may have different capabilities and platform support.
+&lt;/summary&gt;</em></div>
 <div class="fsdocs-tip" id="fs14">Common.SQLiteLibrary.SystemDataSQLite: Common.SQLiteLibrary = 0<br /><em>&lt;summary&gt;
  .NET Framework default
 &lt;/summary&gt;</em></div>
@@ -375,8 +386,12 @@ type SQLiteLibrary =
 type CaseSensitivityChange =
   | ORIGINAL = 0
   | TOUPPER = 1
-  | TOLOWER = 2</div>
-<div class="fsdocs-tip" id="fs16">Common.CaseSensitivityChange.ORIGINAL: Common.CaseSensitivityChange = 0</div>
+  | TOLOWER = 2<br /><em>&lt;summary&gt;
+ Specifies how to handle case sensitivity when generating table and column names.
+&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs16">Common.CaseSensitivityChange.ORIGINAL: Common.CaseSensitivityChange = 0<br /><em>&lt;summary&gt;
+ Keep original casing from the database
+&lt;/summary&gt;</em></div>
 <div class="fsdocs-tip" id="fs17">val ctx: SqlDataProvider&lt;...&gt;.dataContext</div>
 <div class="fsdocs-tip" id="fs18">SqlDataProvider&lt;...&gt;.GetDataContext() : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(selectOperations: SelectOperations) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;selectOperations&#39;&gt;Execute select-clause operations in SQL database rather than .NET-side.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(commandTimeout: int) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;commandTimeout&#39;&gt;SQL command timeout. Maximum time for single SQL-command in seconds.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(transactionOptions: Transactions.TransactionOptions) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;transactionOptions&#39;&gt;TransactionOptions for the transaction created on SubmitChanges.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string, selectOperations: SelectOperations) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;&lt;param name=&#39;selectOperations&#39;&gt;Execute select-clause operations in SQL database rather than .NET-side.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(transactionOptions: Transactions.TransactionOptions, commandTimeout: int) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;transactionOptions&#39;&gt;TransactionOptions for the transaction created on SubmitChanges.&lt;/param&gt;&lt;param name=&#39;commandTimeout&#39;&gt;SQL command timeout. Maximum time for single SQL-command in seconds.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string, commandTimeout: int) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;&lt;param name=&#39;commandTimeout&#39;&gt;SQL command timeout. Maximum time for single SQL-command in seconds.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string, transactionOptions: Transactions.TransactionOptions) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;&lt;param name=&#39;transactionOptions&#39;&gt;TransactionOptions for the transaction created on SubmitChanges.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string, resolutionPath: string) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;&lt;param name=&#39;resolutionPath&#39;&gt;The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types.  Types used in design-time: If no better clue, prefer .NET Standard 2.0 versions. Semicolon to separate multiple.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em></div>
 <div class="fsdocs-tip" id="fs19">val customers: string list</div>
@@ -391,10 +406,9 @@ from Microsoft.FSharp.Collections</div>
 <div class="fsdocs-tip" id="fs24">val c: SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity</div>
 <div class="fsdocs-tip" id="fs25">property SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity.ContactName: string with get, set<br /><em>&lt;summary&gt;ContactName:   nvarchar(30)&lt;/summary&gt;</em></div>
 <div class="fsdocs-tip" id="fs26">val toList: source: &#39;T seq -&gt; &#39;T list</div>
-<div class="fsdocs-tip" id="fs27">val myCustomer: SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity</div>
-<div class="fsdocs-tip" id="fs28">SqlDataProvider&lt;...&gt;.dataContext.SubmitUpdates() : Unit<br /><em>&lt;summary&gt;Save changes to data-source. May throws errors: To deal with non-saved items use GetUpdates() and ClearUpdates().&lt;/summary&gt;</em></div>
-<div class="fsdocs-tip" id="fs29">val rowid: int</div>
-<div class="fsdocs-tip" id="fs30">Multiple items<br />val int: value: &#39;T -&gt; int (requires member op_Explicit)<br /><br />--------------------<br />type int = int32<br /><br />--------------------<br />type int&lt;&#39;Measure&gt; =
+<div class="fsdocs-tip" id="fs27">val myCustomer: obj</div>
+<div class="fsdocs-tip" id="fs28">val rowid: int</div>
+<div class="fsdocs-tip" id="fs29">Multiple items<br />val int: value: &#39;T -&gt; int (requires member op_Explicit)<br /><br />--------------------<br />type int = int32<br /><br />--------------------<br />type int&lt;&#39;Measure&gt; =
   int</div>
 
     </div>
@@ -420,6 +434,11 @@ from Microsoft.FSharp.Collections</div>
   <li class="level-3">
     <a href="#ResolutionPath">
       ResolutionPath
+    </a>
+  </li>
+  <li class="level-3">
+    <a href="#Current-build-of-SQLProvider-with-the-dynamic-provider">
+      Current build of SQLProvider with the dynamic provider
     </a>
   </li>
   <li class="level-3">

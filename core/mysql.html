@@ -411,8 +411,13 @@ type DatabaseProviderTypes =
   | MSSQLSERVER_DYNAMIC = 8
   | MSSQLSERVER_SSDT = 9
   | DUCKDB = 10
-  | EXTERNAL = 11</div>
-<div class="fsdocs-tip" id="fs12">Common.DatabaseProviderTypes.MYSQL: Common.DatabaseProviderTypes = 3</div>
+  | EXTERNAL = 11<br /><em>&lt;summary&gt;
+ Specifies the database provider type for the SQL type provider.
+ Each provider has its own specific implementation for SQL generation and data type mapping.
+&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs12">Common.DatabaseProviderTypes.MYSQL: Common.DatabaseProviderTypes = 3<br /><em>&lt;summary&gt;
+ MySQL using MySql.Data or MySqlConnector provider
+&lt;/summary&gt;</em></div>
 <div class="fsdocs-tip" id="fs13">[&lt;Literal&gt;]
 val resPath: string = &quot;C:\git\SQLProvider\docs\content\core/../../../packages/tests/MySql.Data/lib/net45&quot;</div>
 <div class="fsdocs-tip" id="fs14">[&lt;Literal&gt;]
@@ -423,7 +428,9 @@ val useOptTypes: Common.NullableColumnType = 1</div>
 type NullableColumnType =
   | NO_OPTION = 0
   | OPTION = 1
-  | VALUE_OPTION = 2</div>
+  | VALUE_OPTION = 2<br /><em>&lt;summary&gt;
+ Specifies how to represent nullable database columns in the generated types.
+&lt;/summary&gt;</em></div>
 <div class="fsdocs-tip" id="fs17">Common.NullableColumnType.OPTION: Common.NullableColumnType = 1<br /><em>&lt;summary&gt;
  Option types are Option&amp;lt;_&amp;gt;. (Old true.)
 &lt;/summary&gt;</em></div>

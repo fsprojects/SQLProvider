@@ -496,14 +496,22 @@ type DatabaseProviderTypes =
   | MSSQLSERVER_DYNAMIC = 8
   | MSSQLSERVER_SSDT = 9
   | DUCKDB = 10
-  | EXTERNAL = 11</div>
-<div class="fsdocs-tip" id="fs11">Common.DatabaseProviderTypes.SQLITE: Common.DatabaseProviderTypes = 1</div>
+  | EXTERNAL = 11<br /><em>&lt;summary&gt;
+ Specifies the database provider type for the SQL type provider.
+ Each provider has its own specific implementation for SQL generation and data type mapping.
+&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs11">Common.DatabaseProviderTypes.SQLITE: Common.DatabaseProviderTypes = 1<br /><em>&lt;summary&gt;
+ SQLite database using System.Data.SQLite or Microsoft.Data.Sqlite
+&lt;/summary&gt;</em></div>
 <div class="fsdocs-tip" id="fs12">[&lt;Struct&gt;]
 type SQLiteLibrary =
   | SystemDataSQLite = 0
   | MonoDataSQLite = 1
   | AutoSelect = 2
-  | MicrosoftDataSqlite = 3</div>
+  | MicrosoftDataSqlite = 3<br /><em>&lt;summary&gt;
+ Specifies which SQLite library to use for connections.
+ Different libraries may have different capabilities and platform support.
+&lt;/summary&gt;</em></div>
 <div class="fsdocs-tip" id="fs13">Common.SQLiteLibrary.SystemDataSQLite: Common.SQLiteLibrary = 0<br /><em>&lt;summary&gt;
  .NET Framework default
 &lt;/summary&gt;</em></div>
@@ -511,7 +519,9 @@ type SQLiteLibrary =
 type NullableColumnType =
   | NO_OPTION = 0
   | OPTION = 1
-  | VALUE_OPTION = 2</div>
+  | VALUE_OPTION = 2<br /><em>&lt;summary&gt;
+ Specifies how to represent nullable database columns in the generated types.
+&lt;/summary&gt;</em></div>
 <div class="fsdocs-tip" id="fs15">Common.NullableColumnType.OPTION: Common.NullableColumnType = 1<br /><em>&lt;summary&gt;
  Option types are Option&amp;lt;_&amp;gt;. (Old true.)
 &lt;/summary&gt;</em></div>

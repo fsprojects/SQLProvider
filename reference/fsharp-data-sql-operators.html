@@ -263,7 +263,8 @@
   <div class="fsdocs-xmldoc">
     <div>
       <p class="fsdocs-summary">
-        
+         Contains custom SQL operators for use in query expressions.
+ These operators are translated to their SQL equivalents during query compilation.
       </p>
     </div>
   </div>
@@ -323,25 +324,46 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  a
-                </span>
-                :
-                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.linq.iqueryable-1">IQueryable</a>&lt;'a&gt;</span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.linq.iqueryable-1">IQueryable</a>&lt;'a&gt;</span></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Operators.op_BangBang``1```')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Operators.op_BangBang``1\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Operators.fs#L292-292" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
+                  <p class="fsdocs-summary">
+                     Left outer join operator. Performs a left join on a related table.
+ Used after "in" and before the context.tablename
+ param a: The related table queryable
+ A queryable that performs a left outer join
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    a
+                  </span>
+                  :
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.linq.iqueryable-1">IQueryable</a>&lt;'a&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.linq.iqueryable-1">IQueryable</a>&lt;'a&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
           </td>
         </tr>
         <tr>
@@ -401,11 +423,14 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Operators.op_LessGreaterPercent``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Operators.fs#L159-159" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Operators.fs#L283-283" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
-                     Not Like
+                     SQL NOT LIKE operator for negated pattern matching.
+ param a: The value to test
+ param b: The pattern to reject
+ returns>Always false at compile time - replaced with SQL NOT LIKE during query execution
                   </p>
                 </div>
               </summary>
@@ -496,11 +521,14 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Operators.op_EqualsPercent``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Operators.fs#L157-157" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Operators.fs#L277-277" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
-                     Like
+                     SQL LIKE operator for pattern matching with wildcards.
+ param a: The value to test
+ param b: The pattern to match
+ returns: Always false at compile time - replaced with SQL LIKE during query execution
                   </p>
                 </div>
               </summary>
@@ -591,11 +619,14 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Operators.op_BarLessGreaterBar``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Operators.fs#L155-155" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Operators.fs#L271-271" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
-                     Not In
+                     SQL NOT IN operator. Tests if a value does not exist in a sequence.
+ param a: The value to test
+ param b: The sequence to search in
+ returns: Always false at compile time - replaced with SQL NOT IN during query execution
                   </p>
                 </div>
               </summary>
@@ -677,33 +708,54 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  a
-                </span>
-                :
-                <code>'a</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  b
-                </span>
-                :
-                <code><span>'a&#32;seq</span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code>bool</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Operators.op_BarEqualsBar``1```')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Operators.op_BarEqualsBar``1\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Operators.fs#L265-265" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
+                  <p class="fsdocs-summary">
+                     SQL IN operator. Tests if a value exists in a sequence.
+ param a: The value to test
+ param b: The sequence to search in
+ returns: Always false at compile time - replaced with SQL IN during query execution
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    a
+                  </span>
+                  :
+                  <code>'a</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    b
+                  </span>
+                  :
+                  <code><span>'a&#32;seq</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>bool</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
           </td>
         </tr>
         <tr>
@@ -755,11 +807,14 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Operators.StdDev``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Operators.fs#L165-165" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Operators.fs#L298-298" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
-                     Standard Deviation
+                     Calculates the standard deviation of numeric values in a column.
+ Used in aggregate queries with groupBy.
+ param a: The column value
+ returns: Always 1m at compile time - replaced with SQL STDDEV during query execution
                   </p>
                 </div>
               </summary>
@@ -834,11 +889,14 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Operators.Variance``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Operators.fs#L168-168" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Operators.fs#L304-304" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
-                     Variance
+                     Calculates the variance of numeric values in a column.
+ Used in aggregate queries with groupBy.
+ param a: The column value
+ returns: Always 1m at compile time - replaced with SQL VARIANCE during query execution
                   </p>
                 </div>
               </summary>

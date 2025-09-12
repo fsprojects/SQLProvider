@@ -322,8 +322,13 @@ type DatabaseProviderTypes =
   | MSSQLSERVER_DYNAMIC = 8
   | MSSQLSERVER_SSDT = 9
   | DUCKDB = 10
-  | EXTERNAL = 11</div>
-<div class="fsdocs-tip" id="fs9">Common.DatabaseProviderTypes.MSSQLSERVER: Common.DatabaseProviderTypes = 0</div>
+  | EXTERNAL = 11<br /><em>&lt;summary&gt;
+ Specifies the database provider type for the SQL type provider.
+ Each provider has its own specific implementation for SQL generation and data type mapping.
+&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs9">Common.DatabaseProviderTypes.MSSQLSERVER: Common.DatabaseProviderTypes = 0<br /><em>&lt;summary&gt;
+ Microsoft SQL Server using SqlClient provider
+&lt;/summary&gt;</em></div>
 <div class="fsdocs-tip" id="fs10">[&lt;Literal&gt;]
 val connString: string = &quot;Server=localhost;Database=test;User Id=test;Password=test&quot;</div>
 <div class="fsdocs-tip" id="fs11">[&lt;Literal&gt;]
@@ -336,7 +341,9 @@ val useOptTypes: Common.NullableColumnType = 1</div>
 type NullableColumnType =
   | NO_OPTION = 0
   | OPTION = 1
-  | VALUE_OPTION = 2</div>
+  | VALUE_OPTION = 2<br /><em>&lt;summary&gt;
+ Specifies how to represent nullable database columns in the generated types.
+&lt;/summary&gt;</em></div>
 <div class="fsdocs-tip" id="fs15">Common.NullableColumnType.OPTION: Common.NullableColumnType = 1<br /><em>&lt;summary&gt;
  Option types are Option&amp;lt;_&amp;gt;. (Old true.)
 &lt;/summary&gt;</em></div>

@@ -279,7 +279,8 @@
   <div class="fsdocs-xmldoc">
     <div>
       <p class="fsdocs-summary">
-        
+         Represents WHERE clause conditions for SQL queries.
+ Supports complex boolean expressions with AND/OR operators and nested conditions.
       </p>
     </div>
   </div>
@@ -305,7 +306,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1440', 1440)" onmouseover="showTip(event, '1440', 1440)">
+              <code onmouseout="hideTip(event, '1566', 1566)" onmouseover="showTip(event, '1566', 1566)">
                 <p>
                   <a id="And">
                     <a href="#And">
@@ -314,7 +315,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1440">
+              <div class="fsdocs-tip" id="1566">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>And(<span><span><span>(<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-alias.html">alias</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlcolumntype.html">SqlColumnType</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html">ConditionOperator</a>&#32;*&#32;<span>obj&#32;option</span></span>)</span>&#32;list</span>,&#32;<span><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-condition.html">Condition</a>&#32;list</span>&#32;option</span></span>)</span></code>
@@ -345,30 +346,42 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  Item1
-                </span>
-                :
-                <code><span><span>(<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-alias.html">alias</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlcolumntype.html">SqlColumnType</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html">ConditionOperator</a>&#32;*&#32;<span>obj&#32;option</span></span>)</span>&#32;list</span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  Item2
-                </span>
-                :
-                <code><span><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-condition.html">Condition</a>&#32;list</span>&#32;option</span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Operators.fs#L112-112" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
+                  <p class="fsdocs-summary">
+                     AND condition with a list of terms and optional nested conditions
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    Item1
+                  </span>
+                  :
+                  <code><span><span>(<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-alias.html">alias</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlcolumntype.html">SqlColumnType</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html">ConditionOperator</a>&#32;*&#32;<span>obj&#32;option</span></span>)</span>&#32;list</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    Item2
+                  </span>
+                  :
+                  <code><span><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-condition.html">Condition</a>&#32;list</span>&#32;option</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+            </details>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1441', 1441)" onmouseover="showTip(event, '1441', 1441)">
+              <code onmouseout="hideTip(event, '1567', 1567)" onmouseover="showTip(event, '1567', 1567)">
                 <p>
                   <a id="ConstantFalse">
                     <a href="#ConstantFalse">
@@ -377,7 +390,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1441">
+              <div class="fsdocs-tip" id="1567">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>ConstantFalse</span></code>
@@ -389,11 +402,11 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Operators.fs#L74-74" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Operators.fs#L118-118" class="fsdocs-source-link" title="Source on GitHub">
                 <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
               </a>
               <p class="fsdocs-summary">
-                
+                 Always evaluates to false
               </p>
             </div>
           </td>
@@ -401,7 +414,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1442', 1442)" onmouseover="showTip(event, '1442', 1442)">
+              <code onmouseout="hideTip(event, '1568', 1568)" onmouseover="showTip(event, '1568', 1568)">
                 <p>
                   <a id="ConstantTrue">
                     <a href="#ConstantTrue">
@@ -410,7 +423,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1442">
+              <div class="fsdocs-tip" id="1568">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>ConstantTrue</span></code>
@@ -422,11 +435,11 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Operators.fs#L73-73" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Operators.fs#L116-116" class="fsdocs-source-link" title="Source on GitHub">
                 <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
               </a>
               <p class="fsdocs-summary">
-                
+                 Always evaluates to true
               </p>
             </div>
           </td>
@@ -434,7 +447,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1443', 1443)" onmouseover="showTip(event, '1443', 1443)">
+              <code onmouseout="hideTip(event, '1569', 1569)" onmouseover="showTip(event, '1569', 1569)">
                 <p>
                   <a id="NotSupported">
                     <a href="#NotSupported">
@@ -443,7 +456,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1443">
+              <div class="fsdocs-tip" id="1569">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>NotSupported&#32;<a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></span></code>
@@ -466,22 +479,34 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  Item
-                </span>
-                :
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Operators.fs#L120-120" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
+                  <p class="fsdocs-summary">
+                     Expression that cannot be translated to SQL
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    Item
+                  </span>
+                  :
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+            </details>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1444', 1444)" onmouseover="showTip(event, '1444', 1444)">
+              <code onmouseout="hideTip(event, '1570', 1570)" onmouseover="showTip(event, '1570', 1570)">
                 <p>
                   <a id="Or">
                     <a href="#Or">
@@ -490,7 +515,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1444">
+              <div class="fsdocs-tip" id="1570">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Or(<span><span><span>(<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-alias.html">alias</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlcolumntype.html">SqlColumnType</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html">ConditionOperator</a>&#32;*&#32;<span>obj&#32;option</span></span>)</span>&#32;list</span>,&#32;<span><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-condition.html">Condition</a>&#32;list</span>&#32;option</span></span>)</span></code>
@@ -521,24 +546,36 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  Item1
-                </span>
-                :
-                <code><span><span>(<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-alias.html">alias</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlcolumntype.html">SqlColumnType</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html">ConditionOperator</a>&#32;*&#32;<span>obj&#32;option</span></span>)</span>&#32;list</span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  Item2
-                </span>
-                :
-                <code><span><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-condition.html">Condition</a>&#32;list</span>&#32;option</span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Operators.fs#L114-114" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
+                  <p class="fsdocs-summary">
+                     OR condition with a list of terms and optional nested conditions
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    Item1
+                  </span>
+                  :
+                  <code><span><span>(<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-alias.html">alias</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlcolumntype.html">SqlColumnType</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html">ConditionOperator</a>&#32;*&#32;<span>obj&#32;option</span></span>)</span>&#32;list</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    Item2
+                  </span>
+                  :
+                  <code><span><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-condition.html">Condition</a>&#32;list</span>&#32;option</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+            </details>
           </td>
         </tr>
       </tbody>
@@ -566,7 +603,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1445', 1445)" onmouseover="showTip(event, '1445', 1445)">
+              <code onmouseout="hideTip(event, '1571', 1571)" onmouseover="showTip(event, '1571', 1571)">
                 <p>
                   <a id="IsAnd">
                     <a href="#IsAnd">
@@ -575,7 +612,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1445">
+              <div class="fsdocs-tip" id="1571">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.IsAnd</span></code>
@@ -605,7 +642,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1446', 1446)" onmouseover="showTip(event, '1446', 1446)">
+              <code onmouseout="hideTip(event, '1572', 1572)" onmouseover="showTip(event, '1572', 1572)">
                 <p>
                   <a id="IsConstantFalse">
                     <a href="#IsConstantFalse">
@@ -614,7 +651,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1446">
+              <div class="fsdocs-tip" id="1572">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.IsConstantFalse</span></code>
@@ -644,7 +681,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1447', 1447)" onmouseover="showTip(event, '1447', 1447)">
+              <code onmouseout="hideTip(event, '1573', 1573)" onmouseover="showTip(event, '1573', 1573)">
                 <p>
                   <a id="IsConstantTrue">
                     <a href="#IsConstantTrue">
@@ -653,7 +690,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1447">
+              <div class="fsdocs-tip" id="1573">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.IsConstantTrue</span></code>
@@ -683,7 +720,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1448', 1448)" onmouseover="showTip(event, '1448', 1448)">
+              <code onmouseout="hideTip(event, '1574', 1574)" onmouseover="showTip(event, '1574', 1574)">
                 <p>
                   <a id="IsNotSupported">
                     <a href="#IsNotSupported">
@@ -692,7 +729,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1448">
+              <div class="fsdocs-tip" id="1574">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.IsNotSupported</span></code>
@@ -722,7 +759,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1449', 1449)" onmouseover="showTip(event, '1449', 1449)">
+              <code onmouseout="hideTip(event, '1575', 1575)" onmouseover="showTip(event, '1575', 1575)">
                 <p>
                   <a id="IsOr">
                     <a href="#IsOr">
@@ -731,7 +768,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1449">
+              <div class="fsdocs-tip" id="1575">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.IsOr</span></code>

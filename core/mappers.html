@@ -356,14 +356,22 @@ type DatabaseProviderTypes =
   | MSSQLSERVER_DYNAMIC = 8
   | MSSQLSERVER_SSDT = 9
   | DUCKDB = 10
-  | EXTERNAL = 11</div>
-<div class="fsdocs-tip" id="fs11">Common.DatabaseProviderTypes.SQLITE: Common.DatabaseProviderTypes = 1</div>
+  | EXTERNAL = 11<br /><em>&lt;summary&gt;
+ Specifies the database provider type for the SQL type provider.
+ Each provider has its own specific implementation for SQL generation and data type mapping.
+&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs11">Common.DatabaseProviderTypes.SQLITE: Common.DatabaseProviderTypes = 1<br /><em>&lt;summary&gt;
+ SQLite database using System.Data.SQLite or Microsoft.Data.Sqlite
+&lt;/summary&gt;</em></div>
 <div class="fsdocs-tip" id="fs12">[&lt;Struct&gt;]
 type SQLiteLibrary =
   | SystemDataSQLite = 0
   | MonoDataSQLite = 1
   | AutoSelect = 2
-  | MicrosoftDataSqlite = 3</div>
+  | MicrosoftDataSqlite = 3<br /><em>&lt;summary&gt;
+ Specifies which SQLite library to use for connections.
+ Different libraries may have different capabilities and platform support.
+&lt;/summary&gt;</em></div>
 <div class="fsdocs-tip" id="fs13">Common.SQLiteLibrary.SystemDataSQLite: Common.SQLiteLibrary = 0<br /><em>&lt;summary&gt;
  .NET Framework default
 &lt;/summary&gt;</em></div>
@@ -371,8 +379,12 @@ type SQLiteLibrary =
 type CaseSensitivityChange =
   | ORIGINAL = 0
   | TOUPPER = 1
-  | TOLOWER = 2</div>
-<div class="fsdocs-tip" id="fs15">Common.CaseSensitivityChange.ORIGINAL: Common.CaseSensitivityChange = 0</div>
+  | TOLOWER = 2<br /><em>&lt;summary&gt;
+ Specifies how to handle case sensitivity when generating table and column names.
+&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs15">Common.CaseSensitivityChange.ORIGINAL: Common.CaseSensitivityChange = 0<br /><em>&lt;summary&gt;
+ Keep original casing from the database
+&lt;/summary&gt;</em></div>
 <div class="fsdocs-tip" id="fs16">namespace System</div>
 <div class="fsdocs-tip" id="fs17">type Employee =
   {
@@ -449,7 +461,10 @@ from Microsoft.FSharp.Collections</div>
 <div class="fsdocs-tip" id="fs45">Multiple items<br />type MappedColumnAttribute =
   inherit Attribute
   new: name: string -&gt; MappedColumnAttribute
-  member Name: string<br /><br />--------------------<br />new: name: string -&gt; MappedColumnAttribute</div>
+  member Name: string<br /><em>&lt;summary&gt;
+ Attribute for mapping entity properties to database columns with different names.
+ Use this when your database column name differs from your preferred F# property name.
+&lt;/summary&gt;</em><br /><br />--------------------<br />new: name: string -&gt; MappedColumnAttribute</div>
 <div class="fsdocs-tip" id="fs46">val qry2: Employee3 seq</div>
 <div class="fsdocs-tip" id="fs47">member SqlEntity.MapTo: ?propertyTypeMapping: (string * obj -&gt; obj) -&gt; &#39;a</div>
 <div class="fsdocs-tip" id="fs48">type DesignTimeCommands =

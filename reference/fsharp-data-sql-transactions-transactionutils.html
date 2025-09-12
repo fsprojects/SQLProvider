@@ -263,7 +263,7 @@
   <div class="fsdocs-xmldoc">
     <div>
       <p class="fsdocs-summary">
-        
+         Utility functions for converting between different transaction isolation level representations.
       </p>
     </div>
   </div>
@@ -384,25 +384,46 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  isolationLevel
-                </span>
-                :
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-transactions-isolationlevel.html">IsolationLevel</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.data.isolationlevel">IsolationLevel</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Transactions.TransactionUtils.toSystemDataIsolationLevel`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Transactions.TransactionUtils.toSystemDataIsolationLevel\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Transactions.fs#L52-52" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
+                  <p class="fsdocs-summary">
+                     Converts SQL provider isolation level to System.Data.IsolationLevel.
+ Use this when you need to work directly with ADO.NET connection transactions.
+ param isolationLevel: The SQL provider isolation level
+ returns: The corresponding System.Data.IsolationLevel
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    isolationLevel
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-transactions-isolationlevel.html">IsolationLevel</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.data.isolationlevel">IsolationLevel</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
           </td>
         </tr>
       </tbody>

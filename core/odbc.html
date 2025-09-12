@@ -354,8 +354,13 @@ type DatabaseProviderTypes =
   | MSSQLSERVER_DYNAMIC = 8
   | MSSQLSERVER_SSDT = 9
   | DUCKDB = 10
-  | EXTERNAL = 11</div>
-<div class="fsdocs-tip" id="fs16">Common.DatabaseProviderTypes.ODBC: Common.DatabaseProviderTypes = 6</div>
+  | EXTERNAL = 11<br /><em>&lt;summary&gt;
+ Specifies the database provider type for the SQL type provider.
+ Each provider has its own specific implementation for SQL generation and data type mapping.
+&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs16">Common.DatabaseProviderTypes.ODBC: Common.DatabaseProviderTypes = 6<br /><em>&lt;summary&gt;
+ Generic ODBC provider for various databases
+&lt;/summary&gt;</em></div>
 <div class="fsdocs-tip" id="fs17">val ctx: obj</div>
 <div class="fsdocs-tip" id="fs18">[&lt;Literal&gt;]
 val quotechar: Common.OdbcQuoteCharacter = 0</div>
@@ -366,8 +371,12 @@ type OdbcQuoteCharacter =
   | SQUARE_BRACKETS = 2
   | NO_QUOTES = 3
   | DOUBLE_QUOTES = 4
-  | APHOSTROPHE = 5</div>
-<div class="fsdocs-tip" id="fs20">Common.OdbcQuoteCharacter.DEFAULT_QUOTE: Common.OdbcQuoteCharacter = 0</div>
+  | APHOSTROPHE = 5<br /><em>&lt;summary&gt;
+ Specifies the quote character style for ODBC connections when dealing with table and column names containing spaces or special characters.
+&lt;/summary&gt;</em></div>
+<div class="fsdocs-tip" id="fs20">Common.OdbcQuoteCharacter.DEFAULT_QUOTE: Common.OdbcQuoteCharacter = 0<br /><em>&lt;summary&gt;
+ Use default quoting for the ODBC driver
+&lt;/summary&gt;</em></div>
 <div class="fsdocs-tip" id="fs21">type db2 = obj</div>
 <div class="fsdocs-tip" id="fs22">val ctx2: obj</div>
 <div class="fsdocs-tip" id="fs23">val ctx3: obj</div>
@@ -382,9 +391,12 @@ type IsolationLevel =
   | Chaos = 5
   | Unspecified = 6
   | DontCreateTransaction = 99<br /><em>&lt;summary&gt;
- Corresponds to the System.Transactions.IsolationLevel.
+ Transaction isolation level for database operations.
+ Corresponds to the System.Transactions.IsolationLevel but provides SQL provider specific functionality.
 &lt;/summary&gt;</em></div>
-<div class="fsdocs-tip" id="fs26">Transactions.IsolationLevel.DontCreateTransaction: Transactions.IsolationLevel = 99</div>
+<div class="fsdocs-tip" id="fs26">Transactions.IsolationLevel.DontCreateTransaction: Transactions.IsolationLevel = 99<br /><em>&lt;summary&gt;
+ Special value to indicate that no transaction should be created
+&lt;/summary&gt;</em></div>
 <div class="fsdocs-tip" id="fs27">[&lt;Struct&gt;]
 type TransactionOptions =
   {
@@ -393,6 +405,7 @@ type TransactionOptions =
   }
   member Equals: TransactionOptions * IEqualityComparer -&gt; bool
   static member Default: TransactionOptions<br /><em>&lt;summary&gt;
+ Configuration options for database transactions.
  Corresponds to the System.Transactions.TransactionOptions.
 &lt;/summary&gt;</em></div>
 

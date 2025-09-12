@@ -283,7 +283,8 @@
   <div class="fsdocs-xmldoc">
     <div>
       <p class="fsdocs-summary">
-         Corresponds to the System.Transactions.IsolationLevel.
+         Transaction isolation level for database operations.
+ Corresponds to the System.Transactions.IsolationLevel but provides SQL provider specific functionality.
       </p>
     </div>
   </div>
@@ -310,7 +311,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '2084', 2084)" onmouseover="showTip(event, '2084', 2084)">
+              <code onmouseout="hideTip(event, '2210', 2210)" onmouseover="showTip(event, '2210', 2210)">
                 <p>
                   <a id="Chaos">
                     <a href="#Chaos">
@@ -319,7 +320,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="2084">
+              <div class="fsdocs-tip" id="2210">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>Chaos</code>
@@ -338,21 +339,33 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-transactions-isolationlevel.html">IsolationLevel</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Transactions.fs#L19-19" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
+                  <p class="fsdocs-summary">
+                     Allows any level of isolation, including overlapping changes (SQL Server specific)
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Field type: 
+                  </span>
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-transactions-isolationlevel.html">IsolationLevel</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '2085', 2085)" onmouseover="showTip(event, '2085', 2085)">
+              <code onmouseout="hideTip(event, '2211', 2211)" onmouseover="showTip(event, '2211', 2211)">
                 <p>
                   <a id="DontCreateTransaction">
                     <a href="#DontCreateTransaction">
@@ -361,7 +374,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="2085">
+              <div class="fsdocs-tip" id="2211">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>DontCreateTransaction</code>
@@ -380,21 +393,33 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-transactions-isolationlevel.html">IsolationLevel</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Transactions.fs#L23-23" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
+                  <p class="fsdocs-summary">
+                     Special value to indicate that no transaction should be created
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Field type: 
+                  </span>
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-transactions-isolationlevel.html">IsolationLevel</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '2086', 2086)" onmouseover="showTip(event, '2086', 2086)">
+              <code onmouseout="hideTip(event, '2212', 2212)" onmouseover="showTip(event, '2212', 2212)">
                 <p>
                   <a id="ReadCommitted">
                     <a href="#ReadCommitted">
@@ -403,7 +428,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="2086">
+              <div class="fsdocs-tip" id="2212">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>ReadCommitted</code>
@@ -422,21 +447,33 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-transactions-isolationlevel.html">IsolationLevel</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Transactions.fs#L13-13" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
+                  <p class="fsdocs-summary">
+                     Prevents dirty reads but allows non-repeatable reads and phantom reads (default for most databases)
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Field type: 
+                  </span>
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-transactions-isolationlevel.html">IsolationLevel</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '2087', 2087)" onmouseover="showTip(event, '2087', 2087)">
+              <code onmouseout="hideTip(event, '2213', 2213)" onmouseover="showTip(event, '2213', 2213)">
                 <p>
                   <a id="ReadUncommitted">
                     <a href="#ReadUncommitted">
@@ -445,7 +482,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="2087">
+              <div class="fsdocs-tip" id="2213">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>ReadUncommitted</code>
@@ -464,21 +501,33 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-transactions-isolationlevel.html">IsolationLevel</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Transactions.fs#L15-15" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
+                  <p class="fsdocs-summary">
+                     Allows dirty reads, non-repeatable reads, and phantom reads (fastest but least safe)
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Field type: 
+                  </span>
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-transactions-isolationlevel.html">IsolationLevel</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '2088', 2088)" onmouseover="showTip(event, '2088', 2088)">
+              <code onmouseout="hideTip(event, '2214', 2214)" onmouseover="showTip(event, '2214', 2214)">
                 <p>
                   <a id="RepeatableRead">
                     <a href="#RepeatableRead">
@@ -487,7 +536,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="2088">
+              <div class="fsdocs-tip" id="2214">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>RepeatableRead</code>
@@ -506,21 +555,33 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-transactions-isolationlevel.html">IsolationLevel</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Transactions.fs#L11-11" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
+                  <p class="fsdocs-summary">
+                     Prevents dirty reads and non-repeatable reads, but phantom reads can occur
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Field type: 
+                  </span>
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-transactions-isolationlevel.html">IsolationLevel</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '2089', 2089)" onmouseover="showTip(event, '2089', 2089)">
+              <code onmouseout="hideTip(event, '2215', 2215)" onmouseover="showTip(event, '2215', 2215)">
                 <p>
                   <a id="Serializable">
                     <a href="#Serializable">
@@ -529,7 +590,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="2089">
+              <div class="fsdocs-tip" id="2215">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>Serializable</code>
@@ -548,21 +609,33 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-transactions-isolationlevel.html">IsolationLevel</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Transactions.fs#L9-9" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
+                  <p class="fsdocs-summary">
+                     Highest isolation level - transactions are completely isolated from each other
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Field type: 
+                  </span>
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-transactions-isolationlevel.html">IsolationLevel</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '2090', 2090)" onmouseover="showTip(event, '2090', 2090)">
+              <code onmouseout="hideTip(event, '2216', 2216)" onmouseover="showTip(event, '2216', 2216)">
                 <p>
                   <a id="Snapshot">
                     <a href="#Snapshot">
@@ -571,7 +644,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="2090">
+              <div class="fsdocs-tip" id="2216">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>Snapshot</code>
@@ -590,21 +663,33 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-transactions-isolationlevel.html">IsolationLevel</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Transactions.fs#L17-17" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
+                  <p class="fsdocs-summary">
+                     SQL Server specific - provides statement-level read consistency using versioning
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Field type: 
+                  </span>
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-transactions-isolationlevel.html">IsolationLevel</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '2091', 2091)" onmouseover="showTip(event, '2091', 2091)">
+              <code onmouseout="hideTip(event, '2217', 2217)" onmouseover="showTip(event, '2217', 2217)">
                 <p>
                   <a id="Unspecified">
                     <a href="#Unspecified">
@@ -613,7 +698,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="2091">
+              <div class="fsdocs-tip" id="2217">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>Unspecified</code>
@@ -632,15 +717,27 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-transactions-isolationlevel.html">IsolationLevel</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Transactions.fs#L21-21" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
+                  <p class="fsdocs-summary">
+                     Use the default isolation level of the database
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Field type: 
+                  </span>
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-transactions-isolationlevel.html">IsolationLevel</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
           </td>
         </tr>
       </tbody>
