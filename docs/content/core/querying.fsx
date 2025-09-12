@@ -96,6 +96,50 @@ let itemAsync =
 
 If you consider using asynchronous queries, read more from the [async documentation](async.html).
 
+**)
+
+// Example: Complex 4-table join pattern
+let complexJoinQuery =
+    query {
+        for customer in ctx.Main.Customers do
+        join order in ctx.Main.Orders on (customer.CustomerId = order.CustomerId)
+        join orderDetail in ctx.Main.OrderDetails on (order.OrderId = orderDetail.OrderId)
+        join product in ctx.Main.Products on (orderDetail.ProductId = product.ProductId)
+        where (customer.Country = "USA" && order.OrderDate > DateTime(2023, 1, 1))
+        select (customer.ContactName, order.OrderDate, product.ProductName)
+    }
+
+(**
+
+## Null-handling with queries
+
+If you want to do explicit null-handling, you can use UseOptionTypes static parameter for constructor.
+You have options to generate nullable fields to Option or ValueOption types.
+
+Here is an example:
+
+*)
+type sql2  = SqlDataProvider<
+                Common.DatabaseProviderTypes.SQLITE,
+                connectionString,
+                SQLiteLibrary=Common.SQLiteLibrary.SystemDataSQLite,
+                ResolutionPath = resolutionPath,
+                CaseSensitivityChange = Common.CaseSensitivityChange.ORIGINAL,
+                UseOptionTypes = Common.NullableColumnType.VALUE_OPTION
+            >
+let ctx2 = sql2.GetDataContext()
+let cutoffDate = DateTime.Today.AddDays(-7)
+
+// Example: ValueOption patterns
+let findRecentOrders =
+    query {
+        for order in ctx2.Main.Orders do
+        where (order.ShippedDate.IsSome && order.ShippedDate.Value > cutoffDate)
+        select order
+    }
+
+(**
+
 ## SELECT -clause operations
 
 You can control the execution context of the select-operations by the `GetDataContext` parameter `selectOperations`.

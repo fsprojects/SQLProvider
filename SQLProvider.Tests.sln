@@ -24,8 +24,27 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{D383A6BC-F
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "core", "core", "{C7E85487-91DA-43CE-B343-C54614949C13}"
 	ProjectSection(SolutionItems) = preProject
-		docs\content\general.fsx = docs\content\general.fsx
-		docs\content\oracle.fsx = docs\content\oracle.fsx
+		docs\content\core\composable.fsx = docs\content\core\composable.fsx
+		docs\content\core\constraints-relationships.fsx = docs\content\core\constraints-relationships.fsx
+		docs\content\core\contributing.fsx = docs\content\core\contributing.fsx
+		docs\content\core\crud.fsx = docs\content\core\crud.fsx
+		docs\content\core\general.fsx = docs\content\core\general.fsx
+		docs\content\core\individuals.fsx = docs\content\core\individuals.fsx
+		docs\content\core\mappers.fsx = docs\content\core\mappers.fsx
+		docs\content\core\msaccess.fsx = docs\content\core\msaccess.fsx
+		docs\content\core\mssql.fsx = docs\content\core\mssql.fsx
+		docs\content\core\mssqlssdt.fsx = docs\content\core\mssqlssdt.fsx
+		docs\content\core\mysql.fsx = docs\content\core\mysql.fsx
+		docs\content\core\netstandard.fsx = docs\content\core\netstandard.fsx
+		docs\content\core\odbc.fsx = docs\content\core\odbc.fsx
+		docs\content\core\oracle.fsx = docs\content\core\oracle.fsx
+		docs\content\core\parameters.fsx = docs\content\core\parameters.fsx
+		docs\content\core\postgresql.fsx = docs\content\core\postgresql.fsx
+		docs\content\core\programmability.fsx = docs\content\core\programmability.fsx
+		docs\content\core\querying.fsx = docs\content\core\querying.fsx
+		docs\content\core\sqlite.fsx = docs\content\core\sqlite.fsx
+		docs\content\core\techdetails.fsx = docs\content\core\techdetails.fsx
+		docs\content\core\unittest.fsx = docs\content\core\unittest.fsx
 	EndProjectSection
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "SqlProvider.Tests", "tests\SqlProvider.Tests\SqlProvider.Tests.fsproj", "{B5E56E66-5EE2-4C81-A242-9973AAAE9C99}"

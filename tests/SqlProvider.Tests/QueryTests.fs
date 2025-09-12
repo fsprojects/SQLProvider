@@ -11,7 +11,6 @@ open System
 open FSharp.Data.Sql
 open System.Linq
 open NUnit.Framework
-open System.Linq
 
 [<Literal>]
 let connectionString =  @"Data Source=" + __SOURCE_DIRECTORY__ + @"/db/northwindEF.db;Version=3;Read Only=false;FailIfMissing=True;"
@@ -1747,6 +1746,18 @@ let ``simple async sum with operations 2``() =
         } |> Seq.sumAsync |> Async.AwaitTask |> Async.RunSynchronously
     Assert.That(qry, Is.EqualTo(31886.0M).Within(1.0M))
 
+[<Test>] // Note: Weird bug on SQLite decimal parameter arithmetic, at least on some drivers.
+let ``simple math op``() = 
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for od in dc.Main.OrderDetails do
+            where ((float od.UnitPrice) * (float od.Quantity) > 100.)
+            select (od.OrderId, (float od.UnitPrice) * (float od.Quantity) > 100.)
+        } |> Seq.toArray
+
+    CollectionAssert.IsNotEmpty qry
+
 [<Test>]
 let ``simple averageBy``() = 
     let dc = sql.GetDataContext()
@@ -2043,6 +2054,20 @@ let ``simple select join twice to same table``() =
     Assert.AreEqual("Butte",c1)    
     Assert.AreEqual("Kirkland",c2)    
 
+[<Test>]
+let ``simple select with multiple table joins with 4 tables``() =
+    let dc = sql.GetDataContext()
+    let results =
+        query {
+            for customer in dc.Main.Customers do
+            join order in dc.Main.Orders on (customer.CustomerId = order.CustomerId)
+            join orderDetail in dc.Main.OrderDetails on (order.OrderId = orderDetail.OrderId)
+            join product in dc.Main.Products on (orderDetail.ProductId = product.ProductId)
+            where (customer.Country = "USA")
+            select (customer.ContactName, product.ProductName)
+        } |> Seq.toArray
+    Assert.IsTrue(results.Length >= 0)
+
 [<Test >]
 let ``simple select query async``() = 
     let dc = sql.GetDataContext() 
@@ -2159,6 +2184,18 @@ let ``simple select query async6``() =
      } |> Async.RunSynchronously
     ()
 
+[<Test>]
+let ``simple select query lengthAsync``() =
+    task {
+        let dc = sql.GetDataContext()
+        let! count =
+            query {
+                for customer in dc.Main.Customers do
+                where (customer.Country = "USA")
+                select customer.CustomerId
+            } |> Seq.lengthAsync
+        Assert.IsTrue(count >= 0)
+    }
 
 [<Test >] // Generates COUNT(DISTINCT CustomerId)
 let ``simple select with distinct count async``() =

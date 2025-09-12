@@ -19,6 +19,16 @@
     <IsLinux Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true'">true</IsLinux>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="more\AdvancedQueryTests.fs" />
+    <Compile Include="more\AdvancedQueryTestsWithOpts.fs" />
+    <Compile Include="more\ComplexJoinTests.fs" />
+    <Compile Include="more\NavigationPropertiesTests.fs" />
+    <Compile Include="more\OptionTypesTests.fs" />
+    <Compile Include="more\PerformancePatternTests.fs" />
+    <Compile Include="more\PerformanceTests.fs" />
+    <Compile Include="more\SubqueryCompositionTests.fs" />
+    <Compile Include="more\SupplementaryTests.fs" />
+    <Compile Include="more\ValueOptionTests.fs" />
     <Compile Include="QueryTests.fs" />
     <Compile Include="CrudTests.fs" />
 	<!--<Compile Include="PostgreSQLTests.fs" />-->
