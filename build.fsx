@@ -285,9 +285,11 @@ let setupMssql url saPassword =
     connBuilder.UserID <- "sa"
     connBuilder.DataSource <- url
     connBuilder.Password <- saPassword
+    connBuilder.TrustServerCertificate <- true
 
+    let maxAttempts = if Fake.Core.BuildServer.buildServer = AppVeyor then 60 else 30
     let runCmd query =
-      // We wait up to 30 seconds for MSSQL to be initialized
+      // We wait up to 60 seconds for MSSQL to be initialized
       let rec runCmd' attempt =
         try
           use conn = new SqlConnection(connBuilder.ConnectionString)
@@ -297,8 +299,10 @@ let setupMssql url saPassword =
         with e ->
           printfn "Connection attempt %i: %A" attempt e
           Threading.Thread.Sleep 1000
-          if attempt < 30 then runCmd' (attempt + 1)
-
+          if attempt < maxAttempts then runCmd' (attempt + 1)
+          else
+            printfn "Failed to connect to SQL Server after %i attempts. Last error: %A" maxAttempts e
+            //reraise()
       runCmd' 0
 
     let runScript fileLines =

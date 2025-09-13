@@ -1,3 +1,8 @@
+### 1.5.17 - 14.09.2025
+* DateTimeOffset function translations
+* Faster disposing of commands
+* No reflection on SQLProvider.SQLite if pre-defined library
+
 ### 1.5.16 - 09.09.2025
 * XML documentation updates
 * Minor memory and performance improvements
