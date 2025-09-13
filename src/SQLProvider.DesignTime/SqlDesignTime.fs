@@ -177,6 +177,7 @@ module DesignTimeUtils =
                                 if con.State <> ConnectionState.Open then con.Open()
                                 use reader = com.ExecuteReader()
                                 let ret = (dcDone :> ISqlDataContext).ReadEntities(table.FullName+"_"+pkName, columns, reader)
+                                reader.Close()
                                 if (dbVendor <> DatabaseProviderTypes.MSACCESS) then con.Close()
                                 let mapped = ret |> Array.choose(fun e ->
                                         match (e :> IColumnHolder).GetColumn pkName with

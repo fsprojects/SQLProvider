@@ -232,6 +232,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType:Data
             if con.State <> ConnectionState.Open then con.Open()
             use reader = com.ExecuteReader()
             let entity = (this :> ISqlDataContext).ReadEntities(table.FullName, columns, reader) |> Seq.exactlyOne
+            reader.Close()
             if provider.CloseConnectionAfterQuery then con.Close()
             entity
 

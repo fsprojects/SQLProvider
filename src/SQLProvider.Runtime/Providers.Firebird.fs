@@ -442,12 +442,13 @@ module Firebird =
             | [||] -> let! r = com.ExecuteNonQueryAsync()
                       return Unit
             | [|retCol|] ->
-                use! reader = com.ExecuteReaderAsync()
                 match retCol.TypeMapping.ProviderTypeName with
                 | ValueSome "cursor" ->
+                    use! reader = com.ExecuteReaderAsync()
                     let! r = Sql.dataReaderToArrayAsync reader
                     let result = SingleResultSet(retCol.Name, r)
                     let! _ = reader.NextResultAsync()
+                    if not reader.IsClosed then reader.Close()
                     return result
                 | _ ->
                     match outps |> Array.tryFind (fun (_,p) -> p.ParameterName = retCol.Name) with
@@ -456,6 +457,7 @@ module Firebird =
             | cols ->
                 use! reader = com.ExecuteReaderAsync()
                 let! r = cols |> Array.toList |> Sql.evaluateOneByOne (processReturnColumnAsync reader outps)
+                if not reader.IsClosed then reader.Close()
                 return Set(r)
         }
 

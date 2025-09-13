@@ -347,6 +347,7 @@ module MSSqlServer =
                     let! r = Sql.dataReaderToArrayAsync reader
                     let result = SingleResultSet(retCol.Name, r)
                     let! _ = reader.NextResultAsync()
+                    if not reader.IsClosed then reader.Close()
                     return result
                 | _ ->
                     let! r = com.ExecuteNonQueryAsync()
@@ -356,6 +357,7 @@ module MSSqlServer =
             | cols ->
                 use! reader = com.ExecuteReaderAsync()
                 let! r = cols |> Array.toList |> Sql.evaluateOneByOne (processReturnColumnAsync com reader)
+                if not reader.IsClosed then reader.Close()
                 return Set(r |> List.toArray)
         }
 

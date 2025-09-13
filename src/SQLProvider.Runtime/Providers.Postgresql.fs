@@ -431,6 +431,7 @@ module PostgreSQL =
                         task {
                             use! reader = com.ExecuteReaderAsync()
                             let! r = Sql.dataReaderToArrayAsync reader
+                            if not reader.IsClosed then reader.Close()
                             return SingleResultSet(col.Name, r)
                         }
                     | ValueSome "refcursor" ->
@@ -442,6 +443,7 @@ module PostgreSQL =
                                 com.CommandType <- CommandType.Text
                             use! reader = com.ExecuteReaderAsync()
                             let! r = Sql.dataReaderToArrayAsync reader
+                            if not reader.IsClosed then reader.Close()
                             return SingleResultSet(col.Name, r)
                         }
                     | ValueSome "SETOF refcursor" ->
@@ -454,6 +456,7 @@ module PostgreSQL =
                                 let! r = Sql.dataReaderToArrayAsync reader
                                 results := ResultSet("ReturnValue" + (string !i), r) :: !results
                                 incr(i)
+                            if not reader.IsClosed then reader.Close()
                             return Set(!results)
                         }
                     | _ ->

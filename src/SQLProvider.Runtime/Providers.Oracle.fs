@@ -559,10 +559,11 @@ module internal Oracle =
             | [||] -> let! r = com.ExecuteNonQueryAsync()
                       return Unit
             | [|col|] ->
-                use! reader = com.ExecuteReaderAsync()
                 match col.TypeMapping.ProviderTypeName with
                 | ValueSome "REF CURSOR" -> 
+                    use! reader = com.ExecuteReaderAsync()
                     let! r = Sql.dataReaderToArrayAsync reader
+                    if not reader.IsClosed then reader.Close()
                     return SingleResultSet(col.Name, r)
                 | _ ->
                     match outps |> Array.tryFind (fun (_,p) -> p.ParameterName = col.Name) with

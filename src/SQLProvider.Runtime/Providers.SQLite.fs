@@ -498,6 +498,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                             return result
                         }
                     let! r = cols |> Seq.toList |> Sql.evaluateOneByOne (processReturnColumnAsync)
+                    if not reader.IsClosed then reader.Close()
                     return Set(r |> List.toArray)
             }
 

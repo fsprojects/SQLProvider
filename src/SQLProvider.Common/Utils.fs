@@ -756,7 +756,7 @@ module Sql =
     open System
     open System.Data
 
-    let private collectfunc(reader:IDataReader) = 
+    let inline private collectfunc(reader:IDataReader) = 
         [|
             for i = 0 to reader.FieldCount - 1 do
                 let v = reader.GetValue i // if we would like to swallow unknown types errors: try reader.GetValue(i) with | :? System.IO.FileNotFoundException as ex -> box ex
@@ -780,10 +780,10 @@ module Sql =
             return res |> Seq.toArray
         }
 
-    let dbUnbox<'a> (v:obj) : 'a = 
+    let inline dbUnbox<'a> (v:obj) : 'a = 
         if Convert.IsDBNull(v) then Unchecked.defaultof<'a> else unbox v
     
-    let dbUnboxWithDefault<'a> def (v:obj) : 'a = 
+    let inline dbUnboxWithDefault<'a> def (v:obj) : 'a = 
         if Convert.IsDBNull(v) then def else unbox v
 
     /// Note: SQLProvider reuses the connection through multiple instances, so you can't dispose it here.
