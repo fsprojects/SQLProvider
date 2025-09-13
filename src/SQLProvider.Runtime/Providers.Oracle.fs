@@ -1148,7 +1148,7 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
                 |> Seq.iter(fun e ->
                     match e._State with
                     | Created ->
-                        let cmd = createInsertCommand provider con sb e
+                        use cmd = createInsertCommand provider con sb e
                         Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                         if timeout.IsSome then
                             cmd.CommandTimeout <- timeout.Value
@@ -1163,14 +1163,14 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
                         | false, _ -> ()
                         e._State <- Unchanged
                     | Modified fields ->
-                        let cmd = createUpdateCommand provider con sb e fields
+                        use cmd = createUpdateCommand provider con sb e fields
                         Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                         if timeout.IsSome then
                             cmd.CommandTimeout <- timeout.Value
                         cmd.ExecuteNonQuery() |> ignore
                         e._State <- Unchanged
                     | Delete ->
-                        let cmd = createDeleteCommand provider con sb e
+                        use cmd = createDeleteCommand provider con sb e
                         Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                         if timeout.IsSome then
                             cmd.CommandTimeout <- timeout.Value
@@ -1207,7 +1207,7 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
                         match e._State with
                         | Created ->
                             task {
-                                let cmd = createInsertCommand provider con sb e :?> System.Data.Common.DbCommand
+                                use cmd = createInsertCommand provider con sb e :?> System.Data.Common.DbCommand
                                 Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
@@ -1224,7 +1224,7 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
                             }
                         | Modified fields ->
                             task {
-                                let cmd = createUpdateCommand provider con sb e fields :?> System.Data.Common.DbCommand
+                                use cmd = createUpdateCommand provider con sb e fields :?> System.Data.Common.DbCommand
                                 Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
@@ -1233,7 +1233,7 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
                             }
                         | Delete ->
                             task {
-                                let cmd = createDeleteCommand provider con sb e :?> System.Data.Common.DbCommand
+                                use cmd = createDeleteCommand provider con sb e :?> System.Data.Common.DbCommand
                                 Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value

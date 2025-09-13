@@ -12,8 +12,13 @@ open FSharp.Data.Sql
 open System.Linq
 open NUnit.Framework
 
+// System.Data.Sqlite connection string:
 [<Literal>]
 let connectionString =  @"Data Source=" + __SOURCE_DIRECTORY__ + @"/db/northwindEF.db;Version=3;Read Only=false;FailIfMissing=True;"
+
+// Microsoft.Data.Sqlite connection string:
+//[<Literal>]
+//let connectionString =  @"Data Source=" + __SOURCE_DIRECTORY__ + @"/db/northwindEF.db"
 
 [<Literal>]
 let resolutionPath = __SOURCE_DIRECTORY__ + "/libs"
@@ -22,7 +27,13 @@ let resolutionPath = __SOURCE_DIRECTORY__ + "/libs"
 // Tools -> Extensions and Updates... -> Online -> NUnit Test Adapter for Visual Studio
 // http://nunit.org/index.php?p=vsTestAdapter&r=2.6.4
 
-type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL, ResolutionPath = resolutionPath, SQLiteLibrary=Common.SQLiteLibrary.SystemDataSQLite>
+type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE,
+                           connectionString,
+                           CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL,
+                           ResolutionPath = resolutionPath,
+                           //SQLiteLibrary=Common.SQLiteLibrary.MicrosoftDataSqlite
+                           SQLiteLibrary=Common.SQLiteLibrary.SystemDataSQLite>
+
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %O")
 let inline isNull (x:^T when ^T : not struct) = obj.ReferenceEquals (x, null)   
 
@@ -1746,7 +1757,11 @@ let ``simple async sum with operations 2``() =
         } |> Seq.sumAsync |> Async.AwaitTask |> Async.RunSynchronously
     Assert.That(qry, Is.EqualTo(31886.0M).Within(1.0M))
 
-[<Test>] // Note: Weird bug on SQLite decimal parameter arithmetic, at least on some drivers.
+[<Test>] 
+// Note: 
+// Use float if you try to do any math, don't use decimal.
+// Decimal is by intention of SQL-drivers handled as text to be non-lossy,
+// but that's why you cant do math on SQLite decimals.
 let ``simple math op``() = 
     let dc = sql.GetDataContext()
     let qry = 

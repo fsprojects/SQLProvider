@@ -1,6 +1,15 @@
+// Dynamic
 #r @"../../../bin/lib/net48/FSharp.Data.SqlProvider.Common.dll"
 #r @"../../../bin/lib/net48/FSharp.Data.SqlProvider.dll"
 #r @"../../../packages/tests/Newtonsoft.Json/lib/net45/Newtonsoft.Json.dll"
+
+// Firebird only
+(*
+#I @"../../../bin/firebird/lib/netstandard2.0"
+#r @"../../../bin/firebird/lib/netstandard2.0/FSharp.Data.SqlProvider.Common.dll"
+#r @"../../../bin/firebird/lib/netstandard2.0/FSharp.Data.SqlProvider.Firebird.dll"
+open FSharp.Data.Sql.Firebird
+*)
 
 open System
 open FSharp.Data.Sql.Common

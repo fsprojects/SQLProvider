@@ -1,6 +1,7 @@
 #r "nuget: System.Data.SqlClient"
 #r "nuget: Microsoft.Data.SqlClient"
 
+// Dynamic
 // This is with classic FSI:
 #I @"../../../bin/lib/net48"
 #r @"../../../bin/lib/net48/FSharp.Data.SqlProvider.Common.dll"
@@ -10,12 +11,23 @@
 #r @"../../../bin/lib/netstandard2.1/FSharp.Data.SqlProvider.Common.dll"
 #r @"../../../bin/lib/netstandard2.1/FSharp.Data.SqlProvider.dll"
 
+// Microsoft SqlServer only
+(*
+#r @"../../../bin/mssql/lib/netstandard2.0/FSharp.Data.SqlProvider.Common.dll"
+#r @"../../../bin/mssql/lib/netstandard2.0/FSharp.Data.SqlProvider.MsSql.dll"
+open FSharp.Data.Sql.MsSql
+*)
+
 open System
 open FSharp.Data.Sql
 
 [<Literal>]
 let connStr = @"Data Source=localhost;Initial Catalog=HR; Integrated Security=True; TrustServerCertificate=true"
-//let connStr = "Data Source=SQLSERVER;Initial Catalog=HR;User Id=sa;Password=password; TrustServerCertificate=true"
+
+(*
+[<Literal>]
+let connStr = "Data Source=SQLSERVER;Initial Catalog=HR;User Id=sa;Password=password; TrustServerCertificate=true"
+*)
 
 [<Literal>]
 let resolutionFolder = __SOURCE_DIRECTORY__ + "/../libs"
@@ -24,6 +36,7 @@ FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executin
 
 let processId = System.Diagnostics.Process.GetCurrentProcess().Id;
 
+//type HR = SqlDataProvider<Common.DatabaseProviderTypes.MSSQLSERVER, connStr, ResolutionPath = resolutionFolder>
 type HR = SqlDataProvider<Common.DatabaseProviderTypes.MSSQLSERVER_DYNAMIC, connStr, ResolutionPath = resolutionFolder>
 let ctx = HR.GetDataContext()
 
@@ -31,7 +44,7 @@ type Employee = {
     EmployeeId : int32
     FirstName : string
     LastName : string
-    HireDate : DateTime
+    HireDate : DateTimeOffset
 }
 
 
@@ -70,15 +83,17 @@ let regionsEmptyTable =
         select r
     } |> Seq.toList
 
-//let tableWithNoKey =
-//    query {
-//        for r in ctx.Dbo.Table1 do
-//        select r.Col
-//    } |> Seq.toList
-//
-//let entity = ctx.Table1.Create()
-//entity.Col <- 123uy
-//ctx.SubmitUpdates()
+(*
+let tableWithNoKey =
+    query {
+        for r in ctx.Dbo.Table1 do
+        select r.Col
+    } |> Seq.toList
+
+let entity = ctx.Table1.Create()
+entity.Col <- 123uy
+ctx.SubmitUpdates()
+*)
 
 let salesNamedDavid =
     query {

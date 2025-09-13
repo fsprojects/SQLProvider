@@ -1,6 +1,14 @@
+// Dynamic
 #I @"../../../bin/lib/net48"
 #r @"../../../bin/lib/net48/FSharp.Data.SqlProvider.Common.dll"
 #r @"../../../bin/lib/net48/FSharp.Data.SqlProvider.dll"
+
+// Odbc only
+(*
+#r @"../../../bin/odbc/lib/netstandard2.0/FSharp.Data.SqlProvider.Common.dll"
+#r @"../../../bin/odbc/lib/netstandard2.0/FSharp.Data.SqlProvider.Odbc.dll"
+open FSharp.Data.Sql.Odbc
+*)
 
 open System
 open FSharp.Data.Sql

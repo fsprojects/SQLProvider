@@ -1,8 +1,23 @@
+// Dynamic
 #I @"../../../bin/lib/net48"
 #r @"../../../bin/lib/net48/FSharp.Data.SqlProvider.Common.dll"
 #r @"../../../bin/lib/net48/FSharp.Data.SqlProvider.dll"
 #r @"../../../packages/tests/Newtonsoft.Json/lib/net45/Newtonsoft.Json.dll"
-#r @"../../../packages/tests/System.Threading.Tasks.Extensions/lib/net461/System.Threading.Tasks.Extensions.dll"
+#r @"../../../packages/tests/System.Threading.Tasks.Extensions/lib/net462/System.Threading.Tasks.Extensions.dll"
+
+// MySql only
+(*
+#r @"../../../bin/mysql/lib/netstandard2.0/FSharp.Data.SqlProvider.Common.dll"
+#r @"../../../bin/mysql/lib/netstandard2.0/FSharp.Data.SqlProvider.MySql.dll"
+open FSharp.Data.Sql.MySql
+*)
+
+// MySqlConnector only
+(*
+#r @"../../../bin/mysqlconnector/lib/netstandard2.0/FSharp.Data.SqlProvider.Common.dll"
+#r @"../../../bin/mysqlconnector/lib/netstandard2.0/FSharp.Data.SqlProvider.MySqlConnector.dll"
+open FSharp.Data.Sql.MySqlConnector
+*)
 
 open System
 open FSharp.Data.Sql

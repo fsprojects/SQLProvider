@@ -1,5 +1,14 @@
+
+// Dynamic
 #r @"../../../bin/lib/net48/FSharp.Data.SqlProvider.Common.dll"
 #r @"../../../bin/lib/net48/FSharp.Data.SqlProvider.dll"
+
+// Microsoft Access only
+(*
+#r @"../../../bin\msaccess/lib/netstandard2.0/FSharp.Data.SqlProvider.Common.dll"
+#r @"../../../bin\msaccess/lib/netstandard2.0/FSharp.Data.SqlProvider.MsAccess.dll"
+open FSharp.Data.Sql.MsAccess
+*)
 
 open System
 open System.Linq

@@ -1138,7 +1138,7 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
                 |> Seq.iter(fun e ->
                     match e._State with
                     | Created ->
-                        let cmd = createInsertCommand con sb e
+                        use cmd = createInsertCommand con sb e
                         Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                         if timeout.IsSome then
                             cmd.CommandTimeout <- timeout.Value
@@ -1146,14 +1146,14 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
                         CommonTasks.checkKey schemaCache.PrimaryKeys id e
                         e._State <- Unchanged
                     | Modified fields ->
-                        let cmd = createUpdateCommand con sb e fields
+                        use cmd = createUpdateCommand con sb e fields
                         Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                         if timeout.IsSome then
                             cmd.CommandTimeout <- timeout.Value
                         cmd.ExecuteNonQuery() |> ignore
                         e._State <- Unchanged
                     | Delete ->
-                        let cmd = createDeleteCommand con sb e
+                        use cmd = createDeleteCommand con sb e
                         Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                         if timeout.IsSome then
                             cmd.CommandTimeout <- timeout.Value
@@ -1190,7 +1190,7 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
                         match e._State with
                         | Created ->
                             task {
-                                let cmd = createInsertCommand con sb e :?> System.Data.Common.DbCommand
+                                use cmd = createInsertCommand con sb e :?> System.Data.Common.DbCommand
                                 Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
@@ -1200,7 +1200,7 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
                             }
                         | Modified fields ->
                             task {
-                                let cmd = createUpdateCommand con sb e fields :?> System.Data.Common.DbCommand
+                                use cmd = createUpdateCommand con sb e fields :?> System.Data.Common.DbCommand
                                 Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
@@ -1209,7 +1209,7 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
                             }
                         | Delete ->
                             task {
-                                let cmd = createDeleteCommand con sb e :?> System.Data.Common.DbCommand
+                                use cmd = createDeleteCommand con sb e :?> System.Data.Common.DbCommand
                                 Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value

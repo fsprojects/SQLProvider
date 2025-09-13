@@ -520,7 +520,8 @@ let rec (|SqlColumnGet|_|) (ex:Expression) =
                 | "IndexOf", [String search; SqlColumnGet(al2,col2,typ2) as pe] when integerTypes |> Seq.exists(fun t -> t = pe.Type) -> Some(alias, CanonicalOperation(CanonicalOp.IndexOfStart(SqlConstant search, SqlCol(al2,col2)), col), intType typ)
                 | "IndexOf", [SqlColumnGet(al2,col2,_); SqlColumnGet(al3,col3,typ2) as pe] when integerTypes |> Seq.exists(fun t -> Type.(=)(pe.Type, t)) -> Some(alias, CanonicalOperation(CanonicalOp.IndexOfStart(SqlCol(al2,col2), SqlCol(al3,col3)), col), intType typ)
                 | _ -> None
-            | t when Type.(=)(t, typeof<System.DateTime>) || Type.(=)(t, typeof<Option<System.DateTime>>) || Type.(=)(t, typeof<ValueOption<System.DateTime>>) -> // DateTime functions
+            | t when Type.(=)(t, typeof<System.DateTime>) || Type.(=)(t, typeof<Option<System.DateTime>>) || Type.(=)(t, typeof<ValueOption<System.DateTime>>) || // DateTime functions
+                     Type.(=)(t, typeof<System.DateTimeOffset>) || Type.(=)(t, typeof<Option<System.DateTimeOffset>>) || Type.(=)(t, typeof<ValueOption<System.DateTimeOffset>>) ->
                 match meth.Name, par with
                 | "AddYears", [Int x] -> Some(alias, CanonicalOperation(CanonicalOp.AddYears(SqlConstant(box x)), col), typ)
                 | "AddYears", [SqlColumnGet(al2,col2,typ2) as pe] when integerTypes |> Seq.exists(fun t -> Type.(=)(pe.Type, t)) -> Some(alias, CanonicalOperation(CanonicalOp.AddYears(SqlCol(al2,col2)), col), typ)
@@ -544,7 +545,9 @@ let rec (|SqlColumnGet|_|) (ex:Expression) =
             match propInfo.Name with
             | "Length" -> Some(alias, CanonicalOperation(CanonicalOp.Length, col), intType typ)
             | _ -> None
-        | t when Type.(=)(t, typeof<System.DateTime>) || Type.(=)(t, typeof<Option<System.DateTime>>) || Type.(=)(t, typeof<ValueOption<System.DateTime>>) -> // DateTime functions
+        | t when Type.(=)(t, typeof<System.DateTime>) || Type.(=)(t, typeof<Option<System.DateTime>>) || Type.(=)(t, typeof<ValueOption<System.DateTime>>) ||
+                 Type.(=)(t, typeof<System.DateTimeOffset>) || Type.(=)(t, typeof<Option<System.DateTimeOffset>>) || Type.(=)(t, typeof<ValueOption<System.DateTimeOffset>>)
+                -> // DateTime functions
             match propInfo.Name with
             | "Date" -> Some(alias, CanonicalOperation(CanonicalOp.Date, col), typ)
             | "Year" -> Some(alias, CanonicalOperation(CanonicalOp.Year, col), intType typ)
@@ -557,12 +560,16 @@ let rec (|SqlColumnGet|_|) (ex:Expression) =
         | _ -> None 
     | _, OptionalFSharpOptionValue(PropertyGet(Some(MethodCall(Some(OptionalFSharpOptionValue(SqlColumnGet(alias, col, typ)) as p1), meth, [par])), propInfo)) 
             when (meth.Name = "Subtract" && (Type.(=)(meth.ReturnType, typeof<System.TimeSpan>) || Type.(=)(meth.ReturnType, typeof<Option<System.TimeSpan>>) || Type.(=)(meth.ReturnType, typeof<ValueOption<System.TimeSpan>>)) && 
-                  (Type.(=)(p1.Type, typeof<System.DateTime>) || Type.(=)(p1.Type, typeof<Option<System.DateTime>>) || Type.(=)(p1.Type, typeof<ValueOption<System.DateTime>>))) -> 
+                  (Type.(=)(p1.Type, typeof<System.DateTime>) || Type.(=)(p1.Type, typeof<Option<System.DateTime>>) || Type.(=)(p1.Type, typeof<ValueOption<System.DateTime>>) ||
+                   Type.(=)(p1.Type, typeof<System.DateTimeOffset>) || Type.(=)(p1.Type, typeof<Option<System.DateTimeOffset>>) || Type.(=)(p1.Type, typeof<ValueOption<System.DateTimeOffset>>)
+                        )) -> 
         match propInfo.Name, par with
-        | "Days", (SqlColumnGet(al2,col2,typ2) as pe) when (Type.(=)(pe.Type, typeof<System.DateTime>) || Type.(=)(pe.Type, typeof<Option<System.DateTime>>) || Type.(=)(pe.Type, typeof<ValueOption<System.DateTime>>)) -> Some(alias, CanonicalOperation(CanonicalOp.DateDiffDays(SqlCol(al2,col2)), col), typ)
-        | "Seconds", (SqlColumnGet(al2,col2,typ2) as pe) when (Type.(=)(pe.Type, typeof<System.DateTime>) || Type.(=)(pe.Type, typeof<Option<System.DateTime>>) || Type.(=)(pe.Type, typeof<ValueOption<System.DateTime>>)) -> Some(alias, CanonicalOperation(CanonicalOp.DateDiffSecs(SqlCol(al2,col2)), col), typ)
-        | "Days", Constant(c,t) when Type.(=)(t, typeof<System.DateTime>) -> Some(alias, CanonicalOperation(CanonicalOp.DateDiffDays(SqlConstant(box c)), col), typ)
-        | "Seconds", Constant(c,t) when Type.(=)(t, typeof<System.DateTime>) -> Some(alias, CanonicalOperation(CanonicalOp.DateDiffSecs(SqlConstant(box c)), col), typ)
+        | "Days", (SqlColumnGet(al2,col2,typ2) as pe) when (Type.(=)(pe.Type, typeof<System.DateTime>) || Type.(=)(pe.Type, typeof<Option<System.DateTime>>) || Type.(=)(pe.Type, typeof<ValueOption<System.DateTime>>))
+                                                            || (Type.(=)(pe.Type, typeof<System.DateTimeOffset>) || Type.(=)(pe.Type, typeof<Option<System.DateTimeOffset>>) || Type.(=)(pe.Type, typeof<ValueOption<System.DateTimeOffset>>)) -> Some(alias, CanonicalOperation(CanonicalOp.DateDiffDays(SqlCol(al2,col2)), col), typ)
+        | "Seconds", (SqlColumnGet(al2,col2,typ2) as pe) when (Type.(=)(pe.Type, typeof<System.DateTime>) || Type.(=)(pe.Type, typeof<Option<System.DateTime>>) || Type.(=)(pe.Type, typeof<ValueOption<System.DateTime>>))
+                                                               || (Type.(=)(pe.Type, typeof<System.DateTimeOffset>) || Type.(=)(pe.Type, typeof<Option<System.DateTimeOffset>>) || Type.(=)(pe.Type, typeof<ValueOption<System.DateTimeOffset>>)) -> Some(alias, CanonicalOperation(CanonicalOp.DateDiffSecs(SqlCol(al2,col2)), col), typ)
+        | "Days", Constant(c,t) when Type.(=)(t, typeof<System.DateTime>) || Type.(=)(t, typeof<System.DateTimeOffset>) -> Some(alias, CanonicalOperation(CanonicalOp.DateDiffDays(SqlConstant(box c)), col), typ)
+        | "Seconds", Constant(c,t) when Type.(=)(t, typeof<System.DateTime>) || Type.(=)(t, typeof<System.DateTimeOffset>) -> Some(alias, CanonicalOperation(CanonicalOp.DateDiffSecs(SqlConstant(box c)), col), typ)
         | _ -> None
 
     // Numerical functions
@@ -622,7 +629,10 @@ let rec (|SqlColumnGet|_|) (ex:Expression) =
             | _ -> failwith ("Shouldn't hit " + op.ToString())
 
         if Type.(=)(be.Left.Type, typeof<System.DateTime>) || Type.(=)(be.Right.Type, typeof<System.DateTime>) || Type.(=)(be.Left.Type, typeof<Option<System.DateTime>>) || Type.(=)(be.Right.Type, typeof<Option<System.DateTime>>)
-                || Type.(=)(be.Left.Type, typeof<ValueOption<System.DateTime>>) || Type.(=)(be.Right.Type, typeof<ValueOption<System.DateTime>>) then
+                || Type.(=)(be.Left.Type, typeof<ValueOption<System.DateTime>>) || Type.(=)(be.Right.Type, typeof<ValueOption<System.DateTime>>) ||
+                Type.(=)(be.Left.Type, typeof<System.DateTimeOffset>) || Type.(=)(be.Right.Type, typeof<System.DateTimeOffset>) || Type.(=)(be.Left.Type, typeof<Option<System.DateTimeOffset>>) || Type.(=)(be.Right.Type, typeof<Option<System.DateTimeOffset>>)
+                    || Type.(=)(be.Left.Type, typeof<ValueOption<System.DateTimeOffset>>) || Type.(=)(be.Right.Type, typeof<ValueOption<System.DateTimeOffset>>)
+                then
             // DateTime math operations are not supported directly as they return .NET TimeSpan which is not the clear translation of SQL.
             // You can use functions like .AddHours(), .AddDays(), .Subtract().Days and comparison.
             None
@@ -705,7 +715,8 @@ let rec (|SqlColumnGet|_|) (ex:Expression) =
         | _ -> None
 
     | ExpressionType.Call, (:? MethodCallExpression as e) when e.Method.Name = "Parse" && e.Arguments.Count = 1 && 
-                           (Type.(=)(e.Type, typeof<System.DateTime>) || Type.(=)(e.Type, typeof<Option<System.DateTime>>) || Type.(=)(e.Type, typeof<ValueOption<System.DateTime>>)) ->
+                           (Type.(=)(e.Type, typeof<System.DateTime>) || Type.(=)(e.Type, typeof<Option<System.DateTime>>) || Type.(=)(e.Type, typeof<ValueOption<System.DateTime>>)
+                           || Type.(=)(e.Type, typeof<System.DateTimeOffset>) || Type.(=)(e.Type, typeof<Option<System.DateTimeOffset>>) || Type.(=)(e.Type, typeof<ValueOption<System.DateTimeOffset>>)) ->
         // Don't do any magic, just: DateTime.Parse('2000-01-01') -> '2000-01-01'
         match e.Arguments.[0] with
         | SqlColumnGet(alias, col, typ) when Type.(=)(typ, typeof<String>) || Type.(=)(typ, typeof<Option<String>>) || Type.(=)(typ, typeof<ValueOption<String>>) 

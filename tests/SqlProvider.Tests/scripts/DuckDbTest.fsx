@@ -4,9 +4,18 @@
 // Or if you are doing a project, not a script, reference you can reference them like usual and you should be fine...
 #r "nuget: DuckDB.NET.Data.Full"
 
+// Dynamic
 #I @"../../../bin/lib/net48"
 #r @"../../../bin/lib/net48/FSharp.Data.SqlProvider.Common.dll"
 #r @"../../../bin/lib/net48/FSharp.Data.SqlProvider.dll"
+
+// DuckDb only
+(*
+#I @"../../../bin/duckdb/lib/netstandard2.0"
+#r @"../../../bin/duckdb/lib/netstandard2.0/FSharp.Data.SqlProvider.Common.dll"
+#r @"../../../bin/duckdb/lib/netstandard2.0/FSharp.Data.SqlProvider.DuckDb.dll"
+open FSharp.Data.Sql.DuckDb
+*)
 
 // Note: In Windows you need to install first: https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist
 

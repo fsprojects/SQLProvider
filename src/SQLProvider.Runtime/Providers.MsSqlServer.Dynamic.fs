@@ -1208,7 +1208,7 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
                 |> Seq.iter(fun e ->
                     match e._State with
                     | Created ->
-                        let cmd = createInsertCommand con sb e :?> System.Data.Common.DbCommand
+                        use cmd = createInsertCommand con sb e :?> System.Data.Common.DbCommand
                         Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                         if timeout.IsSome then
                             cmd.CommandTimeout <- timeout.Value
@@ -1216,14 +1216,14 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
                         CommonTasks.checkKey schemaCache.PrimaryKeys id e
                         e._State <- Unchanged
                     | Modified fields ->
-                        let cmd = createUpdateCommand con sb e fields :?> System.Data.Common.DbCommand
+                        use cmd = createUpdateCommand con sb e fields :?> System.Data.Common.DbCommand
                         Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                         if timeout.IsSome then
                             cmd.CommandTimeout <- timeout.Value
                         cmd.ExecuteNonQuery() |> ignore
                         e._State <- Unchanged
                     | Delete ->
-                        let cmd = createDeleteCommand con sb e :?> System.Data.Common.DbCommand
+                        use cmd = createDeleteCommand con sb e :?> System.Data.Common.DbCommand
                         Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                         if timeout.IsSome then
                             cmd.CommandTimeout <- timeout.Value
@@ -1258,7 +1258,7 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
                         match e._State with
                         | Created ->
                             task {
-                                let cmd = createInsertCommand con sb e :?> System.Data.Common.DbCommand
+                                use cmd = createInsertCommand con sb e :?> System.Data.Common.DbCommand
                                 Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
@@ -1268,7 +1268,7 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
                             }
                         | Modified fields ->
                             task {
-                                let cmd = createUpdateCommand con sb e fields :?> System.Data.Common.DbCommand
+                                use cmd = createUpdateCommand con sb e fields :?> System.Data.Common.DbCommand
                                 Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
@@ -1277,7 +1277,7 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
                             }
                         | Delete ->
                             task {
-                                let cmd = createDeleteCommand con sb e :?> System.Data.Common.DbCommand
+                                use cmd = createDeleteCommand con sb e :?> System.Data.Common.DbCommand
                                 Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value

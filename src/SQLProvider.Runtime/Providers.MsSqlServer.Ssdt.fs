@@ -869,7 +869,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                 |> Seq.iter(fun e ->
                     match e._State with
                     | Created ->
-                        let cmd = createInsertCommand con sb e
+                        use cmd = createInsertCommand con sb e
                         Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                         if timeout.IsSome then
                             cmd.CommandTimeout <- timeout.Value
@@ -877,14 +877,14 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                         CommonTasks.checkKey schemaCache.PrimaryKeys id e
                         e._State <- Unchanged
                     | Modified fields ->
-                        let cmd = createUpdateCommand con sb e fields
+                        use cmd = createUpdateCommand con sb e fields
                         Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                         if timeout.IsSome then
                             cmd.CommandTimeout <- timeout.Value
                         cmd.ExecuteNonQuery() |> ignore
                         e._State <- Unchanged
                     | Delete ->
-                        let cmd = createDeleteCommand con sb e
+                        use cmd = createDeleteCommand con sb e
                         Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                         if timeout.IsSome then
                             cmd.CommandTimeout <- timeout.Value
@@ -921,7 +921,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                         match e._State with
                         | Created ->
                             task {
-                                let cmd = createInsertCommand con sb e
+                                use cmd = createInsertCommand con sb e
                                 Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
@@ -931,7 +931,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                             }
                         | Modified fields ->
                             task {
-                                let cmd = createUpdateCommand con sb e fields
+                                use cmd = createUpdateCommand con sb e fields
                                 Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
@@ -940,7 +940,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                             }
                         | Delete ->
                             task {
-                                let cmd = createDeleteCommand con sb e
+                                use cmd = createDeleteCommand con sb e
                                 Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value

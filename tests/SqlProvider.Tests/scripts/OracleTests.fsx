@@ -1,7 +1,15 @@
+// Dynamic
 #I @"../../../bin/lib/net48"
 #r @"../../../bin/lib/net48/FSharp.Data.SqlProvider.Common.dll"
 #r @"../../../bin/lib/net48/FSharp.Data.SqlProvider.dll"
 #r @"../libs/Oracle.ManagedDataAccess.dll"
+
+// Oracle only
+(*
+#r @"../../../bin/oracle/lib/netstandard2.0/FSharp.Data.SqlProvider.Common.dll"
+#r @"../../../bin/oracle/lib/netstandard2.0/FSharp.Data.SqlProvider.Oracle.dll"
+open FSharp.Data.Sql.Oracle
+*)
 
 open System
 open FSharp.Data.Sql

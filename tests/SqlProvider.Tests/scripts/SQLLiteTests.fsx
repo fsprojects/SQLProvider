@@ -1,8 +1,16 @@
+open System
+
+// SQLite only:
+(*
+#I @"../../../bin/sqlite/lib/netstandard2.0"
+#r "FSharp.Data.SqlProvider.Common.dll"
+#r "FSharp.Data.SqlProvider.SQLite.dll"
+open FSharp.Data.Sql.SQLite
+*)
+
+// Dynamic:
 #r @"../../../bin/lib/net48/FSharp.Data.SqlProvider.Common.dll"
 #r @"../../../bin/lib/net48/FSharp.Data.SqlProvider.dll"
-
-open System
-open FSharp.Data.Sql
 
 [<Literal>]
 let connectionString = @"Data Source=" + __SOURCE_DIRECTORY__ + @"/northwindEF.db;Version=3"
@@ -14,7 +22,13 @@ let resolutionPath = __SOURCE_DIRECTORY__ + "/../libs"
 open FSharp.Data.Sql
 
 
-type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, ResolutionPath = resolutionPath, CaseSensitivityChange = Common.CaseSensitivityChange.ORIGINAL>
+type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE,
+                           connectionString,
+                           ResolutionPath = resolutionPath,
+                           CaseSensitivityChange = Common.CaseSensitivityChange.ORIGINAL,
+                           //SQLiteLibrary=Common.SQLiteLibrary.MicrosoftDataSqlite
+                           SQLiteLibrary=Common.SQLiteLibrary.SystemDataSQLite
+                           >
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %O")
 
 let ctx = sql.GetDataContext()
@@ -121,7 +135,15 @@ let query2 =
     |> Seq.toArray
 
 
-type sqlOpt = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, ResolutionPath = resolutionPath, CaseSensitivityChange = Common.CaseSensitivityChange.ORIGINAL, UseOptionTypes=FSharp.Data.Sql.Common.NullableColumnType.OPTION>
+type sqlOpt = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE,
+                              connectionString,
+                              ResolutionPath = resolutionPath,
+                              CaseSensitivityChange = Common.CaseSensitivityChange.ORIGINAL,
+                              UseOptionTypes=FSharp.Data.Sql.Common.NullableColumnType.OPTION,
+                              //SQLiteLibrary=Common.SQLiteLibrary.MicrosoftDataSqlite
+                              SQLiteLibrary=Common.SQLiteLibrary.SystemDataSQLite
+                              >
+
 let ctxOpt = sqlOpt.GetDataContext()
 let ``none option in left join`` =
         query {

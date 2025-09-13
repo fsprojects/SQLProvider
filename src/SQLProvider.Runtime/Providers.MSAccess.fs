@@ -683,7 +683,7 @@ type internal MSAccessProvider(contextSchemaPath) =
                     |> Seq.iter(fun e ->
                         match e._State with
                         | Created ->
-                            let cmd = createInsertCommand con sb e
+                            use cmd = createInsertCommand con sb e
                             cmd.Transaction <- trnsx :?> OleDbTransaction
                             Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                             if timeout.IsSome then
@@ -692,7 +692,7 @@ type internal MSAccessProvider(contextSchemaPath) =
                             CommonTasks.checkKey schemaCache.PrimaryKeys id e
                             e._State <- Unchanged
                         | Modified fields ->
-                            let cmd = createUpdateCommand con sb e fields
+                            use cmd = createUpdateCommand con sb e fields
                             cmd.Transaction <- trnsx :?> OleDbTransaction
                             Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                             if timeout.IsSome then
@@ -700,7 +700,7 @@ type internal MSAccessProvider(contextSchemaPath) =
                             cmd.ExecuteNonQuery() |> ignore
                             e._State <- Unchanged
                         | Delete ->
-                            let cmd = createDeleteCommand con sb e
+                            use cmd = createDeleteCommand con sb e
                             cmd.Transaction <- trnsx :?> OleDbTransaction
                             Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                             if timeout.IsSome then
@@ -742,7 +742,7 @@ type internal MSAccessProvider(contextSchemaPath) =
                             match e._State with
                             | Created ->
                                 task {
-                                    let cmd = createInsertCommand con sb e
+                                    use cmd = createInsertCommand con sb e
                                     cmd.Transaction <- trnsx :?> OleDbTransaction
                                     Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                                     if timeout.IsSome then
@@ -753,7 +753,7 @@ type internal MSAccessProvider(contextSchemaPath) =
                                 }
                             | Modified fields ->
                                 task {
-                                    let cmd = createUpdateCommand con sb e fields
+                                    use cmd = createUpdateCommand con sb e fields
                                     cmd.Transaction <- trnsx :?> OleDbTransaction
                                     Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                                     if timeout.IsSome then
@@ -763,7 +763,7 @@ type internal MSAccessProvider(contextSchemaPath) =
                                 }
                             | Delete ->
                                 task {
-                                    let cmd = createDeleteCommand con sb e
+                                    use cmd = createDeleteCommand con sb e
                                     cmd.Transaction <- trnsx :?> OleDbTransaction
                                     Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                                     if timeout.IsSome then

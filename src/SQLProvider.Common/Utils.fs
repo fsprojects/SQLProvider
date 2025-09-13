@@ -107,6 +107,7 @@ module Utilities =
             | :? DateTimeOffset as t -> Option.Some t |> box
             | :? TimeSpan as t -> Option.Some t |> box
             | :? bigint as t -> Option.Some t |> box
+            | :? Guid as t -> Option.Some t |> box
             | t ->
                 if isCOpt (t.GetType()) then t |> box
                 else Option.Some t |> box
@@ -132,6 +133,7 @@ module Utilities =
             | :? DateTimeOffset as t -> ValueOption.Some t |> box
             | :? TimeSpan as t -> ValueOption.Some t |> box
             | :? bigint as t -> ValueOption.Some t |> box
+            | :? Guid as t -> ValueOption.Some t |> box
             | t ->
                 if isVOpt (t.GetType()) then t|> box
                 else ValueOption.Some t |> box
@@ -146,26 +148,7 @@ module Utilities =
             | :? string as s -> true, s
             | _ -> false, ""
 
-        match ok, returnType with
-        | true, t when Type.(=) (t, typeof<String>) -> s |> box
-        | true, t when Type.(=) (t, typeof<Int32>) && Int32.TryParse s |> fst -> Int32.Parse s |> box
-        | true, t when Type.(=) (t, typeof<Decimal>) && Decimal.TryParse s |> fst -> Decimal.Parse s |> box
-        | true, t when Type.(=) (t, typeof<Int64>) && Int64.TryParse s |> fst -> Int64.Parse s |> box
-        | true, t when Type.(=) (t, typeof<Single>) && Single.TryParse s |> fst -> Single.Parse s |> box
-        | true, t when Type.(=) (t, typeof<UInt32>) && UInt32.TryParse s |> fst -> UInt32.Parse s |> box
-        | true, t when Type.(=) (t, typeof<Double>) && Double.TryParse s |> fst -> Double.Parse s |> box
-        | true, t when Type.(=) (t, typeof<UInt64>) && UInt64.TryParse s |> fst -> UInt64.Parse s |> box
-        | true, t when Type.(=) (t, typeof<Int16>) && Int16.TryParse s |> fst -> Int16.Parse s |> box
-        | true, t when Type.(=) (t, typeof<UInt16>) && UInt16.TryParse s |> fst -> UInt16.Parse s |> box
-        | true, t when Type.(=) (t, typeof<DateTime>) && DateTime.TryParse s |> fst -> DateTime.Parse s |> box
-        | true, t when Type.(=) (t, typeof<Boolean>) && Boolean.TryParse s |> fst -> Boolean.Parse s |> box
-        | true, t when Type.(=) (t, typeof<Byte>) && Byte.TryParse s |> fst -> Byte.Parse s |> box
-        | true, t when Type.(=) (t, typeof<SByte>) && SByte.TryParse s |> fst -> SByte.Parse s |> box
-        | true, t when Type.(=) (t, typeof<Char>) && Char.TryParse s |> fst -> Char.Parse s |> box
-        | true, t when Type.(=) (t, typeof<DateTimeOffset>) && DateTimeOffset.TryParse s |> fst -> DateTimeOffset.Parse s |> box
-        | true, t when Type.(=) (t, typeof<TimeSpan>) && TimeSpan.TryParse s |> fst -> TimeSpan.Parse s |> box
-        | true, t when Type.(=) (t, typeof<bigint>) && Numerics.BigInteger.TryParse s |> fst -> bigint.Parse s |> box
-        | _ -> 
+        if not ok then
             if Type.(=) (returnType, typeof<String>) then Convert.ToString itm |> box
             elif Type.(=) (returnType, typeof<Int32>) then Convert.ToInt32 itm |> box
             elif Type.(=) (returnType, typeof<Decimal>) then Convert.ToDecimal itm |> box
@@ -182,6 +165,66 @@ module Utilities =
             elif Type.(=) (returnType, typeof<SByte>) then Convert.ToSByte itm |> box
             elif Type.(=) (returnType, typeof<Char>) then Convert.ToChar itm |> box
             else itm |> box
+        else
+
+        if Type.(=) (returnType, typeof<String>) then s |> box
+        elif Type.(=) (returnType, typeof<Int32>) then
+            let ok, x = Int32.TryParse s
+            if ok then box x else Convert.ToInt32 itm |> box
+        elif Type.(=) (returnType, typeof<Decimal>) then 
+            let ok, x = Decimal.TryParse s
+            if ok then box x else Convert.ToDecimal itm |> box
+        elif Type.(=) (returnType, typeof<Int64>) then
+            let ok, x = Int64.TryParse s
+            if ok then box x else Convert.ToInt64 itm |> box
+        elif Type.(=) (returnType, typeof<Single>) then 
+            let ok, x = Single.TryParse s
+            if ok then box x else Convert.ToSingle itm |> box
+        elif Type.(=) (returnType, typeof<UInt32>) then 
+            let ok, x = UInt32.TryParse s
+            if ok then box x else Convert.ToUInt32 itm |> box
+        elif Type.(=) (returnType, typeof<Double>) then 
+            let ok, x = Double.TryParse s
+            if ok then box x else Convert.ToDouble itm |> box
+        elif Type.(=) (returnType, typeof<UInt64>) then 
+            let ok, x = UInt64.TryParse s
+            if ok then box x else Convert.ToUInt64 itm |> box
+        elif Type.(=) (returnType, typeof<Int16>) then 
+            let ok, x = Int16.TryParse s
+            if ok then box x else Convert.ToInt16 itm |> box
+        elif Type.(=) (returnType, typeof<UInt16>) then 
+            let ok, x = UInt16.TryParse s
+            if ok then box x else Convert.ToUInt16 itm |> box
+        elif Type.(=) (returnType, typeof<DateTime>) then 
+            let ok, x = DateTime.TryParse s
+            if ok then box x else Convert.ToDateTime itm |> box
+        elif Type.(=) (returnType, typeof<Boolean>) then 
+            let ok, x = Boolean.TryParse s
+            if ok then box x else Convert.ToBoolean itm |> box
+        elif Type.(=) (returnType, typeof<Byte>) then 
+            let ok, x = Byte.TryParse s
+            if ok then box x else Convert.ToByte itm |> box
+        elif Type.(=) (returnType, typeof<SByte>) then 
+            let ok, x = SByte.TryParse s
+            if ok then box x else Convert.ToSByte itm |> box
+        elif Type.(=) (returnType, typeof<Char>) then 
+            let ok, x = Char.TryParse s
+            if ok then box x else Convert.ToChar itm |> box
+        elif Type.(=) (returnType, typeof<DateTimeOffset>) then
+            let ok, x = DateTimeOffset.TryParse s
+            if ok then box x else itm |> box
+        elif Type.(=) (returnType, typeof<TimeSpan>) then 
+            let ok, x = TimeSpan.TryParse s
+            if ok then box x else itm |> box
+        elif Type.(=) (returnType, typeof<bigint>) then 
+            let ok, x = Numerics.BigInteger.TryParse s
+            if ok then box x else itm |> box
+        elif Type.(=) (returnType, typeof<Guid>) then 
+            let ok, x = Guid.TryParse s
+            if ok then box x else itm |> box
+        else
+            itm |> box
+
 
     /// Standard SQL. Provider spesific overloads can be done before this.
     let genericFieldNotation (recursionBase:SqlColumnType->string) (colSprint:string->string) = function

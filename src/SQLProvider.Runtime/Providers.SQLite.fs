@@ -42,8 +42,8 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                 "System.Double","double",8
                 "System.Decimal","money",7
                 "System.Decimal","currency",7
-                "System.Decimal","decimal",7
                 "System.Decimal","numeric",7
+                "System.Decimal","decimal",7 // Note: real would be lossy.".
                 "System.Boolean","bit",3
                 "System.Boolean","yesno",3
                 "System.Boolean","logical",3
@@ -55,7 +55,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                 "System.Int64","autoincrement",12
                 "System.Int64","identity",12
                 "System.Int64","long",12
-                "System.Int64","bigint",12
+                "System.Numerics.BigInteger","bigint",12
                 "System.Byte[]","binary",1
                 "System.Byte[]","varbinary",1
                 "System.Byte[]","blob",1
@@ -77,12 +77,13 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                 "System.DateTime","timestamp",6
                 "System.DateTime","date",6
                 "System.DateTime","time",6
+                //"System.DateTimeOffset","date",6 // or text?
                 "System.Guid","uniqueidentifier",4
                 "System.Guid","guid",4 ] |> List.iter(addrow)
             dt
         | "Tables" -> updateDataTableByTableOrView "table"
         | "Views" -> updateDataTableByTableOrView "view"
-        | "ForeignKeys" ->
+        | "ForeignKeys" -> 
             let tablequery = "SELECT name as TABLE_NAME FROM sqlite_master WHERE type='table';"
             let tables =
                 use com = (this:>ISqlProvider).CreateCommand(conn,tablequery)
@@ -205,7 +206,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
             | false -> sprintf "'[%s].[%s]'" al
         Utilities.genericAliasNotation aliasSprint col
 
-    let getSchema name conn =
+    let getSchema name (conn:IDbConnection) =
         match sqliteLibrary with
         | SQLiteLibrary.MicrosoftDataSqlite -> customGetSchema name conn
         | SQLiteLibrary.AutoSelect ->
@@ -213,6 +214,10 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
             customGetSchema name conn
 #else
             getSchemaMethod.Value.Invoke(conn,[|name|]) :?> DataTable
+#endif
+#if !REFLECTIONLOAD
+        | SQLiteLibrary.SystemDataSQLite ->
+            (conn :?> System.Data.SQLite.SQLiteConnection).GetSchema(name)
 #endif
         | _ ->
             getSchemaMethod.Value.Invoke(conn,[|name|]) :?> DataTable
@@ -370,49 +375,95 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
         member __.GetTableDescription(con,tableName) = "" // SQLite doesn't support table descriptions/comments
         member __.GetColumnDescription(con,tableName,columnName) = "" // SQLite doesn't support column descriptions/comments
         member __.CreateConnection(connectionString) =
-            //Forces relative paths to be relative to the Runtime assembly
-            let basePath =
-                if String.IsNullOrEmpty(resolutionPath) || resolutionPath = Path.DirectorySeparatorChar.ToString()
-                then runtimeAssembly |> Path.GetFullPath
-                else (if resolutionPath.Contains ";" then
-                        resolutionPath.Split ';'
-                        |> Array.map (fun p -> p.Trim() |> Path.GetFullPath)
-                        |> Array.filter System.IO.Directory.Exists
-                        |> Array.tryHead |> Option.defaultValue (runtimeAssembly |> Path.GetFullPath)
-                      else resolutionPath.Trim() |> Path.GetFullPath)
+            let inline createDynamicConnection() = 
+                //Forces relative paths to be relative to the Runtime assembly
+                let basePath =
+                    if String.IsNullOrEmpty(resolutionPath) || resolutionPath = Path.DirectorySeparatorChar.ToString()
+                    then runtimeAssembly |> Path.GetFullPath
+                    else (if resolutionPath.Contains ";" then
+                            resolutionPath.Split ';'
+                            |> Array.map (fun p -> p.Trim() |> Path.GetFullPath)
+                            |> Array.filter System.IO.Directory.Exists
+                            |> Array.tryHead |> Option.defaultValue (runtimeAssembly |> Path.GetFullPath)
+                          else resolutionPath.Trim() |> Path.GetFullPath)
 
-            let connectionString =
-                connectionString // We don't want to replace /../ and we want to support general unix paths as well as current env paths.
-                    .Replace(@"=." + Path.DirectorySeparatorChar.ToString(), "=" + basePath + Path.DirectorySeparatorChar.ToString())
-                    .Replace(@"=./", "=" + basePath + Path.DirectorySeparatorChar.ToString())
-            try
-                Activator.CreateInstance(connectionType.Value,[|box connectionString|]) :?> IDbConnection
-            with
-            | :? System.Reflection.ReflectionTypeLoadException as ex ->
-                let errorfiles = ex.LoaderExceptions |> Array.map(fun e -> e.GetBaseException().Message) |> Seq.distinct |> Seq.toArray
-                let msg = ex.Message + "\r\n" + String.Join("\r\n", errorfiles) + (if Environment.Is64BitProcess then " (You are running on x64.)" else " (You are NOT running on x64.)")
-                raise(System.Reflection.TargetInvocationException(msg, ex))
-            | :? System.Reflection.TargetInvocationException as ex when ((not(isNull ex.InnerException)) && ex.InnerException :? DllNotFoundException) ->
-                let resp = Reflection.listResolutionFullPaths resolutionPath
-                let msg = ex.GetBaseException().Message + ", Path: " + resp + (if Environment.Is64BitProcess then " (You are running on x64.)" else " (You are NOT running on x64.)")
-                raise(System.Reflection.TargetInvocationException(msg, ex))
-            | :? System.TypeInitializationException as te when (te.InnerException :? System.Reflection.TargetInvocationException) ->
-                let ex = te.InnerException :?> System.Reflection.TargetInvocationException
-                let resp = Reflection.listResolutionFullPaths resolutionPath
-                let msg = ex.GetBaseException().Message + ", Path: " + resp + (if Environment.Is64BitProcess then " (You are running on x64.)" else " (You are NOT running on x64.)")
-                raise(System.Reflection.TargetInvocationException(msg, ex.InnerException))
-            | :? System.Reflection.TargetInvocationException as ex when not(isNull ex.InnerException) ->
-                let msg = ex.GetBaseException().Message
-                raise(System.Reflection.TargetInvocationException("Cannot create connection, db driver raised exception: " + msg, ex.InnerException))
+                let connectionString =
+                    connectionString // We don't want to replace /../ and we want to support general unix paths as well as current env paths.
+                        .Replace(@"=." + Path.DirectorySeparatorChar.ToString(), "=" + basePath + Path.DirectorySeparatorChar.ToString())
+                        .Replace(@"=./", "=" + basePath + Path.DirectorySeparatorChar.ToString())
+                try
+                    Activator.CreateInstance(connectionType.Value,[|box connectionString|]) :?> IDbConnection
+                with
+                | :? System.Reflection.ReflectionTypeLoadException as ex ->
+                    let errorfiles = ex.LoaderExceptions |> Array.map(fun e -> e.GetBaseException().Message) |> Seq.distinct |> Seq.toArray
+                    let msg = ex.Message + "\r\n" + String.Join("\r\n", errorfiles) + (if Environment.Is64BitProcess then " (You are running on x64.)" else " (You are NOT running on x64.)")
+                    raise(System.Reflection.TargetInvocationException(msg, ex))
+                | :? System.Reflection.TargetInvocationException as ex when ((not(isNull ex.InnerException)) && ex.InnerException :? DllNotFoundException) ->
+                    let resp = Reflection.listResolutionFullPaths resolutionPath
+                    let msg = ex.GetBaseException().Message + ", Path: " + resp + (if Environment.Is64BitProcess then " (You are running on x64.)" else " (You are NOT running on x64.)")
+                    raise(System.Reflection.TargetInvocationException(msg, ex))
+                | :? System.TypeInitializationException as te when (te.InnerException :? System.Reflection.TargetInvocationException) ->
+                    let ex = te.InnerException :?> System.Reflection.TargetInvocationException
+                    let resp = Reflection.listResolutionFullPaths resolutionPath
+                    let msg = ex.GetBaseException().Message + ", Path: " + resp + (if Environment.Is64BitProcess then " (You are running on x64.)" else " (You are NOT running on x64.)")
+                    raise(System.Reflection.TargetInvocationException(msg, ex.InnerException))
+                | :? System.Reflection.TargetInvocationException as ex when not(isNull ex.InnerException) ->
+                    let msg = ex.GetBaseException().Message
+                    raise(System.Reflection.TargetInvocationException("Cannot create connection, db driver raised exception: " + msg, ex.InnerException))
+#if REFLECTIONLOAD
+            createDynamicConnection()
+#else
+            match sqliteLibrary with
+            | SQLiteLibrary.SystemDataSQLite -> 
+                let c = new System.Data.SQLite.SQLiteConnection(connectionString)
+                c :> IDbConnection
+            | SQLiteLibrary.MicrosoftDataSqlite -> 
+                let c = new Microsoft.Data.Sqlite.SqliteConnection(connectionString)
+                c :> IDbConnection
+            | _ -> createDynamicConnection()
+#endif
 
-        member __.CreateCommand(connection,commandText) = Activator.CreateInstance(commandType.Value,[|box commandText;box connection|]) :?> IDbCommand
+        member __.CreateCommand(connection:IDbConnection,commandText) =
+            let inline createDynamicCommand() = 
+                Activator.CreateInstance(commandType.Value,[|box commandText;box connection|]) :?> IDbCommand
+#if REFLECTIONLOAD
+            createDynamicCommand()
+#else
+            match sqliteLibrary with
+            | SQLiteLibrary.SystemDataSQLite -> 
+                let c = new System.Data.SQLite.SQLiteCommand(commandText, (connection :?> System.Data.SQLite.SQLiteConnection))
+                c :> IDbCommand
+            | SQLiteLibrary.MicrosoftDataSqlite -> 
+                let c = new Microsoft.Data.Sqlite.SqliteCommand(commandText, (connection :?> Microsoft.Data.Sqlite.SqliteConnection))
+                c :> IDbCommand
+            | _ -> createDynamicCommand()
+#endif
 
         member __.CreateCommandParameter(param,value) =
-            let p = Activator.CreateInstance(paramterType.Value,[|box param.Name;box value|]) :?> IDbDataParameter
-            p.DbType <- param.TypeMapping.DbType
-            p.Direction <- param.Direction
-            ValueOption.iter (fun l -> p.Size <- l) param.Length
-            p
+            let inline createDynamicParameter() = 
+                let p = Activator.CreateInstance(paramterType.Value,[|box param.Name;box value|]) :?> IDbDataParameter
+                p.DbType <- param.TypeMapping.DbType
+                p.Direction <- param.Direction
+                ValueOption.iter (fun l -> p.Size <- l) param.Length
+                p
+#if REFLECTIONLOAD
+            createDynamicParameter()
+#else
+            match sqliteLibrary with
+            | SQLiteLibrary.SystemDataSQLite -> 
+                let p = System.Data.SQLite.SQLiteParameter(param.Name, value)
+                p.DbType <- param.TypeMapping.DbType
+                p.Direction <- param.Direction
+                ValueOption.iter (fun l -> p.Size <- l) param.Length
+                p :> IDbDataParameter
+            | SQLiteLibrary.MicrosoftDataSqlite -> 
+                let p = Microsoft.Data.Sqlite.SqliteParameter(param.Name, value)
+                p.DbType <- param.TypeMapping.DbType
+                p.Direction <- param.Direction
+                ValueOption.iter (fun l -> p.Size <- l) param.Length
+                p :> IDbDataParameter
+            | _ -> createDynamicParameter()
+#endif
 
         member __.ExecuteSprocCommand(com, _, returnCols, values:obj array) =
             let pars = pragmacheck values

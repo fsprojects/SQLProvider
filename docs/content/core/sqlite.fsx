@@ -1,9 +1,18 @@
 (*** hide ***)
-#I @"../../../bin/lib/netstandard2.0"
+// Dynamic:
+//#I @"../../../bin/lib/netstandard2.0"
+//#r "FSharp.Data.SqlProvider.dll"
+//#r "FSharp.Data.SqlProvider.Common.dll"
+
+(*** hide ***)
+// SQLite only:
+#I @"../../../bin/sqlite/lib/netstandard2.0"
 #r "FSharp.Data.SqlProvider.Common.dll"
-#r "FSharp.Data.SqlProvider.dll"
+#r "FSharp.Data.SqlProvider.SQLite.dll"
 open System
 open FSharp.Data.Sql
+open FSharp.Data.Sql.SQLite
+
 (**
 
 # SQLite Provider
@@ -99,6 +108,12 @@ When you do insert operation, after .SubmitUpdates call you can get inserted row
 let myCustomer = ctx.Main.Customers.``Create(CompanyName)``("MyCompany")
 ctx.SubmitUpdates()
 let rowid = myCustomer.GetColumn("rowid") : int
+// ...or just use myCustomer.CustomerId
 ```
 
+Also note: SQLite is not very strong on types.
+Use float if you try to do any math, don't use decimal.
+Decimal is on intention of SQL-drivers handled as text to be non-lossy.
+
 *)
+
