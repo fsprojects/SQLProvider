@@ -1501,7 +1501,7 @@ GITHUB
     src/ProvidedTypes.fs (ce34c1cc71096857b8342f1dedf93391addc9df6)
     src/ProvidedTypes.fsi (ce34c1cc71096857b8342f1dedf93391addc9df6)
   remote: Thorium/Linq.Expression.Optimizer
-    src/Code/ExpressionOptimizer.fs (5e1a0d610e6b8dd1e2347091c3b5e1fe694e1e3c)
+    src/Code/ExpressionOptimizer.fs (d89d2f7a8f04f268ad7b9ea3bc4279a9253edc66)
 GROUP Tests
 STORAGE: PACKAGES
 NUGET

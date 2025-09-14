@@ -361,25 +361,22 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup, activeColu
         member __.SetColumnOptionSilent(key,value) =
           match value with
           | Some value ->
-              if data.ContainsKey key then
-                  data.[key] <- value
-              else data.Add(key,value)
+                data.[key] <- value
           | None -> data.Remove key |> ignore
 
         member __.SetPkColumnOptionSilent(keys,value) =
             match value with
             | Some value ->
                 keys |> List.iter(fun x -> 
-                    if data.ContainsKey x then data.[x] <- value
-                    else data.Add(x,value))
+                    data.[x] <- value
+                    )
             | None ->
                 keys |> List.iter(fun x -> data.Remove x |> ignore)
 
         member e.SetColumnOption(key,value) =
           match value with
           | Some value ->
-              if data.ContainsKey key then data.[key] <- value
-              else data.Add(key,value)
+              data.[key] <- value
               e.TriggerPropertyChange key
           | None -> if data.Remove key then e.TriggerPropertyChange key
           e.UpdateField key
@@ -387,8 +384,7 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup, activeColu
         member e.SetColumnValueOption(key,value) =
           match value with
           | ValueSome value ->
-              if data.ContainsKey key then data.[key] <- value
-              else data.Add(key,value)
+              data.[key] <- value
               e.TriggerPropertyChange key
           | ValueNone -> if data.Remove key then e.TriggerPropertyChange key
           e.UpdateField key
@@ -1161,7 +1157,7 @@ module public OfflineTools =
                             match dummydata.TryGetValue(arg1.ToLower()) with
                             | true, tableData -> createMockEntitiesDc this arg1 tableData
                             | false, _ ->
-                                match dummydata |> Map.toSeq |> Seq.tryFind(fun (k,v) -> k.ToUpperInvariant() = arg1.ToUpperInvariant()) with
+                                match dummydata |> Map.toSeq |> Seq.tryFind(fun (k,v) -> String.Equals(k, arg1, StringComparison.InvariantCultureIgnoreCase)) with
                                 | Some (k, tableData) -> createMockEntitiesDc this arg1 tableData
                                 | None -> failwith ("Add table to dummydata: " + arg1) 
                     member this.CreateEntity(arg1: string): SqlEntity =

@@ -450,8 +450,10 @@ module internal QueryExpressionTransformer =
                                                                                          | false, _ -> projectionMap.Add(en, ResizeArray<_>())
                                                                                          upcast databaseParam
                                                                                     | _ ->
-                                                                                        if (not (isNull replaceParams)) && replaceParams.ContainsKey(e) then
-                                                                                            replaceParams.[e].Body
+                                                                                        if (not (isNull replaceParams)) then
+                                                                                            match replaceParams.TryGetValue e with
+                                                                                            | true, re -> re.Body
+                                                                                            | false, _ -> upcast e
                                                                                         else
                                                                                             upcast e
             | ExpressionType.MemberAccess,       (:? MemberExpression as e)      -> let memb = Expression.MakeMemberAccess(transform en e.Expression, e.Member)

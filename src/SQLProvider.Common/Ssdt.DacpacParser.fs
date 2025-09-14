@@ -325,7 +325,7 @@ let parseXml(xml: string) =
                 |> ValueOption.defaultValue "SQL_VARIANT"
             let allowNulls =
                 match annotation with
-                | ValueSome { Nullability = ValueSome nlb } -> nlb.ToUpperInvariant() = "NULL"
+                | ValueSome { Nullability = ValueSome nlb } -> String.Equals(nlb, "NULL", StringComparison.InvariantCultureIgnoreCase)
                 | ValueSome { Nullability = ValueNone } -> true // Sql Server column declarations allow nulls by default
                 | ValueNone -> false // Default to "SQL_VARIANT" (obj) with no nulls if annotation is not found
             
@@ -555,7 +555,7 @@ let parseXml(xml: string) =
                         |> Option.defaultValue "SQL_VARIANT"
                     let allowNulls =
                         match annotation with
-                        | Some { Nullability = ValueSome nlb } -> nlb.ToUpperInvariant() = "NULL"
+                        | Some { Nullability = ValueSome nlb } -> String.Equals(nlb, "NULL", StringComparison.InvariantCultureIgnoreCase)
                         | Some { Nullability = ValueNone } -> true // Sql Server column declarations allow nulls by default
                         | None -> false // Default to "SQL_VARIANT" (obj) with no nulls if annotation is not found
                     let description =
