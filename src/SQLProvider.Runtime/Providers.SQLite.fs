@@ -553,13 +553,19 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                         match findDbType dt with
                         | Some(m) ->
                             let pkColumn = reader.GetBoolean(5)
+                            // Check if column is generated/computed (hidden column in pragma table_info is 6)
+                            let isComputed = 
+                                try 
+                                    if reader.FieldCount > 6 then (reader.GetInt32 6) > 0 
+                                    else false
+                                with _ -> false
                             let col =
                                 { Column.Name = colName
                                   TypeMapping = m
                                   IsNullable = not <| reader.GetBoolean(3);
                                   IsPrimaryKey = pkColumn
                                   IsAutonumber = pkColumn
-                                  IsComputed = false
+                                  IsComputed = isComputed
                                   HasDefault = not (reader.IsDBNull 4)
                                   TypeInfo = ValueSome dtv }
                             if col.IsPrimaryKey then
@@ -686,6 +692,10 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                     | Length -> sprintf "LENGTH(%s)" column
                     | IndexOf(SqlConstant search) -> sprintf "INSTR(%s,%s)" column (fieldParam search)
                     | IndexOf(SqlCol(al2, col2)) -> sprintf "INSTR(%s,%s)" column (fieldNotation al2 col2)
+                    | IndexOfStart(SqlConstant search, SqlConstant startPos) -> sprintf "CASE WHEN INSTR(SUBSTR(%s, %s), %s) > 0 THEN INSTR(SUBSTR(%s, %s), %s) + %s - 1 ELSE 0 END" column (fieldParam startPos) (fieldParam search) column (fieldParam startPos) (fieldParam search) (fieldParam startPos)
+                    | IndexOfStart(SqlConstant search, SqlCol(al2, col2)) -> sprintf "CASE WHEN INSTR(SUBSTR(%s, %s), %s) > 0 THEN INSTR(SUBSTR(%s, %s), %s) + %s - 1 ELSE 0 END" column (fieldNotation al2 col2) (fieldParam search) column (fieldNotation al2 col2) (fieldParam search) (fieldNotation al2 col2)
+                    | IndexOfStart(SqlCol(al2, col2), SqlConstant startPos) -> sprintf "CASE WHEN INSTR(SUBSTR(%s, %s), %s) > 0 THEN INSTR(SUBSTR(%s, %s), %s) + %s - 1 ELSE 0 END" column (fieldParam startPos) (fieldNotation al2 col2) column (fieldParam startPos) (fieldNotation al2 col2) (fieldParam startPos)
+                    | IndexOfStart(SqlCol(al2, col2), SqlCol(al3, col3)) -> sprintf "CASE WHEN INSTR(SUBSTR(%s, %s), %s) > 0 THEN INSTR(SUBSTR(%s, %s), %s) + %s - 1 ELSE 0 END" column (fieldNotation al3 col3) (fieldNotation al2 col2) column (fieldNotation al3 col3) (fieldNotation al2 col2) (fieldNotation al3 col3)
                     | CastVarchar -> sprintf "CAST(%s AS TEXT)" column
                     | CastInt -> sprintf "CAST(%s AS INTEGER)" column
                     // Date functions

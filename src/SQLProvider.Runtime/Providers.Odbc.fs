@@ -306,13 +306,21 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
                             let maxlen = if i.[6] = box(DBNull.Value) then 0 else i.[6] :?> int
                             
                             let pkColumn = (Array.isEmpty primaryKey |> not) && primaryKey.[0].[8] = box name
+                            // Try to detect defaults from ODBC metadata (COLUMN_DEF at index 12)
+                            let hasDefault = 
+                                try
+                                    if i.Length > 12 && (not (isNull i.[12])) && i.[12] <> box(DBNull.Value) then
+                                        let defaultVal = i.[12].ToString()
+                                        not(String.IsNullOrWhiteSpace defaultVal)
+                                    else false
+                                with _ -> false
                             let col =
                                 { Column.Name = name
                                   TypeMapping = m
                                   IsNullable = let b = i.[17] :?> string in b = "YES"
                                   IsPrimaryKey = pkColumn
                                   IsAutonumber = pkColumn
-                                  HasDefault = false
+                                  HasDefault = hasDefault
                                   IsComputed = false
                                   TypeInfo = 
                                     if maxlen < 1 then ValueSome dt

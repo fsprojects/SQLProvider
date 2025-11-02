@@ -1007,6 +1007,10 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                     | Length -> sprintf "CHAR_LENGTH(%s)" column
                     | IndexOf(SqlConstant search) -> sprintf "STRPOS(%s,%s)" (fieldParam search) column
                     | IndexOf(SqlCol(al2, col2)) -> sprintf "STRPOS(%s,%s)" (fieldNotation al2 col2) column
+                    | IndexOfStart(SqlConstant search, SqlConstant startPos) -> sprintf "CASE WHEN STRPOS(SUBSTRING(%s FROM %s::integer), %s) > 0 THEN STRPOS(SUBSTRING(%s FROM %s::integer), %s) + %s::integer - 1 ELSE 0 END" column (fieldParam startPos) (fieldParam search) column (fieldParam startPos) (fieldParam search) (fieldParam startPos)
+                    | IndexOfStart(SqlConstant search, SqlCol(al2, col2)) -> sprintf "CASE WHEN STRPOS(SUBSTRING(%s FROM %s::integer), %s) > 0 THEN STRPOS(SUBSTRING(%s FROM %s::integer), %s) + %s::integer - 1 ELSE 0 END" column (fieldNotation al2 col2) (fieldParam search) column (fieldNotation al2 col2) (fieldParam search) (fieldNotation al2 col2)
+                    | IndexOfStart(SqlCol(al2, col2), SqlConstant startPos) -> sprintf "CASE WHEN STRPOS(SUBSTRING(%s FROM %s::integer), %s) > 0 THEN STRPOS(SUBSTRING(%s FROM %s::integer), %s) + %s::integer - 1 ELSE 0 END" column (fieldParam startPos) (fieldNotation al2 col2) column (fieldParam startPos) (fieldNotation al2 col2) (fieldParam startPos)
+                    | IndexOfStart(SqlCol(al2, col2), SqlCol(al3, col3)) -> sprintf "CASE WHEN STRPOS(SUBSTRING(%s FROM %s::integer), %s) > 0 THEN STRPOS(SUBSTRING(%s FROM %s::integer), %s) + %s::integer - 1 ELSE 0 END" column (fieldNotation al3 col3) (fieldNotation al2 col2) column (fieldNotation al3 col3) (fieldNotation al2 col2) (fieldNotation al3 col3)
                     | CastVarchar -> sprintf "(%s::varchar)" column
                     | CastInt -> sprintf "(%s::int)" column
                     // Date functions
