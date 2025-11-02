@@ -710,10 +710,10 @@ type internal DuckDbProvider(resolutionPath, contextSchemaPath, owner:string, re
                     | Length -> sprintf "LENGTH(%s)" column
                     | IndexOf(SqlConstant search) -> sprintf "POSITION(%s IN %s)" (fieldParam search) column
                     | IndexOf(SqlCol(al2, col2)) -> sprintf "POSITION(%s IN %s)" (fieldNotation al2 col2) column
-                    //| IndexOfStart(SqlConstant search,(SqlConstant startPos)) -> sprintf "LOCATE(%s,%s,%s)" (fieldParam search) column (fieldParam startPos)
-                    //| IndexOfStart(SqlConstant search,SqlCol(al2, col2)) -> sprintf "LOCATE(%s,%s,%s)" (fieldParam search)  column (fieldNotation al2 col2)
-                    //| IndexOfStart(SqlCol(al2, col2),(SqlConstant startPos)) -> sprintf "LOCATE(%s,%s,%s)" (fieldNotation al2 col2) column (fieldParam startPos)
-                    //| IndexOfStart(SqlCol(al2, col2),SqlCol(al3, col3)) -> sprintf "LOCATE(%s,%s,%s)" (fieldNotation al2 col2) column (fieldNotation al3 col3)
+                    | IndexOfStart(SqlConstant search,(SqlConstant startPos)) -> sprintf "CASE WHEN POSITION(%s IN SUBSTRING(%s, %s)) > 0 THEN POSITION(%s IN SUBSTRING(%s, %s)) + %s - 1 ELSE 0 END" (fieldParam search) column (fieldParam startPos) (fieldParam search) column (fieldParam startPos) (fieldParam startPos)
+                    | IndexOfStart(SqlConstant search,SqlCol(al2, col2)) -> sprintf "CASE WHEN POSITION(%s IN SUBSTRING(%s, %s)) > 0 THEN POSITION(%s IN SUBSTRING(%s, %s)) + %s - 1 ELSE 0 END" (fieldParam search) column (fieldNotation al2 col2) (fieldParam search) column (fieldNotation al2 col2) (fieldNotation al2 col2)
+                    | IndexOfStart(SqlCol(al2, col2),(SqlConstant startPos)) -> sprintf "CASE WHEN POSITION(%s IN SUBSTRING(%s, %s)) > 0 THEN POSITION(%s IN SUBSTRING(%s, %s)) + %s - 1 ELSE 0 END" (fieldNotation al2 col2) column (fieldParam startPos) (fieldNotation al2 col2) column (fieldParam startPos) (fieldParam startPos)
+                    | IndexOfStart(SqlCol(al2, col2),SqlCol(al3, col3)) -> sprintf "CASE WHEN POSITION(%s IN SUBSTRING(%s, %s)) > 0 THEN POSITION(%s IN SUBSTRING(%s, %s)) + %s - 1 ELSE 0 END" (fieldNotation al2 col2) column (fieldNotation al3 col3) (fieldNotation al2 col2) column (fieldNotation al3 col3) (fieldNotation al3 col3)
                     | CastVarchar -> sprintf "CAST(%s AS CHAR)" column
                     | CastInt -> sprintf "CAST(%s AS INT)" column
                     // Date functions
