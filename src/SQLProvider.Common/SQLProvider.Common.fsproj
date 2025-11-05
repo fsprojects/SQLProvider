@@ -15,13 +15,15 @@
     <PackageReleaseNotes>https://github.com/fsprojects/SQLProvider/blob/master/docs/RELEASE_NOTES.md</PackageReleaseNotes>
     <PackageProjectUrl>https://fsprojects.github.io/SQLProvider</PackageProjectUrl>
     <RepositoryUrl>https://github.com/fsprojects/SQLProvider</RepositoryUrl>
-    <IncludeSymbols>true</IncludeSymbols>
-    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <TargetFSharpCoreVersion>8.0.0.0</TargetFSharpCoreVersion>
     <RepositoryType>git</RepositoryType>
     <Authors>pezipink,colinbull,thorium</Authors>
     <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+    <!-- SourceLink settings - Embedded PDBs (recommended for Paket projects) -->
+    <DebugType>embedded</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <Optimize>true</Optimize>
@@ -67,7 +69,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
   </ItemGroup>
   <Target Name="AfterBuild">
   </Target>

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
@@ -20,6 +20,11 @@
     <FsDocsNavbarPosition>fixed-right</FsDocsNavbarPosition>
     <FsDocsWarnOnMissingDocs>false</FsDocsWarnOnMissingDocs>
     <FsDocsTheme>default</FsDocsTheme>
+    <!-- SourceLink settings - Embedded PDBs -->
+    <DebugType>embedded</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\..\paket-files\sourcefiles\Thorium\Linq.Expression.Optimizer\src\Code\ExpressionOptimizer.fs">
@@ -35,6 +40,7 @@
   <ItemGroup>
       <PackageReference Include="MySql.Data" Version="9.3.0" />
       <PackageReference Include="System.Runtime.Loader" Version="4.3" />
+      <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
       <ProjectReference Include="..\SQLProvider.Common\SQLProvider.Common.fsproj" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />

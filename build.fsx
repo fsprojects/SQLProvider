@@ -68,10 +68,7 @@ Target.initEnvironment()
 //    Travis.Installer
 //]
 
-#if MONO
-#else
-//#load @"packages/Build/SourceLink.Fake/tools/SourceLink.fsx"
-#endif
+// SourceLink is now configured via MSBuild properties in the project files
 
 //#r @"packages/tests/Npgsql/lib/net451/Npgsql.dll"
 #I @"./packages/build/System.Threading.Tasks.Extensions/lib/netstandard2.0/"
@@ -400,6 +397,7 @@ Target.create "NuGet" (fun _ ->
 )
 
 Target.create "PackNuGet" (fun _ ->
+    // Pack with embedded PDBs (SourceLink enabled, works with Paket)
     let _ =
         Fake.DotNet.Paket.pack(fun p ->
             { p with
@@ -433,18 +431,8 @@ Target.create "WatchLocalDocs" (fun _ ->
 
 )
 
-#if MONO
-Target.create "SourceLink" <| fun _ -> ()
-#else
-//open SourceLink
-Target.create "SourceLink" <| fun _ -> () (*
-    let baseUrl = sprintf "%s/%s/{0}/%%var2%%" gitRaw project
-    !! "src/*.fsproj"
-    |> Seq.iter (fun file ->
-        let proj = VsProj.LoadRelease file
-        SourceLink.Index proj.CompilesNotLinked proj.OutputFilePdb __SOURCE_DIRECTORY__ baseUrl
-       *)
-#endif
+// SourceLink is now automatically handled by Microsoft.SourceLink.GitHub package
+// configured in the project files with MSBuild properties
 
 // --------------------------------------------------------------------------------------
 // Release Scripts
@@ -506,10 +494,6 @@ Target.create "BuildDocs" ignore
   ==> "BuildDocs"
 
 "All"
-#if MONO
-#else
-  //=?> ("SourceLink", Pdbstr.tryFind().IsSome )
-#endif
   =?> ("NuGet", not(Fake.Core.Environment.hasEnvironVar "onlydocs"))
   ==> "ReleaseDocs"
   ==> "Release"
