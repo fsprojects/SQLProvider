@@ -5,7 +5,7 @@ on:
   pull_request:
 
 jobs:
-  buildAndTest:
+  buildAndTestWindows:
 
     runs-on:
     - windows-latest
@@ -22,10 +22,60 @@ jobs:
     - name: Upload artifact (bin)
       uses: actions/upload-artifact@v4
       with:
-        name: bin
+        name: bin-windows
         path: bin
     - name: Upload artifact (dist)
       uses: actions/upload-artifact@v4
       with:
-        name: dist
+        name: dist-windows
+        path: dist
+        
+  buildAndTestLinux:
+
+    runs-on:
+    - ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 6.0.428
+    - name: Build & Run Tests
+      run: |
+        ./build.sh
+    - name: Upload artifact (bin)
+      uses: actions/upload-artifact@v4
+      with:
+        name: bin-linux
+        path: bin
+    - name: Upload artifact (dist)
+      uses: actions/upload-artifact@v4
+      with:
+        name: dist-linux
+        path: dist
+        
+  buildAndTestMac:
+
+    runs-on:
+    - macos-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 6.0.428
+    - name: Build & Run Tests
+      run: |
+        ./build.sh
+    - name: Upload artifact (bin)
+      uses: actions/upload-artifact@v4
+      with:
+        name: bin-macos
+        path: bin
+    - name: Upload artifact (dist)
+      uses: actions/upload-artifact@v4
+      with:
+        name: dist-macos
         path: dist
