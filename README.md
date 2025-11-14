@@ -43,10 +43,10 @@ documentation originates from
 so please feel free to submit a pull request if you fix typos or add 
 additional samples and documentation!
 
-## Building
+## Building [![Build status](https://github.com/fsprojects/SQLProvider/actions/workflows/CI.yml/badge.svg?branch=master&event=push)](https://github.com/fsprojects/SQLProvider/actions?query=branch%3Amaster)
 
-* Mono: Run *build.sh*  [![Mono build status](https://travis-ci.org/fsprojects/SQLProvider.svg?branch=master)](https://travis-ci.org/fsprojects/SQLProvider)
-* Windows: Run *build.cmd* [![Build status](https://ci.appveyor.com/api/projects/status/ngbj9995twhfqn28/branch/master?svg=true)](https://ci.appveyor.com/project/colinbull/sqlprovider-ogy2l/branch/master)
+* Mono: Run *build.sh*
+* Windows: Run *build.cmd*
 
 ## Known issues
 
