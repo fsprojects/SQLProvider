@@ -5,7 +5,7 @@
 
 [![Join the chat at https://gitter.im/fsprojects/SQLProvider](https://badges.gitter.im/fsprojects/SQLProvider.svg)](https://gitter.im/fsprojects/SQLProvider?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-A general .NET/Mono SQL database type provider. Current features :
+A general .NET SQL database type provider. Current features :
  * LINQ queries
  * Lazy schema exploration 
  * Automatic constraint navigation
@@ -45,8 +45,12 @@ additional samples and documentation!
 
 ## Building [![Build status](https://github.com/fsprojects/SQLProvider/actions/workflows/CI.yml/badge.svg?branch=master&event=push)](https://github.com/fsprojects/SQLProvider/actions?query=branch%3Amaster)
 
-* Mono: Run *build.sh*
+* Linux/macOS: Run *build.sh*
 * Windows: Run *build.cmd*
+
+(Note: both scripts above use the `dotnet` command underneath; if you need to build
+with .NETFramework v4.x or Mono, rename the '.paket_netfx' to '.paket' first, before
+restoring & building manually with paket and msbuild.)
 
 ## Known issues
 
