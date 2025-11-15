@@ -1,4 +1,8 @@
 @echo off
+where /q dotnet
+if ERRORLEVEL 1 (
+  echo "ERROR: 'dotnet' not found. Please ensure you have installed .NETv6 or newer" && exit /b 1
+)
 rem change the target via -t, e.g.:
 rem build -t PackNuget
 cls
