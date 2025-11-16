@@ -236,6 +236,37 @@ type public SqlDataContext (typeName, connectionString:string, providerType:Data
             if provider.CloseConnectionAfterQuery then con.Close()
             entity
 
+        member this.GetIndividualAsync(table,id) =
+            task {
+                use con = provider.CreateConnection(connectionString) :?> System.Data.Common.DbConnection
+                let table = Table.FromFullName table
+                // this line is to ensure the columns for the table have been retrieved and therefore
+                // its primary key exists in the lookup
+                let columns = provider.GetColumns(con, table)
+                let pk =
+                    match provider.GetPrimaryKey table with
+                    | Some v -> columns.[v]
+                    | None ->
+                        // this fail case should not really be possible unless the runtime database is different to the design-time one
+                        failwithf "Primary key could not be found on object %s. Individuals only supported on objects with a single primary key." table.FullName
+                use com = provider.CreateCommand(con,provider.GetIndividualQueryText(table,pk.Name)) :?> System.Data.Common.DbCommand
+                if commandTimeout.IsSome then
+                    com.CommandTimeout <- commandTimeout.Value
+                //todo: establish pk SQL data type
+                com.Parameters.Add (provider.CreateCommandParameter(QueryParameter.Create("@id", 0, pk.TypeMapping),id)) |> ignore
+                if con.State <> ConnectionState.Open then 
+                    do! con.OpenAsync()
+                if con.State <> ConnectionState.Open then // Just ensure, as not all the providers seems to work so great with OpenAsync.
+                    if con.State <> ConnectionState.Closed && provider.CloseConnectionAfterQuery then con.Close()
+                    con.Open()
+                use! reader = com.ExecuteReaderAsync()
+                let! entities = (this :> ISqlDataContext).ReadEntitiesAsync(table.FullName, columns, reader)
+                let entity = entities |> Seq.exactlyOne
+                reader.Close()
+                if provider.CloseConnectionAfterQuery then con.Close()
+                return entity
+            }
+
         member this.ReadEntities(name: string, columns: ColumnLookup, reader: IDataReader) =
             [| while reader.Read() do
                  let e = SqlEntity(this, name, columns, reader.FieldCount)

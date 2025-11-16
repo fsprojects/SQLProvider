@@ -240,7 +240,25 @@ module DesignTimeUtils =
                                                     , getterCode = getterCode
                                                     )
                             )
-                        |> Array.append( propertyMap |> Map.toArray |> Array.map (snd >> snd))
+                    
+                    // Add async method to fetch individual by primary key
+                    let tableName = table.FullName
+                    let pkColumn = columns.[pkName]
+                    let pkType = Utilities.getType pkColumn.TypeMapping.ClrType
+                    let returnType = typedefof<System.Threading.Tasks.Task<_>>.MakeGenericType(tableTypeDef)
+                    let getAsyncMethod =
+                        ProvidedMethod("GetAsync", [ProvidedParameter("id", pkType)], returnType, invokeCode = fun args ->
+                            let a0 = args.[0]
+                            let pkValue = args.[1]
+                            <@@ ((%%a0 : obj) :?> ISqlDataContext).GetIndividualAsync(tableName, %%pkValue) @@>
+                        )
+                    getAsyncMethod.AddXmlDoc(sprintf "<summary>Asynchronously get an individual %s by primary key value</summary>" table.Name)
+                    
+                    seq {
+                        yield getAsyncMethod :> MemberInfo
+                        yield! props |> Seq.cast<MemberInfo>
+                        yield! propertyMap |> Map.toSeq |> Seq.map (snd >> snd) |> Seq.cast<MemberInfo>
+                    } |> Seq.toList
 
                     propertyMap
                     |> Map.toSeq

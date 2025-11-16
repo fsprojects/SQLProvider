@@ -548,6 +548,8 @@ and ISqlDataContext =
     abstract CallSprocAsync             : RunTimeSprocDefinition * QueryParameter[] * obj[] -> System.Threading.Tasks.Task<SqlEntity>
     /// Get individual row. Takes tablename and id.
     abstract GetIndividual              : string * obj -> SqlEntity
+    /// Get individual row asynchronously. Takes tablename and id.
+    abstract GetIndividualAsync         : string * obj -> System.Threading.Tasks.Task<SqlEntity>
     /// Save entity to database.
     abstract SubmitChangedEntity        : SqlEntity -> unit
     /// Save database-changes in a transaction to database.
@@ -1229,6 +1231,7 @@ module public OfflineTools =
                                 | false, _ ->
                                     failwith ("Add table to dummydata: " + pe)
                     member this.GetIndividual(arg1: string, arg2: obj): SqlEntity = raise (System.NotImplementedException())
+                    member this.GetIndividualAsync(arg1: string, arg2: obj): System.Threading.Tasks.Task<SqlEntity> = raise (System.NotImplementedException())
                     member this.GetPendingEntities(): SqlEntity list = (CommonTasks.sortEntities pendingChanges) |> Seq.toList
                     member this.GetPrimaryKeyDefinition(arg1: string): string = ""
                     member this.ReadEntities(arg1: string, arg2: FSharp.Data.Sql.Schema.ColumnLookup, arg3: Data.IDataReader): SqlEntity array = raise (System.NotImplementedException())
