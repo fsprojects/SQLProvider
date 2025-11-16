@@ -1240,5 +1240,5 @@ module public OfflineTools =
                     member _.SubmitPendingChangesAsync(): Threading.Tasks.Task<unit> = task {return ()}
                     member _.ConnectionString = ""
                     member _.IsReadOnly = false
-               }
+                }
         x :> obj |> unbox<'T>

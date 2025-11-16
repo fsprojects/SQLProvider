@@ -848,7 +848,7 @@ module internal QueryImplementation =
                                     ForeignTable = {Schema="";Name="";Type=""};
                                     OuterJoin = isOuter; RelDirection = RelationshipDirection.Parents }
                     SelectMany(sourceAlias,destAlias,LinkQuery(data),outExp)
-                | OptionalOuterJoin(outerJoin,MethodCall(Some(_),(MethodWithName "CreateRelated"), [param; _; String PE; String PK; String FE; String FK; RelDirection dir;])) ->
+                | OptionalOuterJoin(outerJoin,MethodCall(Some(_),(MethodWithName "CreateRelated"), [param; _; String pe; String pk; String fe; String fk; RelDirection dir;])) ->
                                 
                     let parseKey itm =
                         SqlColumnType.KeyColumn itm
@@ -857,7 +857,7 @@ module internal QueryImplementation =
                         | ParamName x -> x
                         | PropertyGet(_,p) -> Utilities.resolveTuplePropertyName p.Name source.TupleIndex
                         | _ -> failwith "unsupported parameter expression in CreatedRelated method call"
-                    let data = { PrimaryKey = [parseKey PK]; PrimaryTable = Table.FromFullName PE; ForeignKey = [parseKey FK]; ForeignTable = Table.FromFullName FE; OuterJoin = outerJoin; RelDirection = dir  }
+                    let data = { PrimaryKey = [parseKey pk]; PrimaryTable = Table.FromFullName pe; ForeignKey = [parseKey fk]; ForeignTable = Table.FromFullName fe; OuterJoin = outerJoin; RelDirection = dir  }
                     let sqlExpression =
                         match outExp with
                         | BaseTable(alias,entity) when alias = "" ->
@@ -1350,3 +1350,45 @@ module Seq =
     let stdDevQuery<'T when 'T : comparison> : System.Linq.IQueryable<'T> -> 'T  = QueryImplementation.getAgg "StdDev"
     /// Execute SQLProvider query to get the variance of elements.
     let varianceQuery<'T when 'T : comparison> : System.Linq.IQueryable<'T> -> 'T  = QueryImplementation.getAgg "Variance"
+
+/// Query debugging and inspection utilities
+module QueryInspection =
+
+    /// Generates the SQL query string and parameters without executing the query.
+    /// Note: This function creates a database connection to access schema metadata for SQL generation,
+    /// but does not execute any queries against the database.
+    /// This is useful for debugging, logging, or when you need to execute the query through ADO.NET directly.
+    /// Returns a tuple of (SQL query string, array of parameter name-value pairs).
+    let toQueryString (query:System.Linq.IQueryable<'T>) : string * (string * obj) array =
+        match QueryImplementation.findSqlService query with
+        | Some svc, _ ->
+            use con = svc.Provider.CreateConnection(svc.DataContext.ConnectionString)
+            let (sql, parameters, _, _) = 
+                QueryExpression.QueryExpressionTransformer.convertExpression 
+                    svc.SqlExpression 
+                    svc.TupleIndex 
+                    con 
+                    svc.Provider 
+                    false 
+                    (svc.DataContext.SqlOperationsInSelect = SelectOperations.DatabaseSide)
+            let paramArray = 
+                parameters 
+                |> Seq.map (fun p -> p.ParameterName, p.Value)
+                |> Seq.toArray
+            (sql, paramArray)
+        | None, _ -> 
+            failwithf "The provided query is not a SQLProvider IQueryable. Type: %s" (query.GetType().FullName)
+
+    /// Extension methods for IQueryable to provide EF Core-like query inspection capabilities
+    [<AutoOpen>]
+    module IQueryableExtensions =
+        
+        type System.Linq.IQueryable<'T> with
+            /// Generates the SQL query string and parameters without executing the query.
+            /// Note: This method creates a database connection to access schema metadata for SQL generation,
+            /// but does not execute any queries against the database.
+            /// This is useful for debugging, logging, or when you need to execute the query through ADO.NET directly.
+            /// Returns a tuple of (SQL query string, array of parameter name-value pairs).
+            member this.ToQueryString() : string * (string * obj) array =
+                toQueryString this
+
