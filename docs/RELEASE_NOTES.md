@@ -1,3 +1,7 @@
+### 1.5.18 - 31.03.2026
+* Fix for new LINQ mapping of ExpressionType.Block
+* Fix for empty select since FSharp.Core 10.1.201 query changes.
+
 ### 1.5.17 - 14.09.2025
 * DateTimeOffset function translations
 * Faster disposing of commands

@@ -1,22 +1,13 @@
 #r "nuget: System.Data.SqlClient"
 #r "nuget: Microsoft.Data.SqlClient"
 
-// Dynamic
-// This is with classic FSI:
-#I @"../../../bin/lib/net48"
-#r @"../../../bin/lib/net48/FSharp.Data.SqlProvider.Common.dll"
-#r @"../../../bin/lib/net48/FSharp.Data.SqlProvider.dll"
-// This is with dotnet.exe fsi:
-#I @"../../../bin/lib/netstandard2.1"
-#r @"../../../bin/lib/netstandard2.1/FSharp.Data.SqlProvider.Common.dll"
-#r @"../../../bin/lib/netstandard2.1/FSharp.Data.SqlProvider.dll"
 
 // Microsoft SqlServer only
-(*
+
 #r @"../../../bin/mssql/lib/netstandard2.0/FSharp.Data.SqlProvider.Common.dll"
 #r @"../../../bin/mssql/lib/netstandard2.0/FSharp.Data.SqlProvider.MsSql.dll"
 open FSharp.Data.Sql.MsSql
-*)
+
 
 open System
 open FSharp.Data.Sql
@@ -37,7 +28,7 @@ FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executin
 let processId = System.Diagnostics.Process.GetCurrentProcess().Id;
 
 //type HR = SqlDataProvider<Common.DatabaseProviderTypes.MSSQLSERVER, connStr, ResolutionPath = resolutionFolder>
-type HR = SqlDataProvider<Common.DatabaseProviderTypes.MSSQLSERVER_DYNAMIC, connStr, ResolutionPath = resolutionFolder>
+type HR = SqlDataProvider<Common.DatabaseProviderTypes.MSSQLSERVER, connStr, ResolutionPath = resolutionFolder>
 let ctx = HR.GetDataContext()
 
 type Employee = {
@@ -51,6 +42,19 @@ type Employee = {
 //***************** Individuals ***********************//
 let indv = ctx.Dbo.Employees.Individuals.``As FirstName``.``100, Steven``
 indv.FirstName + " " + indv.LastName + " " + indv.Email
+
+
+let dia = 100m
+let qry = 
+    query {
+        for cg in ctx.Dbo.Employees do
+        where (cg.Salary > dia && cg.Email <> "idFlowDetail")
+        select {|
+            Id = cg.Email
+            Volumen = cg.FirstName
+        |}
+    }
+let res = qry |> Seq.toList
 
 
 //*************** QUERY ************************//

@@ -1,5 +1,5 @@
 #if INTERACTIVE
-#I @"../../bin/lib/net48/"
+#I @"../../bin/lib/netstandard2.0/"
 #r "FSharp.Data.SqlProvider.Common.dll"
 #r "FSharp.Data.SqlProvider.dll"
 #r @"../../packages/tests/NUnit/lib/netstandard2.0/nunit.framework.dll"
@@ -49,6 +49,18 @@ let ``simple select with contains query``() =
             contains "ALFKI"
         }
     Assert.IsTrue(qry)    
+
+[<Test >]
+let ``simple select with tuple by the new projections``() =
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            where (cust.CustomerId = "ALFKI")
+            select (cust.CustomerId, cust.City)
+        } |> Seq.toList
+    let firstId = qry |> List.head |> fst
+    Assert.AreEqual("ALFKI", firstId)
 
 [<Test>]
 let ``simple select with contains query with where``() =

@@ -681,20 +681,27 @@ module internal QueryExpressionTransformer =
                     match projs with 
                     | [] -> prevLambda, foundparams
                     | proj::tail ->
-                        let operations =
-                            // Full entities don't need to be transferred recursively
-                            // but Canonical operation structures cannot be lost.
-                            [| for KeyValue(k,v) in foundparams do
-                                if k = "" then yield k, v
-                                else
-                                  for colp in v do
-                                    match colp with
-                                    | OperationColumn _ ->  yield k, v
-                                    | EntityColumn _ -> () |]
-                        foundparams.Clear()
-                        operations |> Array.distinct |> Array.iter(fun (k, v) ->foundparams.Add(k,v))
                         let lambda1, dbparams1 = visitExpression proj prevLambda initDbParam
-                        dbparams1 |> Seq.iter(fun k -> foundparams.[k.Key] <- k.Value )
+                        if dbparams1.Count = 0 then
+                            // This was not a database call projection, there was probably some unrelated extra-wrapping lambda.
+                            // It's safest to keep any previous parameters.
+                            ()
+                        else
+                            let operations =
+                                // Full entities don't need to be transferred recursively
+                                // but Canonical operation structures cannot be lost.
+                                [| for KeyValue(k,v) in foundparams do
+                                    if k = "" then yield k, v
+                                    else
+                                        for colp in v do
+                                        match colp with
+                                        | OperationColumn _ ->  yield k, v
+                                        | EntityColumn _ -> () |]
+
+                            foundparams.Clear()
+                            operations |> Array.distinct |> Array.iter(fun (k, v) ->foundparams.Add(k,v))
+                            dbparams1 |> Seq.iter(fun k -> foundparams.[k.Key] <- k.Value )
+
                         composeProjections tail lambda1 foundparams
 
                 let generatedMegaLambda, finalParams = composeProjections projs (Unchecked.defaultof<LambdaExpression>) (Dictionary<string, ResizeArray<ProjectionParameter>>())
