@@ -1148,9 +1148,10 @@ module DesignTimeUtils =
 
             // these are the default values to be used if the .GetDataContext() overload doesn't include the parameter
             let defaultConnStr =
-                <@@ match ConfigHelpers.tryGetConnectionString true resolutionFolder conStringName connectionString with
-                    | "" -> failwithf "No connection string specified or could not find a connection string with name %s" conStringName
-                    | cs -> cs
+                <@@ let cs = ConfigHelpers.tryGetConnectionString true resolutionFolder conStringName connectionString
+                    if String.IsNullOrEmpty cs then
+                        failwithf "No connection string specified or could not find a connection string with name %s" conStringName
+                    else cs
                 @@>
             let defaultResPath = <@@ resolutionPath @@>
             let defaultCmdTimeout = <@@ NO_COMMAND_TIMEOUT @@>

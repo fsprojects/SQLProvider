@@ -485,6 +485,10 @@ module internal QueryExpressionTransformer =
             | ExpressionType.Invoke,             (:? InvocationExpression as e)  -> upcast Expression.Invoke(transform en e.Expression, e.Arguments |> Seq.map(fun a -> transform en a))
             | ExpressionType.MemberInit,         (:? MemberInitExpression as e)  -> upcast Expression.MemberInit( (transform en e.NewExpression) :?> NewExpression , e.Bindings)
             | ExpressionType.ListInit,           (:? ListInitExpression as e)    -> upcast Expression.ListInit( (transform en e.NewExpression) :?> NewExpression, e.Initializers)
+            | ExpressionType.Block,              (:? BlockExpression as e)       -> let transformedVariables =
+                                                                                        try e.Variables |> Seq.map(fun e -> transform en e :?> ParameterExpression)
+                                                                                        with | _ -> e.Variables
+                                                                                    upcast Expression.Block(transformedVariables, e.Expressions |> Seq.map(fun e -> transform en e))
             | _ -> failwith ("encountered unknown LINQ expression: " + e.NodeType.ToString() + " " + e.ToString())
 
         let newProjection =
