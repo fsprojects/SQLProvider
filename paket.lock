@@ -20,7 +20,7 @@ NUGET
       System.Security.Cryptography.ProtectedData (>= 4.7) - restriction: >= netstandard2.0
       System.Text.Json (>= 4.7.2) - restriction: >= netstandard2.0
       System.Threading.Tasks.Extensions (>= 4.5.4) - restriction: >= netstandard2.0
-    FSharp.Core (8.0.301)
+    FSharp.Core (10.1.201)
     Microsoft.Bcl.AsyncInterfaces (9.0.4) - restriction: || (>= net462) (&& (>= net6.0) (< net8.0)) (>= netstandard2.0)
       System.Threading.Tasks.Extensions (>= 4.5.4) - restriction: || (>= net462) (&& (>= netstandard2.0) (< netstandard2.1))
     Microsoft.Bcl.Memory (9.0.4) - restriction: || (>= net462) (&& (>= net6.0) (< net8.0)) (&& (< net6.0) (>= netstandard2.0)) (&& (>= net8.0) (< net9.0))
@@ -1498,10 +1498,10 @@ GROUP SourceFiles
 STORAGE: NONE
 GITHUB
   remote: fsprojects/FSharp.TypeProviders.SDK
-    src/ProvidedTypes.fs (8e61c84a007ee6cd672e627fc98eb476fb0f94be)
-    src/ProvidedTypes.fsi (8e61c84a007ee6cd672e627fc98eb476fb0f94be)
+    src/ProvidedTypes.fs (2571b7d60394e5903d77fac39ae3173d8188449a)
+    src/ProvidedTypes.fsi (2571b7d60394e5903d77fac39ae3173d8188449a)
   remote: Thorium/Linq.Expression.Optimizer
-    src/Code/ExpressionOptimizer.fs (2a3d9c88f99e5b47a42289295e8c5bb95369bc33)
+    src/Code/ExpressionOptimizer.fs (9bdaecfa2daeedb9e2529b58477168a15b5299c0)
 GROUP Tests
 STORAGE: PACKAGES
 NUGET

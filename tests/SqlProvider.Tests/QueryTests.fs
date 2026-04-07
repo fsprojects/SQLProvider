@@ -62,6 +62,18 @@ let ``simple select with tuple by the new projections``() =
     let firstId = qry |> List.head |> fst
     Assert.AreEqual("ALFKI", firstId)
 
+[<Test >]
+let ``simple select with anon-record by the new projections``() =
+    let dc = sql.GetDataContext()
+    let qry = 
+        query {
+            for cust in dc.Main.Customers do
+            where (cust.CustomerId = "ALFKI")
+            select {| B = cust.City; A = cust.CustomerId; C = "" |}
+        } |> Seq.toList
+    let firstItm = qry |> List.head
+    Assert.AreEqual("ALFKI", firstItm.A)
+
 [<Test>]
 let ``simple select with contains query with where``() =
     let dc = sql.GetDataContext()

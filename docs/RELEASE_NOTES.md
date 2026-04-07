@@ -1,3 +1,6 @@
+### 1.5.19 - 07.04.2026
+* Added support for code-blocks (record fix) for new FSharp.Core 10.1
+
 ### 1.5.18 - 31.03.2026
 * Fix for new LINQ mapping of ExpressionType.Block
 * Fix for empty select since FSharp.Core 10.1.201 query changes.

@@ -8,7 +8,7 @@ storage: none
 // - Some fsproj files may have direct dependencies listed as packagereference, shouldn't conflict with these versions
 // - Nuget packages have dependencies listed, so if updated here, the paket.template needs update as well
 
-nuget FSharp.Core == 8.0.301
+nuget FSharp.Core == 10.1.201
 nuget System.Data.SqlClient framework: net461, net472, net48, netstandard2.0, netstandard2.1, netcoreapp2.1, netcoreapp3.1
 nuget NETStandard.Library.NETFramework storage: packages
 nuget System.Runtime
@@ -29,7 +29,7 @@ group Build
     storage: none
 
     nuget Microsoft.SourceLink.GitHub prerelease copy_local: true
-    nuget FSharp.Core == 8.0.301
+    nuget FSharp.Core == 10.1.201
     nuget FSharp.Formatting >= 4.0.0
     nuget Nuget.CommandLine
     nuget RazorEngine
@@ -49,7 +49,7 @@ group Build
     nuget Fake.DotNet.MSBuild
     nuget Fake.DotNet.FSFormatting
     nuget Fake.DotNet.Testing.NUnit
-    nuget FSharp.Compiler.Service 43.8.301
+    nuget FSharp.Compiler.Service 43.12.201
     nuget System.Data.SqlClient
     nuget MSBuild.StructuredLogger
 
@@ -79,7 +79,7 @@ group Docs
     nuget FSharp.Formatting prerelease
     nuget FSharp.Literate >= 4.0.0
     nuget Dotnet.ProjInfo.Workspace.FCS
-	nuget FSharp.Compiler.Service 43.8.301
+	nuget FSharp.Compiler.Service 43.12.201
 
 group Tests
     source https://api.nuget.org/v3/index.json

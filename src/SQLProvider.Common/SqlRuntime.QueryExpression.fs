@@ -489,6 +489,8 @@ module internal QueryExpressionTransformer =
                                                                                         try e.Variables |> Seq.map(fun e -> transform en e :?> ParameterExpression)
                                                                                         with | _ -> e.Variables
                                                                                     upcast Expression.Block(transformedVariables, e.Expressions |> Seq.map(fun e -> transform en e))
+            | ExpressionType.Assign,             (:? BinaryExpression as e)      -> // Left shouldn't be entity, but it can be a var CopyOfStruct thing
+                                                                                    upcast Expression.Assign (transform en e.Left, transform en e.Right)
             | _ -> failwith ("encountered unknown LINQ expression: " + e.NodeType.ToString() + " " + e.ToString())
 
         let newProjection =
