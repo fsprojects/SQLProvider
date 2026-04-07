@@ -5,13 +5,13 @@ open System.Reflection
 [<assembly: AssemblyTitleAttribute("SQLProvider.DuckDb.DesignTime")>]
 [<assembly: AssemblyProductAttribute("SQLProvider")>]
 [<assembly: AssemblyDescriptionAttribute("Type providers for DuckDb database access.")>]
-[<assembly: AssemblyVersionAttribute("1.5.18")>]
-[<assembly: AssemblyFileVersionAttribute("1.5.18")>]
+[<assembly: AssemblyVersionAttribute("1.5.19")>]
+[<assembly: AssemblyFileVersionAttribute("1.5.19")>]
 do ()
 
 module internal AssemblyVersionInformation =
     let [<Literal>] AssemblyTitle = "SQLProvider.DuckDb.DesignTime"
     let [<Literal>] AssemblyProduct = "SQLProvider"
     let [<Literal>] AssemblyDescription = "Type providers for DuckDb database access."
-    let [<Literal>] AssemblyVersion = "1.5.18"
-    let [<Literal>] AssemblyFileVersion = "1.5.18"
+    let [<Literal>] AssemblyVersion = "1.5.19"
+    let [<Literal>] AssemblyFileVersion = "1.5.19"
