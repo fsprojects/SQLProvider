@@ -2,7 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>net8.0;netstandard2.0;net461</TargetFrameworks>
+    <TargetFrameworks>net8.0;net10.0;netstandard2.0;net461</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <DefineConstants>$(DefineConstants);TP_RUNTIME;NO_GENERATIVE;ODBC</DefineConstants>
     <PackageReleaseNotes>https://github.com/fsprojects/SQLProvider/blob/master/docs/RELEASE_NOTES.md</PackageReleaseNotes>
@@ -38,7 +38,6 @@
     <MSBuild Projects="..\SQLProvider.Odbc.DesignTime\SQLProvider.Odbc.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=$(TargetFramework)" />
   </Target>
   <ItemGroup>
-    <PackageReference Include="System.Data.Odbc" Version="6.0.2" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
   </ItemGroup>
     <ItemGroup Condition="'$(TargetFramework)' == 'net461'">

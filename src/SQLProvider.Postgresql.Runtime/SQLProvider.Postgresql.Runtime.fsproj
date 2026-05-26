@@ -2,7 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>net8.0;netstandard2.0;net462</TargetFrameworks>
+    <TargetFrameworks>net8.0;net10.0;netstandard2.0;net462</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <DefineConstants>$(DefineConstants);TP_RUNTIME;NO_GENERATIVE;POSTGRESQL</DefineConstants>
     <PackageReleaseNotes>https://github.com/fsprojects/SQLProvider/blob/master/docs/RELEASE_NOTES.md</PackageReleaseNotes>
@@ -48,8 +48,6 @@
         <Reference Include="System.IO.Compression" />
     </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Npgsql" Version="8.0.7" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.3" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
   </ItemGroup>
   <ItemGroup>

@@ -2,7 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>net8.0;netstandard2.0;net462</TargetFrameworks>
+    <TargetFrameworks>net8.0;net10.0;netstandard2.0;net462</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <DefineConstants>$(DefineConstants);NO_GENERATIVE;DESIGNTIME;POSTGRESQL</DefineConstants>
     <OutputPath>..\..\bin\postgresql\typeproviders\fsharp41\</OutputPath>
@@ -44,12 +44,6 @@
         <Reference Include="System.Xml" />
         <Reference Include="System.IO.Compression" />
     </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="Npgsql" Version="8.0.7">
-        <IncludeAssets>all</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.3" />
-  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SQLProvider.Common\SQLProvider.Common.fsproj" />
   </ItemGroup>

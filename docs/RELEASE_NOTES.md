@@ -1,3 +1,6 @@
+### 1.5.20 - 26.05.2026
+* NET 10 libraries Added
+
 ### 1.5.19 - 07.04.2026
 * Added support for code-blocks (record fix) for new FSharp.Core 10.1
 

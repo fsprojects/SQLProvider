@@ -24,9 +24,11 @@ summary
 description
     Type providers for PostgreSql database access.
 files
+    ../../bin/postgresql/lib/net10.0/FSharp.Data.SqlProvider.* ==> lib/net10.0
     ../../bin/postgresql/lib/net462/FSharp.Data.SqlProvider.* ==> lib/net462
     ../../bin/postgresql/lib/net8.0/FSharp.Data.SqlProvider.* ==> lib/net8.0
     ../../bin/postgresql/lib/netstandard2.0/FSharp.Data.SqlProvider.* ==> lib/netstandard2.0
+    ../../bin/postgresql/typeproviders/fsharp41/net10.0/**/*.dll ==> typeproviders/fsharp41/net10.0
     ../../bin/postgresql/typeproviders/fsharp41/net462/**/*.dll ==> typeproviders/fsharp41/net462
     ../../bin/postgresql/typeproviders/fsharp41/net8.0/**/*.dll ==> typeproviders/fsharp41/net8.0
     ../../bin/postgresql/typeproviders/fsharp41/netstandard2.0/**/*.dll ==> typeproviders/fsharp41/netstandard2.0

@@ -1,4 +1,4 @@
-version 8.1.0
+version 10.3.1
 source https://api.nuget.org/v3/index.json
 storage: none
 
@@ -19,7 +19,7 @@ nuget Microsoft.Data.SQLite 2.0
 nuget Microsoft.Data.SqlClient 5.2.2
 nuget System.Memory
 nuget System.Runtime.Loader 4.3
-nuget System.Text.Encodings.Web 9.0.4
+nuget System.Text.Encodings.Web 9.0.16
 nuget System.Threading.Tasks.Extensions
 nuget Microsoft.Extensions.Logging.Abstractions 8.0.3
 
@@ -27,6 +27,7 @@ group Build
 
     source https://api.nuget.org/v3/index.json
     storage: none
+    framework: net6.0
 
     nuget Microsoft.SourceLink.GitHub prerelease copy_local: true
     nuget FSharp.Core == 10.1.201
@@ -52,7 +53,9 @@ group Build
     nuget FSharp.Compiler.Service 43.12.201
     nuget System.Data.SqlClient
     nuget MSBuild.StructuredLogger
-
+    nuget System.Collections.Immutable
+    nuget System.Formats.Asn1
+    nuget Microsoft.Bcl.Cryptography
 
 group SourceFiles
     source https://api.nuget.org/v3/index.json
@@ -80,6 +83,7 @@ group Docs
     nuget FSharp.Literate >= 4.0.0
     nuget Dotnet.ProjInfo.Workspace.FCS
 	nuget FSharp.Compiler.Service 43.12.201
+    nuget System.Reflection.Metadata 9.0.16
 
 group Tests
     source https://api.nuget.org/v3/index.json

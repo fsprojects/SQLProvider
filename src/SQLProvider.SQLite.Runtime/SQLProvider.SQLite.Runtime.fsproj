@@ -2,7 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>net8.0;netstandard2.0;net462</TargetFrameworks>
+    <TargetFrameworks>net8.0;net10.0;netstandard2.0;net462</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <DefineConstants>$(DefineConstants);TP_RUNTIME;NO_GENERATIVE;SQLITE</DefineConstants>
     <PackageReleaseNotes>https://github.com/fsprojects/SQLProvider/blob/master/docs/RELEASE_NOTES.md</PackageReleaseNotes>
@@ -38,10 +38,6 @@
     <MSBuild Projects="..\SQLProvider.SQLite.DesignTime\SQLProvider.SQLite.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=$(TargetFramework)" />
   </Target>
   <ItemGroup>
-    <PackageReference Include="Microsoft.Data.Sqlite.Core" Version="9.0.4" />
-    <PackageReference Include="SQLitePCLRaw.bundle_green" Version="2.1.11" />
-    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.115.5" />
-    <PackageReference Include="System.Data.SQLite.Linq" Version="1.0.115.5" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
   </ItemGroup>
     <ItemGroup Condition="'$(TargetFramework)' == 'net462'">

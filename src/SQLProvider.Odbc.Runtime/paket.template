@@ -24,9 +24,11 @@ summary
 description
     Type providers for ODBC database access.
 files
+    ../../bin/odbc/lib/net10.0/FSharp.Data.SqlProvider.* ==> lib/net10.0
     ../../bin/odbc/lib/net8.0/FSharp.Data.SqlProvider.* ==> lib/net8.0
     ../../bin/odbc/lib/netstandard2.0/FSharp.Data.SqlProvider.* ==> lib/netstandard2.0
     ../../bin/odbc/lib/net461/FSharp.Data.SqlProvider.* ==> lib/net461
+    ../../bin/odbc/typeproviders/fsharp41/net10.0/**/*.dll ==> typeproviders/fsharp41/net10.0
     ../../bin/odbc/typeproviders/fsharp41/net8.0/**/*.dll ==> typeproviders/fsharp41/net8.0
     ../../bin/odbc/typeproviders/fsharp41/netstandard2.0/**/*.dll ==> typeproviders/fsharp41/netstandard2.0
     ../../bin/odbc/typeproviders/fsharp41/net461/**/*.dll ==> typeproviders/fsharp41/net461

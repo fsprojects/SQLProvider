@@ -6,4 +6,4 @@ group SourceFiles
 
 group Tests
       Oracle.ManagedDataAccess framework: net472, net48, netstandard2.0
-      Oracle.ManagedDataAccess.Core framework: net8.0, netstandard2.1
+      Oracle.ManagedDataAccess.Core framework: net10.0, net8.0, netstandard2.1

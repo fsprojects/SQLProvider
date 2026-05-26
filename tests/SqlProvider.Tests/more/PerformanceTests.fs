@@ -292,6 +292,6 @@ let ``query plan caching test`` () =
         let avgFirstTwo = executionTimes |> List.map decimal |> List.take 2 |> List.average
         let avgLastTwo = executionTimes |> List.map decimal |> List.skip 3 |> List.average
         
-        // This is a general expectation, but can vary
-        Assert.IsTrue(avgLastTwo <= avgFirstTwo * 2.0m) // Allow reasonable variance
+        // This is a general expectation, but can vary  
+        Assert.IsTrue(avgLastTwo <= avgFirstTwo * 2.0m, $"First returned {avgFirstTwo}, last retruned {avgLastTwo}") // Allow reasonable variance
     }

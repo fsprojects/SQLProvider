@@ -1528,7 +1528,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                 // This is not a perfect cache-invalidation solution, it can remove a valid item from
                 // cache after the time-out, causing one extra hit, but this is only a design-time cache
                 // and it will work well enough to deal with Visual Studio's multi-threading problems
-                let expiration = TimeSpan.FromMinutes 3
+                let expiration = TimeSpan.FromMinutes 3.0
                 let rec invalidationFunction key =
                     async {
                         do! Async.Sleep (int expiration.TotalMilliseconds)

@@ -2,7 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>net8.0;netstandard2.0;net462</TargetFrameworks>
+    <TargetFrameworks>net8.0;net10.0;netstandard2.0;net462</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <DefineConstants>$(DefineConstants);TP_RUNTIME;NO_GENERATIVE;MSACCESS</DefineConstants>
     <PackageReleaseNotes>https://github.com/fsprojects/SQLProvider/blob/master/docs/RELEASE_NOTES.md</PackageReleaseNotes>
@@ -38,7 +38,6 @@
     <MSBuild Projects="..\SQLProvider.MsAccess.DesignTime\SQLProvider.MsAccess.DesignTime.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=$(TargetFramework)" />
   </Target>
   <ItemGroup>
-    <PackageReference Include="System.Data.OleDb" Version="6.0.1" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
   </ItemGroup>
   <ItemGroup>

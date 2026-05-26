@@ -2,7 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>net8.0;netstandard2.0;net462</TargetFrameworks>
+    <TargetFrameworks>net8.0;net10.0;netstandard2.0;net462</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <DefineConstants>$(DefineConstants);NO_GENERATIVE;DESIGNTIME;MSACCESS</DefineConstants>
     <OutputPath>..\..\bin\msaccess\typeproviders\fsharp41\</OutputPath>
@@ -33,9 +33,6 @@
       <Compile Include="..\SQLProvider.Runtime\Providers.MSAccess.fs" Link="Providers.MSAccess.fs" />
       <Compile Include="..\SQLProvider.Runtime\SqlRuntime.DataContext.fs" Link="SqlRuntime.DataContext.fs" />
       <Compile Include="..\SQLProvider.DesignTime\SqlDesignTime.fs" Link="SqlDesignTime.fs" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="System.Data.OleDb" Version="6.0.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SQLProvider.Common\SQLProvider.Common.fsproj" />

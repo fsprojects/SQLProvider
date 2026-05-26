@@ -24,9 +24,11 @@ summary
 description
     Type providers for Oracle database access.
 files
+    ../../bin/oracle/lib/net10.0/FSharp.Data.SqlProvider.* ==> lib/net10.0
     ../../bin/oracle/lib/net8.0/FSharp.Data.SqlProvider.* ==> lib/net8.0
     ../../bin/oracle/lib/net472/FSharp.Data.SqlProvider.* ==> lib/net472
     ../../bin/oracle/lib/netstandard2.0/FSharp.Data.SqlProvider.* ==> lib/netstandard2.0
+    ../../bin/oracle/typeproviders/fsharp41/net10.0/**/*.dll ==> typeproviders/fsharp41/net10.0
     ../../bin/oracle/typeproviders/fsharp41/net8.0/**/*.dll ==> typeproviders/fsharp41/net8.0
     ../../bin/oracle/typeproviders/fsharp41/net472/**/*.dll ==> typeproviders/fsharp41/net472
     ../../bin/oracle/typeproviders/fsharp41/netstandard2.0/**/*.dll ==> typeproviders/fsharp41/netstandard2.0
@@ -45,6 +47,12 @@ dependencies
     System.Memory >= 4.6.3
     Oracle.ManagedDataAccess.Core >= 23.8.0
   framework: net8.0
+    FSharp.Core >= 8.0.301
+    Newtonsoft.Json >= 13.0.1
+    System.Memory >= 4.6.3
+    Oracle.ManagedDataAccess >= 23.8.0
+    Oracle.ManagedDataAccess.Core >= 23.8.0
+  framework: net10.0
     FSharp.Core >= 8.0.301
     Newtonsoft.Json >= 13.0.1
     System.Memory >= 4.6.3

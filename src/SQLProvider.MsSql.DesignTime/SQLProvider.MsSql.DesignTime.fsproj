@@ -2,7 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>net8.0;netstandard2.0;net462</TargetFrameworks>
+    <TargetFrameworks>net8.0;net10.0;netstandard2.0;net462</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <DefineConstants>$(DefineConstants);NO_GENERATIVE;DESIGNTIME;MSSQL;MICROSOFTSQL</DefineConstants>
     <OutputPath>..\..\bin\mssql\typeproviders\fsharp41\</OutputPath>
@@ -36,9 +36,6 @@
       <Compile Include="..\SQLProvider.DesignTime\SqlDesignTime.fs" Link="SqlDesignTime.fs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2">
-        <IncludeAssets>all</IncludeAssets>
-    </PackageReference>
     <ProjectReference Include="..\SQLProvider.Common\SQLProvider.Common.fsproj" />
   </ItemGroup>
     <ItemGroup Condition="'$(TargetFramework)' == 'net462' ">

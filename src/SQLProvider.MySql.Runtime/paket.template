@@ -24,8 +24,10 @@ summary
 description
     Type providers for MySQL database access.
 files
+    ../../bin/mysql/lib/net10.0/FSharp.Data.SqlProvider.* ==> lib/net10.0
     ../../bin/mysql/lib/net8.0/FSharp.Data.SqlProvider.* ==> lib/net8.0
     ../../bin/mysql/lib/netstandard2.0/FSharp.Data.SqlProvider.* ==> lib/netstandard2.0
+    ../../bin/mysql/typeproviders/fsharp41/net10.0/**/*.dll ==> typeproviders/fsharp41/net10.0
     ../../bin/mysql/typeproviders/fsharp41/net48/**/*.dll ==> typeproviders/fsharp41/net48
     ../../bin/mysql/typeproviders/fsharp41/net8.0/**/*.dll ==> typeproviders/fsharp41/net8.0
     ../../bin/mysql/typeproviders/fsharp41/netstandard2.0/**/*.dll ==> typeproviders/fsharp41/netstandard2.0

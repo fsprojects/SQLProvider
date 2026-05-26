@@ -2,7 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>net8.0;netstandard2.0;net48</TargetFrameworks>
+    <TargetFrameworks>net8.0;net10.0;netstandard2.0;net48</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <DefineConstants>$(DefineConstants);NO_GENERATIVE;DESIGNTIME;FIREBIRD</DefineConstants>
     <OutputPath>..\..\bin\firebird\typeproviders\fsharp41\</OutputPath>
@@ -33,11 +33,6 @@
       <Compile Include="..\SQLProvider.Runtime\Providers.Firebird.fs" Link="Providers.Firebird.fs" />
       <Compile Include="..\SQLProvider.Runtime\SqlRuntime.DataContext.fs" Link="SqlRuntime.DataContext.fs" />
       <Compile Include="..\SQLProvider.DesignTime\SqlDesignTime.fs" Link="SqlDesignTime.fs" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="FirebirdSql.Data.FirebirdClient" Version="10.3.2">
-        <IncludeAssets>all</IncludeAssets>
-    </PackageReference>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SQLProvider.Common\SQLProvider.Common.fsproj" />
