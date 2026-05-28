@@ -45,7 +45,10 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
             p.OdbcType <- (Enum.ToObject(typeof<OdbcType>, providerType) :?> OdbcType)
             p.DbType
 
-        let getClrType (input:string) = Utilities.getType(input).ToString()
+        let getClrType (input:string) =
+            match Utilities.getType input with
+            | null -> typeof<String>.ToString()
+            | x -> x.ToString()
 
         let mappings =
             [

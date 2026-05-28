@@ -1,3 +1,6 @@
+### 1.5.21 - 28.05.2026
+* Added more tolerance to type mapping
+
 ### 1.5.20 - 26.05.2026
 * NET 10 libraries Added
 

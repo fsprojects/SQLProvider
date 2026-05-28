@@ -178,7 +178,10 @@ module MySql =
             p.DbType
 #endif
 
-        let getClrType (input:string) = Utilities.getType(input).ToString()
+        let getClrType (input:string) =
+            match Utilities.getType input with
+            | null -> typeof<String>.ToString()
+            | x -> x.ToString()
 
         let mappings =
             [
