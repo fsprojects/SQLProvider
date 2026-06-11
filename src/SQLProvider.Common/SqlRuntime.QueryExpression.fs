@@ -17,6 +17,11 @@ module internal QueryExpressionTransformer =
         | FSharp.Quotations.Patterns.Call(_,mi,_) -> mi
         | _ -> failwith "never"
 
+    /// Replaces parameter references matching the predicate with the given expression
+    type internal ParamSubstitutor(predicate: ParameterExpression -> bool, replacement: Expression) =
+        inherit ExpressionVisitor()
+        override __.VisitParameter p = if predicate p then replacement else upcast p
+
 
     let rec directAggregate (exp:Expression) picker =
         match exp.NodeType, exp with
@@ -262,7 +267,18 @@ module internal QueryExpressionTransformer =
                         match hasInnerdSelect with
                         | Some selParam -> selParam.Arguments.[0]
                         | None -> me.Arguments.[0]
-                        
+                    let paramArg =
+                        // LINQ-helper wrapper new Grouping(key, items): aggregate over the underlying grouping of rows,
+                        // so the wrapper (and any groupValBy element conversion inside it) is never materialized
+                        match paramArg with
+                        | :? NewExpression as ne when ne.Type.Name.StartsWith("Grouping") && ne.Arguments.Count = 2 ->
+                            match ne.Arguments.[1] with
+                            | :? MethodCallExpression as sel when sel.Method.Name = "Select" && sel.Arguments.Count = 2 && Common.Utilities.isGrp sel.Arguments.[0].Type ->
+                                sel.Arguments.[0]
+                            | x when Common.Utilities.isGrp x.Type -> x
+                            | _ -> paramArg
+                        | _ -> paramArg
+
                     let ty =
                         let retType =
                             if paramArg.Type.GetGenericArguments().Length > 1 then
@@ -452,22 +468,92 @@ module internal QueryExpressionTransformer =
                                                                                     | _ ->
                                                                                         if (not (isNull replaceParams)) then
                                                                                             match replaceParams.TryGetValue e with
-                                                                                            | true, re -> re.Body
+                                                                                            | true, re ->
+                                                                                                // groupValBy: a grouping parameter composes over the element selector,
+                                                                                                // but SQL-side it is the grouping of database rows itself
+                                                                                                if Common.Utilities.isGrp e.Type && Common.Utilities.isGrp databaseParam.Type && not(Common.Utilities.isGrp re.Body.Type) then
+                                                                                                    upcast databaseParam
+                                                                                                else re.Body
                                                                                             | false, _ -> upcast e
                                                                                         else
                                                                                             upcast e
-            | ExpressionType.MemberAccess,       (:? MemberExpression as e)      -> let memb = Expression.MakeMemberAccess(transform en e.Expression, e.Member)
+            | ExpressionType.MemberAccess,       (:? MemberExpression as e)      -> let trExp = transform en e.Expression
+                                                                                    match trExp with
+                                                                                    | :? NewExpression as ne when e.Member.Name = "Key" && ne.Type.Name.StartsWith("Grouping") && ne.Arguments.Count = 2 ->
+                                                                                        // (new Grouping(key, items)).Key reduces to key: this avoids materializing
+                                                                                        // a groupValBy LINQ-helper grouping that is only used for its key
+                                                                                        ne.Arguments.[0]
+                                                                                    | _ ->
+                                                                                    let memb =
+                                                                                        // groupValBy: the source may have been retyped to the SqlEntity-grouping, so re-resolve the member by name
+                                                                                        if (not(isNull trExp)) && (not(isNull e.Expression)) && Type.(<>)(trExp.Type, e.Expression.Type)
+                                                                                            && (not (e.Member.DeclaringType.IsAssignableFrom trExp.Type)) then
+                                                                                            match trExp.Type.GetProperty(e.Member.Name) with
+                                                                                            | null -> Expression.MakeMemberAccess(trExp, e.Member)
+                                                                                            | p -> Expression.MakeMemberAccess(trExp, p)
+                                                                                        else Expression.MakeMemberAccess(trExp, e.Member)
                                                                                     // If we have merged new lambdas, just check the combination of anonymous objects
                                                                                     if replaceParams.Count>0 then
                                                                                         ExpressionOptimizer.Methods.``remove AnonymousType`` memb
                                                                                     else upcast memb
-            | ExpressionType.Call,               (:? MethodCallExpression as e)  -> let transformed = Expression.Call( (if isNull e.Object then null else transform en e.Object), e.Method, e.Arguments |> Seq.map(fun a -> transform en a))
+            | ExpressionType.Call,               (:? MethodCallExpression as e)  -> let obj' = if isNull e.Object then null else transform en e.Object
+                                                                                    let args = e.Arguments |> Seq.map(fun a -> transform en a) |> Seq.toArray
+                                                                                    let fstSndProp =
+                                                                                        // F# fst/snd over a value composed from a groupValBy element selector:
+                                                                                        // turn it into a property access so it reduces against the composed value
+                                                                                        if (e.Method.Name = "Fst" || e.Method.Name = "Snd") && args.Length = 1 && (not(isNull args.[0]))
+                                                                                            && Type.(<>)(args.[0].Type, e.Arguments.[0].Type) then
+                                                                                            match args.[0].Type.GetProperty(if e.Method.Name = "Fst" then "Item1" else "Item2") with
+                                                                                            | null -> None
+                                                                                            | p -> Some p
+                                                                                        else None
+                                                                                    match fstSndProp with
+                                                                                    | Some p ->
+                                                                                        let memb = Expression.MakeMemberAccess(args.[0], p)
+                                                                                        if replaceParams.Count > 0 then ExpressionOptimizer.Methods.``remove AnonymousType`` memb
+                                                                                        else upcast memb
+                                                                                    | None ->
+                                                                                    let transformed =
+                                                                                        // groupValBy: arguments retargeted from the value-typed grouping to the SqlEntity-grouping
+                                                                                        // need the generic method and inner lambda parameters re-mapped accordingly
+                                                                                        let substPairs =
+                                                                                            if e.Method.IsGenericMethod && Common.Utilities.isGrp databaseParam.Type then
+                                                                                                Seq.zip e.Arguments args
+                                                                                                |> Seq.filter(fun ((o:Expression), (n:Expression)) ->
+                                                                                                    (not(isNull n)) && Common.Utilities.isGrp o.Type && Common.Utilities.isGrp n.Type && Type.(<>)(o.Type, n.Type))
+                                                                                                |> Seq.toList
+                                                                                            else []
+                                                                                        if substPairs.IsEmpty then Expression.Call(obj', e.Method, args)
+                                                                                        else
+                                                                                            let rec substT (t:Type) =
+                                                                                                match substPairs |> List.tryPick(fun ((o:Expression),(n:Expression)) ->
+                                                                                                                    if Type.(=)(o.Type, t) then Some n.Type
+                                                                                                                    elif Type.(=)(o.Type.GenericTypeArguments.[1], t) then Some n.Type.GenericTypeArguments.[1]
+                                                                                                                    else None) with
+                                                                                                | Some n -> n
+                                                                                                | None when t.IsGenericType -> t.GetGenericTypeDefinition().MakeGenericType(t.GenericTypeArguments |> Array.map substT)
+                                                                                                | None -> t
+                                                                                            let meth = e.Method.GetGenericMethodDefinition().MakeGenericMethod(e.Method.GetGenericArguments() |> Array.map substT)
+                                                                                            let fixedArgs =
+                                                                                                args |> Array.map(fun a ->
+                                                                                                    match a with
+                                                                                                    | :? LambdaExpression as l when l.Parameters |> Seq.exists(fun p -> Type.(<>)(substT p.Type, p.Type)) ->
+                                                                                                        // the body no longer references the old parameter: it was inlined from the element selector
+                                                                                                        let ps = l.Parameters |> Seq.map(fun p -> Expression.Parameter(substT p.Type, p.Name)) |> Seq.toArray
+                                                                                                        let body =
+                                                                                                            if ps.Length = 1 && Type.(=)(ps.[0].Type, typeof<SqlEntity>) then
+                                                                                                                // re-point the element selector's dangling row references to the lambda's own parameter
+                                                                                                                ParamSubstitutor((fun p -> Type.(=)(p.Type, typeof<SqlEntity>)), ps.[0]).Visit l.Body
+                                                                                                            else l.Body
+                                                                                                        Expression.Lambda(body, ps) :> Expression
+                                                                                                    | _ -> a)
+                                                                                            Expression.Call(obj', meth, fixedArgs)
                                                                                     match transformed with
-                                                                                    | GroupByAggregate(param, callreplace) -> 
+                                                                                    | GroupByAggregate(param, callreplace) ->
                                                                                         if not(groupProjectionMap.Contains param) then
                                                                                             groupProjectionMap.Add(param)
                                                                                         upcast callreplace
-                                                                                    | _ -> 
+                                                                                    | _ ->
                                                                                         upcast transformed
             | ExpressionType.Lambda,             (:? LambdaExpression as e)      -> let exType = e.GetType()
                                                                                     if  exType.IsGenericType
@@ -476,10 +562,33 @@ module internal QueryExpressionTransformer =
                                                                                         upcast Expression.Lambda(e.GetType().GenericTypeArguments.[0],transform en e.Body, e.Parameters)
                                                                                     else
                                                                                         upcast Expression.Lambda(transform en e.Body, e.Parameters)
-            | ExpressionType.New,                (:? NewExpression as e)         -> if isNull e.Members then
-                                                                                      upcast Expression.New(e.Constructor, e.Arguments |> Seq.map(fun a -> transform en a))
+            | ExpressionType.New,                (:? NewExpression as e)         -> let args = e.Arguments |> Seq.map(fun a -> transform en a) |> Seq.toArray
+                                                                                    // groupValBy: tuples/anonymous objects carrying the value-typed grouping are retyped to the SqlEntity-grouping
+                                                                                    let substPairs =
+                                                                                        if e.Type.IsGenericType && Common.Utilities.isGrp databaseParam.Type then
+                                                                                            Seq.zip e.Arguments args
+                                                                                            |> Seq.filter(fun ((o:Expression), (n:Expression)) ->
+                                                                                                (not(isNull n)) && Common.Utilities.isGrp o.Type && Common.Utilities.isGrp n.Type && Type.(<>)(o.Type, n.Type))
+                                                                                            |> Seq.toList
+                                                                                        else []
+                                                                                    if substPairs.IsEmpty then
+                                                                                        if isNull e.Members then
+                                                                                          upcast Expression.New(e.Constructor, args)
+                                                                                        else
+                                                                                          upcast Expression.New(e.Constructor, args, e.Members)
                                                                                     else
-                                                                                      upcast Expression.New(e.Constructor, e.Arguments |> Seq.map(fun a -> transform en a), e.Members)
+                                                                                        let rec substT (t:Type) =
+                                                                                            match substPairs |> List.tryPick(fun ((o:Expression),(n:Expression)) -> if Type.(=)(o.Type, t) then Some n.Type else None) with
+                                                                                            | Some n -> n
+                                                                                            | None when t.IsGenericType -> t.GetGenericTypeDefinition().MakeGenericType(t.GenericTypeArguments |> Array.map substT)
+                                                                                            | None -> t
+                                                                                        let newType = substT e.Type
+                                                                                        let ctor = newType.GetConstructors() |> Array.find(fun c -> c.GetParameters().Length = args.Length)
+                                                                                        if isNull e.Members then
+                                                                                            upcast Expression.New(ctor, args)
+                                                                                        else
+                                                                                            let members = e.Members |> Seq.map(fun m -> newType.GetProperty(m.Name) :> Reflection.MemberInfo)
+                                                                                            upcast Expression.New(ctor, args, members)
             | ExpressionType.NewArrayInit,       (:? NewArrayExpression as e)    -> upcast Expression.NewArrayInit(e.Type.GetElementType(), e.Expressions |> Seq.map(fun e -> transform en e))
             | ExpressionType.NewArrayBounds,     (:? NewArrayExpression as e)    -> upcast Expression.NewArrayBounds(e.Type.GetElementType(), e.Expressions |> Seq.map(fun e -> transform en e))
             | ExpressionType.Invoke,             (:? InvocationExpression as e)  -> upcast Expression.Invoke(transform en e.Expression, e.Arguments |> Seq.map(fun a -> transform en a))
@@ -558,8 +667,21 @@ module internal QueryExpressionTransformer =
                 let pmap = Dictionary<string,ProjectionParameter ResizeArray>()
                 pmap.Add(baseAlias, ResizeArray<_>())
                 (Expression.Lambda(initDbParam,initDbParam).Compile(),pmap)
-            | projs -> 
+            | projs ->
                 let replaceParams = Dictionary<ParameterExpression, LambdaExpression>()
+
+                // groupValBy stores its element selector in the group-data: it is composed specially below
+                let groupValElemSel =
+                    let rec find = function
+                        | SelectMany(_,_,GroupQuery(gdata),_) -> gdata.Projection
+                        | BaseTable _ -> None
+                        | SelectMany(_,_,_,rest)
+                        | FilterClause(_,rest) | HavingClause(_,rest) | Projection(_,rest)
+                        | Distinct rest | OrderBy(_,_,_,rest) | Skip(_,rest) | Take(_,rest)
+                        | Union(_,_,_,rest) | Count rest | AggregateOp(_,_,rest) -> find rest
+                    match find exp with
+                    | Some p when obj.ReferenceEquals(p, projs.Head) -> Some p
+                    | _ -> None
 
                 // We should fetch the initial parameter type from the fist lambda input type.
                 // But currently SQL will always return a list of SqlEntities.
@@ -577,7 +699,8 @@ module internal QueryExpressionTransformer =
                         let rec tupleofentities (tupleType:Type) =
                             if (tupleType.Name.StartsWith("AnonymousObject") || tupleType.Name.StartsWith("Tuple")) then
                                 let ps = tupleType.GetGenericArguments()
-                                ps |> Seq.forall(fun t -> (not(isNull t)) && (Type.(=)(t, typeof<SqlEntity>) || (tupleofentities t))) 
+                                // groupJoin groups (IEnumerable<SqlEntity>) flatten to the joined rows, so they count as entities here
+                                ps |> Seq.forall(fun t -> (not(isNull t)) && (Type.(=)(t, typeof<SqlEntity>) || Type.(=)(t, typeof<System.Collections.Generic.IEnumerable<SqlEntity>>) || (tupleofentities t)))
                             else false
 
                         if e.NodeType = ExpressionType.New then
@@ -602,11 +725,38 @@ module internal QueryExpressionTransformer =
                         | :? UnaryExpression as ce -> 
                             foundInitParamType ce.Operand
                         | _ -> Expression.Parameter(typeof<SqlEntity>,"result")
-                    match projs.Head with
-                    // We have this wrap and the lambda is the second argument:
-                    | :? MethodCallExpression as meth when meth.Arguments.Count = 2 ->
-                        foundInitParamType meth.Arguments.[1]
-                    | _ -> foundInitParamType projs.Head
+                    let defaultParam =
+                        match projs.Head with
+                        // We have this wrap and the lambda is the second argument:
+                        | :? MethodCallExpression as meth when meth.Arguments.Count = 2 ->
+                            foundInitParamType meth.Arguments.[1]
+                        | _ -> foundInitParamType projs.Head
+
+                    match groupValElemSel with
+                    | Some _ when projs.Length > 1 ->
+                        // groupValBy with a later projection: the runtime feeds the projector a grouping of database rows,
+                        // keyed by the type found from the following projection's grouping parameter
+                        let keyType =
+                            let rec lambdaOf : Expression -> LambdaExpression option = function
+                                | :? LambdaExpression as l -> Some l
+                                | :? MethodCallExpression as m when m.Arguments.Count = 2 -> lambdaOf m.Arguments.[1]
+                                | :? UnaryExpression as u -> lambdaOf u.Operand
+                                | _ -> None
+                            match lambdaOf projs.[1] with
+                            | Some l when l.Parameters.Count = 1 && Common.Utilities.isGrp l.Parameters.[0].Type ->
+                                Some l.Parameters.[0].Type.GenericTypeArguments.[0]
+                            | _ -> None
+                        match keyType with
+                        | Some kt ->
+                            let entType =
+                                match sqlQuery.Links.Length with
+                                | 1 -> typeof<Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity>>
+                                | 2 -> typeof<Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity,SqlEntity>>
+                                | 3 -> typeof<Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity,SqlEntity,SqlEntity>>
+                                | _ -> typeof<SqlEntity>
+                            Expression.Parameter(typedefof<System.Linq.IGrouping<_,_>>.MakeGenericType(kt, entType), "result")
+                        | None -> defaultParam
+                    | _ -> defaultParam
 
                 // Multiple projections found. We need to do a function composition: prevProj >> currentProj
                 // for Lamda Expressions. So this is an expression tree visitor.
@@ -635,6 +785,36 @@ module internal QueryExpressionTransformer =
                         | _ -> ()
 
                     generateReplacementParams(currentProj)
+
+                    // groupValBy: nested lambda parameters typed as the element value (or its tuple twin,
+                    // used by the LINQ-helper Grouping-conversion) also compose over the element selector
+                    match groupValElemSel, prevProj with
+                    | Some elemSel, (:? LambdaExpression as prevLambda) when
+                            (not(obj.ReferenceEquals(currentProj, elemSel))) && prevLambda <> Unchecked.defaultof<LambdaExpression> ->
+                        let elemType = (elemSel :?> LambdaExpression).ReturnType
+                        let isElemTwin (t:Type) =
+                            Type.(=)(t, elemType) ||
+                            (t.IsGenericType && elemType.IsGenericType && t.Name.StartsWith("Tuple") && elemType.Name.StartsWith("AnonymousObject")
+                                && t.GenericTypeArguments.Length = elemType.GenericTypeArguments.Length
+                                && Seq.forall2 (fun (a:Type) b -> Type.(=)(a,b)) t.GenericTypeArguments elemType.GenericTypeArguments)
+                        let rec mapNested (e:Expression) =
+                            if isNull e then () else
+                            match e.NodeType, e with
+                            | ExpressionType.Lambda, (:? LambdaExpression as l) ->
+                                l.Parameters |> Seq.iter(fun p -> if isElemTwin p.Type && not(replaceParams.ContainsKey p) then replaceParams.[p] <- prevLambda)
+                                mapNested l.Body
+                            | ExpressionType.Quote, (:? UnaryExpression as u) -> mapNested u.Operand
+                            | ExpressionType.Call, (:? MethodCallExpression as m) ->
+                                (if not(isNull m.Object) then mapNested m.Object)
+                                m.Arguments |> Seq.iter mapNested
+                            | ExpressionType.New, (:? NewExpression as n) -> n.Arguments |> Seq.iter mapNested
+                            | ExpressionType.MemberAccess, (:? MemberExpression as me) -> mapNested me.Expression
+                            | _, (:? BinaryExpression as b) -> mapNested b.Left; mapNested b.Right
+                            | _, (:? UnaryExpression as u) -> mapNested u.Operand
+                            | _ -> ()
+                        mapNested currentProj
+                    | _ -> ()
+
                     let newProjection, projectionMap, groupProjectionMap = transform currentProj entityIndex dbParam sqlQuery.Aliases sqlQuery.UltimateChild replaceParams useCanonicalsOnSelect
                     let fixedParams = Expression.Lambda((newProjection:?>LambdaExpression).Body,initDbParam)
                     
@@ -683,7 +863,14 @@ module internal QueryExpressionTransformer =
                     match projs with 
                     | [] -> prevLambda, foundparams
                     | proj::tail ->
+                        let groupginCountBefore = groupgin.Count
                         let lambda1, dbparams1 = visitExpression proj prevLambda initDbParam
+                        match groupValElemSel with
+                        | Some elemSel when obj.ReferenceEquals(proj, elemSel) && not tail.IsEmpty && groupgin.Count > groupginCountBefore ->
+                            // the groupValBy element selector composes into the later projections:
+                            // its value columns are not selected themselves, the later aggregates are
+                            groupgin.RemoveRange(groupginCountBefore, groupgin.Count - groupginCountBefore)
+                        | _ -> ()
                         if dbparams1.Count = 0 then
                             // This was not a database call projection, there was probably some unrelated extra-wrapping lambda.
                             // It's safest to keep any previous parameters.

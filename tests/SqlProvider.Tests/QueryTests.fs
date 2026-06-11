@@ -1308,8 +1308,8 @@ let ``simple select query with groupBy join complex operations``() =
         } |> Seq.toArray
     Assert.IsNotNull(qry)
 
-[<Test; Ignore("Not Supported")>]
-let ``simple groupValBy item``() = 
+[<Test>]
+let ``simple groupValBy item``() =
     let dc = sql.GetDataContext()
     let qry = 
         query {
@@ -1318,8 +1318,8 @@ let ``simple groupValBy item``() =
         } |> Seq.toList
     Assert.IsNotEmpty(qry)
 
-[<Test; Ignore("Not Supported")>]
-let ``simple select query with groupValBy``() = 
+[<Test>]
+let ``simple select query with groupValBy``() =
     let dc = sql.GetDataContext()
     let qry = 
         query {
@@ -1329,8 +1329,8 @@ let ``simple select query with groupValBy``() =
         } |> dict  
     Assert.IsNotEmpty(qry)
 
-[<Test; Ignore("Not Supported")>]
-let ``complex select query with groupValBy``() = 
+[<Test>]
+let ``complex select query with groupValBy``() =
     let dc = sql.GetDataContext()
     let qry = 
         query {
@@ -1646,8 +1646,8 @@ let ``simple select query with join using relationships``() =
             "VICTE", new DateTime(1996,7,8)
         |], qry.[0..3])
 
-[<Test; Ignore("Not Supported")>]
-let ``simple select query with group join``() = 
+[<Test>]
+let ``simple select query with group join``() =
     let dc = sql.GetDataContext()
     let qry = 
         query {

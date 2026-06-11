@@ -854,7 +854,7 @@ type GroupResultItems<'key, 'SqlEntity>(keyname:String*String*String*String*Stri
     new((k1,k2):String*String, keyval, distinctItem:'SqlEntity) = GroupResultItems((k1, k2,"","","","",""), keyval, distinctItem)
     new((k1,k2,k3):String*String*String, keyval, distinctItem:'SqlEntity) = GroupResultItems((k1, k2,k3,"","","",""), keyval, distinctItem)
     new((k1,k2,k3,k4):String*String*String*String, keyval, distinctItem:'SqlEntity) = GroupResultItems((k1, k2,k3,k4,"","",""), keyval, distinctItem)
-    new((k1,k2,k3,k4,k5):String*String*String*String*String, keyval, distinctItem:'SqlEntity) = GroupResultItems((k1, k2,k3,k4,"","",""), keyval, distinctItem)
+    new((k1,k2,k3,k4,k5):String*String*String*String*String, keyval, distinctItem:'SqlEntity) = GroupResultItems((k1, k2,k3,k4,k5,"",""), keyval, distinctItem)
     new((k1,k2,k3,k4,k5,k6):String*String*String*String*String*String, keyval, distinctItem:'SqlEntity) = GroupResultItems((k1, k2,k3,k4,k5,k6,""), keyval, distinctItem)
     member private __.fetchItem<'ret> itemType (columnName:Option<string>) =
         let fetchCol =

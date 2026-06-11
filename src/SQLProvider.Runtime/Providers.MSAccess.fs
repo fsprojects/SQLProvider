@@ -94,7 +94,7 @@ type internal MSAccessProvider(contextSchemaPath) =
             |> Array.unzip
 
         sb.Clear() |> ignore
-        ~~(sprintf "INSERT INTO [%s] (%s) VALUES (%s)"//; SELECT @@IDENTITY;"
+        ~~(sprintf "INSERT INTO [%s] (%s) VALUES (%s)"
             (entity :> IColumnHolder).Table.Name
             (String.concat "," columnNames)
             (String.concat "," (values |> Array.map(fun p -> p.ParameterName))))
@@ -393,7 +393,7 @@ type internal MSAccessProvider(contextSchemaPath) =
                     | DateDiffSecs(SqlConstant x) -> sprintf "DateDiff('s',%s,%s)" (fieldParam x) column
                     // Math functions
                     | Truncate -> sprintf "Fix(%s)" column
-                    | Ceil -> sprintf "Fix(%s)+1" column
+                    | Ceil -> sprintf "-Int(-(%s))" column
                     | Floor -> sprintf "Int(%s)" column
                     | Sqrt -> sprintf "Sqr(%s)" column
                     | ATan -> sprintf "Atn(%s)" column
@@ -597,6 +597,8 @@ type internal MSAccessProvider(contextSchemaPath) =
                     if i > 0 then ~~ ", "
                     ~~ (sprintf "%s %s" (fieldNotation alias column) (if not desc then "DESC " else "")))
 
+            if sqlQuery.Skip.IsSome then failwith "Skip is not supported by MS Access. Use a sub-query or fetch and skip on the client side."
+
             //add in 'numLinks' open parens, after FROM, closing each after each JOIN statement
             let numLinks = sqlQuery.Links.Length
             if isDeleteScript then
@@ -691,7 +693,10 @@ type internal MSAccessProvider(contextSchemaPath) =
                             Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                             if timeout.IsSome then
                                 cmd.CommandTimeout <- timeout.Value
-                            let id = cmd.ExecuteScalar()
+                            cmd.ExecuteNonQuery() |> ignore
+                            // Jet/ACE doesn't support multi-statement commands, so the identity is fetched separately
+                            use idCmd = new OleDbCommand("SELECT @@IDENTITY", con :?> OleDbConnection, trnsx :?> OleDbTransaction)
+                            let id = idCmd.ExecuteScalar()
                             CommonTasks.checkKey schemaCache.PrimaryKeys id e
                             e._State <- Unchanged
                         | Modified fields ->
@@ -750,7 +755,10 @@ type internal MSAccessProvider(contextSchemaPath) =
                                     Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                                     if timeout.IsSome then
                                         cmd.CommandTimeout <- timeout.Value
-                                    let! id = cmd.ExecuteScalarAsync()
+                                    let! _ = cmd.ExecuteNonQueryAsync()
+                                    // Jet/ACE doesn't support multi-statement commands, so the identity is fetched separately
+                                    use idCmd = new OleDbCommand("SELECT @@IDENTITY", con :?> OleDbConnection, trnsx :?> OleDbTransaction)
+                                    let! id = idCmd.ExecuteScalarAsync()
                                     CommonTasks.checkKey schemaCache.PrimaryKeys id e
                                     e._State <- Unchanged
                                 }

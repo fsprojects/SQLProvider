@@ -1117,7 +1117,7 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
             match sqlQuery.Take, sqlQuery.Skip with
             | ValueSome take, ValueSome skip ->  ~~(sprintf " ROWS %i TO %i;" (skip+1) (skip+take))
             | ValueSome take, ValueNone ->  ~~(sprintf " ROWS %i;" take)
-            | ValueNone, ValueSome skip -> ~~(sprintf " ROWS %i TO %i;" skip System.UInt64.MaxValue)
+            | ValueNone, ValueSome skip -> ~~(sprintf " ROWS %i TO %i;" (skip+1) System.UInt64.MaxValue)
             | ValueNone, ValueNone -> ()
 
             let sql = sb.ToString()

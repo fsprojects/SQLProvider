@@ -713,9 +713,9 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                     | AddMinutes(SqlConstant x) -> sprintf "DATETIME(%s, '+%s minute')" column (Utilities.fieldConstant x)
                     | AddSeconds x -> sprintf "DATETIME(%s, '+%f second')" column x
                     | DateDiffDays(SqlCol(al2, col2)) -> sprintf "CAST(JULIANDAY(%s) - JULIANDAY(%s) as INTEGER)" column (fieldNotation al2 col2)
-                    | DateDiffSecs(SqlCol(al2, col2)) -> sprintf "(JULIANDAY(%s) - JULIANDAY(%s))*24*60*60" (fieldNotation al2 col2) column
+                    | DateDiffSecs(SqlCol(al2, col2)) -> sprintf "(JULIANDAY(%s) - JULIANDAY(%s))*24*60*60" column (fieldNotation al2 col2)
                     | DateDiffDays(SqlConstant x) -> sprintf "CAST(JULIANDAY(%s) - JULIANDAY(%s) as INTEGER)" column (fieldParam x)
-                    | DateDiffSecs(SqlConstant x) -> sprintf "(JULIANDAY(%s) - JULIANDAY(%s))*24*60*60" (fieldParam x) column
+                    | DateDiffSecs(SqlConstant x) -> sprintf "(JULIANDAY(%s) - JULIANDAY(%s))*24*60*60" column (fieldParam x)
                     // Math functions
                     | Truncate -> sprintf "SUBSTR(%s, 1, INSTR(%s, '.') + 1)" column column
                     | Ceil -> sprintf "CAST(%s + 0.5 AS INT)" column // Ceil not supported, this will do

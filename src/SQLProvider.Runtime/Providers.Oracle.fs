@@ -143,7 +143,10 @@ module internal Oracle =
         let getClrType (input:string) =
             (match input.ToLower() with
             | "system.long"  -> typeof<System.Int64>
-            | _ -> Utilities.getType(input)).ToString()
+            | _ ->
+                match Utilities.getType(input) with
+                | null -> typeof<String>
+                | x -> x).ToString()
 
         let mappings =
             [
@@ -617,8 +620,22 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
             ((entity :> IColumnHolder).Table.FullName)
             (String.Join(",",columnNames))
             (String.Join(",",values |> Array.map(fun p -> p.ParameterName))))
+        // sequence/identity-generated keys are read back with a RETURNING clause into an output parameter
+        let pkReturning =
+            match schemaCache.PrimaryKeys.TryGetValue (entity :> IColumnHolder).Table.Name with
+            | true, [pk] when not (columnNames |> Array.contains pk) ->
+                match schemaCache.Columns.TryGetValue (entity :> IColumnHolder).Table.FullName with
+                | true, cols ->
+                    match cols |> Map.tryFind pk with
+                    | Some pkCol ->
+                        ~~(sprintf " RETURNING %s INTO :pkResult" pk)
+                        [| provider.CreateCommandParameter(QueryParameter.Create(":pkResult", columnNames.Length, pkCol.TypeMapping, ParameterDirection.Output), DBNull.Value) |]
+                    | None -> [||]
+                | _ -> [||]
+            | _ -> [||]
         let cmd = provider.CreateCommand(con, sb.ToString())
         values |> Array.iter (cmd.Parameters.Add >> ignore)
+        pkReturning |> Array.iter (cmd.Parameters.Add >> ignore)
         cmd
 
     let createUpdateCommand (provider:ISqlProvider) (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) (changedColumns: string list) =
@@ -1121,11 +1138,18 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
             //I think on oracle this will potentially impact the ordering as the row num is generated before any
             //filters or ordering is applied hance why this produces a nested query. something like
             //select * from (select ....) where ROWNUM <= 5.
-            match sqlQuery.Take with
-            | ValueSome v ->
+            match sqlQuery.Skip, sqlQuery.Take with
+            | ValueSome skip, ValueSome take ->
+                // OFFSET/FETCH requires Oracle 12c or newer
+                ~~(sprintf " OFFSET %i ROWS FETCH NEXT %i ROWS ONLY" skip take)
+                (sb.ToString(), parameters)
+            | ValueSome skip, ValueNone ->
+                ~~(sprintf " OFFSET %i ROWS" skip)
+                (sb.ToString(), parameters)
+            | ValueNone, ValueSome v ->
                 let sql = sprintf "select * from (%s) where ROWNUM <= %i" (sb.ToString()) v
                 (sql, parameters)
-            | ValueNone ->
+            | ValueNone, ValueNone ->
                 let sql = sb.ToString()
                 (sql,parameters)
 
@@ -1153,7 +1177,11 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
                         Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                         if timeout.IsSome then
                             cmd.CommandTimeout <- timeout.Value
-                        let id = cmd.ExecuteScalar()
+                        cmd.ExecuteNonQuery() |> ignore
+                        let id =
+                            // the generated key comes back in the RETURNING INTO output parameter, if one was added
+                            if cmd.Parameters.Contains ":pkResult" then (cmd.Parameters.[":pkResult"] :?> IDbDataParameter).Value
+                            else null
                         match schemaCache.PrimaryKeys.TryGetValue (e :> IColumnHolder).Table.Name with
                         | true, pk ->
                             match (e :> IColumnHolder).GetPkColumnOption pk with
@@ -1212,7 +1240,11 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
                                 Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
-                                let! id = cmd.ExecuteScalarAsync()
+                                let! _ = cmd.ExecuteNonQueryAsync()
+                                let id =
+                                    // the generated key comes back in the RETURNING INTO output parameter, if one was added
+                                    if cmd.Parameters.Contains ":pkResult" then (cmd.Parameters.[":pkResult"] :> IDbDataParameter).Value
+                                    else null
                                 match schemaCache.PrimaryKeys.TryGetValue (e :> IColumnHolder).Table.Name with
                                 | true, pk ->
                                     match (e :> IColumnHolder).GetPkColumnOption pk with

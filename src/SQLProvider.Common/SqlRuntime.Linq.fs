@@ -159,37 +159,37 @@ module internal QueryImplementation =
                 seq { for e in results -> projector.DynamicInvoke e } |> Seq.cache :> System.Collections.IEnumerable
 
 #if DEBUG
-    let parseGroupByQueryResults (projector:Delegate) (results:SqlEntity[]) =
+    let parseGroupByQueryResults (projector:Delegate) (results:SqlEntity[]) (groupKeys:string list) =
 #else
-    let inline internal parseGroupByQueryResults (projector:Delegate) (results:SqlEntity[]) =
+    let inline internal parseGroupByQueryResults (projector:Delegate) (results:SqlEntity[]) (groupKeys:string list) =
 #endif
                 let args = projector.GetType().GenericTypeArguments
-                let keyType, keyConstructor, itemEntityType =
+                let keyType, keyConstructor, itemEntityType, perRowProjector =
                     if Common.Utilities.isGrp args.[0] then
-                        if args.[0].GenericTypeArguments.Length = 0 then None, None, typeof<SqlEntity>
-                        else 
+                        if args.[0].GenericTypeArguments.Length = 0 then None, None, typeof<SqlEntity>, None
+                        else
                             let kt = args.[0].GenericTypeArguments.[0]
                             let itmType = if args.[0].GenericTypeArguments.Length > 1 then args.[0].GenericTypeArguments.[1] else typeof<SqlEntity>
-                            if Type.(=) (kt, typeof<obj>) then None, None, itmType
+                            if Type.(=) (kt, typeof<obj>) then None, None, itmType, None
                             else
                                 let tyo = typedefof<GroupResultItems<_,SqlEntity>>.MakeGenericType(kt, itmType)
-                                Some kt, Some (tyo.GetConstructors()), itmType
+                                Some kt, Some (tyo.GetConstructors()), itmType, None
                     else
                         let baseItmType = typeof<Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity>>
                         let genOpt = args.[0].GenericTypeArguments |> Array.tryFind Common.Utilities.isGrp
                         match genOpt with
                         | None ->
-                            // GroupValBy
-                            failwith ("Not yet supported grouping operation: " + projector.ToString())
-                            //None, None, args.[1]
-                        | Some gen when gen.GenericTypeArguments.Length = 0 -> None, None, baseItmType
+                            // GroupValBy without a later projection: the projector is the element selector,
+                            // applied per row, and the groups are returned as-is.
+                            None, None, args.[1], Some projector
+                        | Some gen when gen.GenericTypeArguments.Length = 0 -> None, None, baseItmType, None
                         | Some gen ->
                             let kt = gen.GenericTypeArguments.[0]
                             let itmType = if gen.GenericTypeArguments.Length > 1 then gen.GenericTypeArguments.[1] else baseItmType
-                            if Type.(=) (kt, typeof<obj>) then None, None, itmType
+                            if Type.(=) (kt, typeof<obj>) then None, None, itmType, None
                             else
                                 let tyo = typedefof<GroupResultItems<_,_>>.MakeGenericType(kt, itmType)
-                                Some kt, Some (tyo.GetConstructors()), itmType
+                                Some kt, Some (tyo.GetConstructors()), itmType, None
 
                 let getval (key:obj) idx = 
                     if keyType.Value.IsGenericType then
@@ -209,27 +209,40 @@ module internal QueryImplementation =
                     tup.GetMethod("makeTuple5"), tup.GetMethod("makeTuple6"), tup.GetMethod("makeTuple7")
 
                 let aggregates = Set.ofArray [|"COUNT_"; "COUNTD_"; "MIN_"; "MAX_"; "SUM_"; "AVG_";"STDDEV_";"VAR_"|]
+                let normalizeKeyName (k:string) =
+                    // group-key columns are aliased e.g. as [City], [cust].[City], `City` or "City" depending on the provider
+                    let k = match k.LastIndexOf '.' with -1 -> k | i -> k.Substring(i+1)
+                    k.Trim([|'['; ']'; '`'; '"'|])
                 // do group-read
-                let collected = 
+                let collected =
                     results |> Array.map(fun (e:SqlEntity) ->
                         // Alias is '[Sum_Column]'
-                        let data = 
-                            e.ColumnValues |> Seq.toArray |> Array.filter(fun (key, _) -> aggregates |> Set.exists (key.Contains) |> not)
+                        let data =
+                            let nonAggregates = e.ColumnValues |> Seq.toArray |> Array.filter(fun (key, _) -> aggregates |> Set.exists (key.Contains) |> not)
+                            if perRowProjector.IsNone then nonAggregates
+                            else
+                                // GroupValBy result rows contain the group-key columns and the selected value columns: pick the keys.
+                                match nonAggregates |> Array.filter(fun (key, _) -> groupKeys |> List.contains (normalizeKeyName key)) with
+                                | [||] -> nonAggregates
+                                | keycols -> keycols
                         let entity =
-                            if Type.(=)(itemEntityType, typeof<SqlEntity>) then box e
-                            elif Type.(=)(itemEntityType, typeof<Tuple<SqlEntity,SqlEntity>>) then
-                                    box(Tuple<_,_>(e, e))
-                            elif Type.(=)(itemEntityType, typeof<Tuple<SqlEntity,SqlEntity,SqlEntity>>) then
-                                    box(Tuple<_,_,_>(e, e, e))
-                            elif Type.(=)(itemEntityType, typeof<Tuple<SqlEntity,SqlEntity,SqlEntity>>) then
-                                    box(Tuple<_,_,_,_>(e, e, e, e))
-                            elif Type.(=)(itemEntityType, typeof<Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity>>) then
-                                    box(Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<_,_>(e, e))
-                            elif Type.(=)(itemEntityType, typeof<Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity,SqlEntity>>) then
-                                    box(Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<_,_,_>(e, e, e))
-                            elif Type.(=)(itemEntityType, typeof<Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity,SqlEntity,SqlEntity>>) then
-                                    box(Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<_,_,_,_>(e, e, e, e))
-                            else failwith ("Not supported grouping: " + itemEntityType.Name)
+                            match perRowProjector with
+                            | Some p -> p.DynamicInvoke e
+                            | None ->
+                                if Type.(=)(itemEntityType, typeof<SqlEntity>) then box e
+                                elif Type.(=)(itemEntityType, typeof<Tuple<SqlEntity,SqlEntity>>) then
+                                        box(Tuple<_,_>(e, e))
+                                elif Type.(=)(itemEntityType, typeof<Tuple<SqlEntity,SqlEntity,SqlEntity>>) then
+                                        box(Tuple<_,_,_>(e, e, e))
+                                elif Type.(=)(itemEntityType, typeof<Tuple<SqlEntity,SqlEntity,SqlEntity,SqlEntity>>) then
+                                        box(Tuple<_,_,_,_>(e, e, e, e))
+                                elif Type.(=)(itemEntityType, typeof<Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity>>) then
+                                        box(Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<_,_>(e, e))
+                                elif Type.(=)(itemEntityType, typeof<Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity,SqlEntity>>) then
+                                        box(Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<_,_,_>(e, e, e))
+                                elif Type.(=)(itemEntityType, typeof<Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity,SqlEntity,SqlEntity>>) then
+                                        box(Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<_,_,_,_>(e, e, e, e))
+                                else failwith ("Not supported grouping: " + itemEntityType.Name)
                             
                         match data with
                         | [||] -> 
@@ -286,7 +299,11 @@ module internal QueryImplementation =
                             keyConstructor.Value.[0].Invoke [|(kn1,kn2,kn3,kn4,kn5,kn6,kn7); tup7.Invoke(null, [|v1;v2;v3;v4;v5;v6;v7|]); entity;|]
                         | lst -> failwith("Complex key columns not supported yet (" + String.Join(",", lst) + ")")
                     )// :?> IGrouping<_, _>)
-                seq { for e in collected -> projector.DynamicInvoke(e) } |> Seq.cache :> System.Collections.IEnumerable
+                if perRowProjector.IsSome then
+                    // GroupValBy: the projector was already applied per row, so the groups are the result
+                    seq { for e in collected -> e } |> Seq.cache :> System.Collections.IEnumerable
+                else
+                    seq { for e in collected -> projector.DynamicInvoke(e) } |> Seq.cache :> System.Collections.IEnumerable
 
     let executeQuery (dc:ISqlDataContext) (provider:ISqlProvider) sqlExp ti =
         use con = provider.CreateConnection(dc.ConnectionString)
@@ -297,7 +314,8 @@ module internal QueryImplementation =
         if dc.CommandTimeout.IsSome then
             cmd.CommandTimeout <- dc.CommandTimeout.Value
         for p in parameters do cmd.Parameters.Add p |> ignore
-        let isGroypBy = sqlExp.hasGroupBy().IsSome && projector.GetType().GenericTypeArguments.Length > 0
+        let groupByInfo = sqlExp.hasGroupBy()
+        let isGroypBy = groupByInfo.IsSome && projector.GetType().GenericTypeArguments.Length > 0
         let columns = provider.GetColumns(con, baseTable)
         if con.State <> ConnectionState.Open then con.Open()
         use reader = cmd.ExecuteReader()
@@ -306,7 +324,9 @@ module internal QueryImplementation =
         if provider.CloseConnectionAfterQuery && con.State <> ConnectionState.Closed then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
         if not isGroypBy then
             invokeEntitiesListAvoidingDynamicInvoke results projector
-        else parseGroupByQueryResults projector results
+        else
+            let groupKeys = match groupByInfo with Some(_,cols) -> cols |> List.map (snd >> Common.Utilities.getBaseColumnName) | None -> []
+            parseGroupByQueryResults projector results groupKeys
 
     let executeQueryAsync (dc:ISqlDataContext) (provider:ISqlProvider) sqlExp ti =
        task {
@@ -318,7 +338,8 @@ module internal QueryImplementation =
            if dc.CommandTimeout.IsSome then
                cmd.CommandTimeout <- dc.CommandTimeout.Value
            for p in parameters do cmd.Parameters.Add p |> ignore
-           let isGroypBy = sqlExp.hasGroupBy().IsSome && projector.GetType().GenericTypeArguments.Length > 0
+           let groupByInfo = sqlExp.hasGroupBy()
+           let isGroypBy = groupByInfo.IsSome && projector.GetType().GenericTypeArguments.Length > 0
            let columns = provider.GetColumns(con, baseTable) // TODO : provider.GetColumnsAsync() ??
            if con.State <> ConnectionState.Open then
                 do! con.OpenAsync() 
@@ -332,7 +353,9 @@ module internal QueryImplementation =
            return
                if not isGroypBy then
                     invokeEntitiesListAvoidingDynamicInvoke results projector
-               else parseGroupByQueryResults projector results
+               else
+                    let groupKeys = match groupByInfo with Some(_,cols) -> cols |> List.map (snd >> Common.Utilities.getBaseColumnName) | None -> []
+                    parseGroupByQueryResults projector results groupKeys
        }
 
     let executeQueryScalar (dc:ISqlDataContext) (provider:ISqlProvider) sqlExp ti =
@@ -839,7 +862,12 @@ module internal QueryImplementation =
                     // in this situation, the first agrument will either be an additional nested join method call,
                     // or finally it will be the call to _CreatedRelated which is handled recursively in the next case
                     let outExp = processSelectManys projectionParams.[0].Name createRelated outExp projectionParams source
-                    let sourceAlias = if sourceTi <> "" then Utilities.resolveTuplePropertyName sourceTi source.TupleIndex else sourceAlias
+                    let sourceAlias =
+                        match createRelated with
+                        | PropertyGet(Some(ParamName _), p) when Type.(=)(p.PropertyType, typeof<System.Collections.Generic.IEnumerable<SqlEntity>>) ->
+                            // the join source is a groupJoin's flattened group: use the group's alias
+                            Utilities.resolveTuplePropertyName p.Name source.TupleIndex
+                        | _ -> if sourceTi <> "" then Utilities.resolveTuplePropertyName sourceTi source.TupleIndex else sourceAlias
                     if source.TupleIndex.Any(fun v -> v = sourceAlias) |> not then source.TupleIndex.Add(sourceAlias)
                     if source.TupleIndex.Any(fun v -> v = destAlias) |> not then source.TupleIndex.Add(destAlias)
                     // we don't actually have the "foreign" table name here in a join as that information is "lost" further up the expression tree.
@@ -913,6 +941,13 @@ module internal QueryImplementation =
                     if source.TupleIndex.Any(fun v -> v = sourceAlias) |> not then source.TupleIndex.Add(sourceAlias)
                     if source.TupleIndex.Any(fun v -> v = destAlias) |> not then source.TupleIndex.Add(destAlias)
                     SelectMany(sourceAlias,destAlias,CrossJoin(table.Name,table),outExp)
+                | PropertyGet(Some(ParamName _), p) when Type.(=)(p.PropertyType, typeof<System.Collections.Generic.IEnumerable<SqlEntity>>) ->
+                    // a groupJoin's group flattened by a following `for x in g`:
+                    // the join itself already produced the flattened rows so this is structurally a no-op.
+                    // the flattened item gets its own tuple slot, so the group's alias is duplicated to keep positions aligned.
+                    let alias = Utilities.resolveTuplePropertyName p.Name source.TupleIndex
+                    source.TupleIndex.Add alias
+                    outExp
                 | MethodCall(None, (MethodWithName "AsQueryable"), [innerExp]) ->
                     processSelectManys projectionParams.[0].Name innerExp outExp projectionParams source
                 | MethodCall(None, (MethodWithName "Select"), [ createRelated; OptionalQuote (Lambda([ v1 ], _) as lambda) ]) as whole ->
@@ -1025,7 +1060,7 @@ module internal QueryImplementation =
 
                         ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; expr; source.TupleIndex;|] :?> IQueryable<'T>
 
-                    | MethodCall(None, (MethodWithName "Join"),
+                    | MethodCall(None, (MethodWithName "Join" | MethodWithName "GroupJoin"),
                                     [ SourceWithQueryData source;
                                       SourceWithQueryData dest
                                       OptionalQuote (Lambda([ParamName sourceAlias],SqlColumnGet(sourceTi,sourceKey,_)))
@@ -1063,7 +1098,7 @@ module internal QueryImplementation =
                         let ty = typeof<SqlQueryable<'T>>
                         Activator.CreateInstance(ty, [| source.DataContext |> box; source.Provider; sqlExpression; source.TupleIndex |]) :?> IQueryable<'T>
 
-                    | MethodCall(None, (MethodWithName "Join"),
+                    | MethodCall(None, (MethodWithName "Join" | MethodWithName "GroupJoin"),
                                     [ SourceWithQueryData source;
                                       SourceWithQueryData dest
                                       OptionalQuote (Lambda([ParamName sourceAlias],TupleSqlColumnsGet(multisource)))
