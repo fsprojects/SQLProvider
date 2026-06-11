@@ -64,7 +64,9 @@ module DcCache =
 
 type public SqlDataContext (typeName, connectionString:string, providerType:DatabaseProviderTypes, resolutionPath:string, referencedAssemblies:string array, runtimeAssembly: string, owner: string, caseSensitivity, tableNames:string, contextSchemaPath:string, odbcquote:OdbcQuoteCharacter, sqliteLibrary:SQLiteLibrary, transactionOptions, commandTimeout:Option<int>, sqlOperationsInSelect, ssdtPath:string, isReadOnly:bool) =
 
-    let myLock2 = new Object();
+    // Async-compatible mutex serializing SubmitPendingChanges and SubmitPendingChangesAsync,
+    // so concurrent submits cannot process the same pending entities twice.
+    let submitLock = lazy new System.Threading.SemaphoreSlim(1, 1)
     let pendingChanges = lazy (if isReadOnly then null else System.Collections.Concurrent.ConcurrentDictionary<SqlEntity, DateTime>())
 
     let provider =
@@ -125,21 +127,26 @@ type public SqlDataContext (typeName, connectionString:string, providerType:Data
             if isReadOnly then failwith "Context is readonly" else
             let pendingChanges = pendingChanges.Force()
             use con = provider.CreateConnection(connectionString)
-            lock myLock2 (fun () ->
+            let semaphore = submitLock.Force()
+            semaphore.Wait()
+            try
                 provider.ProcessUpdates(con, pendingChanges, transactionOptions, commandTimeout)
                 pendingChanges |> Seq.iter(fun e -> if e.Key._State = Unchanged || e.Key._State = Deleted then pendingChanges.TryRemove(e.Key) |> ignore)
-            )
+            finally
+                semaphore.Release() |> ignore
 
         member __.SubmitPendingChangesAsync() =
             if isReadOnly then failwith "Context is readonly" else
             let pendingChanges = pendingChanges.Force()
             task {
                 use con = provider.CreateConnection(connectionString) :?> System.Data.Common.DbConnection
-                let maxWait = DateTime.Now.AddSeconds(3.)
-                while (pendingChanges |> Seq.exists(fun e -> match e.Key._State with Unchanged | Deleted -> true | _ -> false)) && DateTime.Now < maxWait do
-                    do! System.Threading.Tasks.Task.Delay 150 // we can't let async lock but this helps.
-                do! provider.ProcessUpdatesAsync(con, pendingChanges, transactionOptions, commandTimeout)
-                pendingChanges |> Seq.iter(fun e -> if e.Key._State = Unchanged || e.Key._State = Deleted then pendingChanges.TryRemove(e.Key) |> ignore)
+                let semaphore = submitLock.Force()
+                do! semaphore.WaitAsync()
+                try
+                    do! provider.ProcessUpdatesAsync(con, pendingChanges, transactionOptions, commandTimeout)
+                    pendingChanges |> Seq.iter(fun e -> if e.Key._State = Unchanged || e.Key._State = Deleted then pendingChanges.TryRemove(e.Key) |> ignore)
+                finally
+                    semaphore.Release() |> ignore
             }
 
         member this.CreateRelated(inst:SqlEntity,_,pe,pk,fe,fk,direction) : IQueryable<SqlEntity> =

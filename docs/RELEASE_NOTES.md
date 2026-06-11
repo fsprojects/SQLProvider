@@ -1,3 +1,8 @@
+### 1.5.22 - 11.06.2026
+* Initial groupValBy and better exits-subquery support
+* Caching and concurrency Fixes
+* Reference file updates
+
 ### 1.5.21 - 28.05.2026
 * Added more tolerance to type mapping
 

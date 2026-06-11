@@ -29,9 +29,6 @@ type DesignCacheKey =
                     string *                   // SSDT Path
                     string))                    //typeName
 
-module DesignTimeCacheSchema =
-    let schemaMap = System.Collections.Concurrent.ConcurrentDictionary<DesignCacheKey*string, ProvidedTypeDefinition>()
-
 type internal ParameterValue =
     | UserProvided of string * string * Type
     | Default of Expr
@@ -466,11 +463,6 @@ module DesignTimeUtils =
                 |> Seq.map snd
             | sproc::rest -> generateTypeTree con prov (walkSproc con prov [] None createdTypes sproc) rest
 
-        let getOrAddSchema (args:DesignCacheKey) (name:string) =
-            DesignTimeCacheSchema.schemaMap.GetOrAdd((args,name), fun (a,nme) ->
-                let pt = ProvidedTypeDefinition(nme + "Schema", Some typeof<obj>, isErased=true)
-                pt)
-
         let createDesignTimeCommands (prov:ISqlProvider) contextSchemaPath recreate (invalidate: _ -> Unit)=
             let designTimeCommandsContainer = ProvidedTypeDefinition("DesignTimeCommands", Some typeof<obj>, isErased=true)
             let designTime = ProvidedProperty("Design Time Commands", designTimeCommandsContainer, getterCode = empty)
@@ -525,7 +517,6 @@ module DesignTimeUtils =
                                 schemacache.SprocsParams.Clear()
                                 schemacache.Packages.Clear()
                                 schemacache.Individuals.Clear()
-                                DesignTimeCacheSchema.schemaMap.Clear()
                                 invalidate()
                                 let pf = recreate()
                                 saveInProcess <- false
@@ -741,6 +732,13 @@ module DesignTimeUtils =
                         sprocList
                 generateTypeTree con prov Map.empty sprocs
 
+            // Schema container types are per-build on purpose: sharing them across rebuilds would
+            // mutate types that another (VS) thread may concurrently enumerate, and would
+            // accumulate duplicate members on every rebuild.
+            let schemaTypes = System.Collections.Concurrent.ConcurrentDictionary<string, ProvidedTypeDefinition>()
+            let getOrAddSchema (name:string) =
+                schemaTypes.GetOrAdd(name, fun nme -> ProvidedTypeDefinition(nme + "Schema", Some typeof<obj>, isErased=true))
+
             let addServiceTypeMembers (isReadonly:bool) =
                 [
                   if not isReadonly then
@@ -758,7 +756,7 @@ module DesignTimeUtils =
                   for (KeyValue(key,(entityType,desc,_,schema))) in tableTypes do
                       // collection type, individuals type
                       let (ct,it) = baseCollectionTypes.Force().[key]
-                      let schemaType = getOrAddSchema args schema
+                      let schemaType = getOrAddSchema schema
 
                       let templateTable = ProvidedTypeDefinition(ct.Name+"Template", Some typeof<obj>, isErased=true)
                       templateTable.AddMemberDelayed(fun () ->
@@ -1061,7 +1059,6 @@ module DesignTimeUtils =
                           | :? ObjectDisposedException -> ()
 
                           invalidate()
-                          DesignTimeCacheSchema.schemaMap.Clear()
 
                           GC.Collect()
 
@@ -1082,12 +1079,11 @@ module DesignTimeUtils =
                       yield designTime :> MemberInfo
 
                  ] @ [
-                    for KeyValue((cachedargs,name),pt) in DesignTimeCacheSchema.schemaMap do
-                        if args = cachedargs then
-                            yield pt :> MemberInfo
-                            yield ProvidedProperty(SchemaProjections.buildTableName(name),pt, getterCode = fun args ->
-                                let a0 = args.[0]
-                                <@@ ((%%a0 : obj) :?> ISqlDataContext) @@> ) :> MemberInfo
+                    for KeyValue(name,pt) in schemaTypes do
+                        yield pt :> MemberInfo
+                        yield ProvidedProperty(SchemaProjections.buildTableName(name),pt, getterCode = fun args ->
+                            let a0 = args.[0]
+                            <@@ ((%%a0 : obj) :?> ISqlDataContext) @@> ) :> MemberInfo
                  ]
 
             serviceType.AddMembers(addServiceTypeMembers false)
@@ -1292,8 +1288,23 @@ type SqlRuntimeInfo (config : TypeProviderConfig) =
         //| Choice2Of2(paths, errors) -> Assembly.GetExecutingAssembly()
     member __.RuntimeAssembly = runtimeAssembly
 
+/// One generation of provided types for one set of static parameters.
+/// Reference equality so that ConcurrentDictionary.TryUpdate swaps compare generations,
+/// not their (concurrently mutated) field values.
+[<ReferenceEquality>]
+type DesignCacheEntry =
+    { /// The provided root type, when it was built, and how old the build may get before a
+      /// background refresh is started (adapted to build duration on slow systems).
+      Root : Lazy<ProvidedTypeDefinition * DateTime * TimeSpan>
+      /// Last access in UTC ticks. Updated lock-free on every instantiation request;
+      /// entries idle longer than the expiration are dropped to free memory.
+      mutable LastAccess : int64
+      /// 1 while a background refresh build is in flight: at most one refresh per entry,
+      /// no matter how many Visual Studio threads request the type concurrently.
+      mutable Refreshing : int }
+
 module DesignTimeCache =
-    let cache = System.Collections.Concurrent.ConcurrentDictionary<DesignCacheKey,Lazy<ProvidedTypeDefinition> * DateTime>()
+    let cache = System.Collections.Concurrent.ConcurrentDictionary<DesignCacheKey,DesignCacheEntry>()
 
 /// The idea of this is trying to avoid case where compile-time has loaded non-runtime assembly. (Happens in .NET 8.0, not in .NET Framework.)
 /// So let's load compile-time (and design-time) manually the required runtime assembly.
@@ -1450,8 +1461,6 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
     let _ = FixReferenceAssemblies.manualLoadNet8Runtime.Force()
 #endif
     let sqlRuntimeInfo = SqlRuntimeInfo(config)
-    let mySaveLock = new Object();
-    let mutable saveInProcess = false
 
     let empty = fun (_:Expr list) -> <@@ () @@>
 
@@ -1514,52 +1523,90 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
             args.[12] :?> string,                   // SSDT Path
             typeName)
 
-        let addCache args =
-            lazy
-                let struct(connectionString, conStringName,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner,caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, ssdtPath, rootTypeName) = args
+        // Entries idle longer than this are dropped to free memory. An actively used entry is
+        // never dropped on a timer; instead it is refreshed in the background once its build is
+        // older than its staleness interval, so database schema changes are still picked up
+        // without IntelliSense ever stalling on a synchronous rebuild.
+        let idleExpiration = TimeSpan.FromMinutes 3.0
 
-                let rootType = ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly,FSHARP_DATA_SQL,rootTypeName,Some typeof<obj>, isErased=true)
-                let serviceType = ProvidedTypeDefinition( "dataContext", Some typeof<obj>, isErased=true)
-                let readServiceType = ProvidedTypeDefinition( "readDataContext", Some typeof<obj>, isErased=true)
+        let buildRoot (args:DesignCacheKey) =
+            let struct(_,_,_,_,_,_,_,_,_,_,_,_,_, rootTypeName) = args
+            let buildStarted = DateTime.UtcNow
 
-                createTypes rootType serviceType readServiceType config sqlRuntimeInfo invalidate registerDispose args
-                createConstructors config (rootType, serviceType, readServiceType, args)
+            let rootType = ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly,FSHARP_DATA_SQL,rootTypeName,Some typeof<obj>, isErased=true)
+            let serviceType = ProvidedTypeDefinition( "dataContext", Some typeof<obj>, isErased=true)
+            let readServiceType = ProvidedTypeDefinition( "readDataContext", Some typeof<obj>, isErased=true)
 
-                // This is not a perfect cache-invalidation solution, it can remove a valid item from
-                // cache after the time-out, causing one extra hit, but this is only a design-time cache
-                // and it will work well enough to deal with Visual Studio's multi-threading problems
-                let expiration = TimeSpan.FromMinutes 3.0
-                let rec invalidationFunction key =
+            createTypes rootType serviceType readServiceType config sqlRuntimeInfo invalidate registerDispose args
+            createConstructors config (rootType, serviceType, readServiceType, args)
+
+            // Refresh no sooner than the idle expiration, and on a slow system no sooner than
+            // 5x the time a build takes, so refreshes cannot put the system under pressure.
+            let buildDuration = DateTime.UtcNow - buildStarted
+            let staleAfter = max idleExpiration (TimeSpan.FromTicks(buildDuration.Ticks * 5L))
+            rootType, DateTime.UtcNow, staleAfter
+
+        let dropDesignTimeDcProvider (key:DesignCacheKey) =
+            // Release the design-time data context provider (used by the Individuals feature)
+            // together with its type tree generation, so it cannot pin stale schema in memory.
+            let struct(_,_,_,_,_,_,_,_,_,_,_,_,_, rootTypeName) = key
+            DcCache.providerCache.TryRemove rootTypeName |> ignore
+
+        let rec idleWatcher (key:DesignCacheKey) =
+            async {
+                do! Async.Sleep (int idleExpiration.TotalMilliseconds)
+                match DesignTimeCache.cache.TryGetValue key with
+                | true, entry ->
+                    let lastAccess = DateTime(System.Threading.Interlocked.Read(&entry.LastAccess), DateTimeKind.Utc)
+                    if DateTime.UtcNow - lastAccess >= idleExpiration then
+                        DesignTimeCache.cache.TryRemove key |> ignore
+                        dropDesignTimeDcProvider key
+                    else
+                        do! idleWatcher key
+                | _ -> ()
+            }
+
+        let addCache (key:DesignCacheKey) =
+            { Root =
+                lazy
+                    let generation = buildRoot key
+                    idleWatcher key |> Async.Start
+                    generation
+              LastAccess = DateTime.UtcNow.Ticks
+              Refreshing = 0 }
+
+        try
+            let entry = DesignTimeCache.cache.GetOrAdd(arguments, addCache)
+            System.Threading.Interlocked.Exchange(&entry.LastAccess, DateTime.UtcNow.Ticks) |> ignore
+
+            // Stale-while-revalidate: always serve the current tree; if it has gone stale,
+            // rebuild it once in the background and swap the entry atomically. Callers never
+            // wait on a refresh, and concurrent VS threads can never start a second one.
+            if entry.Root.IsValueCreated then
+                let _, builtAt, staleAfter = entry.Root.Value
+                if DateTime.UtcNow - builtAt >= staleAfter
+                   && System.Threading.Interlocked.CompareExchange(&entry.Refreshing, 1, 0) = 0 then
                     async {
-                        do! Async.Sleep (int expiration.TotalMilliseconds)
+                        try
+                            try
+                                let freshGeneration = buildRoot arguments
+                                let freshEntry =
+                                    { Root = Lazy<_>.CreateFromValue freshGeneration
+                                      LastAccess = DateTime.UtcNow.Ticks
+                                      Refreshing = 0 }
+                                if DesignTimeCache.cache.TryUpdate(arguments, freshEntry, entry) then
+                                    dropDesignTimeDcProvider arguments
+                            with
+                            | _ -> () // keep serving the previous generation; retried on a later access
+                        finally
+                            System.Threading.Interlocked.Exchange(&entry.Refreshing, 0) |> ignore
+                    } |> Async.Start
 
-                        match DesignTimeCache.cache.TryGetValue key with
-                        | true, (_, timestamp) ->
-                            if DateTime.UtcNow - timestamp >= expiration then
-                                DesignTimeCache.cache.TryRemove key |> ignore
-                            else
-                                do! invalidationFunction key
-                        | _ -> ()
-
-                    }
-                invalidationFunction args |> Async.Start
-                rootType
-            , DateTime.UtcNow
-        try (DesignTimeCache.cache.GetOrAdd(arguments, addCache) |> fst).Value
+            let root, _, _ = entry.Root.Value
+            root
         with
         | e ->
-            let _ = DesignTimeCache.cache.TryRemove(arguments)
-            let _ =
-                lock mySaveLock (fun() ->
-                    let keysToClear =
-                        DesignTimeCacheSchema.schemaMap.Keys
-                        |> Seq.toList
-                        |> List.filter(fun (a,k) -> a = arguments)
-                    keysToClear |> Seq.iter(fun ak ->
-                        let _ = DesignTimeCacheSchema.schemaMap.TryRemove ak
-                        ()
-                    )
-                )
+            DesignTimeCache.cache.TryRemove(arguments) |> ignore
             reraise()
     )
 
