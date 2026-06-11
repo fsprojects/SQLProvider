@@ -2680,7 +2680,7 @@ let ``simple select with subquery exists subquery``() =
     Assert.AreEqual(91, qry.Count())
     CollectionAssert.Contains(qry, "QUEEN")
 
-[<Test; Ignore("Not supported")>]
+[<Test>]
 let ``simple select with join subqry``() =
     let dc = sql.GetDataContext()
     let subqry =
@@ -2688,15 +2688,38 @@ let ``simple select with join subqry``() =
             for cust2 in dc.Main.Customers do
             select cust2
         }
-    let qry = 
+    let qry =
         query {
             for cust in dc.Main.Customers do
             join cust2 in subqry on (cust.CustomerId = cust2.CustomerId)
-            select (cust, cust2)
+            select (cust.CustomerId, cust2.City)
         } |> Seq.toList
     Assert.IsNotEmpty(qry)
     Assert.AreEqual(91, qry.Count())
-    CollectionAssert.Contains(qry, "QUEEN")
+    CollectionAssert.Contains(qry |> List.map fst, "QUEEN")
+
+[<Test>]
+let ``simple select with join to filtered subqry``() =
+    let dc = sql.GetDataContext()
+    let expected =
+        query {
+            for c in dc.Main.Customers do
+            where (c.City = "London")
+            select c.CustomerId
+        } |> Seq.toList |> List.sort
+    let subqry =
+        query {
+            for cust2 in dc.Main.Customers do
+            where (cust2.City = "London")
+            select cust2
+        }
+    let qry =
+        query {
+            for cust in dc.Main.Customers do
+            join londonCust in subqry on (cust.CustomerId = londonCust.CustomerId)
+            select cust.CustomerId
+        } |> Seq.toList |> List.sort
+    Assert.AreEqual(expected, qry)
 
 [<Test>]
 let ``simple select with subquery exists parameter from main query``() =
@@ -2732,7 +2755,7 @@ let ``simple select with subquery not exists parameter from main query``() =
     Assert.AreEqual(506, qry.Count())
     CollectionAssert.Contains(qry, 10372L)
 
-[<Test; Ignore("Not supported")>]
+[<Test; Ignore("Not supported: FSharp.Core's query translator compiles the inner query before the provider sees it, and fails on the outer ('free') variable o. Write the correlation with exists instead.")>]
 let ``simple select with subquery in parameter from main query``() =
     let dc = sql.GetDataContext()
     let qry = 
@@ -3052,3 +3075,71 @@ let ``simple select query with MapTo with options``() =
     Assert.True(mapped1.ShipRegion.IsNone)
     Assert.AreEqual(Some "VINET", mapped2.CustomerId)
     Assert.True(mapped2.ShipRegion.IsNone)
+
+[<Test>]
+let ``exists-subquery correlated over outer join``() =
+    let dc = sql.GetDataContext()
+    // ground truth client-side
+    let orders = query { for o in dc.Main.Orders do select (o.CustomerId, o.OrderId) } |> Seq.toList
+    let ods = query { for od in dc.Main.OrderDetails do select (od.OrderId, od.Quantity) } |> Seq.toList
+    let bigOrderIds = ods |> List.filter (fun (_,q) -> q > 50s) |> List.map fst |> Set.ofList
+    let expected =
+        orders |> List.filter (fun (_, oid) -> bigOrderIds.Contains oid) |> List.map snd |> List.sort
+    let actual =
+        query {
+            for cust in dc.Main.Customers do
+            join ord in dc.Main.Orders on (cust.CustomerId = ord.CustomerId)
+            where (query {
+                for od in dc.Main.OrderDetails do
+                exists (od.OrderId = ord.OrderId && od.Quantity > 50s)
+            })
+            select ord.OrderId
+        } |> Seq.toList |> List.sort
+    Assert.AreEqual(expected, actual)
+
+[<Test>]
+let ``exists-subquery with inner join correlated over outer join``() =
+    let dc = sql.GetDataContext()
+    let custIds = query { for c in dc.Main.Customers do select c.CustomerId } |> Seq.toList |> Set.ofList
+    let orders = query { for o in dc.Main.Orders do select (o.CustomerId, o.OrderId) } |> Seq.toList
+    let ods = query { for od in dc.Main.OrderDetails do select (od.OrderId, od.ProductId) } |> Seq.toList
+    let prods = query { for p in dc.Main.Products do select (p.ProductId, p.UnitPrice) } |> Seq.toList |> dict
+    let expensiveOrderIds =
+        ods |> List.filter (fun (_,pid) -> prods.[pid] > 50m) |> List.map fst |> Set.ofList
+    let expected =
+        orders
+        |> List.filter (fun (cid, oid) -> custIds.Contains cid && expensiveOrderIds.Contains oid)
+        |> List.map snd |> List.sort
+    let actual =
+        query {
+            for cust in dc.Main.Customers do
+            join ord in dc.Main.Orders on (cust.CustomerId = ord.CustomerId)
+            where (query {
+                for od in dc.Main.OrderDetails do
+                join p in dc.Main.Products on (od.ProductId = p.ProductId)
+                exists (od.OrderId = ord.OrderId && p.UnitPrice > 50m)
+            })
+            select ord.OrderId
+        } |> Seq.toList |> List.sort
+    Assert.AreEqual(expected, actual)
+
+[<Test>]
+let ``exists-subquery with inner join correlated to simple outer``() =
+    let dc = sql.GetDataContext()
+    let orders = query { for o in dc.Main.Orders do select o.OrderId } |> Seq.toList
+    let ods = query { for od in dc.Main.OrderDetails do select (od.OrderId, od.ProductId) } |> Seq.toList
+    let prods = query { for p in dc.Main.Products do select (p.ProductId, p.UnitPrice) } |> Seq.toList |> dict
+    let expensiveOrderIds =
+        ods |> List.filter (fun (_,pid) -> prods.[pid] > 50m) |> List.map fst |> Set.ofList
+    let expected = orders |> List.filter expensiveOrderIds.Contains |> List.sort
+    let actual =
+        query {
+            for ord in dc.Main.Orders do
+            where (query {
+                for od in dc.Main.OrderDetails do
+                join p in dc.Main.Products on (od.ProductId = p.ProductId)
+                exists (od.OrderId = ord.OrderId && p.UnitPrice > 50m)
+            })
+            select ord.OrderId
+        } |> Seq.toList |> List.sort
+    Assert.AreEqual(expected, actual)

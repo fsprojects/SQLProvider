@@ -657,6 +657,57 @@ module internal QueryImplementation =
                         | _ -> ()
 
                         let innersrc = (src :?> IWithSqlService)
+
+                        // References to the outer query inside the predicate are positional (ItemN) against the
+                        // OUTER tuple index. Resolve them to named aliases here: the inner query would otherwise
+                        // resolve them against its own joins and silently correlate the wrong tables.
+                        let qual =
+                            match qual with
+                            | :? LambdaExpression as lambda when lambda.Parameters.Count = 1 ->
+                                let innerParam = lambda.Parameters.[0]
+                                let innerAliases =
+                                    let rec collect exp =
+                                        match exp with
+                                        | BaseTable(a,_) -> [a]
+                                        | SelectMany(a,b,_,rest) -> a :: b :: collect rest
+                                        | FilterClause(_,rest) | HavingClause(_,rest) | Projection(_,rest)
+                                        | Distinct rest | OrderBy(_,_,_,rest) | Skip(_,rest) | Take(_,rest)
+                                        | Union(_,_,_,rest) | Count rest | AggregateOp(_,_,rest) -> collect rest
+                                    // a blank inner base-table alias will later be named after the predicate's parameter
+                                    innerParam.Name :: collect innersrc.SqlExpression |> List.filter ((<>) "")
+                                let checkCollision (alias:string) =
+                                    if innerAliases |> List.exists(fun a -> String.Equals(a, alias, StringComparison.OrdinalIgnoreCase)) then
+                                        failwithf "Subquery alias collision: the outer table alias '%s' is also used inside the subquery. Rename one of the query variables." alias
+                                    alias
+                                // same original parameter must map to the same replacement instance
+                                let substitutions = Dictionary<Expression, ParameterExpression>(HashIdentity.Reference)
+                                let substitute (key:Expression) (alias:string) =
+                                    match substitutions.TryGetValue key with
+                                    | true, p -> p
+                                    | false, _ ->
+                                        let p = Expression.Parameter(typeof<SqlEntity>, checkCollision alias)
+                                        substitutions.[key] <- p
+                                        p
+                                let visitor =
+                                    { new ExpressionVisitor() with
+                                        member __.VisitMember m =
+                                            match m.Expression with
+                                            | :? ParameterExpression as p when
+                                                    (not (obj.ReferenceEquals(p, innerParam))) &&
+                                                    Type.(=)(m.Type, typeof<SqlEntity>) &&
+                                                    m.Member.Name.StartsWith "Item" ->
+                                                let alias = Utilities.resolveTuplePropertyName m.Member.Name source.TupleIndex
+                                                if alias = m.Member.Name then
+                                                    failwithf "Could not resolve the outer table reference '%s' used inside a subquery." m.Member.Name
+                                                substitute (m :> Expression) alias :> Expression
+                                            | _ -> base.VisitMember m
+                                        member __.VisitParameter p =
+                                            if (not (obj.ReferenceEquals(p, innerParam))) && Type.(=)(p.Type, typeof<SqlEntity>) && p.Name <> null then
+                                                substitute (p :> Expression) p.Name :> Expression
+                                            else upcast p }
+                                visitor.Visit qual
+                            | _ -> qual
+
                         source.TupleIndex |> Seq.filter(innersrc.TupleIndex.Contains >> not) |> Seq.iter(innersrc.TupleIndex.Add)
                         let qry = parseWhere meth innersrc qual :> IQueryable
                         let svc = (qry :?> IWithSqlService)
@@ -955,7 +1006,39 @@ module internal QueryImplementation =
                     Projection(whole,outExp)
                 | _ -> failwith ("Unknown: " + inExp.ToString())
 
-             // Possible Linq method overrides are available here: 
+             // A join destination may be a separately defined sub-query. When it is just a (possibly
+             // filtered) base table behind a trivial projection, it can be folded into the join:
+             // the base table becomes the join target and the filters are hoisted into the outer query.
+             let decomposeJoinDestination (dest:IWithSqlService) =
+                let rec decompose exp (filters: Condition list) =
+                    match exp with
+                    | BaseTable(al,destEntity) -> Some(al, destEntity, false, List.rev filters)
+                    | Projection(MethodCall(None, MethodWithName("Select"), [_ ; OptionalQuote (Lambda(_,MethodCall(None, (MethodWithName "leftJoin"),_)))]), BaseTable(al,destEntity)) -> Some(al, destEntity, true, List.rev filters)
+                    | Projection(MethodCall(None, MethodWithName("Select"), [_; OptionalQuote (Lambda([ParamName p1], ParamName p2))]), rest) when p1 = p2 ->
+                        decompose rest filters
+                    | FilterClause(c, rest) -> decompose rest (c :: filters)
+                    | _ -> None
+                decompose dest.SqlExpression []
+
+             /// Hoisted sub-query filters reference the sub-query's own alias: remap to the join alias.
+             let remapConditionAliases (oldAlias: string) (newAlias: string) condition =
+                let mapAlias al = if al = "" || al = oldAlias then newAlias else al
+                let rec walk cond =
+                    let mapItem (al, col, op, value) =
+                        let value2 =
+                            match value with
+                            | Some (v: obj) when (v :? (string * SqlColumnType)) ->
+                                let (a, c) = v :?> string * SqlColumnType
+                                Some(box(mapAlias a, c))
+                            | _ -> value
+                        (mapAlias al, col, op, value2)
+                    match cond with
+                    | And(xs, rest) -> And(xs |> List.map mapItem, rest |> Option.map (List.map walk))
+                    | Or(xs, rest) -> Or(xs |> List.map mapItem, rest |> Option.map (List.map walk))
+                    | x -> x
+                walk condition
+
+             // Possible Linq method overrides are available here:
              // https://referencesource.microsoft.com/#System.Core/System/Linq/IQueryable.cs
              // https://msdn.microsoft.com/en-us/library/system.linq.enumerable_methods(v=vs.110).aspx
              { new System.Linq.IQueryProvider with
@@ -1071,11 +1154,12 @@ module internal QueryImplementation =
                             | GroupColumn(KeyOp "", KeyColumn "Key"), SelectMany(_,_,GroupQuery g,_) when (g.KeyColumns.Length = 1) ->
                                 g.KeyColumns.[0]
                             | _ -> sourceTi, sourceKey
-                        let destEntity, isOuter =
-                            match dest.SqlExpression with
-                            | BaseTable(_,destEntity) -> destEntity, false
-                            | Projection(MethodCall(None, MethodWithName("Select"),  [_ ; OptionalQuote (Lambda(_,MethodCall(None, (MethodWithName "leftJoin"),_)))]),BaseTable(_,destEntity)) -> destEntity, true
-                            | _ -> failwithf "Unexpected join destination entity expression (%A)." dest.SqlExpression
+                        let destEntity, isOuter, subFilters =
+                            match decomposeJoinDestination dest with
+                            | Some(innerAlias, destEntity, isOuter, filters) ->
+                                if isOuter && not filters.IsEmpty then failwithf "A filtered sub-query is not supported as a left-join destination (%A)." dest.SqlExpression
+                                destEntity, isOuter, (filters |> List.map (remapConditionAliases innerAlias destAlias))
+                            | None -> failwithf "Unexpected join destination entity expression (%A)." dest.SqlExpression
                         let sqlExpression =
                             match source.SqlExpression with
                             | BaseTable(alias,entity) when alias = "" ->
@@ -1095,6 +1179,7 @@ module internal QueryImplementation =
                                              OuterJoin = isOuter; RelDirection = RelationshipDirection.Parents }
                                 SelectMany(sourceAlias,destAlias,LinkQuery(data),source.SqlExpression)
 
+                        let sqlExpression = (sqlExpression, subFilters) ||> List.fold(fun acc f -> FilterClause(f, acc))
                         let ty = typeof<SqlQueryable<'T>>
                         Activator.CreateInstance(ty, [| source.DataContext |> box; source.Provider; sqlExpression; source.TupleIndex |]) :?> IQueryable<'T>
 
@@ -1104,11 +1189,12 @@ module internal QueryImplementation =
                                       OptionalQuote (Lambda([ParamName sourceAlias],TupleSqlColumnsGet(multisource)))
                                       OptionalQuote (Lambda([ParamName destAlias],TupleSqlColumnsGet(multidest)))
                                       OptionalQuote projection ]) ->
-                        let destEntity, isOuter =
-                            match dest.SqlExpression with
-                            | BaseTable(_,destEntity) -> destEntity, false
-                            | Projection(MethodCall(None, MethodWithName("Select"), [_ ;OptionalQuote (Lambda(_,MethodCall(None, (MethodWithName "leftJoin"),_)))]),BaseTable(_,destEntity)) -> destEntity, true
-                            | _ -> failwithf "Unexpected join destination entity expression (%A)." dest.SqlExpression
+                        let destEntity, isOuter, subFilters =
+                            match decomposeJoinDestination dest with
+                            | Some(innerAlias, destEntity, isOuter, filters) ->
+                                if isOuter && not filters.IsEmpty then failwithf "A filtered sub-query is not supported as a left-join destination (%A)." dest.SqlExpression
+                                destEntity, isOuter, (filters |> List.map (remapConditionAliases innerAlias destAlias))
+                            | None -> failwithf "Unexpected join destination entity expression (%A)." dest.SqlExpression
                         let destKeys = multidest |> List.map(fun(_,dest,_)->dest)
                         let sourceKeys = multisource |> List.map(fun(_,source,_)->source)
                         let sqlExpression =
@@ -1131,7 +1217,7 @@ module internal QueryImplementation =
                                              OuterJoin = isOuter; RelDirection = RelationshipDirection.Parents }
                                 SelectMany(sourceAlias,destAlias,LinkQuery(data),source.SqlExpression)
 
-
+                        let sqlExpression = (sqlExpression, subFilters) ||> List.fold(fun acc f -> FilterClause(f, acc))
                         let ty = typeof<SqlQueryable<'T>>
                         Activator.CreateInstance(ty, [| source.DataContext |> box; source.Provider; sqlExpression; source.TupleIndex |]) :?> IQueryable<'T>
 
