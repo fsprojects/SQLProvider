@@ -69,6 +69,10 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                 "System.String","note",16
                 "System.String","text",16
                 "System.String","ntext",16
+                "System.String","longvarchar",16
+                "System.String","longnvarchar",16
+                "System.String","longchar",16
+                "System.String","clob",16
                 "System.String","string",16
                 "System.String","char",16
                 "System.String","nchar",16

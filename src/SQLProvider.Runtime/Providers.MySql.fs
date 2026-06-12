@@ -536,6 +536,33 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
         cmd.CommandText <- sb.ToString()
         cmd
 
+    /// Like CommonTasks.checkKey, but the MySql schema cache is keyed by the quoted table
+    /// name (not Table.FullName), and LAST_INSERT_ID() returns UInt64 regardless of the
+    /// column type (issue #638), so the value is converted to the column's CLR type.
+    let checkInsertedKey (id:obj) (e:SqlEntity) =
+        let tableKey = (e :> IColumnHolder).Table |> quotedTableName
+        match schemaCache.PrimaryKeys.TryGetValue tableKey with
+        | true, pkKey ->
+            match (e :> IColumnHolder).GetPkColumnOption<obj> pkKey with
+            | [] ->
+                let id =
+                    if isNull id || Convert.IsDBNull id then id
+                    else
+                        match pkKey, schemaCache.Columns.TryGetValue tableKey with
+                        | [pkName], (true, cols) ->
+                            match cols.TryFind pkName with
+                            | Some col ->
+                                match Utilities.getType col.TypeMapping.ClrType with
+                                | null -> id
+                                | clrType -> try Convert.ChangeType(id, clrType) with _ -> id
+                            | None -> id
+                        | _ -> id
+                (e :> IColumnHolder).SetPkColumnSilent(pkKey, id)
+            | _ -> () // if the primary key exists, do nothing
+                      // this is because non-identity columns will have been set
+                      // manually and in that case LAST_INSERT_ID would bring back 0
+        | false, _ -> ()
+
     do
         MySql.resolutionPath <- resolutionPath
         MySql.schemas <- owner.Split(';', ',', ' ', '\n', '\r') |> Array.filter (not << String.IsNullOrWhiteSpace)
@@ -1097,7 +1124,7 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                         if timeout.IsSome then
                             cmd.CommandTimeout <- timeout.Value
                         let id = cmd.ExecuteScalar()
-                        CommonTasks.checkKey schemaCache.PrimaryKeys id e
+                        checkInsertedKey id e
                         e._State <- Unchanged
                     | Modified fields ->
                         use cmd = createUpdateCommand con sb e fields
@@ -1149,7 +1176,7 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                                 if timeout.IsSome then
                                     cmd.CommandTimeout <- timeout.Value
                                 let! id = cmd.ExecuteScalarAsync()
-                                CommonTasks.checkKey schemaCache.PrimaryKeys id e
+                                checkInsertedKey id e
                                 e._State <- Unchanged
                             }
                         | Modified fields ->

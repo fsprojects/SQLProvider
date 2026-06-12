@@ -417,15 +417,15 @@ module internal QueryImplementation =
            if dc.CommandTimeout.IsSome then
                cmd.CommandTimeout <- dc.CommandTimeout.Value
            for p in parameters do cmd.Parameters.Add p |> ignore
-           // ignore any generated projection and just expect a single integer back
+           // DELETE produces no result set, so the affected row count is the result
            if con.State <> ConnectionState.Open then
                 do! con.OpenAsync()
            if (con.State <> ConnectionState.Open) then // Just ensure, as not all the providers seems to work so great with OpenAsync.
                 if (con.State <> ConnectionState.Closed) && provider.CloseConnectionAfterQuery then con.Close()
                 con.Open()
-           let! executed = cmd.ExecuteScalarAsync()
+           let! executed = cmd.ExecuteNonQueryAsync()
            if provider.CloseConnectionAfterQuery then con.Close() //else get 'COM object that has been separated from its underlying RCW cannot be used.'
-           return executed
+           return box executed
        }
 
     type [<Struct>]SqlWhereType = NormalWhere | HavingWhere

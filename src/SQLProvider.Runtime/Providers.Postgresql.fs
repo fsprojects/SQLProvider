@@ -758,11 +758,19 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
         member __.GetTables(con,_) =
             let schemas = PostgreSQL.schemas |> String.concat "', '" |> sprintf "ARRAY['%s']"
 
+            // Materialized views are not part of the SQL standard information_schema,
+            // they are fetched separately from pg_matviews (available since PostgreSQL 9.3).
             use reader = Sql.executeSql PostgreSQL.createCommand (sprintf "SELECT  table_schema,
                                                           table_name,
                                                           table_type
                                                     FROM  information_schema.tables
-                                                   WHERE  table_schema = ANY(%s)" schemas) con
+                                                   WHERE  table_schema = ANY(%s)
+                                                UNION ALL
+                                                  SELECT  schemaname AS table_schema,
+                                                          matviewname AS table_name,
+                                                          'MATERIALIZED VIEW' AS table_type
+                                                    FROM  pg_matviews
+                                                   WHERE  schemaname = ANY(%s)" schemas schemas) con
             [ while reader.Read() do
                 let table = { Schema = Sql.dbUnbox<string> reader.["table_schema"]
                               Name = Sql.dbUnbox<string> reader.["table_name"]
@@ -854,8 +862,10 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                                         )
                                                                 
                                 match typeMapping with
-                                | None ->                                                     
-                                    failwithf "Could not get columns for `%s`, the type `%s` is unknown to Npgsql type mapping" table.FullName fullTypeName
+                                | None ->
+                                    // Tolerance: the type is unknown to the Npgsql type mapping (e.g. PostGIS geometry
+                                    // without a plugin). Skip the column and map the rest instead of failing the table.
+                                    ()
                                 | Some m ->
                                     let isPk = Sql.dbUnbox<bool> reader.["is_primary_key"]
                                     let col =

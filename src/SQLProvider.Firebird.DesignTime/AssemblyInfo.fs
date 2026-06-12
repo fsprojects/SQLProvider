@@ -5,13 +5,13 @@ open System.Reflection
 [<assembly: AssemblyTitleAttribute("SQLProvider.Firebird.DesignTime")>]
 [<assembly: AssemblyProductAttribute("SQLProvider")>]
 [<assembly: AssemblyDescriptionAttribute("Type providers for Firebird database access.")>]
-[<assembly: AssemblyVersionAttribute("1.5.22")>]
-[<assembly: AssemblyFileVersionAttribute("1.5.22")>]
+[<assembly: AssemblyVersionAttribute("1.5.23")>]
+[<assembly: AssemblyFileVersionAttribute("1.5.23")>]
 do ()
 
 module internal AssemblyVersionInformation =
     let [<Literal>] AssemblyTitle = "SQLProvider.Firebird.DesignTime"
     let [<Literal>] AssemblyProduct = "SQLProvider"
     let [<Literal>] AssemblyDescription = "Type providers for Firebird database access."
-    let [<Literal>] AssemblyVersion = "1.5.22"
-    let [<Literal>] AssemblyFileVersion = "1.5.22"
+    let [<Literal>] AssemblyVersion = "1.5.23"
+    let [<Literal>] AssemblyFileVersion = "1.5.23"

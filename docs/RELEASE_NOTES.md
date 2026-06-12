@@ -1,3 +1,11 @@
+### 1.5.23 - 12.06.2026
+* SQLite: added missing string type mappings (longvarchar, longchar, longnvarchar, clob) #101
+* PostgreSQL: skip columns with types unknown to Npgsql (e.g. PostGIS geometry) instead of failing the table #695
+* PostgreSQL: materialized views are now visible (via pg_matviews) #136
+* Seq.``delete all items from single table`` now returns the deleted row count #633
+* MSSQL: plain count over a sorted query no longer generates invalid ORDER BY #507
+* MySQL: inserted entity primary key is now set back after insert, converted to the column's type #638
+
 ### 1.5.22 - 11.06.2026
 * Initial groupValBy and better exits-subquery support
 * Caching and concurrency Fixes

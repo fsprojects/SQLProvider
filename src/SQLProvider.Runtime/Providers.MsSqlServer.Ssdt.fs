@@ -793,10 +793,12 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                 filterBuilder (~~) f
 
             // ORDER BY
+            // Note: plain COUNT(1) without GROUP BY returns a single row, so ORDER BY over
+            // base columns would be invalid SQL and is omitted (issue #507).
             match mssqlPaging, sqlQuery.Skip, sqlQuery.Take with
             | MSSQLPagingCompatibility.Offset, _, _
             | MSSQLPagingCompatibility.RowNumber, ValueNone, _ ->
-              if sqlQuery.Ordering.Length > 0 then
+              if sqlQuery.Ordering.Length > 0 && not (sqlQuery.Count && sqlQuery.Grouping.IsEmpty && sqlQuery.Skip.IsNone && sqlQuery.Take.IsNone) then
                   ~~"ORDER BY "
                   orderByBuilder()
             | _ ->
