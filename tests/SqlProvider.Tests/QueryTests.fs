@@ -13,8 +13,17 @@ open System.Linq
 open NUnit.Framework
 
 // System.Data.Sqlite connection string:
+#if NETFRAMEWORK
 [<Literal>]
 let connectionString =  @"Data Source=" + __SOURCE_DIRECTORY__ + @"/db/northwindEF.db;Version=3;Read Only=false;FailIfMissing=True;"
+[<Literal>]
+let sqliteLib = Common.SQLiteLibrary.SystemDataSQLite
+#else
+[<Literal>]
+let connectionString =  @"Data Source=" + __SOURCE_DIRECTORY__ + @"/db/northwindEF.db"
+[<Literal>]
+let sqliteLib = Common.SQLiteLibrary.MicrosoftDataSqlite
+#endif
 
 // Microsoft.Data.Sqlite connection string:
 //[<Literal>]
@@ -32,7 +41,7 @@ type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE,
                            CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL,
                            ResolutionPath = resolutionPath,
                            //SQLiteLibrary=Common.SQLiteLibrary.MicrosoftDataSqlite
-                           SQLiteLibrary=Common.SQLiteLibrary.SystemDataSQLite>
+                           SQLiteLibrary=sqliteLib>
 
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %O")
 let inline isNull (x:^T when ^T : not struct) = obj.ReferenceEquals (x, null)   
@@ -316,6 +325,45 @@ let ``outer join with inner join test``() =
         } 
 
     Assert.AreNotEqual(None,qry)
+
+[<Test>]
+let ``leftOuterJoin yields null entity for unmatched row``() =
+    let dc = sql.GetDataContext()
+    // When the whole joined entity is selected, it must be null for customers with no orders.
+    let res =
+        query {
+            for cust in dc.Main.Customers do
+            leftOuterJoin order in dc.Main.Orders on (cust.CustomerId = order.CustomerId) into result
+            for order in result.DefaultIfEmpty() do
+            where (cust.CustomerId = "FISSA" || cust.CustomerId = "ALFKI")
+            select (cust.CustomerId, order)
+        } |> Seq.toArray
+    let fissa = res |> Array.filter (fun (c,_) -> c = "FISSA")
+    Assert.AreEqual(1, fissa.Length)
+    Assert.IsTrue(obj.ReferenceEquals(snd fissa.[0], null), "unmatched left-join entity should be null")
+    let alfki = res |> Array.filter (fun (c,_) -> c = "ALFKI")
+    Assert.AreEqual(6, alfki.Length)
+    Assert.IsTrue(alfki |> Array.forall (fun (_,o) -> not (obj.ReferenceEquals(o, null))))
+
+[<Test>]
+let ``leftOuterJoin chained over three tables``() =
+    let dc = sql.GetDataContext()
+    // Two chained left joins: Customers -> Orders -> OrderDetails. Equivalent to a SQL
+    // LEFT JOIN ... LEFT JOIN, so the row count matches and no-order customers still appear.
+    let res =
+        query {
+            for cust in dc.Main.Customers do
+            leftOuterJoin order in dc.Main.Orders on (cust.CustomerId = order.CustomerId) into ords
+            for order in ords.DefaultIfEmpty() do
+            leftOuterJoin od in dc.Main.OrderDetails on (order.OrderId = od.OrderId) into dets
+            for od in dets.DefaultIfEmpty() do
+            select (cust.CustomerId, order.OrderId, od.ProductId)
+        } |> Seq.toArray
+    Assert.AreEqual(2142, res.Length)
+    // FISSA has no orders: exactly one row (with defaulted order/detail keys).
+    Assert.AreEqual(1, res |> Array.filter (fun (c,_,_) -> c = "FISSA") |> Array.length)
+    // ALFKI's 6 orders have 12 order-detail lines in total.
+    Assert.AreEqual(12, res |> Array.filter (fun (c,_,_) -> c = "ALFKI") |> Array.length)
 
 [<Test>]
 let ``simple select two queries test``() =
@@ -1695,25 +1743,27 @@ let ``simple select query with multiple joins on relationships``() =
             "HANAR", 65L, 15s
         |], qry.[0..7])
 
-[<Test; Ignore("Not Supported, but you can use (!!) operator for left join")>]
-let ``simple select query with left outer join``() = 
+[<Test>]
+let ``simple select query with left outer join``() =
     let dc = sql.GetDataContext()
-    let qry = 
+    let qry =
         query {
             for cust in dc.Main.Customers do
             leftOuterJoin order in dc.Main.Orders on (cust.CustomerId = order.CustomerId) into result
             for order in result.DefaultIfEmpty() do
             select (cust.CustomerId, order.OrderDate)
         } |> Seq.toArray
-    
+
     CollectionAssert.IsNotEmpty qry
-    CollectionAssert.AreEquivalent(
-        [|
-            "VINET", new DateTime(1996,7,4)
-            "TOMSP", new DateTime(1996,7,5)
-            "HANAR", new DateTime(1996,7,8)
-            "VICTE", new DateTime(1996,7,8)
-        |], qry.[0..3])
+    // One row per order, plus one row for each customer that has no orders (left-join semantics).
+    Assert.AreEqual(826, qry.Length)
+    // Matched rows carry the real order date (order-independent membership checks).
+    CollectionAssert.Contains(qry, ("VINET", new DateTime(1996,7,4)))
+    CollectionAssert.Contains(qry, ("TOMSP", new DateTime(1996,7,5)))
+    // A customer with no orders still appears, with a defaulted (no-match) order date.
+    let fissa = qry |> Array.filter (fun (c,_) -> c = "FISSA")
+    Assert.AreEqual(1, fissa.Length)
+    Assert.AreEqual(Unchecked.defaultof<DateTime>, snd fissa.[0])
 
 [<Test>]
 let ``simple sumBy``() = 
@@ -2257,7 +2307,7 @@ let ``simple select with distinct count async``() =
     ()
 
 
-type sqlOption = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL, UseOptionTypes=FSharp.Data.Sql.Common.NullableColumnType.OPTION, ResolutionPath = resolutionPath, SQLiteLibrary=Common.SQLiteLibrary.SystemDataSQLite>
+type sqlOption = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL, UseOptionTypes=FSharp.Data.Sql.Common.NullableColumnType.OPTION, ResolutionPath = resolutionPath, SQLiteLibrary=sqliteLib>
 
 [<Test>]
 let ``simple select query with different return types options``() = 
@@ -2285,7 +2335,7 @@ let ``simple select with contains query with where boolean option type``() =
 [<Test>]
 let ``simple select with contains query with where not boolean option type``() =
     let dc = sqlOption.GetDataContext()
-    let qry = 
+    let qry =
         query {
             for cust in dc.Main.Customers do
             where (not(cust.City.IsNone))
@@ -2293,6 +2343,26 @@ let ``simple select with contains query with where not boolean option type``() =
             contains "ALFKI"
         }
     Assert.IsTrue(qry)
+
+[<Test>]
+let ``leftOuterJoin with option types yields None for unmatched columns``() =
+    // Issue #540: with UseOptionTypes, the left-joined columns must be None when there is no match.
+    let dc = sqlOption.GetDataContext()
+    let res =
+        query {
+            for cust in dc.Main.Customers do
+            leftOuterJoin order in dc.Main.Orders on (cust.CustomerId = order.CustomerId.Value) into result
+            for order in result.DefaultIfEmpty() do
+            select (cust.CustomerId, order.OrderDate)
+        } |> Seq.toArray
+    // matched customer: the option column has a value
+    let alfki = res |> Array.filter (fun (c,_) -> c = "ALFKI")
+    Assert.AreEqual(6, alfki.Length)
+    Assert.IsTrue(alfki |> Array.forall (fun (_,d) -> Option.isSome d))
+    // unmatched customer (no orders): the option column is None
+    let fissa = res |> Array.filter (fun (c,_) -> c = "FISSA")
+    Assert.AreEqual(1, fissa.Length)
+    Assert.AreEqual(None, snd fissa.[0])
 
 [<Test>]
 let ``simple select with where boolean option types``() =
@@ -2895,7 +2965,7 @@ let ``simple mapTo test``() =
     qry |> Assert.IsNotEmpty
     qry |> List.exists(fun i -> i.FirstName = "Laura") |> Assert.IsTrue
 
-type sqlValueOption = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL, UseOptionTypes=FSharp.Data.Sql.Common.NullableColumnType.VALUE_OPTION, ResolutionPath = resolutionPath, SQLiteLibrary=Common.SQLiteLibrary.SystemDataSQLite>
+type sqlValueOption = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL, UseOptionTypes=FSharp.Data.Sql.Common.NullableColumnType.VALUE_OPTION, ResolutionPath = resolutionPath, SQLiteLibrary=sqliteLib>
 
 [<Test >]
 let ``simple select query with different return types valueoptions``() = 
@@ -2907,6 +2977,27 @@ let ``simple select query with different return types valueoptions``() =
         } |> Seq.toArray
     
     CollectionAssert.IsNotEmpty qry
+
+[<Test>]
+let ``leftOuterJoin with value-option types yields ValueNone for unmatched columns``() =
+    // With VALUE_OPTION, a left-joined column is a ValueOption: ValueNone when there is no match,
+    // ValueSome otherwise. (The entity itself is never option-wrapped, so selecting it whole is null.)
+    let dc = sqlValueOption.GetDataContext()
+    let res =
+        query {
+            for cust in dc.Main.Customers do
+            leftOuterJoin order in dc.Main.Orders on (cust.CustomerId = order.CustomerId.Value) into result
+            for order in result.DefaultIfEmpty() do
+            select (cust.CustomerId, order.OrderDate)
+        } |> Seq.toArray
+    // matched customer: the value-option column carries a value
+    let alfki = res |> Array.filter (fun (c,_) -> c = "ALFKI")
+    Assert.AreEqual(6, alfki.Length)
+    Assert.IsTrue(alfki |> Array.forall (fun (_,d) -> ValueOption.isSome d))
+    // unmatched customer (no orders): the value-option column is ValueNone (not a default value)
+    let fissa = res |> Array.filter (fun (c,_) -> c = "FISSA")
+    Assert.AreEqual(1, fissa.Length)
+    Assert.IsTrue(ValueOption.isNone (snd fissa.[0]))
 
 [<Test>]
 let ``simple select with ValueOption type query``() =

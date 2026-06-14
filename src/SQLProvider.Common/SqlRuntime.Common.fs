@@ -417,6 +417,31 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup, activeColu
             aliasCache.Value.Add(alias,newEntity)
             newEntity
 
+    /// Like GetSubTable, but returns null when the aliased table produced no matching row in a
+    /// left outer join (i.e. all of its columns are null). Used by the `leftOuterJoin ... into g`
+    /// form so the joined result-set entity is null instead of an entity full of default values.
+    /// Note: a real match always has a non-null primary key, so only genuine no-match rows
+    /// (every selected column null) are mapped to null.
+    member internal e.GetSubTableNullable(alias:string, tableName) =
+        let sub = e.GetSubTable(alias, tableName)
+        // Decide no-match by looking ONLY at columns that are genuinely qualified with this alias.
+        // GetSubTable also copies unqualified/foreign columns as a fallback (Utilities.checkPred),
+        // which must not count here. checkPred strips the alias prefix, so a column belongs to this
+        // alias exactly when the returned key differs from the original (a prefix was removed).
+        let pred = Utilities.checkPred alias
+        let ownValues =
+            e.ColumnValues
+            |> Seq.choose (fun (k, v) ->
+                match pred (k, v) with
+                | Some(stripped, value) when stripped <> k -> Some value
+                | _ -> None)
+            |> Seq.toList
+        let hasMatch =
+            match ownValues with
+            | [] -> true   // no alias-qualified columns to judge by: keep the entity
+            | _ -> ownValues |> List.exists (fun v -> not (isNull v))
+        if hasMatch then sub else Unchecked.defaultof<SqlEntity>
+
     /// Maps database entity class to the type provided in generic attribute.
     /// You can define more detailed mapping via MappedColumnAttribute or propertyTypeMapping 
     member x.MapTo<'a>(?propertyTypeMapping : (string * obj) -> obj) =
@@ -588,6 +613,10 @@ type LinkData =
       ForeignTable       : Table
       ForeignKey         : SqlColumnType list
       OuterJoin          : bool
+      // When true (leftOuterJoin), the joined result-set entity is materialised as
+      // null (or None with UseOptionTypes) when there is no matching row, instead of
+      // an entity populated with default values. Only meaningful when OuterJoin = true.
+      IsNullableOuter    : bool
       RelDirection       : RelationshipDirection      }
     with
         member x.Rev() =

@@ -863,6 +863,23 @@ module internal QueryImplementation =
                 ty, data, sAlias
 
 
+             // F#'s `leftOuterJoin x in src on (..) into g` lowers to a GroupJoin whose result
+             // selector wraps the group in `g.DefaultIfEmpty()` (followed by a SelectMany over the
+             // same). The presence of DefaultIfEmpty in the join's result selector is what marks it
+             // as a LEFT OUTER JOIN whose unmatched rows are nulled - a plain inner join never has it.
+             let rec containsDefaultIfEmpty (e:Expression) =
+                if isNull e then false else
+                match e with
+                | :? LambdaExpression as l -> containsDefaultIfEmpty l.Body
+                | :? UnaryExpression as u -> containsDefaultIfEmpty u.Operand
+                | :? NewExpression as n -> n.Arguments |> Seq.exists containsDefaultIfEmpty
+                | :? MemberExpression as me -> containsDefaultIfEmpty me.Expression
+                | :? MethodCallExpression as m ->
+                    m.Method.Name = "DefaultIfEmpty"
+                    || (not(isNull m.Object) && containsDefaultIfEmpty m.Object)
+                    || (m.Arguments |> Seq.exists containsDefaultIfEmpty)
+                | _ -> false
+
              // multiple SelectMany calls in sequence are represented in the same expression tree which must be parsed recursively (and joins too!)
              let rec processSelectManys (toAlias:string) (inExp:Expression) (outExp:SqlExp) (projectionParams : ParameterExpression list) (source:IWithSqlService) =
                 match inExp with
@@ -892,18 +909,18 @@ module internal QueryImplementation =
                     let outExp = processSelectManys projectionParams.[0].Name createRelated outExp projectionParams source
                     let ty, data, sourceEntityName = parseGroupBy meth source sourceAlias destEntity [lambda] exp ""
                     SelectMany(sourceEntityName,destEntity,GroupQuery(data), outExp)
-                | MethodCall(None, (MethodWithName "Join"),
+                | MethodCall(None, (MethodWithName "Join" | MethodWithName "GroupJoin"),
                                         [createRelated
                                          OptionalOuterJoin(isOuter, ConvertOrTypeAs(MethodCall(Some(Lambda(_,MethodCall(_,MethodWithName "CreateEntities",[String destEntity]))),(MethodWithName "Invoke"),_)))
                                          OptionalQuote (Lambda([ParamName sourceAlias],SqlColumnGet(sourceTi,sourceKey,_)))
                                          OptionalQuote (Lambda([ParamName destAlias],SqlColumnGet(_,destKey,_)))
-                                         OptionalQuote (Lambda(projectionParams,_))])
-                | MethodCall(None, (MethodWithName "Join"),
+                                         OptionalQuote (Lambda(projectionParams,_) as projLambda)])
+                | MethodCall(None, (MethodWithName "Join" | MethodWithName "GroupJoin"),
                                         [createRelated
                                          OptionalOuterJoin(isOuter, ConvertOrTypeAs(MethodCall(_, (MethodWithName "CreateEntities"), [String destEntity] )))
                                          OptionalQuote (Lambda([ParamName sourceAlias],SqlColumnGet(sourceTi,sourceKey,_)))
                                          OptionalQuote (Lambda([ParamName destAlias],SqlColumnGet(_,destKey,_)))
-                                         OptionalQuote (Lambda(projectionParams,_))]) ->
+                                         OptionalQuote (Lambda(projectionParams,_) as projLambda)]) ->
                     let sourceTi,sourceKey =
                         match sourceKey, source.SqlExpression with
                         | GroupColumn(KeyOp "", KeyColumn "Key"), SelectMany(_,_,GroupQuery g,_) when (g.KeyColumns.Length = 1) ->
@@ -913,6 +930,8 @@ module internal QueryImplementation =
                     // in this situation, the first agrument will either be an additional nested join method call,
                     // or finally it will be the call to _CreatedRelated which is handled recursively in the next case
                     let outExp = processSelectManys projectionParams.[0].Name createRelated outExp projectionParams source
+                    // A nested GroupJoin whose result selector uses DefaultIfEmpty is a chained leftOuterJoin.
+                    let isLeftOuter = containsDefaultIfEmpty projLambda
                     let sourceAlias =
                         match createRelated with
                         | PropertyGet(Some(ParamName _), p) when Type.(=)(p.PropertyType, typeof<System.Collections.Generic.IEnumerable<SqlEntity>>) ->
@@ -925,7 +944,7 @@ module internal QueryImplementation =
                     // it's ok though because it can always be resolved later after the whole expression tree has been evaluated
                     let data = { PrimaryKey = [destKey]; PrimaryTable = Table.FromFullName destEntity; ForeignKey = [sourceKey];
                                     ForeignTable = {Schema="";Name="";Type=""};
-                                    OuterJoin = isOuter; RelDirection = RelationshipDirection.Parents }
+                                    OuterJoin = isOuter || isLeftOuter; IsNullableOuter = isLeftOuter; RelDirection = RelationshipDirection.Parents }
                     SelectMany(sourceAlias,destAlias,LinkQuery(data),outExp)
                 | OptionalOuterJoin(outerJoin,MethodCall(Some(_),(MethodWithName "CreateRelated"), [param; _; String pe; String pk; String fe; String fk; RelDirection dir;])) ->
                                 
@@ -936,7 +955,7 @@ module internal QueryImplementation =
                         | ParamName x -> x
                         | PropertyGet(_,p) -> Utilities.resolveTuplePropertyName p.Name source.TupleIndex
                         | _ -> failwith "unsupported parameter expression in CreatedRelated method call"
-                    let data = { PrimaryKey = [parseKey pk]; PrimaryTable = Table.FromFullName pe; ForeignKey = [parseKey fk]; ForeignTable = Table.FromFullName fe; OuterJoin = outerJoin; RelDirection = dir  }
+                    let data = { PrimaryKey = [parseKey pk]; PrimaryTable = Table.FromFullName pe; ForeignKey = [parseKey fk]; ForeignTable = Table.FromFullName fe; OuterJoin = outerJoin; IsNullableOuter = false; RelDirection = dir  }
                     let sqlExpression =
                         match outExp with
                         | BaseTable(alias,entity) when alias = "" ->
@@ -948,19 +967,20 @@ module internal QueryImplementation =
                     if source.TupleIndex.Any(fun v -> v = fromAlias) |> not then source.TupleIndex.Add(fromAlias)
                     if source.TupleIndex.Any(fun v -> v = toAlias) |> not then  source.TupleIndex.Add(toAlias)
                     sqlExpression
-                | MethodCall(None, (MethodWithName "Join"),
+                | MethodCall(None, (MethodWithName "Join" | MethodWithName "GroupJoin"),
                                         [createRelated
                                          OptionalOuterJoin(isOuter, ConvertOrTypeAs(OptionalConvertOrTypeAs(MethodCall(Some(Lambda(_,MethodCall(_,MethodWithName "CreateEntities",[String destEntity]))),(MethodWithName "Invoke"),_))))
                                          OptionalQuote (Lambda([ParamName sourceAlias],TupleSqlColumnsGet(multisource)))
                                          OptionalQuote (Lambda([ParamName destAlias],TupleSqlColumnsGet(multidest)))
-                                         OptionalQuote (Lambda(projectionParams,_))])
-                | MethodCall(None, (MethodWithName "Join"),
+                                         OptionalQuote (Lambda(projectionParams,_) as projLambda)])
+                | MethodCall(None, (MethodWithName "Join" | MethodWithName "GroupJoin"),
                                         [createRelated
-                                         OptionalOuterJoin(isOuter, ConvertOrTypeAs(OptionalConvertOrTypeAs(MethodCall(_, MethodWithName "CreateEntities",[String destEntity])))) 
+                                         OptionalOuterJoin(isOuter, ConvertOrTypeAs(OptionalConvertOrTypeAs(MethodCall(_, MethodWithName "CreateEntities",[String destEntity]))))
                                          OptionalQuote (Lambda([ParamName sourceAlias],TupleSqlColumnsGet(multisource)))
                                          OptionalQuote (Lambda([ParamName destAlias],TupleSqlColumnsGet(multidest)))
-                                         OptionalQuote (Lambda(projectionParams,_))]) ->
+                                         OptionalQuote (Lambda(projectionParams,_) as projLambda)]) ->
                     let outExp = processSelectManys projectionParams.[0].Name createRelated outExp projectionParams source
+                    let isLeftOuter = containsDefaultIfEmpty projLambda
 
                     let destKeys = multidest |> List.map(fun (_,destKey,_) -> destKey)
                     let aliashandlesSource =
@@ -976,7 +996,7 @@ module internal QueryImplementation =
 
                     let data = { PrimaryKey = destKeys; PrimaryTable = Table.FromFullName destEntity; ForeignKey = sourceKeys;
                                     ForeignTable = {Schema="";Name="";Type=""};
-                                    OuterJoin = isOuter; RelDirection = RelationshipDirection.Parents }
+                                    OuterJoin = isOuter || isLeftOuter; IsNullableOuter = isLeftOuter; RelDirection = RelationshipDirection.Parents }
                     SelectMany(sourceAlias,destAlias,LinkQuery(data),outExp)
                 | OptionalOuterJoin(isOuter, OptionalConvertOrTypeAs(MethodCall(Some(Lambda([_],MethodCall(_,MethodWithName "CreateEntities",[String destEntity]))),(MethodWithName "Invoke"),_))) 
                 | OptionalOuterJoin(isOuter, OptionalConvertOrTypeAs(MethodCall(_, MethodWithName "CreateEntities",[String destEntity]))) ->
@@ -999,6 +1019,11 @@ module internal QueryImplementation =
                     let alias = Utilities.resolveTuplePropertyName p.Name source.TupleIndex
                     source.TupleIndex.Add alias
                     outExp
+                | MethodCall(None, (MethodWithName "DefaultIfEmpty"), [innerExp]) ->
+                    // `for x in g.DefaultIfEmpty()` after a `leftOuterJoin ... into g`: the GroupJoin
+                    // has already been turned into a LEFT OUTER JOIN, so the DefaultIfEmpty is just the
+                    // left-join marker and the flattening is the same group no-op as `for x in g`.
+                    processSelectManys toAlias innerExp outExp projectionParams source
                 | MethodCall(None, (MethodWithName "AsQueryable"), [innerExp]) ->
                     processSelectManys projectionParams.[0].Name innerExp outExp projectionParams source
                 | MethodCall(None, (MethodWithName "Select"), [ createRelated; OptionalQuote (Lambda([ v1 ], _) as lambda) ]) as whole ->
@@ -1010,10 +1035,11 @@ module internal QueryImplementation =
              // filtered) base table behind a trivial projection, it can be folded into the join:
              // the base table becomes the join target and the filters are hoisted into the outer query.
              let decomposeJoinDestination (dest:IWithSqlService) =
+                // returns (alias, destEntity, isOuter, isNullableOuter, filters)
                 let rec decompose exp (filters: Condition list) =
                     match exp with
-                    | BaseTable(al,destEntity) -> Some(al, destEntity, false, List.rev filters)
-                    | Projection(MethodCall(None, MethodWithName("Select"), [_ ; OptionalQuote (Lambda(_,MethodCall(None, (MethodWithName "leftJoin"),_)))]), BaseTable(al,destEntity)) -> Some(al, destEntity, true, List.rev filters)
+                    | BaseTable(al,destEntity) -> Some(al, destEntity, false, false, List.rev filters)
+                    | Projection(MethodCall(None, MethodWithName("Select"), [_ ; OptionalQuote (Lambda(_,MethodCall(None, (MethodWithName "leftJoin"),_)))]), BaseTable(al,destEntity)) -> Some(al, destEntity, true, false, List.rev filters)
                     | Projection(MethodCall(None, MethodWithName("Select"), [_; OptionalQuote (Lambda([ParamName p1], ParamName p2))]), rest) when p1 = p2 ->
                         decompose rest filters
                     | FilterClause(c, rest) -> decompose rest (c :: filters)
@@ -1154,17 +1180,25 @@ module internal QueryImplementation =
                             | GroupColumn(KeyOp "", KeyColumn "Key"), SelectMany(_,_,GroupQuery g,_) when (g.KeyColumns.Length = 1) ->
                                 g.KeyColumns.[0]
                             | _ -> sourceTi, sourceKey
-                        let destEntity, isOuter, subFilters =
+                        let destEntity, isOuter0, isNullableOuter0, subFilters =
                             match decomposeJoinDestination dest with
-                            | Some(innerAlias, destEntity, isOuter, filters) ->
+                            | Some(innerAlias, destEntity, isOuter, isNullableOuter, filters) ->
                                 if isOuter && not filters.IsEmpty then failwithf "A filtered sub-query is not supported as a left-join destination (%A)." dest.SqlExpression
-                                destEntity, isOuter, (filters |> List.map (remapConditionAliases innerAlias destAlias))
+                                destEntity, isOuter, isNullableOuter, (filters |> List.map (remapConditionAliases innerAlias destAlias))
                             | None -> failwithf "Unexpected join destination entity expression (%A)." dest.SqlExpression
+                        // F# `leftOuterJoin ... into g` (a GroupJoin whose result selector uses DefaultIfEmpty)
+                        // is a nullable left outer join.
+                        let isLeftOuter = containsDefaultIfEmpty projection
+                        // A filtered sub-query can't be a left-join target (its filter would be hoisted to the
+                        // outer WHERE, silently dropping the unmatched NULL rows). Same guard as the (!!) path.
+                        if isLeftOuter && not subFilters.IsEmpty then failwithf "A filtered sub-query is not supported as a left-join destination (%A)." dest.SqlExpression
+                        let isOuter = isOuter0 || isLeftOuter
+                        let isNullableOuter = isNullableOuter0 || isLeftOuter
                         let sqlExpression =
                             match source.SqlExpression with
                             | BaseTable(alias,entity) when alias = "" ->
                                 // special case here as above - this is the first call so replace the top of the tree here with the current base table alias and the select many
-                                let data = { PrimaryKey = [destKey]; PrimaryTable = destEntity; ForeignKey = [sourceKey]; ForeignTable = entity; OuterJoin = isOuter; RelDirection = RelationshipDirection.Parents}
+                                let data = { PrimaryKey = [destKey]; PrimaryTable = destEntity; ForeignKey = [sourceKey]; ForeignTable = entity; OuterJoin = isOuter; IsNullableOuter = isNullableOuter; RelDirection = RelationshipDirection.Parents}
                                 if source.TupleIndex.Any(fun v -> v = sourceAlias) |> not then source.TupleIndex.Add(sourceAlias)
                                 if source.TupleIndex.Any(fun v -> v = destAlias) |> not then source.TupleIndex.Add(destAlias)
                                 SelectMany(sourceAlias,destAlias, LinkQuery(data),BaseTable(sourceAlias,entity))
@@ -1176,7 +1210,7 @@ module internal QueryImplementation =
                                 // it's ok though because it can always be resolved later after the whole expression tree has been evaluated
                                 let data = { PrimaryKey = [destKey]; PrimaryTable = destEntity; ForeignKey = [sourceKey];
                                              ForeignTable = {Schema="";Name="";Type=""};
-                                             OuterJoin = isOuter; RelDirection = RelationshipDirection.Parents }
+                                             OuterJoin = isOuter; IsNullableOuter = isNullableOuter; RelDirection = RelationshipDirection.Parents }
                                 SelectMany(sourceAlias,destAlias,LinkQuery(data),source.SqlExpression)
 
                         let sqlExpression = (sqlExpression, subFilters) ||> List.fold(fun acc f -> FilterClause(f, acc))
@@ -1189,19 +1223,27 @@ module internal QueryImplementation =
                                       OptionalQuote (Lambda([ParamName sourceAlias],TupleSqlColumnsGet(multisource)))
                                       OptionalQuote (Lambda([ParamName destAlias],TupleSqlColumnsGet(multidest)))
                                       OptionalQuote projection ]) ->
-                        let destEntity, isOuter, subFilters =
+                        let destEntity, isOuter0, isNullableOuter0, subFilters =
                             match decomposeJoinDestination dest with
-                            | Some(innerAlias, destEntity, isOuter, filters) ->
+                            | Some(innerAlias, destEntity, isOuter, isNullableOuter, filters) ->
                                 if isOuter && not filters.IsEmpty then failwithf "A filtered sub-query is not supported as a left-join destination (%A)." dest.SqlExpression
-                                destEntity, isOuter, (filters |> List.map (remapConditionAliases innerAlias destAlias))
+                                destEntity, isOuter, isNullableOuter, (filters |> List.map (remapConditionAliases innerAlias destAlias))
                             | None -> failwithf "Unexpected join destination entity expression (%A)." dest.SqlExpression
+                        // F# `leftOuterJoin ... into g` (a GroupJoin whose result selector uses DefaultIfEmpty)
+                        // is a nullable left outer join.
+                        let isLeftOuter = containsDefaultIfEmpty projection
+                        // A filtered sub-query can't be a left-join target (its filter would be hoisted to the
+                        // outer WHERE, silently dropping the unmatched NULL rows). Same guard as the (!!) path.
+                        if isLeftOuter && not subFilters.IsEmpty then failwithf "A filtered sub-query is not supported as a left-join destination (%A)." dest.SqlExpression
+                        let isOuter = isOuter0 || isLeftOuter
+                        let isNullableOuter = isNullableOuter0 || isLeftOuter
                         let destKeys = multidest |> List.map(fun(_,dest,_)->dest)
                         let sourceKeys = multisource |> List.map(fun(_,source,_)->source)
                         let sqlExpression =
                             match source.SqlExpression with
                             | BaseTable(alias,entity) when alias = "" ->
                                 // special case here as above - this is the first call so replace the top of the tree here with the current base table alias and the select many
-                                let data = { PrimaryKey = destKeys; PrimaryTable = destEntity; ForeignKey = sourceKeys; ForeignTable = entity; OuterJoin = isOuter; RelDirection = RelationshipDirection.Parents}
+                                let data = { PrimaryKey = destKeys; PrimaryTable = destEntity; ForeignKey = sourceKeys; ForeignTable = entity; OuterJoin = isOuter; IsNullableOuter = isNullableOuter; RelDirection = RelationshipDirection.Parents}
                                 if source.TupleIndex.Any(fun v -> v = sourceAlias) |> not then source.TupleIndex.Add(sourceAlias)
                                 if source.TupleIndex.Any(fun v -> v = destAlias) |> not then source.TupleIndex.Add(destAlias)
                                 SelectMany(sourceAlias,destAlias, LinkQuery(data),BaseTable(sourceAlias,entity))
@@ -1214,7 +1256,7 @@ module internal QueryImplementation =
                                 // it's ok though because it can always be resolved later after the whole expression tree has been evaluated
                                 let data = { PrimaryKey = destKeys; PrimaryTable = destEntity; ForeignKey = sourceKeys;
                                              ForeignTable = {Schema="";Name="";Type=""};
-                                             OuterJoin = isOuter; RelDirection = RelationshipDirection.Parents }
+                                             OuterJoin = isOuter; IsNullableOuter = isNullableOuter; RelDirection = RelationshipDirection.Parents }
                                 SelectMany(sourceAlias,destAlias,LinkQuery(data),source.SqlExpression)
 
                         let sqlExpression = (sqlExpression, subFilters) ||> List.fold(fun acc f -> FilterClause(f, acc))

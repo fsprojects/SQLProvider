@@ -218,7 +218,7 @@ if                       |X |                                                   
 join                     |X |                                                       |
 last                     |  |                                                       |
 lastOrDefault            |  |                                                       |
-leftOuterJoin            |  |                                                       |
+leftOuterJoin            |x | Standard `leftOuterJoin .. into g` + `g.DefaultIfEmpty()`, see below |
 let                      |x | ...but not using tmp variables in where-clauses       |
 maxBy                    |X | Single table (1)                                      |
 maxByNullable            |X | Single table (1)                                      |
@@ -418,7 +418,28 @@ You can find some custom operators `using FSharp.Data.Sql`:
 * `|<>|` (Not in set)
 * `=%` (Like)
 * `<>%` (Not like)
-* `!!` (Left join)
+* `!!` (Left join: the joined entity is populated with default values when there is no match)
+
+### Left outer joins
+
+There are two ways to do a `LEFT OUTER JOIN`:
+
+The standard F# `leftOuterJoin ... into g` query operator (with `g.DefaultIfEmpty()`) is supported.
+When there is no matching row the joined columns are `None` (under `UseOptionTypes`) / default, and
+the joined entity itself is `null` if you select it whole:
+
+```fsharp
+let res =
+    query {
+        for cust in ctx.Main.Customers do
+        leftOuterJoin order in ctx.Main.Orders on (cust.CustomerId = order.CustomerId) into result
+        for order in result.DefaultIfEmpty() do
+        select (cust.CustomerId, order.OrderDate) // OrderDate is None / default when the customer has no orders
+    }
+```
+
+Alternatively the `!!` operator does an inline left join, but (unlike the form above) the joined
+entity is populated with default values rather than being null when there is no match.
 
 ## Best practices working with queries
 

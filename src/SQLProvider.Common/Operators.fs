@@ -289,8 +289,8 @@ module Operators =
     /// Used after "in" and before the context.tablename
     /// param a: The related table queryable
     /// A queryable that performs a left outer join
-    let (!!) (a:IQueryable<'a>) = query { for x in a do select (leftJoin x) } 
-    
+    let (!!) (a:IQueryable<'a>) = query { for x in a do select (leftJoin x) }
+
     /// Calculates the standard deviation of numeric values in a column.
     /// Used in aggregate queries with groupBy.
     /// param a: The column value

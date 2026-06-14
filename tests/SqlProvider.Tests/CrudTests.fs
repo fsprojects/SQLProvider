@@ -19,10 +19,19 @@ open System.Transactions
 [<Literal>]
 let resolutionPath = __SOURCE_DIRECTORY__ + "/libs"
 
+#if NETFRAMEWORK
 [<Literal>]
 let connectionString =  @"Data Source=" + __SOURCE_DIRECTORY__ + @"/db/northwindEF.db;Version=3;Read Only=false;FailIfMissing=True;"
+[<Literal>]
+let sqliteLib = Common.SQLiteLibrary.SystemDataSQLite
+#else
+[<Literal>]
+let connectionString =  @"Data Source=" + __SOURCE_DIRECTORY__ + @"/db/northwindEF.db"
+[<Literal>]
+let sqliteLib = Common.SQLiteLibrary.MicrosoftDataSqlite
+#endif
 
-type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL, ResolutionPath = resolutionPath, SQLiteLibrary=Common.SQLiteLibrary.SystemDataSQLite>
+type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL, ResolutionPath = resolutionPath, SQLiteLibrary=sqliteLib>
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %O")
 
 

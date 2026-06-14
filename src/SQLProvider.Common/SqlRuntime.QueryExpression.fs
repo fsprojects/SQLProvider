@@ -17,6 +17,11 @@ module internal QueryExpressionTransformer =
         | FSharp.Quotations.Patterns.Call(_,mi,_) -> mi
         | _ -> failwith "never"
 
+    let getSubEntityNullableMi =
+        match <@ (Unchecked.defaultof<SqlEntity>).GetSubTableNullable("", "") @> with
+        | FSharp.Quotations.Patterns.Call(_,mi,_) -> mi
+        | _ -> failwith "never"
+
     /// Replaces parameter references matching the predicate with the given expression
     type internal ParamSubstitutor(predicate: ParameterExpression -> bool, replacement: Expression) =
         inherit ExpressionVisitor()
@@ -35,7 +40,7 @@ module internal QueryExpressionTransformer =
             | _ -> None
         | _ -> None
 
-    let transform (projection:Expression) (tupleIndex:string ResizeArray) (databaseParam:ParameterExpression) (aliasEntityDict:Map<string,Table>) (ultimateChild:(string * Table) option) (replaceParams:Dictionary<ParameterExpression, LambdaExpression>) useCanonicalsOnSelect =
+    let transform (projection:Expression) (tupleIndex:string ResizeArray) (databaseParam:ParameterExpression) (aliasEntityDict:Map<string,Table>) (ultimateChild:(string * Table) option) (replaceParams:Dictionary<ParameterExpression, LambdaExpression>) useCanonicalsOnSelect (nullableAliases:Set<string>) =
         let (|OperationColumnOnly|_|) = function
             | MethodCall(None, MethodWithName "Select", [Constant(_, t) ;
                 OptionalQuote (Lambda([ParamName sourceAlias],(SqlColumnGet(entity,(CanonicalOperation(_) | KeyColumn(_) as coltyp),rtyp) as oper))) as exp]) when 
@@ -347,7 +352,10 @@ module internal QueryExpressionTransformer =
                 match projectionMap.TryGetValue alias with
                 | true, values -> values.Clear()
                 | false, _ -> projectionMap.Add(alias, ResizeArray<_>())
-                Some (Expression.Call(databaseParam,getSubEntityMi,Expression.Constant(alias),Expression.Constant(name)))
+                // For a leftOuterJoin destination, materialise the whole sub-entity as null when
+                // there is no matching row (instead of an entity with default-valued columns).
+                let subEntityMi = if nullableAliases.Contains alias then getSubEntityNullableMi else getSubEntityMi
+                Some (Expression.Call(databaseParam,subEntityMi,Expression.Constant(alias),Expression.Constant(name)))
             | _, SourceTupleGet(alias,name,Some(key,mi)) ->
                 match projectionMap.TryGetValue alias with
                 | true, values when values.Count > 0 -> values.Add(EntityColumn(key))
@@ -815,7 +823,11 @@ module internal QueryExpressionTransformer =
                         mapNested currentProj
                     | _ -> ()
 
-                    let newProjection, projectionMap, groupProjectionMap = transform currentProj entityIndex dbParam sqlQuery.Aliases sqlQuery.UltimateChild replaceParams useCanonicalsOnSelect
+                    let nullableAliases =
+                        sqlQuery.Links
+                        |> List.choose(fun (_, data, destAlias) -> if data.IsNullableOuter then Some destAlias else None)
+                        |> Set.ofList
+                    let newProjection, projectionMap, groupProjectionMap = transform currentProj entityIndex dbParam sqlQuery.Aliases sqlQuery.UltimateChild replaceParams useCanonicalsOnSelect nullableAliases
                     let fixedParams = Expression.Lambda((newProjection:?>LambdaExpression).Body,initDbParam)
                     
                     if sqlQuery.Grouping.Length > 0 then

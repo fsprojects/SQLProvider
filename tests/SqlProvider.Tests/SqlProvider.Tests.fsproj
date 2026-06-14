@@ -5,10 +5,11 @@
     <IsPackable>false</IsPackable>
     <GenerateProgramFile>false</GenerateProgramFile>
     <OutputType>Library</OutputType>
-    <TargetFramework>net48</TargetFramework>
-    <!--<TargetFrameworks>net48;netcoreapp3.1</TargetFrameworks>-->
+    <TargetFrameworks>net48;net10.0</TargetFrameworks>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <AssemblyName>SqlProvider.Tests</AssemblyName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net48'">
 	<TargetFSharpCoreVersion>8.0.0.0</TargetFSharpCoreVersion>
   </PropertyGroup>
   <PropertyGroup>
@@ -32,17 +33,27 @@
     <Compile Include="QueryTests.fs" />
     <Compile Include="CrudTests.fs" />
 	<!--<Compile Include="PostgreSQLTests.fs" />-->
-    <Compile Include="SqlServerTests.fs" />
+    <!-- MSSQL tests need a live SQL Server at design time; only built for net48. -->
+    <Compile Include="SqlServerTests.fs" Condition="'$(TargetFramework)' == 'net48'" />
     <Compile Include="MsDataSqliteTransactions.fs" />
     <Content Include="app.config" />
-    <None Include="x86\SQLite.Interop.dll">
+    <None Include="x86\SQLite.Interop.dll" Condition="'$(TargetFramework)' == 'net48'">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="x64\SQLite.Interop.dll">
+    <None Include="x64\SQLite.Interop.dll" Condition="'$(TargetFramework)' == 'net48'">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="System.Threading.Tasks.Extensions.dll">
+    <None Include="System.Threading.Tasks.Extensions.dll" Condition="'$(TargetFramework)' == 'net48'">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <!-- Cross-platform native SQLite for net10 design-time/runtime (Microsoft.Data.Sqlite). -->
+    <None Include="libs\e_sqlite3.dll" Condition="'$(TargetFramework)' != 'net48'">
+      <Link>e_sqlite3.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="libs\libe_sqlite3.so" Condition="'$(TargetFramework)' != 'net48'">
+      <Link>libe_sqlite3.so</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="scripts\SqlServerTests.fsx" />
     <None Include="scripts\OracleTests.fsx" />
@@ -59,15 +70,18 @@
     <ProjectReference Include="..\..\src\SQLProvider.Runtime\SQLProvider.Runtime.fsproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net48" Version="1.0.3">
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net48" Version="1.0.3" Condition="'$(TargetFramework)' == 'net48'">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="System.Data.SQLite.Linq" Version="1.0.114.3" />
-    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.114.3" />
+    <PackageReference Include="System.Data.SQLite.Linq" Version="1.0.114.3" Condition="'$(TargetFramework)' == 'net48'" />
+    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.114.3" Condition="'$(TargetFramework)' == 'net48'" />
     <PackageReference Include="SQLitePCLRaw.core" Version="2.1.11" />
+    <!-- net10: cross-platform SQLite driver + bundled native -->
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.0" Condition="'$(TargetFramework)' != 'net48'" />
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.11" Condition="'$(TargetFramework)' != 'net48'" />
   </ItemGroup>
-  <ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
     <Reference Include="System.Transactions, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   </ItemGroup>
   <Target Name="CopyLibrariesWin">

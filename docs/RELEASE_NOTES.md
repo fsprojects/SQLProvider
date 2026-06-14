@@ -1,3 +1,6 @@
+### 1.5.24 - 12.06.2026
+* Initial support for standard F# `leftOuterJoin .. into g` / `g.DefaultIfEmpty()` left outer joins (single/multi-key and chained over several tables): unmatched columns are None/default and a whole selected entity is null #540 #697
+
 ### 1.5.23 - 12.06.2026
 * SQLite: added missing string type mappings (longvarchar, longchar, longnvarchar, clob) #101
 * PostgreSQL: skip columns with types unknown to Npgsql (e.g. PostGIS geometry) instead of failing the table #695
