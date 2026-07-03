@@ -242,7 +242,20 @@ module internal QueryImplementation =
                                         box(Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<_,_,_>(e, e, e))
                                 elif Type.(=)(itemEntityType, typeof<Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity,SqlEntity,SqlEntity>>) then
                                         box(Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<_,_,_,_>(e, e, e, e))
-                                else failwith ("Not supported grouping: " + itemEntityType.Name)
+                                else
+                                    // Same structural placeholder as the fixed-shape cases above, but for
+                                    // arbitrary join-row shapes: a groupBy after a leftOuterJoin / groupJoin
+                                    // carries the flattened group as an IEnumerable<SqlEntity> slot, and
+                                    // chained joins nest the tuples.
+                                    let rec makeGroupItem (t:Type) : obj =
+                                        if Type.(=)(t, typeof<SqlEntity>) then box e
+                                        elif Type.(=)(t, typeof<System.Collections.Generic.IEnumerable<SqlEntity>>) then box (Seq.singleton e)
+                                        elif t.IsGenericType
+                                             && (let g = t.GetGenericTypeDefinition()
+                                                 g.Name.StartsWith "AnonymousObject" || g.Name.StartsWith "Tuple`") then
+                                            Activator.CreateInstance(t, t.GenericTypeArguments |> Array.map makeGroupItem)
+                                        else failwith ("Not supported grouping: " + itemEntityType.Name)
+                                    makeGroupItem itemEntityType
                             
                         match data with
                         | [||] -> 
@@ -867,6 +880,11 @@ module internal QueryImplementation =
              // selector wraps the group in `g.DefaultIfEmpty()` (followed by a SelectMany over the
              // same). The presence of DefaultIfEmpty in the join's result selector is what marks it
              // as a LEFT OUTER JOIN whose unmatched rows are nulled - a plain inner join never has it.
+             // Only the LINQ operator counts: a same-named method on some user type must not
+             // accidentally turn an inner join into a left outer join.
+             let isLinqDefaultIfEmpty (m:Reflection.MethodInfo) =
+                m.Name = "DefaultIfEmpty"
+                && (Type.(=)(m.DeclaringType, typeof<System.Linq.Enumerable>) || Type.(=)(m.DeclaringType, typeof<System.Linq.Queryable>))
              let rec containsDefaultIfEmpty (e:Expression) =
                 if isNull e then false else
                 match e with
@@ -875,10 +893,78 @@ module internal QueryImplementation =
                 | :? NewExpression as n -> n.Arguments |> Seq.exists containsDefaultIfEmpty
                 | :? MemberExpression as me -> containsDefaultIfEmpty me.Expression
                 | :? MethodCallExpression as m ->
-                    m.Method.Name = "DefaultIfEmpty"
+                    isLinqDefaultIfEmpty m.Method
                     || (not(isNull m.Object) && containsDefaultIfEmpty m.Object)
                     || (m.Arguments |> Seq.exists containsDefaultIfEmpty)
                 | _ -> false
+
+             // A GroupJoin's group parameter may only be passed through raw, to be flattened by a
+             // following `for x in g` / `for x in g.DefaultIfEmpty()` (which is what turns the
+             // GroupJoin into a flat join). Any other use - g.Count(), g.Sum(...), a nested query
+             // over g - cannot be modelled as a flat join and would otherwise be silently dropped
+             // by the later projection handling, returning wrong results.
+             let groupUsedAsValue (groupParam:ParameterExpression) (projection:Expression) =
+                let rec mentions (e:Expression) =
+                    if isNull e then false else
+                    match e with
+                    | :? ParameterExpression as pe -> Object.ReferenceEquals(pe, groupParam)
+                    | :? LambdaExpression as l -> mentions l.Body
+                    | :? UnaryExpression as u -> mentions u.Operand
+                    | :? NewExpression as n -> n.Arguments |> Seq.exists mentions
+                    | :? MemberExpression as me -> mentions me.Expression
+                    | :? BinaryExpression as b -> mentions b.Left || mentions b.Right
+                    | :? ConditionalExpression as c -> mentions c.Test || mentions c.IfTrue || mentions c.IfFalse
+                    | :? MethodCallExpression as m ->
+                        (not(isNull m.Object) && mentions m.Object) || (m.Arguments |> Seq.exists mentions)
+                    | _ -> false
+                let rec usedAsValue (e:Expression) =
+                    if isNull e then false else
+                    match e with
+                    | :? ParameterExpression -> false // raw pass-through, flattened later
+                    | :? LambdaExpression as l -> usedAsValue l.Body
+                    | :? UnaryExpression as u -> usedAsValue u.Operand
+                    | :? NewExpression as n -> n.Arguments |> Seq.exists usedAsValue
+                    | :? MemberExpression as me -> usedAsValue me.Expression
+                    | :? MethodCallExpression as m when isLinqDefaultIfEmpty m.Method ->
+                        // g.DefaultIfEmpty() is the left-outer-join marker, not a group aggregate
+                        m.Arguments |> Seq.exists usedAsValue
+                    | :? MethodCallExpression as m ->
+                        (not(isNull m.Object) && mentions m.Object) || (m.Arguments |> Seq.exists mentions)
+                    | e -> mentions e
+                usedAsValue projection
+
+             // A groupJoin group that survives into a later Select can only have been flattened
+             // (`for x in g` / `g.DefaultIfEmpty()`) - the join is already modelled as a flat join
+             // by then. If the projection instead consumes the group as a value (g.Count(), g.Sum(),
+             // a nested query over g), the aggregate has nothing to translate to and would surface
+             // as a cryptic expression error; detect it and fail with a clear message instead.
+             // The group is recognisable as a join-tuple (AnonymousObject) member of type
+             // IEnumerable<SqlEntity>, which is not a type any other query construct produces.
+             let groupConsumedAsValue (e:Expression) =
+                let isJoinGroup (x:Expression) =
+                    if isNull x then false else
+                    match x with
+                    | :? MemberExpression as me ->
+                        Type.(=)(me.Type, typeof<System.Collections.Generic.IEnumerable<SqlEntity>>)
+                        && not(isNull me.Member.DeclaringType) && me.Member.DeclaringType.Name.StartsWith "AnonymousObject"
+                    | :? ParameterExpression as pe -> Type.(=)(pe.Type, typeof<System.Collections.Generic.IEnumerable<SqlEntity>>)
+                    | _ -> false
+                let rec walk (e:Expression) =
+                    if isNull e then false else
+                    match e with
+                    | :? LambdaExpression as l -> walk l.Body
+                    | :? UnaryExpression as u -> walk u.Operand
+                    | :? NewExpression as n -> n.Arguments |> Seq.exists walk
+                    | :? MemberExpression as me -> walk me.Expression
+                    | :? BinaryExpression as b -> walk b.Left || walk b.Right
+                    | :? ConditionalExpression as c -> walk c.Test || walk c.IfTrue || walk c.IfFalse
+                    | :? MethodCallExpression as m ->
+                        (not (isLinqDefaultIfEmpty m.Method)
+                            && ((not(isNull m.Object) && isJoinGroup m.Object) || (m.Arguments |> Seq.exists isJoinGroup)))
+                        || (not(isNull m.Object) && walk m.Object)
+                        || (m.Arguments |> Seq.exists walk)
+                    | _ -> false
+                walk e
 
              // multiple SelectMany calls in sequence are represented in the same expression tree which must be parsed recursively (and joins too!)
              let rec processSelectManys (toAlias:string) (inExp:Expression) (outExp:SqlExp) (projectionParams : ParameterExpression list) (source:IWithSqlService) =
@@ -909,13 +995,13 @@ module internal QueryImplementation =
                     let outExp = processSelectManys projectionParams.[0].Name createRelated outExp projectionParams source
                     let ty, data, sourceEntityName = parseGroupBy meth source sourceAlias destEntity [lambda] exp ""
                     SelectMany(sourceEntityName,destEntity,GroupQuery(data), outExp)
-                | MethodCall(None, (MethodWithName "Join" | MethodWithName "GroupJoin"),
+                | MethodCall(None, (MethodWithName "Join" | MethodWithName "GroupJoin" as meth),
                                         [createRelated
                                          OptionalOuterJoin(isOuter, ConvertOrTypeAs(MethodCall(Some(Lambda(_,MethodCall(_,MethodWithName "CreateEntities",[String destEntity]))),(MethodWithName "Invoke"),_)))
                                          OptionalQuote (Lambda([ParamName sourceAlias],SqlColumnGet(sourceTi,sourceKey,_)))
                                          OptionalQuote (Lambda([ParamName destAlias],SqlColumnGet(_,destKey,_)))
                                          OptionalQuote (Lambda(projectionParams,_) as projLambda)])
-                | MethodCall(None, (MethodWithName "Join" | MethodWithName "GroupJoin"),
+                | MethodCall(None, (MethodWithName "Join" | MethodWithName "GroupJoin" as meth),
                                         [createRelated
                                          OptionalOuterJoin(isOuter, ConvertOrTypeAs(MethodCall(_, (MethodWithName "CreateEntities"), [String destEntity] )))
                                          OptionalQuote (Lambda([ParamName sourceAlias],SqlColumnGet(sourceTi,sourceKey,_)))
@@ -931,7 +1017,9 @@ module internal QueryImplementation =
                     // or finally it will be the call to _CreatedRelated which is handled recursively in the next case
                     let outExp = processSelectManys projectionParams.[0].Name createRelated outExp projectionParams source
                     // A nested GroupJoin whose result selector uses DefaultIfEmpty is a chained leftOuterJoin.
-                    let isLeftOuter = containsDefaultIfEmpty projLambda
+                    let isLeftOuter = meth.Name = "GroupJoin" && containsDefaultIfEmpty projLambda
+                    if meth.Name = "GroupJoin" && not isLeftOuter && projectionParams.Length = 2 && groupUsedAsValue projectionParams.[1] projLambda then
+                        failwith "groupJoin: aggregating or querying the join group is not supported. Flatten the group with `for x in g do` (inner join semantics), use `leftOuterJoin ... into g` with `for x in g.DefaultIfEmpty()`, or use groupBy for aggregates."
                     let sourceAlias =
                         match createRelated with
                         | PropertyGet(Some(ParamName _), p) when Type.(=)(p.PropertyType, typeof<System.Collections.Generic.IEnumerable<SqlEntity>>) ->
@@ -967,20 +1055,22 @@ module internal QueryImplementation =
                     if source.TupleIndex.Any(fun v -> v = fromAlias) |> not then source.TupleIndex.Add(fromAlias)
                     if source.TupleIndex.Any(fun v -> v = toAlias) |> not then  source.TupleIndex.Add(toAlias)
                     sqlExpression
-                | MethodCall(None, (MethodWithName "Join" | MethodWithName "GroupJoin"),
+                | MethodCall(None, (MethodWithName "Join" | MethodWithName "GroupJoin" as meth),
                                         [createRelated
                                          OptionalOuterJoin(isOuter, ConvertOrTypeAs(OptionalConvertOrTypeAs(MethodCall(Some(Lambda(_,MethodCall(_,MethodWithName "CreateEntities",[String destEntity]))),(MethodWithName "Invoke"),_))))
                                          OptionalQuote (Lambda([ParamName sourceAlias],TupleSqlColumnsGet(multisource)))
                                          OptionalQuote (Lambda([ParamName destAlias],TupleSqlColumnsGet(multidest)))
                                          OptionalQuote (Lambda(projectionParams,_) as projLambda)])
-                | MethodCall(None, (MethodWithName "Join" | MethodWithName "GroupJoin"),
+                | MethodCall(None, (MethodWithName "Join" | MethodWithName "GroupJoin" as meth),
                                         [createRelated
                                          OptionalOuterJoin(isOuter, ConvertOrTypeAs(OptionalConvertOrTypeAs(MethodCall(_, MethodWithName "CreateEntities",[String destEntity]))))
                                          OptionalQuote (Lambda([ParamName sourceAlias],TupleSqlColumnsGet(multisource)))
                                          OptionalQuote (Lambda([ParamName destAlias],TupleSqlColumnsGet(multidest)))
                                          OptionalQuote (Lambda(projectionParams,_) as projLambda)]) ->
                     let outExp = processSelectManys projectionParams.[0].Name createRelated outExp projectionParams source
-                    let isLeftOuter = containsDefaultIfEmpty projLambda
+                    let isLeftOuter = meth.Name = "GroupJoin" && containsDefaultIfEmpty projLambda
+                    if meth.Name = "GroupJoin" && not isLeftOuter && projectionParams.Length = 2 && groupUsedAsValue projectionParams.[1] projLambda then
+                        failwith "groupJoin: aggregating or querying the join group is not supported. Flatten the group with `for x in g do` (inner join semantics), use `leftOuterJoin ... into g` with `for x in g.DefaultIfEmpty()`, or use groupBy for aggregates."
 
                     let destKeys = multidest |> List.map(fun (_,destKey,_) -> destKey)
                     let aliashandlesSource =
@@ -1024,6 +1114,8 @@ module internal QueryImplementation =
                     // has already been turned into a LEFT OUTER JOIN, so the DefaultIfEmpty is just the
                     // left-join marker and the flattening is the same group no-op as `for x in g`.
                     processSelectManys toAlias innerExp outExp projectionParams source
+                | MethodCall(None, (MethodWithName "DefaultIfEmpty"), [_; _]) ->
+                    failwith "DefaultIfEmpty with a custom default value is not supported in a leftOuterJoin query: the unmatched side is materialised as null (or None with UseOptionTypes). Use the parameterless DefaultIfEmpty()."
                 | MethodCall(None, (MethodWithName "AsQueryable"), [innerExp]) ->
                     processSelectManys projectionParams.[0].Name innerExp outExp projectionParams source
                 | MethodCall(None, (MethodWithName "Select"), [ createRelated; OptionalQuote (Lambda([ v1 ], _) as lambda) ]) as whole ->
@@ -1169,7 +1261,7 @@ module internal QueryImplementation =
 
                         ty.GetConstructors().[0].Invoke [| source.DataContext; source.Provider; expr; source.TupleIndex;|] :?> IQueryable<'T>
 
-                    | MethodCall(None, (MethodWithName "Join" | MethodWithName "GroupJoin"),
+                    | MethodCall(None, (MethodWithName "Join" | MethodWithName "GroupJoin" as meth),
                                     [ SourceWithQueryData source;
                                       SourceWithQueryData dest
                                       OptionalQuote (Lambda([ParamName sourceAlias],SqlColumnGet(sourceTi,sourceKey,_)))
@@ -1188,7 +1280,13 @@ module internal QueryImplementation =
                             | None -> failwithf "Unexpected join destination entity expression (%A)." dest.SqlExpression
                         // F# `leftOuterJoin ... into g` (a GroupJoin whose result selector uses DefaultIfEmpty)
                         // is a nullable left outer join.
-                        let isLeftOuter = containsDefaultIfEmpty projection
+                        let isLeftOuter = meth.Name = "GroupJoin" && containsDefaultIfEmpty projection
+                        // A GroupJoin whose group is consumed as a value (g.Count() etc.) can't be a flat join.
+                        if meth.Name = "GroupJoin" && not isLeftOuter then
+                            match projection with
+                            | :? LambdaExpression as pl when pl.Parameters.Count = 2 && groupUsedAsValue pl.Parameters.[1] pl.Body ->
+                                failwith "groupJoin: aggregating or querying the join group is not supported. Flatten the group with `for x in g do` (inner join semantics), use `leftOuterJoin ... into g` with `for x in g.DefaultIfEmpty()`, or use groupBy for aggregates."
+                            | _ -> ()
                         // A filtered sub-query can't be a left-join target (its filter would be hoisted to the
                         // outer WHERE, silently dropping the unmatched NULL rows). Same guard as the (!!) path.
                         if isLeftOuter && not subFilters.IsEmpty then failwithf "A filtered sub-query is not supported as a left-join destination (%A)." dest.SqlExpression
@@ -1217,7 +1315,7 @@ module internal QueryImplementation =
                         let ty = typeof<SqlQueryable<'T>>
                         Activator.CreateInstance(ty, [| source.DataContext |> box; source.Provider; sqlExpression; source.TupleIndex |]) :?> IQueryable<'T>
 
-                    | MethodCall(None, (MethodWithName "Join" | MethodWithName "GroupJoin"),
+                    | MethodCall(None, (MethodWithName "Join" | MethodWithName "GroupJoin" as meth),
                                     [ SourceWithQueryData source;
                                       SourceWithQueryData dest
                                       OptionalQuote (Lambda([ParamName sourceAlias],TupleSqlColumnsGet(multisource)))
@@ -1231,7 +1329,13 @@ module internal QueryImplementation =
                             | None -> failwithf "Unexpected join destination entity expression (%A)." dest.SqlExpression
                         // F# `leftOuterJoin ... into g` (a GroupJoin whose result selector uses DefaultIfEmpty)
                         // is a nullable left outer join.
-                        let isLeftOuter = containsDefaultIfEmpty projection
+                        let isLeftOuter = meth.Name = "GroupJoin" && containsDefaultIfEmpty projection
+                        // A GroupJoin whose group is consumed as a value (g.Count() etc.) can't be a flat join.
+                        if meth.Name = "GroupJoin" && not isLeftOuter then
+                            match projection with
+                            | :? LambdaExpression as pl when pl.Parameters.Count = 2 && groupUsedAsValue pl.Parameters.[1] pl.Body ->
+                                failwith "groupJoin: aggregating or querying the join group is not supported. Flatten the group with `for x in g do` (inner join semantics), use `leftOuterJoin ... into g` with `for x in g.DefaultIfEmpty()`, or use groupBy for aggregates."
+                            | _ -> ()
                         // A filtered sub-query can't be a left-join target (its filter would be hoisted to the
                         // outer WHERE, silently dropping the unmatched NULL rows). Same guard as the (!!) path.
                         if isLeftOuter && not subFilters.IsEmpty then failwithf "A filtered sub-query is not supported as a left-join destination (%A)." dest.SqlExpression
@@ -1277,6 +1381,8 @@ module internal QueryImplementation =
                         Activator.CreateInstance(ty, [| source.DataContext |> box; source.Provider; ex; source.TupleIndex |]) :?> IQueryable<'T>
 
                     | MethodCall(None, (MethodWithName "Select"), [ SourceWithQueryData source; OptionalQuote (Lambda([ v1 ], _) as lambda) ]) as whole ->
+                        if groupConsumedAsValue lambda then
+                            failwith "groupJoin: aggregating or querying the join group is not supported. Flatten the group with `for x in g do` (inner join semantics), use `leftOuterJoin ... into g` with `for x in g.DefaultIfEmpty()`, or use groupBy for aggregates."
                         let ty = typedefof<SqlQueryable<_>>.MakeGenericType((lambda :?> LambdaExpression).ReturnType )
                         if v1.Name.StartsWith "_arg" && Type.(<>)(v1.Type, typeof<SqlEntity>) && not(Utilities.isGrp v1.Type) then
                             // this is the projection from a join - ignore

@@ -420,27 +420,31 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup, activeColu
     /// Like GetSubTable, but returns null when the aliased table produced no matching row in a
     /// left outer join (i.e. all of its columns are null). Used by the `leftOuterJoin ... into g`
     /// form so the joined result-set entity is null instead of an entity full of default values.
-    /// Note: a real match always has a non-null primary key, so only genuine no-match rows
-    /// (every selected column null) are mapped to null.
+    /// Note: this heuristic is safe because the nullable path is only used for whole-entity
+    /// selects, where every column - including the join key, which is non-null on any match -
+    /// is selected. If partial-column materialisation ever reaches this path, a synthetic
+    /// match-flag column in the SELECT would be needed instead.
     member internal e.GetSubTableNullable(alias:string, tableName) =
-        let sub = e.GetSubTable(alias, tableName)
         // Decide no-match by looking ONLY at columns that are genuinely qualified with this alias.
         // GetSubTable also copies unqualified/foreign columns as a fallback (Utilities.checkPred),
         // which must not count here. checkPred strips the alias prefix, so a column belongs to this
         // alias exactly when the returned key differs from the original (a prefix was removed).
+        // Single pass without intermediate collections; this runs once per materialised row, and
+        // the sub-entity is only built when the row actually matched.
         let pred = Utilities.checkPred alias
-        let ownValues =
-            e.ColumnValues
-            |> Seq.choose (fun (k, v) ->
+        let mutable sawOwnColumn = false
+        let mutable sawValue = false
+        for (k, v) in e.ColumnValues do
+            if not sawValue then
                 match pred (k, v) with
-                | Some(stripped, value) when stripped <> k -> Some value
-                | _ -> None)
-            |> Seq.toList
-        let hasMatch =
-            match ownValues with
-            | [] -> true   // no alias-qualified columns to judge by: keep the entity
-            | _ -> ownValues |> List.exists (fun v -> not (isNull v))
-        if hasMatch then sub else Unchecked.defaultof<SqlEntity>
+                | Some(stripped, _) when stripped <> k ->
+                    sawOwnColumn <- true
+                    if not (isNull v) then sawValue <- true
+                | _ -> ()
+        // No alias-qualified columns to judge by (e.g. the provider returned unqualified column
+        // names): fall back to the populated entity rather than guessing no-match.
+        if sawValue || not sawOwnColumn then e.GetSubTable(alias, tableName)
+        else Unchecked.defaultof<SqlEntity>
 
     /// Maps database entity class to the type provided in generic attribute.
     /// You can define more detailed mapping via MappedColumnAttribute or propertyTypeMapping 
@@ -930,7 +934,27 @@ type GroupResultItems<'key, 'SqlEntity>(keyname:String*String*String*String*Stri
                 let ent = unbox<Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject<SqlEntity,SqlEntity,SqlEntity,SqlEntity>> distinctItem
                 Seq.concat [| ent.Item1.ColumnValues; ent.Item2.ColumnValues; ent.Item3.ColumnValues; ent.Item4.ColumnValues; |]
                     |> Seq.distinct |> filterColumnValues
-            | _ -> failwith ("Unknown aggregate item: " + typeof<'SqlEntity>.Name)
+            | other ->
+                // Generic fallback for join-row shapes the fixed cases above don't cover:
+                // a groupBy after a leftOuterJoin / groupJoin carries the flattened group as an
+                // IEnumerable<SqlEntity> slot, and chained joins nest the tuples.
+                let rec collectEntities (o:obj) : SqlEntity seq =
+                    match o with
+                    | null -> Seq.empty
+                    | :? SqlEntity as e -> Seq.singleton e
+                    | :? System.Collections.Generic.IEnumerable<SqlEntity> as es -> es
+                    | o ->
+                        let t = o.GetType()
+                        if t.IsGenericType
+                           && (let g = t.GetGenericTypeDefinition()
+                               g.Name.StartsWith "AnonymousObject" || g.Name.StartsWith "Tuple`") then
+                            t.GetProperties()
+                            |> Seq.filter(fun p -> p.Name.StartsWith "Item")
+                            |> Seq.collect(fun p -> collectEntities (p.GetValue o))
+                        else Seq.empty
+                let ents = collectEntities other |> Seq.toArray
+                if ents.Length = 0 then failwith ("Unknown aggregate item: " + typeof<'SqlEntity>.Name)
+                else ents |> Seq.collect(fun e -> e.ColumnValues) |> Seq.distinct |> filterColumnValues
         let itm = 
             if Seq.isEmpty itms then
                 let cols = (keyname |> fun (x1,x2,x3,x4,x5,x6,x7) -> StringBuilder(x1).Append(" ").Append(x2).Append(" ").Append(x3).Append(" ").Append(x4).Append(" ").Append(x5).Append(" ").Append(x6).Append(" ").Append(x7).ToString()).Trim()

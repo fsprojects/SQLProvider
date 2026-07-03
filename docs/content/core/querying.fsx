@@ -210,7 +210,7 @@ exactlyOneOrDefault      |X |                                                   
 exists                   |X |                                                       |
 find                     |X |                                                       |
 groupBy                  |x | Simple support (2) |
-groupJoin                |  |                                                       |
+groupJoin                |x | Only when flattened: `groupJoin .. into g` + `for x in g` (inner join), see below |
 groupValBy	             |  |                                                       |
 head                     |X |                                                       |
 headOrDefault            |X |                                                       |
@@ -440,6 +440,31 @@ let res =
 
 Alternatively the `!!` operator does an inline left join, but (unlike the form above) the joined
 entity is populated with default values rather than being null when there is no match.
+
+The classic anti-join ("customers without orders") works by filtering the left-joined side with
+`IS NULL`, which under `UseOptionTypes` is an `IsNone` check:
+
+```fsharp
+let customersWithoutOrders =
+    query {
+        for cust in ctx.Main.Customers do
+        leftOuterJoin order in ctx.Main.Orders on (cust.CustomerId = order.CustomerId.Value) into result
+        for order in result.DefaultIfEmpty() do
+        where (order.CustomerId.IsNone)
+        select cust.CustomerId
+    }
+```
+
+Notes and limitations:
+
+* `groupJoin ... into g` followed by `for x in g do` is supported and behaves as an inner join.
+  Aggregating the group itself (e.g. `select (c, g.Count())`) is not supported - use `groupBy`
+  for aggregates.
+* A `groupBy` after a `leftOuterJoin` follows SQL semantics: `COUNT(*)` counts the unmatched
+  NULL row, so a customer with no orders gets count 1, not 0.
+* `DefaultIfEmpty(customDefaultValue)` is not supported; only the parameterless form is.
+* A filtered sub-query is not supported as a left-join destination (the filter would belong in
+  the JOIN's `ON` clause, which is not yet generated).
 
 ## Best practices working with queries
 

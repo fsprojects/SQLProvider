@@ -366,6 +366,69 @@ let ``leftOuterJoin chained over three tables``() =
     Assert.AreEqual(12, res |> Array.filter (fun (c,_,_) -> c = "ALFKI") |> Array.length)
 
 [<Test>]
+let ``leftOuterJoin after an inner join``() =
+    let dc = sql.GetDataContext()
+    let res =
+        query {
+            for cust in dc.Main.Customers do
+            join order in dc.Main.Orders on (cust.CustomerId = order.CustomerId)
+            leftOuterJoin emp in dc.Main.Employees on (order.EmployeeId = emp.EmployeeId) into emps
+            for emp in emps.DefaultIfEmpty() do
+            select (cust.CustomerId, order.OrderId, emp)
+        } |> Seq.toArray
+    // The INNER JOIN keeps one row per order with a known customer; the LEFT JOIN must not
+    // drop the orders whose EmployeeId has no match, it nulls the employee instead.
+    Assert.AreEqual(823, res.Length)
+    Assert.AreEqual(72, res |> Array.filter (fun (_,_,e) -> obj.ReferenceEquals(e, null)) |> Array.length)
+
+[<Test>]
+let ``leftOuterJoin with groupBy over the outer table``() =
+    let dc = sql.GetDataContext()
+    let res =
+        query {
+            for cust in dc.Main.Customers do
+            leftOuterJoin order in dc.Main.Orders on (cust.CustomerId = order.CustomerId) into result
+            for order in result.DefaultIfEmpty() do
+            groupBy cust.CustomerId into g
+            select (g.Key, g.Count())
+        } |> Seq.toArray |> Map.ofArray
+    // Every customer appears, even those without orders.
+    Assert.AreEqual(91, res.Count)
+    Assert.AreEqual(6, res.["ALFKI"])
+    // Standard SQL semantics: COUNT(*) over a left join counts the unmatched NULL row,
+    // so a customer with no orders has count 1, not 0.
+    Assert.AreEqual(1, res.["FISSA"])
+
+[<Test>]
+let ``groupJoin flattened without DefaultIfEmpty behaves as an inner join``() =
+    let dc = sql.GetDataContext()
+    let res =
+        query {
+            for cust in dc.Main.Customers do
+            groupJoin order in dc.Main.Orders on (cust.CustomerId = order.CustomerId) into result
+            for order in result do
+            where (cust.CustomerId = "ALFKI" || cust.CustomerId = "FISSA")
+            select (cust.CustomerId, order.OrderId)
+        } |> Seq.toArray
+    // FISSA has no orders and is dropped: without DefaultIfEmpty this flattening is an inner join.
+    Assert.AreEqual(6, res.Length)
+    Assert.IsTrue(res |> Array.forall (fun (c,_) -> c = "ALFKI"))
+
+[<Test>]
+let ``groupJoin with a group aggregate fails loudly``() =
+    let dc = sql.GetDataContext()
+    // Aggregating the join group can't be modelled as a flat join; it must fail with a clear
+    // message instead of silently returning wrong results.
+    let ex =
+        Assert.Catch(fun () ->
+            query {
+                for cust in dc.Main.Customers do
+                groupJoin order in dc.Main.Orders on (cust.CustomerId = order.CustomerId) into result
+                select (cust.CustomerId, result.Count())
+            } |> Seq.toArray |> ignore)
+    StringAssert.Contains("groupJoin", ex.Message)
+
+[<Test>]
 let ``simple select two queries test``() =
     let dc = sql.GetDataContext(SelectOperations.DatabaseSide)
     // Works also with: let dc = sql.GetDataContext(SelectOperations.DotNetSide)
@@ -2363,6 +2426,21 @@ let ``leftOuterJoin with option types yields None for unmatched columns``() =
     let fissa = res |> Array.filter (fun (c,_) -> c = "FISSA")
     Assert.AreEqual(1, fissa.Length)
     Assert.AreEqual(None, snd fissa.[0])
+
+[<Test>]
+let ``leftOuterJoin anti-join finds customers without orders``() =
+    // The classic anti-join: LEFT JOIN + IS NULL on the joined side. The where on the
+    // left-joined column must translate to `IS NULL` and keep only the unmatched rows.
+    let dc = sqlOption.GetDataContext()
+    let res =
+        query {
+            for cust in dc.Main.Customers do
+            leftOuterJoin order in dc.Main.Orders on (cust.CustomerId = order.CustomerId.Value) into result
+            for order in result.DefaultIfEmpty() do
+            where (order.CustomerId.IsNone)
+            select cust.CustomerId
+        } |> Seq.toArray
+    CollectionAssert.AreEquivalent([|"FISSA"; "PARIS"; "WOLZA"|], res)
 
 [<Test>]
 let ``simple select with where boolean option types``() =

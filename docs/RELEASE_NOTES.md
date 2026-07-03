@@ -1,3 +1,9 @@
+### 1.5.25 - 03.07.2026
+* leftOuterJoin: groupBy after a left outer join is now supported (SQL semantics: COUNT counts the unmatched NULL row)
+* groupJoin: `groupJoin ... into g` + `for x in g do` now works (inner join semantics); aggregating the group (e.g. `g.Count()`) fails with a clear message instead of returning wrong results
+* leftOuterJoin detection is now gated on the GroupJoin operator and the LINQ DefaultIfEmpty method, so an unrelated `DefaultIfEmpty` call in a projection can no longer turn an inner join into a left outer join
+* Unmatched left-join rows no longer construct a throwaway entity during materialisation
+
 ### 1.5.24 - 12.06.2026
 * Initial support for standard F# `leftOuterJoin .. into g` / `g.DefaultIfEmpty()` left outer joins (single/multi-key and chained over several tables): unmatched columns are None/default and a whole selected entity is null #540 #697
 

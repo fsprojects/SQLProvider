@@ -651,19 +651,25 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
             | _ -> None
 
         member __.GetColumns(con,table) =
-            
-            // If we don't know this server's version already, open the connection ahead-of-time and read it 
-            
-            mssqlVersionCache.GetOrAdd(con.ConnectionString, fun conn ->
-                lazy
-                    if con.State <> ConnectionState.Open then con.Open()
-                    let ver = con.GetType().GetProperty("ServerVersion").GetValue(con,null)
-                    if isNull ver then Version("12.0")
-                    else
-                    let success, version = ver.ToString() |> Version.TryParse
-                    if success then version else Version("12.0")
-            ).Value |> ignore 
-                
+
+            // If we don't know this server's version already, open the connection ahead-of-time and read it
+            // Evict on failure: the lazy caches a thrown exception (ExecutionAndPublication), so a
+            // transient connection failure must not poison this connection string's cache entry
+            // (and pin the failed connection object) until the process restarts.
+            try
+                mssqlVersionCache.GetOrAdd(con.ConnectionString, fun conn ->
+                    lazy
+                        if con.State <> ConnectionState.Open then con.Open()
+                        let ver = con.GetType().GetProperty("ServerVersion").GetValue(con,null)
+                        if isNull ver then Version("12.0")
+                        else
+                        let success, version = ver.ToString() |> Version.TryParse
+                        if success then version else Version("12.0")
+                ).Value |> ignore
+            with _ ->
+                mssqlVersionCache.TryRemove con.ConnectionString |> ignore
+                reraise()
+
             match schemaCache.Columns.TryGetValue table.FullName with
             | (true,data) when data.Count > 0 -> 
                // Close the connection in case it was opened above (possible if the same schema exists on multiple servers)
