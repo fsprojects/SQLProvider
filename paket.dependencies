@@ -61,8 +61,11 @@ group SourceFiles
     source https://api.nuget.org/v3/index.json
     storage: none
 
-    github fsprojects/FSharp.TypeProviders.SDK src/ProvidedTypes.fsi
-    github fsprojects/FSharp.TypeProviders.SDK src/ProvidedTypes.fs
+    // Pinned to PR fsprojects/FSharp.TypeProviders.SDK#522: thread-safety fix for concurrent
+    // type translation (FS0193 "type X is not compatible with type X" under ParallelCompilation).
+    // Move back to a release/master pin once the PR is merged.
+    github fsprojects/FSharp.TypeProviders.SDK:26fff288236366fdd2495cf31df91df3343daffa src/ProvidedTypes.fsi
+    github fsprojects/FSharp.TypeProviders.SDK:26fff288236366fdd2495cf31df91df3343daffa src/ProvidedTypes.fs
     github Thorium/Linq.Expression.Optimizer src/Code/ExpressionOptimizer.fs
 
 group Analyzers
