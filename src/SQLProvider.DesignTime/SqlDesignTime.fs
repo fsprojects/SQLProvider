@@ -1288,20 +1288,23 @@ type SqlRuntimeInfo (config : TypeProviderConfig) =
         //| Choice2Of2(paths, errors) -> Assembly.GetExecutingAssembly()
     member __.RuntimeAssembly = runtimeAssembly
 
-/// One generation of provided types for one set of static parameters.
-/// Reference equality so that ConcurrentDictionary.TryUpdate swaps compare generations,
-/// not their (concurrently mutated) field values.
+/// One generation of provided types for one set of static parameters. Once built, a generation is
+/// served unchanged for the lifetime of the entry. This is a correctness requirement, not a cache
+/// policy: the compiler-facing (target-model) provided types are memoized by the TypeProvider SDK
+/// keyed on the identity of these source types, so producing a second source root for the same
+/// static parameters while any compilation may still re-request it makes the compiler see two
+/// unrelated erased types (intermittent FS0193/FS0001 "type X is not compatible with type X").
+/// The entry is therefore only ever dropped whole (idle expiration or explicit cache clear),
+/// never rebuilt and swapped in place underneath a live compilation.
+/// Reference equality so the identity-checked eviction matches the exact entry instance, not its
+/// (concurrently mutated) field values.
 [<ReferenceEquality>]
 type DesignCacheEntry =
-    { /// The provided root type, when it was built, and how old the build may get before a
-      /// background refresh is started (adapted to build duration on slow systems).
-      Root : Lazy<ProvidedTypeDefinition * DateTime * TimeSpan>
+    { /// The provided root type, built lazily once per set of static parameters.
+      Root : Lazy<ProvidedTypeDefinition>
       /// Last access in UTC ticks. Updated lock-free on every instantiation request;
       /// entries idle longer than the expiration are dropped to free memory.
-      mutable LastAccess : int64
-      /// 1 while a background refresh build is in flight: at most one refresh per entry,
-      /// no matter how many Visual Studio threads request the type concurrently.
-      mutable Refreshing : int }
+      mutable LastAccess : int64 }
 
 module DesignTimeCache =
     let cache = System.Collections.Concurrent.ConcurrentDictionary<DesignCacheKey,DesignCacheEntry>()
@@ -1523,15 +1526,17 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
             args.[12] :?> string,                   // SSDT Path
             typeName)
 
-        // Entries idle longer than this are dropped to free memory. An actively used entry is
-        // never dropped on a timer; instead it is refreshed in the background once its build is
-        // older than its staleness interval, so database schema changes are still picked up
-        // without IntelliSense ever stalling on a synchronous rebuild.
-        let idleExpiration = TimeSpan.FromMinutes 3.0
+        // Entries idle longer than this are dropped to free memory (and the design-time connection),
+        // so a later access rebuilds from scratch and picks up any database schema changes. The
+        // window is deliberately long: a single large compilation can have multi-minute gaps
+        // between two requests for the same instantiation, and evicting inside such a gap would
+        // hand the compiler two different generations of the same erased types (FS0193, see
+        // DesignCacheEntry). An actively used entry is served as-is and never rebuilt underneath
+        // a live compilation; explicit refresh is available via ClearDatabaseSchemaCache.
+        let idleExpiration = TimeSpan.FromMinutes 30.0
 
         let buildRoot (args:DesignCacheKey) =
             let struct(_,_,_,_,_,_,_,_,_,_,_,_,_, rootTypeName) = args
-            let buildStarted = DateTime.UtcNow
 
             let rootType = ProvidedTypeDefinition(sqlRuntimeInfo.RuntimeAssembly,FSHARP_DATA_SQL,rootTypeName,Some typeof<obj>, isErased=true)
             let serviceType = ProvidedTypeDefinition( "dataContext", Some typeof<obj>, isErased=true)
@@ -1539,12 +1544,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
 
             createTypes rootType serviceType readServiceType config sqlRuntimeInfo invalidate registerDispose args
             createConstructors config (rootType, serviceType, readServiceType, args)
-
-            // Refresh no sooner than the idle expiration, and on a slow system no sooner than
-            // 5x the time a build takes, so refreshes cannot put the system under pressure.
-            let buildDuration = DateTime.UtcNow - buildStarted
-            let staleAfter = max idleExpiration (TimeSpan.FromTicks(buildDuration.Ticks * 5L))
-            rootType, DateTime.UtcNow, staleAfter
+            rootType
 
         let dropDesignTimeDcProvider (key:DesignCacheKey) =
             // Release the design-time data context provider (used by the Individuals feature)
@@ -1572,8 +1572,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
                     let generation = buildRoot key
                     idleWatcher key |> Async.Start
                     generation
-              LastAccess = DateTime.UtcNow.Ticks
-              Refreshing = 0 }
+              LastAccess = DateTime.UtcNow.Ticks }
 
         let mutable builtEntry = Unchecked.defaultof<DesignCacheEntry>
         try
@@ -1581,31 +1580,9 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
             builtEntry <- entry
             System.Threading.Interlocked.Exchange(&entry.LastAccess, DateTime.UtcNow.Ticks) |> ignore
 
-            // Stale-while-revalidate: always serve the current tree; if it has gone stale,
-            // rebuild it once in the background and swap the entry atomically. Callers never
-            // wait on a refresh, and concurrent VS threads can never start a second one.
-            if entry.Root.IsValueCreated then
-                let _, builtAt, staleAfter = entry.Root.Value
-                if DateTime.UtcNow - builtAt >= staleAfter
-                   && System.Threading.Interlocked.CompareExchange(&entry.Refreshing, 1, 0) = 0 then
-                    async {
-                        try
-                            try
-                                let freshGeneration = buildRoot arguments
-                                let freshEntry =
-                                    { Root = Lazy<_>.CreateFromValue freshGeneration
-                                      LastAccess = DateTime.UtcNow.Ticks
-                                      Refreshing = 0 }
-                                if DesignTimeCache.cache.TryUpdate(arguments, freshEntry, entry) then
-                                    dropDesignTimeDcProvider arguments
-                            with
-                            | _ -> () // keep serving the previous generation; retried on a later access
-                        finally
-                            System.Threading.Interlocked.Exchange(&entry.Refreshing, 0) |> ignore
-                    } |> Async.Start
-
-            let root, _, _ = entry.Root.Value
-            root
+            // One stable generation per set of static parameters: see DesignCacheEntry for why
+            // the built root must never be rebuilt and swapped underneath a live compilation.
+            entry.Root.Value
         with
         | e ->
             // Evict only this exact faulted generation by reference identity, never a fresh entry
