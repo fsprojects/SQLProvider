@@ -20,7 +20,7 @@ NUGET
       System.Security.Cryptography.ProtectedData (>= 4.7) - restriction: >= netstandard2.0
       System.Text.Json (>= 4.7.2) - restriction: >= netstandard2.0
       System.Threading.Tasks.Extensions (>= 4.5.4) - restriction: >= netstandard2.0
-    FSharp.Core (10.1.201)
+    FSharp.Core (10.0.109)
     Microsoft.Bcl.AsyncInterfaces (9.0.4) - restriction: || (>= net462) (&& (>= net6.0) (< net8.0)) (>= netstandard2.0)
       System.Threading.Tasks.Extensions (>= 4.5.4) - restriction: || (>= net462) (&& (>= netstandard2.0) (< netstandard2.1))
     Microsoft.Bcl.Memory (9.0.4) - restriction: || (>= net462) (&& (>= net6.0) (< net8.0)) (&& (< net6.0) (>= netstandard2.0)) (&& (>= net8.0) (< net9.0))
@@ -507,8 +507,8 @@ NUGET
     FSharp.Core (10.1.201)
     FSharp.Formatting (22.0)
       FSharp.Compiler.Service (43.12.201)
-    Microsoft.Bcl.Cryptography (10.0.8)
-      System.Formats.Asn1 (>= 10.0.8)
+    Microsoft.Bcl.Cryptography (10.0.9)
+      System.Formats.Asn1 (>= 10.0.9)
       System.Runtime.CompilerServices.Unsafe (>= 6.1.2)
     Microsoft.Build.Framework (17.11.4)
       Microsoft.Win32.Registry (>= 5.0)
@@ -528,7 +528,7 @@ NUGET
     Microsoft.NET.StringTools (17.11.4)
       System.Memory (>= 4.5.5)
       System.Runtime.CompilerServices.Unsafe (>= 6.0)
-    Microsoft.SourceLink.GitHub (11.0.100-preview.4.26230.115) - copy_local: true
+    Microsoft.SourceLink.GitHub (11.0.100-preview.5.26302.115) - copy_local: true
     Microsoft.Win32.Registry (5.0)
       System.Security.AccessControl (>= 5.0)
       System.Security.Principal.Windows (>= 5.0)
@@ -552,7 +552,7 @@ NUGET
     runtime.win-x64.runtime.native.System.Data.SqlClient.sni (4.4)
     runtime.win-x86.runtime.native.System.Data.SqlClient.sni (4.4)
     System.Buffers (4.6.1)
-    System.Collections.Immutable (10.0.8)
+    System.Collections.Immutable (10.0.9)
       System.Memory (>= 4.6.3)
       System.Runtime.CompilerServices.Unsafe (>= 6.1.2)
     System.Configuration.ConfigurationManager (8.0)
@@ -562,7 +562,7 @@ NUGET
     System.Diagnostics.DiagnosticSource (10.0.8)
       System.Memory (>= 4.6.3)
       System.Runtime.CompilerServices.Unsafe (>= 6.1.2)
-    System.Formats.Asn1 (10.0.8)
+    System.Formats.Asn1 (10.0.9)
       System.Memory (>= 4.6.3)
     System.Memory (4.6.3)
     System.Reactive (5.0)

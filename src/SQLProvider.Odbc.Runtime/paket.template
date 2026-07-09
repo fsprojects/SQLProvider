@@ -39,7 +39,7 @@ references
     FSharp.Data.SqlProvider.Common.dll
     FSharp.Data.SqlProvider.Odbc.dll
 dependencies
-    FSharp.Core >= 8.0.301
+    FSharp.Core >= 10.0.109
     Newtonsoft.Json >= 13.0.1
     System.Memory >= 4.6.3
     System.Data.Odbc >= 6.0.2
