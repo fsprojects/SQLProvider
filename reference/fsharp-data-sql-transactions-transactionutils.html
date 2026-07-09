@@ -286,7 +286,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '710', 710)" onmouseover="showTip(event, '710', 710)">
+              <code onmouseout="hideTip(event, '692', 692)" onmouseover="showTip(event, '692', 692)">
                 <p>
                   <a id="ensureTransaction">
                     <a href="#ensureTransaction">
@@ -295,7 +295,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="710">
+              <div class="fsdocs-tip" id="692">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>ensureTransaction&#32;<span>transactionOptions</span></span></code>
@@ -323,31 +323,54 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  transactionOptions
-                </span>
-                :
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-transactions-transactionoptions.html">TransactionOptions</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.transactions.transactionscope">TransactionScope</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Transactions.TransactionUtils.ensureTransaction`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Transactions.TransactionUtils.ensureTransaction\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Transactions.fs#L110-110" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
+                  <p class="fsdocs-summary">
+                     Creates the TransactionScope that wraps a SubmitUpdates write batch. Called ONLY from the
+ providers' ProcessUpdates/ProcessUpdatesAsync - reads are never wrapped. Uses
+ TransactionScopeOption.Required: if the caller already opened an ambient transaction this
+ enlists in it (and the caller's isolation level applies, not the one passed here); otherwise
+ it starts a fresh standalone transaction using transactionOptions. Pass
+ IsolationLevel.DontCreateTransaction to skip creating a scope entirely.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    transactionOptions
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-transactions-transactionoptions.html">TransactionOptions</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.transactions.transactionscope">TransactionScope</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '711', 711)" onmouseover="showTip(event, '711', 711)">
+              <code onmouseout="hideTip(event, '693', 693)" onmouseover="showTip(event, '693', 693)">
                 <p>
                   <a id="toSystemDataIsolationLevel">
                     <a href="#toSystemDataIsolationLevel">
@@ -356,7 +379,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="711">
+              <div class="fsdocs-tip" id="693">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>toSystemDataIsolationLevel&#32;<span>isolationLevel</span></span></code>
@@ -393,7 +416,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Transactions.TransactionUtils.toSystemDataIsolationLevel\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Transactions.fs#L52-52" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Transactions.fs#L82-82" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">

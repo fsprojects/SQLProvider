@@ -298,14 +298,14 @@ Defaults to "public".</p>
 
 
 <span class="k">type</span> <span onmouseout="hideTip(event, 'fs19', 30)" onmouseover="showTip(event, 'fs19', 30)" class="rt">sql</span> <span class="o">=</span>
-    <span onmouseout="hideTip(event, 'fs20', 31)" onmouseover="showTip(event, 'fs20', 31)" class="rt">SqlDataProvider</span><span class="pn">&lt;</span>
-        <span onmouseout="hideTip(event, 'fs7', 32)" onmouseover="showTip(event, 'fs7', 32)" class="prop">dbVendor</span><span class="pn">,</span>
-        <span onmouseout="hideTip(event, 'fs11', 33)" onmouseover="showTip(event, 'fs11', 33)" class="prop">connString</span><span class="pn">,</span>
+    <span class="id">SqlDataProvider</span><span class="pn">&lt;</span>
+        <span onmouseout="hideTip(event, 'fs7', 31)" onmouseover="showTip(event, 'fs7', 31)" class="id">dbVendor</span><span class="pn">,</span>
+        <span onmouseout="hideTip(event, 'fs11', 32)" onmouseover="showTip(event, 'fs11', 32)" class="id">connString</span><span class="pn">,</span>
         <span class="s">&quot;&quot;</span><span class="pn">,</span>         <span class="c">//ConnectionNameString can be left empty</span>
-        <span onmouseout="hideTip(event, 'fs13', 34)" onmouseover="showTip(event, 'fs13', 34)" class="prop">resPath</span><span class="pn">,</span>
-        <span onmouseout="hideTip(event, 'fs14', 35)" onmouseover="showTip(event, 'fs14', 35)" class="prop">indivAmount</span><span class="pn">,</span>
-        <span onmouseout="hideTip(event, 'fs15', 36)" onmouseover="showTip(event, 'fs15', 36)" class="prop">useOptTypes</span><span class="pn">,</span>
-        <span onmouseout="hideTip(event, 'fs18', 37)" onmouseover="showTip(event, 'fs18', 37)" class="prop">owner</span><span class="pn">&gt;</span>
+        <span onmouseout="hideTip(event, 'fs13', 33)" onmouseover="showTip(event, 'fs13', 33)" class="id">resPath</span><span class="pn">,</span>
+        <span onmouseout="hideTip(event, 'fs14', 34)" onmouseover="showTip(event, 'fs14', 34)" class="id">indivAmount</span><span class="pn">,</span>
+        <span onmouseout="hideTip(event, 'fs15', 35)" onmouseover="showTip(event, 'fs15', 35)" class="id">useOptTypes</span><span class="pn">,</span>
+        <span onmouseout="hideTip(event, 'fs18', 36)" onmouseover="showTip(event, 'fs18', 36)" class="id">owner</span><span class="pn">&gt;</span>
 </code></pre>
 
         <div class="fsdocs-tip" id="fs1">val connectionString: string</div>
@@ -363,21 +363,6 @@ type NullableColumnType =
 <div class="fsdocs-tip" id="fs18">[&lt;Literal&gt;]
 val owner: string = &quot;public, admin, references&quot;</div>
 <div class="fsdocs-tip" id="fs19">type sql = obj</div>
-<div class="fsdocs-tip" id="fs20">type SqlDataProvider<br /><em>&lt;summary&gt;Typed representation of a database&lt;/summary&gt;
-                    &lt;param name=&#39;ConnectionString&#39;&gt;The connection string for the SQL database&lt;/param&gt;
-                    &lt;param name=&#39;ConnectionStringName&#39;&gt;The connection string name to select from a configuration file&lt;/param&gt;
-                    &lt;param name=&#39;DatabaseVendor&#39;&gt; The target database vendor&lt;/param&gt;
-                    &lt;param name=&#39;IndividualsAmount&#39;&gt;The amount of sample entities to project into the type system for each SQL entity type. Default 50. Note GDPR/PII regulations if using individuals with ContextSchemaPath.&lt;/param&gt;
-                    &lt;param name=&#39;UseOptionTypes&#39;&gt;If set, F# option types will be used in place of nullable database columns.  If not, you will always receive the default value of the column&#39;s type even if it is null in the database.&lt;/param&gt;
-                    &lt;param name=&#39;ResolutionPath&#39;&gt;The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types. Types used in design-time: If no better clue, prefer .NET Standard 2.0 versions. Semicolon to separate multiple.&lt;/param&gt;
-                    &lt;param name=&#39;Owner&#39;&gt;Oracle: The owner of the schema for this provider to resolve. PostgreSQL: A list of schemas to resolve, separated by spaces, newlines, commas, or semicolons.&lt;/param&gt;
-                    &lt;param name=&#39;CaseSensitivityChange&#39;&gt;Should we do ToUpper or ToLower when generating table names?&lt;/param&gt;
-                    &lt;param name=&#39;TableNames&#39;&gt;Comma separated table names list to limit a number of tables in big instances. The names can have &#39;%&#39; sign to handle it as in the &#39;LIKE&#39; query (Oracle and MSSQL Only)&lt;/param&gt;
-                    &lt;param name=&#39;ContextSchemaPath&#39;&gt;The location of the context schema previously saved with SaveContextSchema. When not empty, will be used to populate the database schema instead of retrieving it from then database.&lt;/param&gt;
-                    &lt;param name=&#39;OdbcQuote&#39;&gt;Odbc quote characters: Quote characters for the table and column names: `alias`, [alias]&lt;/param&gt;
-                    &lt;param name=&#39;SQLiteLibrary&#39;&gt;Use System.Data.SQLite or Mono.Data.SQLite or select automatically (SQLite only)&lt;/param&gt;
-                    &lt;param name=&#39;SsdtPath&#39;&gt;A path to an SSDT .dacpac file.&#39;&lt;/param&gt;
-                    </em></div>
 
     </div>
 </main>
