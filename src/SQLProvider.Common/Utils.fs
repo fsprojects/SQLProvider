@@ -290,12 +290,20 @@ module Utilities =
         | CanonicalOperation(op, c) -> $"c{abs(op.GetHashCode())}c{getBaseColumnName c}"
         | GroupColumn(op, c) -> $"g{abs(op.GetHashCode())}g{getBaseColumnName c}"
 
+    /// Renders an inline SQL *value literal* (used where a provider - chiefly ODBC - can't bind a
+    /// parameter). String/Guid/DateTime literals are ALWAYS single-quoted (the delimiter is fixed
+    /// here, it is NOT OdbcQuoteCharacter - that setting only controls *identifier* quoting:
+    /// ` ` / [ ] / " " / 'x'). Because the delimiter is a single quote, the escape must be the
+    /// matching single quote doubled ('') - and ONLY the single quote is doubled; every other
+    /// character (including ") passes through verbatim. So `O'Brien` -> 'O''Brien' and
+    /// `say "hi"` -> 'say "hi"'. The '' escape is SQL-standard and universal across backends.
+    /// (If the literal delimiter were ever made configurable, the escaped char would have to track it.)
     let fieldConstant (value:obj) =
         //Can we create named parameters in ODBC, and how?
         match value with
         | :? Guid
         | :? DateTime
-        | :? String -> sprintf "'%s'" (value.ToString().Replace("'", ""))
+        | :? String -> sprintf "'%s'" (value.ToString().Replace("'", "''"))
         | _ -> value.ToString()
 
        

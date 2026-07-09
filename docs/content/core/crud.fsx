@@ -180,7 +180,69 @@ ctx.SubmitUpdates() // no record is added
 
 (**
 
-Inside SubmitUpdate the transaction is created by default TransactionOption, which is Required: Shares a transaction, if one exists, and creates a new transaction if necessary. So, if you have query-operation before SubmitUpdates, you should create your own transaction to wrap these into the same transaction.
+### Transactions and isolation level
+
+`SubmitUpdates` / `SubmitUpdatesAsync` wrap the write in a `TransactionScope` created with
+`TransactionScopeOption.Required`: it *joins* an ambient transaction if one already exists, otherwise
+it starts a new one. Only the submit is wrapped &mdash; your queries/reads are **not** put in a
+transaction, so reads carry no locking overhead.
+
+Because of `Required`, the way to make a *read-then-write* atomic (read some rows, decide, then write)
+is to open your **own** transaction around both the reads and the `SubmitUpdates`, and that scope's
+isolation level is the one that applies:
+
+```fsharp
+open System.Transactions
+
+use scope =
+    new TransactionScope(
+        TransactionScopeOption.Required,
+        TransactionOptions(IsolationLevel = IsolationLevel.ReadCommitted),
+        TransactionScopeAsyncFlowOption.Enabled)   // needed if you await inside the scope
+
+// Open a FRESH data context *inside* the scope for this unit of work (see note below):
+let ctx = sql.GetDataContext connstr
+
+// ... your queries (reads) ...
+// ... your Create()/mutations ...
+ctx.SubmitUpdates()
+scope.Complete()
+```
+
+**Create a fresh context per transaction &mdash; don't reuse a shared/long-lived one.** A data context
+accumulates *all* pending changes (every `Create()`, `Delete()`, and column edit) until `SubmitUpdates()`
+flushes them to the database together. If you'd reuse a long-lived or shared context, a `SubmitUpdates()`
+inside your transaction could commit unrelated pending changes that another request or user left sitting on
+that context. Opening a new context inside the scope keeps each transaction small and self-contained, and
+guarantees the tracked changes are exactly what this transaction should write &mdash; and it keeps the
+context's connection enlisted in this transaction.
+
+**Reads are different &mdash; a shared context is fine (and fastest).** The "fresh context per unit of work"
+rule above is about *writes*. If you use  `.GetReadOnlyDataContext connstr` you can enforce read-only:
+it has no pending-change nor transaction concerns. For read-only operations you can safely **share/cache one** 
+database context across requests, which is actually the fastest way to read (no per-call context setup). 
+The one thing to add is *resilience*: if the connection dies for reasons outside SQLProvider (driver/network/timeout), 
+you need logic to rebuild the shared context &mdash; e.g. hold it in a mutable `Lazy` and recreate 
+it when the value is null or a call throws a connection error.
+
+**Isolation level gotcha:** SQLProvider's `TransactionOptions.Default` &mdash; used *only* when
+`SubmitUpdates` has to create a standalone write transaction (no ambient scope) &mdash; inherits the
+.NET default, which is **`Serializable`**, not `ReadCommitted`. A bare `new TransactionScope()` is the
+same: it also defaults to `Serializable`. So if you want `ReadCommitted` (usually the right choice to
+avoid over-locking on a larger system), pass it explicitly through `TransactionOptions`, as above. Choosing the isolation
+level for a unit of work is intentionally the caller's job, not SQLProvider's (see
+[issue #238](https://github.com/fsprojects/SQLProvider/issues/238) for one real-world use-case solution).
+
+If your transaction spans an `await` / async continuation, remember `TransactionScopeAsyncFlowOption.Enabled`
+(otherwise the ambient transaction won't flow to the continuation thread &mdash; see the [async](async.html)
+page for a full example).
+
+**Read vs write contexts:** SQLProvider can generate a read-only data context via
+`GetReadOnlyDataContext()` alongside the writable `GetDataContext()`, giving you compile-time separation
+of read and write code paths (the read-only context can't accidentally mutate/submit). They are type-level
+different. If you have a method parameter and you want to share a read-only query with a read 
+that *must* run inside a write transaction, call `.AsReadOnly()` on the writable context to reuse its
+connection.
 
 SQLProvider also supports async database operations:
 

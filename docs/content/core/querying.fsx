@@ -326,6 +326,8 @@ Math.Pow(x,y)   | POWER(x,y) | POWER(x,y) | POWER(x,y) | POWER(x,y) |    | x^y  
 (/)             | /          | /         | /       | /     | /          | /       | /        |   |
 (%)             | %          | %         | %       | %     | %          | %       | %        |   |
 
+SQL Engine operations may differ from .NET ones, for example `Math.Round` in .NET (banker's rounding).
+
 Microsoft SQL Server doesn't have Greatest and Least functions, so that will be done via nested SQL clause: (select max(v) from (values (x), (y)) as value(v))
 It might also not be standard ODBC, but it should work e.g. on Amazon Redshift.
 

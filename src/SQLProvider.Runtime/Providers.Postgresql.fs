@@ -1047,6 +1047,9 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                     | DateDiffSecs(SqlConstant x) -> sprintf "EXTRACT(EPOCH FROM (%s::timestamp - %s::timestamp))" column (fieldParam x)
                     // Math functions
                     | Truncate -> sprintf "TRUNC(%s)" column
+                    // Postgres has ROUND(double precision) but NOT ROUND(double precision, int) -
+                    // only ROUND(numeric, int). Cast so 2-arg rounding works for float/real columns too.
+                    | RoundDecimals n -> sprintf "ROUND(%s::numeric, %d)" column n
                     | BasicMathOfColumns(o, a, c) when o = "/" -> sprintf "(%s %s (1.0*%s))" column o (fieldNotation a c)
                     | BasicMathOfColumns(o, a, c) -> sprintf "(%s %s %s)" column o (fieldNotation a c)
                     | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "(%s %s %s)" column o (fieldParam par)

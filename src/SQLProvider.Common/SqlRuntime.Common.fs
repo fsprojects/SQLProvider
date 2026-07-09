@@ -1021,9 +1021,9 @@ module CommonTasks =
                     | Condition.And(curr, tail) -> 
                         let converted = curr |> List.map (fun (alias,c,op,i) -> replaceAlias alias, replaceEmptyKey c, op, i)
                         Condition.And(converted, tail |> Option.map parseFilters)
-                    | Condition.Or(curr,tail) -> 
+                    | Condition.Or(curr,tail) ->
                         let converted = curr |> List.map (fun (alias,c,op,i) -> replaceAlias alias, replaceEmptyKey c, op, i)
-                        Condition.Or(curr, tail |> Option.map parseFilters)
+                        Condition.Or(converted, tail |> Option.map parseFilters)
                     | x -> x)
             parseFilters conditionList
 

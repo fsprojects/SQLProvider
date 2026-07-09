@@ -584,7 +584,6 @@ let rec (|SqlColumnGet|_|) (ex:Expression) =
             | "Ceil", [_] -> Some(alias, CanonicalOperation(CanonicalOp.Ceil, col), typ)
             | "Floor", [_] -> Some(alias, CanonicalOperation(CanonicalOp.Floor, col), typ)
             | "Round", [_] -> Some(alias, CanonicalOperation(CanonicalOp.Round, col), typ)
-            | "Round", [_; Int decCount] -> Some(alias, CanonicalOperation(CanonicalOp.RoundDecimals(decCount), col), typ)
             | "Sqrt", [_] -> Some(alias, CanonicalOperation(CanonicalOp.Sqrt, col), typ)
             | "Sin", [_] -> Some(alias, CanonicalOperation(CanonicalOp.Sin, col), typ)
             | "Cos", [_] -> Some(alias, CanonicalOperation(CanonicalOp.Cos, col), typ)
@@ -595,8 +594,13 @@ let rec (|SqlColumnGet|_|) (ex:Expression) =
             | "Truncate", [_] -> Some(alias, CanonicalOperation(CanonicalOp.Truncate, col), typ)
             | _ -> failwith "Shouldn't hit"
 
+    // Math.Round(col, decimals): a 2-arg call the single-arg numerical pattern above can't match.
+    | _, OptionalFSharpOptionValue(MethodCallOrFSharpWrap(None, meth, [OptionalFSharpOptionValue(OptionalConvertOrTypeAs(SqlColumnGet(alias, col, typ)) as pe); Int decCount]))
+        when (meth.Name = "Round" && (decimalTypes |> Array.exists(fun t -> Type.(=)(pe.Type, t)))) ->
+            Some(alias, CanonicalOperation(CanonicalOp.RoundDecimals(decCount), col), typ)
+
     | _, OptionalFSharpOptionValue(MethodCall(None, meth, ([OptionalFSharpOptionValue(OptionalConvertOrTypeAs(SqlColumnGet(alias, col, typ)) as p1); par])))
-        when (meth.Name = "Max" || meth.Name = "Min" || meth.Name = "Pow") -> 
+        when (meth.Name = "Max" || meth.Name = "Min" || meth.Name = "Pow") ->
             match meth.Name, par with
             | "Max", (OptionalConvertOrTypeAs(SqlColumnGet(al2,col2,typ2)) as pe) when Type.(=)(pe.Type, p1.Type) -> Some(alias, CanonicalOperation(CanonicalOp.Greatest(SqlCol(al2,col2)), col), typ)
             | "Min", (OptionalConvertOrTypeAs(SqlColumnGet(al2,col2,typ2)) as pe) when Type.(=)(pe.Type, p1.Type) -> Some(alias, CanonicalOperation(CanonicalOp.Least(SqlCol(al2,col2)), col), typ)

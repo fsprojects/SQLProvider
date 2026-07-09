@@ -29,7 +29,7 @@ is to release the business logics thread while the database is doing its job.
 This can lead to a huge performance difference in a heavy traffic environment
 (basically, will your business logics server / web-server crash or not).
 
-![](https://i.imgur.com/DBPLRlP.png)
+![Business logic server has a red wait block while DB is doing queries](../content/DBPLRlP.png)
 
 In the picture, we talk about the red block, which can be released to serve other customers.
 As usual with async operations, there will be more thread context switching,

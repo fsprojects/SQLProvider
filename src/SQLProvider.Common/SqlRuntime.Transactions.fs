@@ -2,14 +2,44 @@ namespace FSharp.Data.Sql.Transactions
 
 open System
 
+// SQLProvider's transaction model, in one place so it isn't misread:
+//  * A TransactionScope is created ONLY on the write path - each provider's
+//    ProcessUpdates/ProcessUpdatesAsync (i.e. SubmitUpdates/SubmitUpdatesAsync).
+//    Query/read execution is intentionally NOT wrapped in a transaction (no overhead).
+//  * The scope uses TransactionScopeOption.Required (see ensureTransaction), so if the
+//    caller has opened their own ambient System.Transactions scope, SubmitUpdates JOINS it
+//    and the caller's isolation level wins - TransactionOptions here are then irrelevant.
+//  * The isolation level below only takes effect for a STANDALONE write batch (when there is
+//    no ambient transaction). Choosing isolation for a read-then-write unit of work is the
+//    caller's job: wrap the reads and the SubmitUpdates in one ambient transaction yourself.
+//    (SQLProvider even exposes separate read/write data-context types to help structure this.)
+// So TransactionOptions.Default = Serializable is NOT a global "everything runs Serializable",
+// it is the fallback isolation for an unscoped write batch only.
+//
+// Recommended usage:
+//  * Pure reads: use a read-only data context (GetReadOnlyDataContext()) - no transaction, no locking overhead.
+//  * Writes / read-then-write: open your OWN ambient scope with the isolation you want, e.g.
+//      use scope = new System.Transactions.TransactionScope(
+//                      System.Transactions.TransactionScopeOption.Required,
+//                      System.Transactions.TransactionOptions(IsolationLevel = <your level>),
+//                      System.Transactions.TransactionScopeAsyncFlowOption.Enabled)
+//    do your reads + SubmitUpdates() inside it (SubmitUpdates enlists via Required), then scope.Complete().
+//    A bare `new TransactionScope(AsyncFlowOption.Enabled)` roots a SERIALIZABLE transaction (the .NET default) -
+//    pass explicit TransactionOptions if you want ReadCommitted etc.
+//  * A read that must run inside a write transaction: call .AsReadOnly() on the writable context to reuse its connection.
+
 /// Transaction isolation level for database operations.
 /// Corresponds to the System.Transactions.IsolationLevel but provides SQL provider specific functionality.
+/// Only applied when SubmitUpdates creates its own (standalone) write transaction; if you wrap your
+/// own ambient System.Transactions scope, that scope's isolation level is used instead.
 type IsolationLevel =
     /// Highest isolation level - transactions are completely isolated from each other
     | Serializable = 0
     /// Prevents dirty reads and non-repeatable reads, but phantom reads can occur
     | RepeatableRead = 1
-    /// Prevents dirty reads but allows non-repeatable reads and phantom reads (default for most databases)
+    /// Prevents dirty reads but allows non-repeatable reads and phantom reads.
+    /// (This describes the default isolation of most DB *engines* - it is NOT SQLProvider's default;
+    /// TransactionOptions.Default is Serializable, inherited from System.Transactions.)
     | ReadCommitted = 2
     /// Allows dirty reads, non-repeatable reads, and phantom reads (fastest but least safe)
     | ReadUncommitted = 3
@@ -71,6 +101,12 @@ module TransactionUtils =
         | System.Transactions.IsolationLevel.Unspecified -> IsolationLevel.Unspecified
         | _ -> failwithf "Unhandled System.Transactions.IsolationLevel value: %A." isolationLevel
 
+    /// Creates the TransactionScope that wraps a SubmitUpdates write batch. Called ONLY from the
+    /// providers' ProcessUpdates/ProcessUpdatesAsync - reads are never wrapped. Uses
+    /// TransactionScopeOption.Required: if the caller already opened an ambient transaction this
+    /// enlists in it (and the caller's isolation level applies, not the one passed here); otherwise
+    /// it starts a fresh standalone transaction using transactionOptions. Pass
+    /// IsolationLevel.DontCreateTransaction to skip creating a scope entirely.
     let ensureTransaction (transactionOptions : TransactionOptions) =
         if transactionOptions.IsolationLevel = IsolationLevel.DontCreateTransaction then
             Unchecked.defaultof<Transactions.TransactionScope>
@@ -94,6 +130,10 @@ module TransactionUtils =
             new Transactions.TransactionScope(transactionScopeOption, transactionOptions, System.Transactions.TransactionScopeAsyncFlowOption.Enabled)
 
 type TransactionOptions with
+    /// Inherits System.Transactions' defaults: Timeout = 1 minute and IsolationLevel = Serializable.
+    /// The Serializable level only applies to a standalone SubmitUpdates write batch (no ambient
+    /// transaction); wrap your read-then-write work in your own scope to control isolation. See the
+    /// note on the IsolationLevel type above.
     static member Default =
         let sysTranOpt = System.Transactions.TransactionOptions()
         {
