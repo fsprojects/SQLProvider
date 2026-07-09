@@ -1,3 +1,8 @@
+### 1.5.26 - 09.07.2026
+- HAVING OR fix
+- Math.Round(col, n) support
+- apostrophe-escape fix on ODBC
+
 ### 1.5.25 - 03.07.2026
 * leftOuterJoin: groupBy after a left outer join is now supported (SQL semantics: COUNT counts the unmatched NULL row)
 * groupJoin: `groupJoin ... into g` + `for x in g do` now works (inner join semantics); aggregating the group (e.g. `g.Count()`) fails with a clear message instead of returning wrong results
