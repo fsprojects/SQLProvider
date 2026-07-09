@@ -1575,8 +1575,10 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
               LastAccess = DateTime.UtcNow.Ticks
               Refreshing = 0 }
 
+        let mutable builtEntry = Unchecked.defaultof<DesignCacheEntry>
         try
             let entry = DesignTimeCache.cache.GetOrAdd(arguments, addCache)
+            builtEntry <- entry
             System.Threading.Interlocked.Exchange(&entry.LastAccess, DateTime.UtcNow.Ticks) |> ignore
 
             // Stale-while-revalidate: always serve the current tree; if it has gone stale,
@@ -1606,7 +1608,13 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
             root
         with
         | e ->
-            DesignTimeCache.cache.TryRemove(arguments) |> ignore
+            // Evict only this exact faulted generation by reference identity, never a fresh entry
+            // another thread may have inserted meanwhile. A transient failure (e.g. a momentarily
+            // invalid or unreachable connection) is then retried on the next access instead of the
+            // cached exception being served, and a concurrently-built good entry is never dropped.
+            if not (obj.ReferenceEquals(builtEntry, null)) then
+                (DesignTimeCache.cache :> System.Collections.Generic.ICollection<System.Collections.Generic.KeyValuePair<DesignCacheKey, DesignCacheEntry>>)
+                    .Remove(System.Collections.Generic.KeyValuePair<DesignCacheKey, DesignCacheEntry>(arguments, builtEntry)) |> ignore
             reraise()
     )
 
