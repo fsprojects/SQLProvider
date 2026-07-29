@@ -1,3 +1,6 @@
+### 1.5.27 - 29.07.2026
+- TypeProviders.SDK update (ProvidedTypes.fs) for threat-safety and performance
+
 ### 1.5.26 - 09.07.2026
 - HAVING OR fix
 - Math.Round(col, n) support
