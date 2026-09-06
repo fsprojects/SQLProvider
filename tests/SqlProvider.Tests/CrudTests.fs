@@ -216,19 +216,23 @@ module UtilsTests =
     let ``List.evaluateOneByOne test``() =
         // This is a helper for executing Tasks as one-by-one to not mess data connections or contexts.
         // If you use Aync, use rateher Async.Sequential
-        let initList = [1;2;3;4;5;6;7;8;9]
-        let processList =
-            initList |> List.evaluateOneByOne(fun x -> task {
-                // Execute some query here, in a rare case that you need to hit database with N queries.
-                return x + 0
-            })
-        processList.Wait()
-        Assert.AreEqual(initList, processList.Result)
+        task {
+            let initList = [1;2;3;4;5;6;7;8;9]
+            let processList =
+                initList |> List.evaluateOneByOne(fun x -> task {
+                    // Execute some query here, in a rare case that you need to hit database with N queries.
+                    return x + 0
+                })
+            do! (processList :> System.Threading.Tasks.Task)
+            Assert.AreEqual(initList, processList.Result)
+        } :> System.Threading.Tasks.Task
 
     [<Test>]
     let ``List.evaluateOneByOne test, no stackoverflow``() =
-        let initList = [1 .. 5000]
-        let processList =
-            initList |> List.evaluateOneByOne(fun x -> task { return x + 0 })
-        processList.Wait()
-        Assert.AreEqual(initList, processList.Result)
+        task {
+            let initList = [1 .. 5000]
+            let processList =
+                initList |> List.evaluateOneByOne(fun x -> task { return x + 0 })
+            do! (processList :> System.Threading.Tasks.Task)
+            Assert.AreEqual(initList, processList.Result)
+        } :> System.Threading.Tasks.Task

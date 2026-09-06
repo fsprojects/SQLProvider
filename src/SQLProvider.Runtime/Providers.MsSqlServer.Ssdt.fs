@@ -29,7 +29,7 @@ module MSSqlServerSsdt =
         let fileInfoOpt path =
             try
                 FileInfo path |> Some
-            with e -> None
+            with (:? System.IO.IOException | :? System.UnauthorizedAccessException) as e -> None
 
         // Find at design time using SsdtPath
         let ssdtFile = IO.FileInfo(dacPacPath)

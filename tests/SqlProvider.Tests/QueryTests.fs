@@ -1040,19 +1040,21 @@ let ``simple where before join test2``() =
 
 [<Test>]
 let ``simple navigation sum async``() = 
-    let dc = sql.GetDataContext()
+    task {
+        let dc = sql.GetDataContext()
 
-    let qry = 
-        query {
-            for od in dc.Main.OrderDetails do
-            for ord in od.``main.Orders by OrderID`` do
-            select (ord.Freight)
-        } |> Seq.sumAsync
+        let qry = 
+            query {
+                for od in dc.Main.OrderDetails do
+                for ord in od.``main.Orders by OrderID`` do
+                select ord.Freight
+            } |> Seq.sumAsync
 
-    let res = 
-        qry |> Async.AwaitTask |> Async.RunSynchronously
+        let! res = 
+            qry
 
-    Assert.GreaterOrEqual(res, 0m)
+        Assert.GreaterOrEqual(res, 0m)
+    } :> System.Threading.Tasks.Task
 
 [<Test>]
 let ``simple where before join test3``() = 
@@ -1840,59 +1842,67 @@ let ``simple sumBy``() =
 
 [<Test>]
 let ``simple async sum``() = 
-    let dc = sql.GetDataContext()
-    let qry = 
-        query {
-            for od in dc.Main.OrderDetails do
-            select od.UnitPrice
-        } |> Seq.sumAsync |> Async.AwaitTask |> Async.RunSynchronously
-    Assert.That(qry, Is.EqualTo(56500.91M).Within(0.001M))
+    task {
+        let dc = sql.GetDataContext()
+        let! qry = 
+            query {
+                 for od in dc.Main.OrderDetails do
+                 select od.UnitPrice
+             } |> Seq.sumAsync
+        Assert.That(qry, Is.EqualTo(56500.91M).Within(0.001M))
+    } :> System.Threading.Tasks.Task
 
 [<Test>]
 let ``simple async sum with operations``() = 
-    let dc = sql.GetDataContext()
-    let qry = 
-        query {
-            for od in dc.Main.OrderDetails do
-            select ((od.UnitPrice+1m)*od.UnitPrice)
-        } |> Seq.sumAsync |> Async.AwaitTask |> Async.RunSynchronously
-    Assert.That(qry, Is.EqualTo(3454230.7769M).Within(0.1M))
+    task {
+        let dc = sql.GetDataContext()
+        let! qry = 
+            query {
+                 for od in dc.Main.OrderDetails do
+                 select ((od.UnitPrice+1m)*od.UnitPrice)
+             } |> Seq.sumAsync
+        Assert.That(qry, Is.EqualTo(3454230.7769M).Within(0.1M))
+    } :> System.Threading.Tasks.Task
 
 [<Test>]
 let ``simple async sum with join and operations``() = 
-    let dc = sql.GetDataContext()
-    let qry = 
-        query {
-            for od in dc.Main.OrderDetails do
-            join o in dc.Main.Orders on (od.OrderId = o.OrderId)
-            select ((od.UnitPrice+1m)*od.UnitPrice)
-        } |> Seq.sumAsync |> Async.AwaitTask |> Async.RunSynchronously
+    task {
+        let dc = sql.GetDataContext()
+        let! qry = 
+            query {
+                 for od in dc.Main.OrderDetails do
+                 join o in dc.Main.Orders on (od.OrderId = o.OrderId)
+                 select ((od.UnitPrice+1m)*od.UnitPrice)
+             } |> Seq.sumAsync
 
-    Assert.That(qry, Is.EqualTo(3454230.7769M).Within(0.1M))
+        Assert.That(qry, Is.EqualTo(3454230.7769M).Within(0.1M))
 
-    let qry2 = 
-        query {
-            for o in dc.Main.Orders do
-            join od in dc.Main.OrderDetails on (o.OrderId = od.OrderId)
-            select ((od.UnitPrice+1m)*od.UnitPrice)
-        } |> Seq.sumAsync |> Async.AwaitTask |> Async.RunSynchronously
+        let! qry2 = 
+            query {
+                 for o in dc.Main.Orders do
+                 join od in dc.Main.OrderDetails on (o.OrderId = od.OrderId)
+                 select ((od.UnitPrice+1m)*od.UnitPrice)
+             } |> Seq.sumAsync
 
-    Assert.That(qry2, Is.EqualTo(3454230.7769M).Within(0.1M))
+        Assert.That(qry2, Is.EqualTo(3454230.7769M).Within(0.1M))
+    } :> System.Threading.Tasks.Task
 
 [<Test>]
 let ``simple async sum with operations 2``() = 
-    let dc = sql.GetDataContext()
-    let qry = 
-        query {
-            for emp in dc.Main.Employees do
-            select (decimal(emp.HireDate.Year)*2m*Math.Min(
-                        2m, if emp.HireDate.Subtract(emp.BirthDate.AddYears(1)).Days>0 then
-                                Math.Abs(
-                                    decimal(emp.HireDate.Subtract(emp.BirthDate).Days)/decimal(emp.HireDate.Subtract(emp.BirthDate.AddYears(1)).Days))
-                            else 1m
-                    ))
-        } |> Seq.sumAsync |> Async.AwaitTask |> Async.RunSynchronously
-    Assert.That(qry, Is.EqualTo(31886.0M).Within(1.0M))
+    task {
+        let dc = sql.GetDataContext()
+        let! qry = 
+            query {
+                 for emp in dc.Main.Employees do
+                 select (decimal emp.HireDate.Year*2m*Math.Min(
+                             2m, if emp.HireDate.Subtract(emp.BirthDate.AddYears 1).Days>0 then
+                                     Math.Abs(
+                                         decimal(emp.HireDate.Subtract(emp.BirthDate).Days)/decimal(emp.HireDate.Subtract(emp.BirthDate.AddYears 1).Days))
+                                 else 1m
+                         ))
+             } |> Seq.sumAsync
+        Assert.That(qry, Is.EqualTo(31886.0M).Within(1.0M))
+    } :> System.Threading.Tasks.Task
 
 [<Test>] 
 // Note: 
@@ -2222,93 +2232,103 @@ let ``simple select with multiple table joins with 4 tables``() =
 
 [<Test >]
 let ``simple select query async``() = 
-    let dc = sql.GetDataContext() 
-    let task = 
-        task {
-            let! asyncquery =
-                query {
-                    for cust in dc.Main.Customers do
-                    select cust
-                } |> Seq.executeQueryAsync 
-            return asyncquery |> Seq.toList
-        }
-    task.Wait()
-    CollectionAssert.IsNotEmpty task.Result
+    task {
+        let dc = sql.GetDataContext() 
+        let task = 
+            task {
+                let! asyncquery =
+                    query {
+                        for cust in dc.Main.Customers do
+                        select cust
+                    } |> Seq.executeQueryAsync 
+                return asyncquery |> Seq.toList
+            }
+        do! (task :> System.Threading.Tasks.Task)
+        CollectionAssert.IsNotEmpty task.Result
+    } :> System.Threading.Tasks.Task
 
 [<Test >]
 let ``simple select query async2``() = 
-    let dc = sql.GetDataContext() 
-    let res = 
-        task {
-            let! asyncquery =
-                query {
-                    for cust in dc.Main.Customers do
-                    where (cust.City <> "")
-                    select (cust.Address, cust.City, cust.ContactName)
-                } |> Seq.executeQueryAsync 
-            return asyncquery
-        } |> Async.AwaitTask |> Async.RunSynchronously
-    CollectionAssert.IsNotEmpty res
-    let r = res |> Seq.toArray
-    CollectionAssert.Contains(r, ("55 Grizzly Peak Rd.", "Butte", "Liu Wong"))
+    task {
+        let dc = sql.GetDataContext() 
+        let! res = 
+            task {
+                 let! asyncquery =
+                     query {
+                         for cust in dc.Main.Customers do
+                         where (cust.City <> "")
+                         select (cust.Address, cust.City, cust.ContactName)
+                     } |> Seq.executeQueryAsync 
+                 return asyncquery
+             }
+        CollectionAssert.IsNotEmpty res
+        let r = res |> Seq.toArray
+        CollectionAssert.Contains(r, ("55 Grizzly Peak Rd.", "Butte", "Liu Wong"))
+    } :> System.Threading.Tasks.Task
 
 [<Test>]
 let ``simple select query async3``() =
-    let dc = sql.GetDataContext() 
-    let res = 
-        task {
-            let asyncquery =
-                query {
-                    for cust in dc.Main.Customers do
-                    where (cust.City <> "")
-                }
-            // Let's mix some good old LINQ. (Not recommended!) Note: the query above didn't have Select, it's returning cust.
-            let res = asyncquery.Where(fun cust -> cust.City = "London").Select(fun cust -> (cust.Address, cust.City, cust.ContactName)).Distinct()
-            let! d = res |> Seq.lengthAsync
-            return d
-        } |> Async.AwaitTask |> Async.RunSynchronously
-    Assert.IsTrue(res > 0)
-    ()
+    task {
+        let dc = sql.GetDataContext() 
+        let! res = 
+            task {
+                 let asyncquery =
+                     query {
+                         for cust in dc.Main.Customers do
+                         where (cust.City <> "")
+                     }
+                 // Let's mix some good old LINQ. (Not recommended!) Note: the query above didn't have Select, it's returning cust.
+                 let res = asyncquery.Where(fun cust -> cust.City = "London").Select(fun cust -> (cust.Address, cust.City, cust.ContactName)).Distinct()
+                 let! d = res |> Seq.lengthAsync
+                 return d
+             }
+        Assert.IsTrue(res > 0)
+        ()
+    } :> System.Threading.Tasks.Task
 
 [<Test>]
 let ``simple select query async4``() =
-    let dc = sql.GetDataContext() 
-    let res = 
-        task {
-            let asyncquery =
-                query {
-                    for cust in dc.Main.Customers do
-                    where (cust.City <> "")
-                    select cust
-                }
+    task {
+        let dc = sql.GetDataContext() 
+        let! res = 
+            task {
+                 let asyncquery =
+                     query {
+                         for cust in dc.Main.Customers do
+                         where (cust.City <> "")
+                         select cust
+                     }
 
-            let! res = asyncquery |> Seq.headAsync
-            return res
-        } |> Async.AwaitTask |> Async.RunSynchronously
-    Assert.IsNotNull(res)
-    ()
+                 let! res = asyncquery |> Seq.headAsync
+                 return res
+             }
+        Assert.IsNotNull(res)
+        ()
+    } :> System.Threading.Tasks.Task
 
 
 [<Test>]
 let ``simple select query async5``() =
-    let dc = sql.GetDataContext()
-    async {
-        let! city, country = 
-            task {
-                let asyncquery =
-                    query {
-                        for cust in dc.Main.Customers do
-                        where (cust.City <> "")
-                        select (cust.City, cust.Country)
-                    }
+    task {
+        let dc = sql.GetDataContext()
+        let! _ = async {
+                     let! city, country = 
+                         task {
+                             let asyncquery =
+                                 query {
+                                     for cust in dc.Main.Customers do
+                                     where (cust.City <> "")
+                                     select (cust.City, cust.Country)
+                                 }
 
-                let! res = asyncquery |> Seq.headAsync
-                return res
-            } |> Async.AwaitTask
-        Assert.IsNotNull(city)
-        Assert.IsNotNull(country)
-     } |> Async.RunSynchronously
-    ()
+                             let! res = asyncquery |> Seq.headAsync
+                             return res
+                         } |> Async.AwaitTask
+                     Assert.IsNotNull(city)
+                     Assert.IsNotNull(country)
+                  } |> Async.StartImmediateAsTask
+        ()
+    } :> System.Threading.Tasks.Task
 
 type CustomType = {
     Location : String;
@@ -2317,24 +2337,26 @@ type CustomType = {
 
 [<Test>]
 let ``simple select query async6``() =
-    let dc = sql.GetDataContext()
-    async {
-        let! customRec = 
-            task {
-                let asyncquery =
-                    query {
-                        for cust in dc.Main.Customers do
-                        where (cust.City <> "")
-                        select { Location = cust.City; Country = cust.Country }
-                    }
+    task {
+        let dc = sql.GetDataContext()
+        let! _ = async {
+                     let! customRec = 
+                         task {
+                             let asyncquery =
+                                 query {
+                                     for cust in dc.Main.Customers do
+                                     where (cust.City <> "")
+                                     select { Location = cust.City; Country = cust.Country }
+                                 }
 
-                let! res = asyncquery |> Seq.headAsync
-                return res
-            } |> Async.AwaitTask
-        Assert.IsNotNull(customRec)
-        Assert.IsNotNull(customRec.Location)
-     } |> Async.RunSynchronously
-    ()
+                             let! res = asyncquery |> Seq.headAsync
+                             return res
+                         } |> Async.AwaitTask
+                     Assert.IsNotNull(customRec)
+                     Assert.IsNotNull(customRec.Location)
+                  } |> Async.StartImmediateAsTask
+        ()
+    } :> System.Threading.Tasks.Task
 
 [<Test>]
 let ``simple select query lengthAsync``() =
@@ -2351,23 +2373,25 @@ let ``simple select query lengthAsync``() =
 
 [<Test >] // Generates COUNT(DISTINCT CustomerId)
 let ``simple select with distinct count async``() =
-    async {
-        let dc = sql.GetDataContext()
-        let! res =
-            task {
-                let qry = 
-                    query {
-                        for cust in dc.Main.Customers do
-                        where (cust.City <> "Helsinki")
-                        distinct
-                        select(cust.City, cust.CustomerId)
-                    }
-                let! leng = qry |> Seq.lengthAsync
-                return leng
-            } |> Async.AwaitTask
-        Assert.AreEqual(90, res)
-     } |> Async.RunSynchronously
-    ()
+    task {
+        let! _ = async {
+                     let dc = sql.GetDataContext()
+                     let! res =
+                         task {
+                             let qry = 
+                                 query {
+                                     for cust in dc.Main.Customers do
+                                     where (cust.City <> "Helsinki")
+                                     distinct
+                                     select(cust.City, cust.CustomerId)
+                                 }
+                             let! leng = qry |> Seq.lengthAsync
+                             return leng
+                         } |> Async.AwaitTask
+                     Assert.AreEqual(90, res)
+                  } |> Async.StartImmediateAsTask
+        ()
+    } :> System.Threading.Tasks.Task
 
 
 type sqlOption = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL, UseOptionTypes=FSharp.Data.Sql.Common.NullableColumnType.OPTION, ResolutionPath = resolutionPath, SQLiteLibrary=sqliteLib>
@@ -2476,14 +2500,16 @@ let ``simple select with custom option types in where``() =
 
 [<Test>]
 let ``simple async sum with option operations``() = 
-    let dc = sqlOption.GetDataContext()
-    let qry = 
-        query {
-            for od in dc.Main.OrderDetails do
-            where (od.UnitPrice>0m)
-            select ((od.UnitPrice)*(decimal)od.OrderId)
-        } |> Seq.sumAsync |> Async.AwaitTask |> Async.RunSynchronously
-    Assert.That(qry, Is.EqualTo(603221955M).Within(10M))
+    task {
+        let dc = sqlOption.GetDataContext()
+        let! qry = 
+            query {
+                 for od in dc.Main.OrderDetails do
+                 where (od.UnitPrice>0m)
+                 select ((od.UnitPrice)*(decimal)od.OrderId)
+             } |> Seq.sumAsync
+        Assert.That(qry, Is.EqualTo(603221955M).Within(10M))
+    } :> System.Threading.Tasks.Task
 
 [<Test >]
 let ``simple select query with left join``() = 
@@ -2773,13 +2799,14 @@ let ``verify groupBy results``() =
 
 [<Test >]
 let ``simple delete where query``() =
-    let dc = sql.GetDataContext()
-    query {
-        for cust in dc.Main.Customers do
-        where (cust.City = "Atlantis" || cust.CompanyName = "Home")
-    } |> Seq.``delete all items from single table`` 
-    |> Async.AwaitTask |> Async.RunSynchronously |> ignore
-    ()
+    task {
+        let dc = sql.GetDataContext()
+        let! _ = query {
+                     for cust in dc.Main.Customers do
+                     where (cust.City = "Atlantis" || cust.CompanyName = "Home")
+                 } |> Seq.``delete all items from single table``
+        ()
+    } :> System.Threading.Tasks.Task
 
 [<Test>]
 let ``simple left join``() = 
@@ -2797,20 +2824,21 @@ let ``simple left join``() =
 
 [<Test>]
 let ``simple query sproc result``() = 
-    let dc = sql.GetDataContext()
-    let pragmaSchemav = dc.Pragma.Get.Invoke("schema_version")
-    let res = pragmaSchemav.ResultSet |> Array.map(fun i -> i.ColumnValues |> Map.ofSeq)
-    let ver = (res |> Seq.head).["schema_version"] :?> Int64
-    Assert.IsTrue(ver > 1L)
+    task {
+        let dc = sql.GetDataContext()
+        let pragmaSchemav = dc.Pragma.Get.Invoke "schema_version"
+        let res = pragmaSchemav.ResultSet |> Array.map(fun i -> i.ColumnValues |> Map.ofSeq)
+        let ver = (res |> Seq.head).["schema_version"] :?> Int64
+        Assert.IsTrue(ver > 1L)
 
-    let pragmaFk = dc.Pragma.GetOf.Invoke("foreign_key_list", "EmployeesTerritories")
-    let res = pragmaFk.ResultSet |> Array.map(fun i -> i.ColumnValues |> Map.ofSeq)
-    Assert.IsNotNull(res)
+        let pragmaFk = dc.Pragma.GetOf.Invoke("foreign_key_list", "EmployeesTerritories")
+        let res = pragmaFk.ResultSet |> Array.map(fun i -> i.ColumnValues |> Map.ofSeq)
+        Assert.IsNotNull(res)
 
-    let pragmaSchemaAsync = 
-        dc.Pragma.Get.InvokeAsync("schema_version")
-        |> Async.AwaitTask |> Async.RunSynchronously
-    Assert.IsNotNull(pragmaSchemaAsync.ResultSet)
+        let! pragmaSchemaAsync = 
+            dc.Pragma.Get.InvokeAsync "schema_version"
+        Assert.IsNotNull(pragmaSchemaAsync.ResultSet)
+    } :> System.Threading.Tasks.Task
 
 [<Test>]
 let ``simple select with subquery exists subquery``() =
