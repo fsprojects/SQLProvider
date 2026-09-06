@@ -696,12 +696,12 @@ module Reflection =
                                             | _ -> None
                                         else
                                             None
-                                    with :? System.IO.IOException | :? System.UnauthorizedAccessException -> None
+                                    with _ -> None
                                 )
                             match picked with Some x -> x | None -> null
                         else null
                     with
-                    | :? System.IO.IOException | :? System.UnauthorizedAccessException -> null
+                    | _ -> null
                 | None ->
                     null
         let mutable handler = Unchecked.defaultof<ResolveEventHandler>
