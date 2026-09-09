@@ -712,8 +712,8 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                 use reader = com.ExecuteReader()
                 let children =
                     [ while reader.Read() do
-                        yield { Name = reader.GetString(0); PrimaryTable=Table.CreateQuotedFullName(reader.GetString(2),reader.GetString(1), "`", "`"); PrimaryKey=reader.GetString(3)
-                                ForeignTable=Table.CreateQuotedFullName(reader.GetString(5),reader.GetString(4), "`", "`"); ForeignKey=reader.GetString(6) } ] |> List.toArray
+                        yield { Name = reader.GetString(0); PrimaryTable=Table.CreateFullName(reader.GetString(2),reader.GetString(1)); PrimaryKey=reader.GetString(3)
+                                ForeignTable=Table.CreateFullName(reader.GetString(5),reader.GetString(4)); ForeignKey=reader.GetString(6) } ] |> List.toArray
                 reader.Dispose()
                 use com = (this:>ISqlProvider).CreateCommand(con,(sprintf "%s AND KCU1.REFERENCED_TABLE_NAME = @table" baseQuery))
                 com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@table", 0), (MySql.ripQuotes table.Name))) |> ignore
@@ -721,8 +721,8 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                 use reader = com.ExecuteReader()
                 let parents =
                     [ while reader.Read() do
-                        yield { Name = reader.GetString(0); PrimaryTable=Table.CreateQuotedFullName(reader.GetString(2),reader.GetString(1), "`", "`"); PrimaryKey=reader.GetString(3)
-                                ForeignTable= Table.CreateQuotedFullName(reader.GetString(5),reader.GetString(4), "`", "`"); ForeignKey=reader.GetString(6) } ] |> List.toArray
+                        yield { Name = reader.GetString(0); PrimaryTable=Table.CreateFullName(reader.GetString(2),reader.GetString(1)); PrimaryKey=reader.GetString(3)
+                                ForeignTable= Table.CreateFullName(reader.GetString(5),reader.GetString(4)); ForeignKey=reader.GetString(6) } ] |> List.toArray
                 (children,parents))
             res)
 
