@@ -42,7 +42,7 @@ let ``three table join with forced join operator``() =
             for order in dc.Main.Orders do
             join customer in (!!) dc.Main.Customers on (order.CustomerId.Value = customer.CustomerId)
             join orderDetail in (!!) dc.Main.OrderDetails on (order.OrderId = orderDetail.OrderId)
-            where (order.OrderDate.IsSome)
+            where order.OrderDate.IsSome
             take 5
             select (order.OrderId, customer.CompanyName, orderDetail.ProductId)
         }
@@ -89,7 +89,7 @@ let ``contains with subquery``() =
     let query = 
         query {
             for customer in dc.Main.Customers do
-            where (recentOrderCustomers.Contains(customer.CustomerId))
+            where (recentOrderCustomers.Contains customer.CustomerId)
             select customer.CompanyName
         }
     
@@ -103,7 +103,7 @@ let ``multiple subqueries with complex conditions``() =
     let customersWithOrders = 
         query {
             for order in dc.Main.Orders do
-            where (order.CustomerId.IsSome)
+            where order.CustomerId.IsSome
             distinct
             select order.CustomerId.Value
         }
@@ -113,7 +113,7 @@ let ``multiple subqueries with complex conditions``() =
             for orderDetail in dc.Main.OrderDetails do
             where (orderDetail.UnitPrice > 100m)
             join order in (!!) dc.Main.Orders on (orderDetail.OrderId = order.OrderId)
-            where (order.CustomerId.IsSome)
+            where order.CustomerId.IsSome
             distinct
             select order.CustomerId.Value
         }
@@ -123,7 +123,7 @@ let ``multiple subqueries with complex conditions``() =
             for customer in dc.Main.Customers do
             where (
                 customersWithOrders.Contains(customer.CustomerId) &&
-                customersWithHighPriceOrders.Contains(customer.CustomerId)
+                customersWithHighPriceOrders.Contains customer.CustomerId
             )
             select customer
         }
@@ -315,7 +315,7 @@ let ``filtering with option type IsSome``() =
     let query = 
         query {
             for order in dc.Main.Orders do
-            where (order.ShippedDate.IsSome)
+            where order.ShippedDate.IsSome
             select order.OrderId
         }
     
@@ -328,7 +328,7 @@ let ``filtering with option type IsNone``() =
     let query = 
         query {
             for order in dc.Main.Orders do
-            where (order.ShippedDate.IsNone)
+            where order.ShippedDate.IsNone
             select order.OrderId
         }
     

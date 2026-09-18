@@ -55,13 +55,13 @@ module MSSqlServerSsdt =
                 | Some p ->
                     yield p
                     yield Path.Combine(p, origPath)
-                | _ -> ()
+                | None -> ()
                 // executing assembly dir
                 match asmToPath (Reflection.execAssembly.Force()) with
                 | Some p ->
                     yield p
                     yield Path.Combine(p, origPath)
-                | _ -> ()
+                | None -> ()
             ]
             |> List.map Path.GetFullPath // sort out the trailing slashes situation
             |> List.distinct
@@ -103,10 +103,10 @@ module MSSqlServerSsdt =
         | Some b -> b.FullName
         | None ->
             let sb = StringBuilder()
-            sb.AppendLine(sprintf "Unable to find .dacpac file. Search path includes executing assembly, configured ssd path, entry assembly, and the environment variable '%s'." DACPAC_SEARCH_PATH_ENV_VAR_NAME) |> ignore
+            sb.AppendLine($"Unable to find .dacpac file. Search path includes executing assembly, configured ssd path, entry assembly, and the environment variable '%s{DACPAC_SEARCH_PATH_ENV_VAR_NAME}'.") |> ignore
             sb.AppendLine("Looked in:") |> ignore
             for s in allPossiblePaths do
-                sb.Append("\t") |> ignore
+                sb.Append('\t') |> ignore
                 sb.AppendLine(s.FullName) |> ignore
             failwith (sb.ToString())
 
@@ -162,6 +162,7 @@ module MSSqlServerSsdt =
     let tryFindMapping (dataType: string) =
         typeMappingsByName.TryFind (dataType.ToUpperInvariant())
 
+    [<TailCall>]
     let rec tryFindMappingOrVariant (uddts: SsdtUserDefinedDataType) (dataType: string) =
         let dataType = dataType.ToUpperInvariant()
         match typeMappingsByName.TryFind dataType with
@@ -255,7 +256,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
     let createInsertCommand = MSSqlServer.createInsertCommand schemaCache
     let createUpdateCommand = MSSqlServer.createUpdateCommand schemaCache
     let createDeleteCommand = MSSqlServer.createDeleteCommand schemaCache
-    let myLock = new Object()
+    let myLock = Object()
     // Remembers the version of each instance it connects to
     let mssqlVersionCache = ConcurrentDictionary<string, Lazy<Version>>()
 
@@ -283,10 +284,14 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
             tableName +
             (ssdtSchema().Descriptions
              |> Array.filter(fun d -> (d.DecriptionType = "SqlTableBase" || d.DecriptionType = "SqlView") && d.ColumnName.IsNone)
-             |> Array.tryFind(fun d -> if tableName.Contains "." then d.Schema + "." + d.TableName = tableName else d.TableName = tableName)
+#if NETSTANDARD21
+             |> Array.tryFind(fun d -> if tableName.Contains '.' then $"{d.Schema}.{d.TableName}" = tableName else d.TableName = tableName)
+#else
+             |> Array.tryFind(fun d -> if tableName.Contains "." then $"{d.Schema}.{d.TableName}" = tableName else d.TableName = tableName)
+#endif
              |> Option.map (fun d ->
                 if String.IsNullOrEmpty d.Description then ""
-                elif d.Description.StartsWith("N'") then
+                elif d.Description.StartsWith "N'" then
                     " / " + d.Description.Substring(0, d.Description.Length-1).Replace("N'", "")
                 else " / " + d.Description)
              |> Option.defaultValue ""
@@ -298,7 +303,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
              |> Option.bind (fun t -> t.Columns |> Array.tryFind (fun c -> c.Name = columnName))
              |> Option.map (fun c ->
                 if String.IsNullOrEmpty c.Description then ""
-                elif c.Description.StartsWith("N'") then
+                elif c.Description.StartsWith "N'" then
                     " / " + c.Description.Substring(0, c.Description.Length-1).Replace("N'", "")
                 else " / " + c.Description)
              |> Option.defaultValue columnName)
@@ -306,10 +311,14 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
             (schema.Descriptions
              |> Array.filter(fun d -> d.DecriptionType = "SqlColumn" && d.ColumnName.IsSome && d.ColumnName.Value = columnName)
              |> Array.tryFind(fun d ->
-                    if tableName.Contains "." then d.Schema + "." + d.TableName = tableName else d.TableName = tableName)
+#if NETSTANDARD21
+                    if tableName.Contains '.' then $"{d.Schema}.{d.TableName}" = tableName else d.TableName = tableName)
+#else
+                    if tableName.Contains "." then $"{d.Schema}.{d.TableName}" = tableName else d.TableName = tableName)
+#endif
              |> Option.map(fun d ->
                     if String.IsNullOrEmpty d.Description then ""
-                    elif d.Description.StartsWith("N'") then
+                    elif d.Description.StartsWith "N'" then
                         " / " + d.Description.Substring(0, d.Description.Length-1).Replace("N'", "")
                     else " / " + d.Description)
              |> Option.defaultValue ""
@@ -317,8 +326,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
         member __.CreateConnection(connectionString) = MSSqlServer.createConnection connectionString
         member __.CreateCommand(connection,commandText) = MSSqlServer.createCommand commandText connection
         member __.CreateCommandParameter(param, value) =
-            let p = SqlParameter(param.Name,value)
-            p.DbType <- param.TypeMapping.DbType
+            let p = SqlParameter(param.Name,value, DbType = param.TypeMapping.DbType)
             ValueOption.iter (fun (t:int) -> p.SqlDbType <- Enum.ToObject(typeof<SqlDbType>, t) :?> SqlDbType) param.TypeMapping.ProviderType
             p.Direction <- param.Direction
             ValueOption.iter (fun l -> p.Size <- l) param.Length
@@ -372,8 +380,8 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
 
 
         member __.GetPrimaryKey(table) =
-            match ssdtSchema().TryGetTableByName(table.Name) with
-            |  ValueSome { PrimaryKey = ValueSome { Columns = [|c|] } } -> Some (c.Name)
+            match ssdtSchema().TryGetTableByName table.Name with
+            |  ValueSome { PrimaryKey = ValueSome { Columns = [|c|] } } -> Some c.Name
             | _ -> None
 
         member __.GetColumns(con,table) =
@@ -383,10 +391,10 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
             | _ ->
                 let schema = ssdtSchema()
                 let columns =
-                    match schema.TryGetTableByName(table.Name) with
+                    match schema.TryGetTableByName table.Name with
                     | ValueSome ssdtTbl ->
                         ssdtTbl.Columns
-                        |> Array.map (MSSqlServerSsdt.ssdtColumnToColumn (schema.UserDefinedDataTypes) ssdtTbl >> fun col ->
+                        |> Array.map (MSSqlServerSsdt.ssdtColumnToColumn schema.UserDefinedDataTypes ssdtTbl >> fun col ->
 
                             // Add PKs to cache
                             if col.IsPrimaryKey then
@@ -409,7 +417,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
         member __.GetRelationships(con, table) =
             schemaCache.Relationships.GetOrAdd(table.FullName, fun name ->
 
-                let defining, foreign = ssdtSchema().TryGetRelationshipsByTableName(table.Name)
+                let defining, foreign = ssdtSchema().TryGetRelationshipsByTableName table.Name
                 let children =
                     foreign
                     |> Array.map (fun r ->
@@ -466,22 +474,20 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                 paramName
 
             let mssqlPaging =
-              match mssqlVersionCache.TryGetValue(con.ConnectionString) with
+              match mssqlVersionCache.TryGetValue con.ConnectionString with
               // SQL 2008 and earlier do not support OFFSET
               | true, mssqlVersion when mssqlVersion.Value.Major < 11 -> MSSQLPagingCompatibility.RowNumber
               | _ -> MSSQLPagingCompatibility.Offset
 
             let rec fieldNotation (al:alias) (c:SqlColumnType) =
                 let buildf (c:Condition)=
-                    let sb = System.Text.StringBuilder()
+                    let sb = StringBuilder()
                     let (~~) (t:string) = sb.Append t |> ignore
                     filterBuilder (~~) [c]
                     sb.ToString()
                 let x = fieldNotation
                 let colSprint =
-                    match String.IsNullOrEmpty(al) with
-                    | true -> sprintf "[%s]"
-                    | false -> sprintf "[%s].[%s]" al
+                    if String.IsNullOrEmpty(al) then sprintf "[%s]" else sprintf "[%s].[%s]" al
                 match c with
                 // Custom database spesific overrides for canonical functions:
                 | SqlColumnType.CanonicalOperation(cf,col) ->
@@ -498,39 +504,39 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                     | SubstringWithLength(SqlConstant startPos,SqlCol(al2, col2)) -> sprintf "SUBSTRING(%s, %s, %s)" column (fieldParam startPos) (fieldNotation al2 col2)
                     | SubstringWithLength(SqlCol(al2, col2), SqlConstant strLen) -> sprintf "SUBSTRING(%s, %s, %s)" column (fieldNotation al2 col2) (fieldParam strLen)
                     | SubstringWithLength(SqlCol(al2, col2),SqlCol(al3, col3)) -> sprintf "SUBSTRING(%s, %s, %s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
-                    | Trim -> sprintf "LTRIM(RTRIM(%s))" column
-                    | Length -> sprintf "DATALENGTH(%s)" column
+                    | Trim -> $"LTRIM(RTRIM(%s{column}))"
+                    | Length -> $"DATALENGTH(%s{column})"
                     | IndexOf(SqlConstant search) -> sprintf "CHARINDEX(%s,%s)" (fieldParam search) column
                     | IndexOf(SqlCol(al2, col2)) -> sprintf "CHARINDEX(%s,%s)" (fieldNotation al2 col2) column
                     | IndexOfStart(SqlConstant search, SqlConstant startPos) -> sprintf "CHARINDEX(%s,%s,%s)" (fieldParam search) column (fieldParam startPos)
                     | IndexOfStart(SqlConstant search, SqlCol(al2, col2)) -> sprintf "CHARINDEX(%s,%s,%s)" (fieldParam search) column (fieldNotation al2 col2)
                     | IndexOfStart(SqlCol(al2, col2), SqlConstant startPos) -> sprintf "CHARINDEX(%s,%s,%s)" (fieldNotation al2 col2) column (fieldParam startPos)
                     | IndexOfStart(SqlCol(al2, col2), SqlCol(al3, col3)) -> sprintf "CHARINDEX(%s,%s,%s)" (fieldNotation al2 col2) column (fieldNotation al3 col3)
-                    | CastVarchar -> sprintf "CAST(%s AS NVARCHAR(MAX))" column
-                    | CastInt -> sprintf "CAST(%s AS INT)" column
+                    | CastVarchar -> $"CAST(%s{column} AS NVARCHAR(MAX))"
+                    | CastInt -> $"CAST(%s{column} AS INT)"
                     // Date functions
-                    | Date -> sprintf "CAST(%s AS DATE)" column
-                    | Year -> sprintf "YEAR(%s)" column
-                    | Month -> sprintf "MONTH(%s)" column
-                    | Day -> sprintf "DAY(%s)" column
-                    | Hour -> sprintf "DATEPART(HOUR, %s)" column
-                    | Minute -> sprintf "DATEPART(MINUTE, %s)" column
-                    | Second -> sprintf "DATEPART(SECOND, %s)" column
+                    | Date -> $"CAST(%s{column} AS DATE)"
+                    | Year -> $"YEAR(%s{column})"
+                    | Month -> $"MONTH(%s{column})"
+                    | Day -> $"DAY(%s{column})"
+                    | Hour -> $"DATEPART(HOUR, %s{column})"
+                    | Minute -> $"DATEPART(MINUTE, %s{column})"
+                    | Second -> $"DATEPART(SECOND, %s{column})"
                     | AddYears(SqlConstant x) -> sprintf "DATEADD(YEAR, %s, %s)" (fieldParam x) column
                     | AddYears(SqlCol(al2, col2)) -> sprintf "DATEADD(YEAR, %s, %s)" (fieldNotation al2 col2) column
                     | AddMonths x -> sprintf "DATEADD(MONTH, %s, %s)" (fieldParam x) column
                     | AddDays(SqlConstant x) -> sprintf "DATEADD(DAY, %s, %s)" (fieldParam x) column // SQL ignores decimal part :-(
                     | AddDays(SqlCol(al2, col2)) -> sprintf "DATEADD(DAY, %s, %s)" (fieldNotation al2 col2) column
-                    | AddHours x -> sprintf "DATEADD(HOUR, %f, %s)" x column
+                    | AddHours x -> $"DATEADD(HOUR, %f{x}, %s{column})"
                     | AddMinutes(SqlConstant x) -> sprintf "DATEADD(MINUTE, %s, %s)" (fieldParam x) column
                     | AddMinutes(SqlCol(al2, col2)) -> sprintf "DATEADD(MINUTE, %s, %s)" (fieldNotation al2 col2) column
-                    | AddSeconds x -> sprintf "DATEADD(SECOND, %f, %s)" x column
+                    | AddSeconds x -> $"DATEADD(SECOND, %f{x}, %s{column})"
                     | DateDiffDays(SqlCol(al2, col2)) -> sprintf "DATEDIFF(DAY, %s, %s)" (fieldNotation al2 col2) column
                     | DateDiffSecs(SqlCol(al2, col2)) -> sprintf "DATEDIFF(SECOND, %s, %s)" (fieldNotation al2 col2) column
                     | DateDiffDays(SqlConstant x) -> sprintf "DATEDIFF(DAY, %s, %s)" (fieldParam x) column
                     | DateDiffSecs(SqlConstant x) -> sprintf "DATEDIFF(SECOND, %s, %s)" (fieldParam x) column
                     // Math functions
-                    | Truncate -> sprintf "TRUNCATE(%s)" column
+                    | Truncate -> $"TRUNCATE(%s{column})"
                     | BasicMathOfColumns(o, a, c) when o = "/" -> sprintf "(%s %s (1.0*%s))" column o (fieldNotation a c)
                     | BasicMathOfColumns(o, a, c) -> sprintf "(%s %s %s)" column (o.Replace("||","+")) (fieldNotation a c)
                     | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "(%s %s %s)" column (o.Replace("||","+")) (fieldParam par)
@@ -573,7 +579,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                                             | Some(x) when (box x :? obj array) ->
                                                 // in and not in operators pass an array
                                                 let elements = box x :?> obj array
-                                                Array.init (elements.Length) (elements.GetValue >> createParam columnDataType)
+                                                Array.init elements.Length (elements.GetValue >> createParam columnDataType)
                                             | Some(x) -> [|createParam columnDataType (box x)|]
                                             | None ->    [|createParam columnDataType DBNull.Value|]
 
@@ -587,27 +593,27 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                                             let text = String.concat "," (array |> Array.map (fun p -> p.ParameterName))
                                             Array.iter parameters.Add array
                                             match operator with
-                                            | FSharp.Data.Sql.In -> sprintf "%s IN (%s)" column text
-                                            | FSharp.Data.Sql.NotIn -> sprintf "%s NOT IN (%s)" column text
+                                            | FSharp.Data.Sql.In -> $"%s{column} IN (%s{text})"
+                                            | FSharp.Data.Sql.NotIn -> $"%s{column} NOT IN (%s{text})"
                                             | _ -> failwithf "Should not be called with any other operator (%O)" operator
 
-                                    let prefix = if i>0 then (sprintf " %s " op) else ""
+                                    let prefix = if i>0 then $" %s{op} " else ""
                                     let paras = extractData data
 
                                     let operatorInQuery operator (array : IDbDataParameter[]) =
                                         let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
                                         Array.iter parameters.Add innerpars
                                         match operator with
-                                        | FSharp.Data.Sql.NestedExists -> sprintf "EXISTS (%s)" innersql
-                                        | FSharp.Data.Sql.NestedNotExists -> sprintf "NOT EXISTS (%s)" innersql
-                                        | FSharp.Data.Sql.NestedIn -> sprintf "%s IN (%s)" column innersql
-                                        | FSharp.Data.Sql.NestedNotIn -> sprintf "%s NOT IN (%s)" column innersql
+                                        | FSharp.Data.Sql.NestedExists -> $"EXISTS (%s{innersql})"
+                                        | FSharp.Data.Sql.NestedNotExists -> $"NOT EXISTS (%s{innersql})"
+                                        | FSharp.Data.Sql.NestedIn -> $"%s{column} IN (%s{innersql})"
+                                        | FSharp.Data.Sql.NestedNotIn -> $"%s{column} NOT IN (%s{innersql})"
                                         | _ -> failwithf "Should not be called with any other operator (%O)" operator
 
                                     ~~(sprintf "%s%s" prefix <|
                                         match operator with
-                                        | FSharp.Data.Sql.IsNull -> sprintf "%s IS NULL" column
-                                        | FSharp.Data.Sql.NotNull -> sprintf "%s IS NOT NULL" column
+                                        | FSharp.Data.Sql.IsNull -> $"%s{column} IS NULL"
+                                        | FSharp.Data.Sql.NotNull -> $"%s{column} IS NOT NULL"
                                         | FSharp.Data.Sql.In
                                         | FSharp.Data.Sql.NotIn -> operatorIn operator paras
                                         | FSharp.Data.Sql.NestedExists
@@ -628,17 +634,17 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                             // there's probably a nicer way to do this
                             let rec aux = function
                                 | [x] when preds.Length > 0 ->
-                                    ~~ (sprintf " %s " op)
+                                    ~~ $" %s{op} "
                                     filterBuilder' [x]
                                 | [x] -> filterBuilder' [x]
                                 | x::xs when preds.Length > 0 ->
-                                    ~~ (sprintf " %s " op)
+                                    ~~ $" %s{op} "
                                     filterBuilder' [x]
-                                    ~~ (sprintf " %s " op)
+                                    ~~ $" %s{op} "
                                     aux xs
                                 | x::xs ->
                                     filterBuilder' [x]
-                                    ~~ (sprintf " %s " op)
+                                    ~~ $" %s{op} "
                                     aux xs
                                 | [] -> ()
 
@@ -654,7 +660,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                         filterBuilder' conds
                 filterBuilder' f
 
-            let sb = System.Text.StringBuilder()
+            let sb = StringBuilder()
 
             let (~~) (t:string) = sb.Append t |> ignore
 
@@ -678,14 +684,14 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                         let k = if k <> "" then k elif baseAlias <> "" then baseAlias else baseTable.Name
                         if v.Count = 0 then   // if no columns exist in the projection then get everything
                             for col in schemaCache.Columns.[cols] |> Seq.map (fun c -> c.Key) do
-                                if singleEntity then yield sprintf "[%s].[%s] as '%s'" k col col
-                                else yield sprintf "[%s].[%s] as '[%s].[%s]'" k col k col
+                                if singleEntity then yield $"[%s{k}].[%s{col}] as '%s{col}'"
+                                else yield $"[%s{k}].[%s{col}] as '[%s{k}].[%s{col}]'"
                         else
                             for colp in v |> Seq.distinct do
                                 match colp with
                                 | EntityColumn col ->
-                                    if singleEntity then yield sprintf "[%s].[%s] as '%s'" k col col
-                                    else yield sprintf "[%s].[%s] as '[%s].[%s]'" k col k col
+                                    if singleEntity then yield $"[%s{k}].[%s{col}] as '%s{col}'"
+                                    else yield $"[%s{k}].[%s{col}] as '[%s{k}].[%s{col}]'"
                                 | OperationColumn(n,op) ->
                                     yield sprintf "%s as '%s'" (fieldNotation k op) n|])
 
@@ -696,16 +702,16 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
             let columns =
                 let extracolumns =
                     match sqlQuery.Grouping with
-                    | [] -> FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation MSSqlServer.fieldNotationAlias sqlQuery.AggregateOp
+                    | [] -> Utilities.parseAggregates fieldNotation MSSqlServer.fieldNotationAlias sqlQuery.AggregateOp
                     | g  ->
                         let keys = g |> List.collect fst |> List.map(fun (a,c) ->
                             let fn = fieldNotation a c
                             if not (tmpGrpParams.ContainsKey (a,c)) then
                                 tmpGrpParams.Add((a,c), fn)
                             if sqlQuery.Aliases.Count < 2 then fn
-                            else sprintf "%s as '%s'" fn fn)
+                            else $"%s{fn} as '%s{fn}'")
                         let aggs = g |> List.collect snd
-                        let res2 = FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation MSSqlServer.fieldNotationAlias aggs |> List.toSeq
+                        let res2 = Utilities.parseAggregates fieldNotation MSSqlServer.fieldNotationAlias aggs |> List.toSeq
                         [String.Join(", ", keys) + (if List.isEmpty aggs || List.isEmpty keys then ""  else ", ") + String.Join(", ", res2)]
                 match extracolumns with
                 | [] -> selectcolumns
@@ -742,19 +748,23 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                     ~~ (sprintf "%s %s" (fieldNotation alias column) (if not desc then "DESC " else "")))
 
             if isDeleteScript then
-                ~~(sprintf "DELETE FROM [%s].[%s] " baseTable.Schema baseTable.Name)
+                ~~ $"DELETE FROM [%s{baseTable.Schema}].[%s{baseTable.Name}] "
             else
                 // SELECT
                 if sqlQuery.Distinct && sqlQuery.Count then
                     let colsAggrs = columns.Split([|" as "|], StringSplitOptions.None)
+#if NETSTANDARD21
+                    let distColumns = colsAggrs.[0] + (if colsAggrs.Length = 2 then "" else " + ',' + " + String.Join(" + ',' + ", colsAggrs |> Seq.filter(fun c -> c.Contains ',') |> Seq.map(fun c -> c.Substring(c.IndexOf(',')+1))))
+#else
                     let distColumns = colsAggrs.[0] + (if colsAggrs.Length = 2 then "" else " + ',' + " + String.Join(" + ',' + ", colsAggrs |> Seq.filter(fun c -> c.Contains ",") |> Seq.map(fun c -> c.Substring(c.IndexOf(',')+1))))
-                    ~~(sprintf "SELECT COUNT(DISTINCT %s) " distColumns)
-                elif sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s%s " (match sqlQuery.Take with ValueSome v -> sprintf "TOP %i " v | ValueNone -> "") columns)
+#endif
+                    ~~ $"SELECT COUNT(DISTINCT %s{distColumns}) "
+                elif sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s%s " (match sqlQuery.Take with ValueSome v -> $"TOP %i{v} " | ValueNone -> "") columns)
                 elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
                 else
                     match sqlQuery.Skip, sqlQuery.Take with
-                    | ValueNone, ValueSome take -> ~~(sprintf "SELECT TOP %i %s " take columns)
-                    | _ -> ~~(sprintf "SELECT %s " columns)
+                    | ValueNone, ValueSome take -> ~~ $"SELECT TOP %i{take} %s{columns} "
+                    | _ -> ~~ $"SELECT %s{columns} "
                 //ROW_NUMBER
                 match mssqlPaging,sqlQuery.Skip, sqlQuery.Take with
                 | MSSQLPagingCompatibility.RowNumber, ValueSome _, _ ->
@@ -766,8 +776,8 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                 | _ -> ()
                 // FROM
                 let bal = if baseAlias = "" then baseTable.Name else baseAlias
-                ~~(sprintf "FROM [%s].[%s] as [%s] " baseTable.Schema baseTable.Name bal)
-                sqlQuery.CrossJoins |> Seq.iter(fun (a,t) -> ~~(sprintf ", [%s].[%s] as [%s] " t.Schema t.Name a))
+                ~~ $"FROM [%s{baseTable.Schema}].[%s{baseTable.Name}] as [%s{bal}] "
+                sqlQuery.CrossJoins |> Seq.iter(fun (a,t) -> ~~ $", [%s{t.Schema}].[%s{t.Name}] as [%s{a}] ")
             fromBuilder()
             // WHERE
             if sqlQuery.Filters.Length > 0 then
@@ -808,32 +818,32 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
             match sqlQuery.Union with
             | Some(UnionType.UnionAll, suquery, pars) ->
                 parameters.AddRange pars
-                ~~(sprintf " UNION ALL %s " suquery)
+                ~~ $" UNION ALL %s{suquery} "
             | Some(UnionType.NormalUnion, suquery, pars) ->
                 parameters.AddRange pars
-                ~~(sprintf " UNION %s " suquery)
+                ~~ $" UNION %s{suquery} "
             | Some(UnionType.Intersect, suquery, pars) ->
                 parameters.AddRange pars
-                ~~(sprintf " INTERSECT %s " suquery)
+                ~~ $" INTERSECT %s{suquery} "
             | Some(UnionType.Except, suquery, pars) ->
                 parameters.AddRange pars
-                ~~(sprintf " EXCEPT %s " suquery)
+                ~~ $" EXCEPT %s{suquery} "
             | None -> ()
 
             let sql =
                 match mssqlPaging with
                 | MSSQLPagingCompatibility.RowNumber ->
-                    let outerSb = System.Text.StringBuilder()
+                    let outerSb = StringBuilder()
                     outerSb.Append "WITH CTE AS ( "  |> ignore
                     match sqlQuery.Skip, sqlQuery.Take with
                     | ValueSome skip, ValueSome take ->
                         outerSb.Append (sb.ToString()) |> ignore
-                        outerSb.Append ")" |> ignore
+                        outerSb.Append ')' |> ignore
                         outerSb.Append (sprintf "SELECT %s FROM CTE [%s] WHERE RN BETWEEN %i AND %i" columns (if baseAlias = "" then baseTable.Name else baseAlias) (skip+1) (skip+take))  |> ignore
                         outerSb.ToString()
                     | ValueSome skip, ValueNone ->
                         outerSb.Append (sb.ToString()) |> ignore
-                        outerSb.Append ")" |> ignore
+                        outerSb.Append ')' |> ignore
                         outerSb.Append (sprintf "SELECT %s FROM CTE [%s] WHERE RN > %i " columns (if baseAlias = "" then baseTable.Name else baseAlias) skip)  |> ignore
                         outerSb.ToString()
                     | _ ->
@@ -842,10 +852,10 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                     match sqlQuery.Skip, sqlQuery.Take with
                     | ValueSome skip, ValueSome take ->
                         // Note: this only works in >=SQL2012
-                        ~~ (sprintf "OFFSET %i ROWS FETCH NEXT %i ROWS ONLY" skip take)
+                        ~~ $"OFFSET %i{skip} ROWS FETCH NEXT %i{take} ROWS ONLY"
                     | ValueSome skip, ValueNone ->
                         // Note: this only works in >=SQL2012
-                        ~~ (sprintf "OFFSET %i ROWS FETCH NEXT %i ROWS ONLY" skip System.UInt32.MaxValue)
+                        ~~ $"OFFSET %i{skip} ROWS FETCH NEXT %i{UInt32.MaxValue} ROWS ONLY"
                     | _ -> ()
                     sb.ToString()
 
@@ -873,23 +883,20 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                     | Created ->
                         use cmd = createInsertCommand con sb e
                         Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
-                        if timeout.IsSome then
-                            cmd.CommandTimeout <- timeout.Value
+                        match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
                         let id = cmd.ExecuteScalar()
                         CommonTasks.checkKey schemaCache.PrimaryKeys id e
                         e._State <- Unchanged
                     | Modified fields ->
                         use cmd = createUpdateCommand con sb e fields
                         Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
-                        if timeout.IsSome then
-                            cmd.CommandTimeout <- timeout.Value
+                        match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
                         cmd.ExecuteNonQuery() |> ignore
                         e._State <- Unchanged
                     | Delete ->
                         use cmd = createDeleteCommand con sb e
                         Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
-                        if timeout.IsSome then
-                            cmd.CommandTimeout <- timeout.Value
+                        match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
                         cmd.ExecuteNonQuery() |> ignore
                         // remove the pk to prevent this attempting to be used again
                         (e :> IColumnHolder).SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[(e :> IColumnHolder).Table.FullName], None)
@@ -925,8 +932,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                             task {
                                 use cmd = createInsertCommand con sb e
                                 Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
-                                if timeout.IsSome then
-                                    cmd.CommandTimeout <- timeout.Value
+                                match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
                                 let! id = cmd.ExecuteScalarAsync()
                                 CommonTasks.checkKey schemaCache.PrimaryKeys id e
                                 e._State <- Unchanged
@@ -935,8 +941,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                             task {
                                 use cmd = createUpdateCommand con sb e fields
                                 Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
-                                if timeout.IsSome then
-                                    cmd.CommandTimeout <- timeout.Value
+                                match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
                                 let! c = cmd.ExecuteNonQueryAsync()
                                 e._State <- Unchanged
                             }
@@ -944,8 +949,7 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                             task {
                                 use cmd = createDeleteCommand con sb e
                                 Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
-                                if timeout.IsSome then
-                                    cmd.CommandTimeout <- timeout.Value
+                                match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
                                 let! c = cmd.ExecuteNonQueryAsync()
                                 // remove the pk to prevent this attempting to be used again
                                 (e :> IColumnHolder).SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[(e :> IColumnHolder).Table.FullName], None)

@@ -54,6 +54,7 @@ connectionString key/value pair stored in App.config (TODO: confirm file name).
 *)
 
 // found in App.config (TODO:confirm)
+[<Literal>]
 let connexStringName = "DefaultConnectionString"
 
 (**

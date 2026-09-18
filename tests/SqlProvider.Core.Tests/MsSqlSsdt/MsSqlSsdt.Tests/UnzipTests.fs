@@ -9,12 +9,12 @@ let dacPacPath = __SOURCE_DIRECTORY__ + "/AdventureWorks_SSDT/AdventureWorks_SSD
 let extractModelXml(path: string) = 
     use stream = new IO.FileStream(path, IO.FileMode.Open)
     use zip = new ZipArchive(stream, ZipArchiveMode.Read, false)
-    let modelEntry = zip.GetEntry("model.xml")
+    let modelEntry = zip.GetEntry "model.xml"
     use modelStream = modelEntry.Open()
     use rdr = new IO.StreamReader(modelStream)
     rdr.ReadToEnd()
 
 [<Test>]
 let ``Unzip Dacpac Model XML``() =
-    let xml = extractModelXml(dacPacPath)
+    let xml = extractModelXml dacPacPath
     printfn "XML: %s" xml

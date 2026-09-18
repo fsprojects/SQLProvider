@@ -116,7 +116,7 @@ let countries =
     |> Seq.map (fun e -> e.MapTo<Country>(fun (prop,value) ->
                                                match prop with
                                                | "Other" ->
-                                                    if value <> null
+                                                    if not (isNull value)
                                                     then JsonConvert.DeserializeObject<OtherCountryInformation>(value :?> string) |> box
                                                     else Unchecked.defaultof<OtherCountryInformation> |> box
                                                | _ -> value
@@ -130,7 +130,7 @@ let nestedQueryTest =
     let qry1 = query {
         for emp in ctx.Hr.Employees do
         where (emp.FirstName.StartsWith("S"))
-        select (emp.FirstName)
+        select emp.FirstName
     }
     query {
         for emp in ctx.Hr.Employees do
@@ -153,7 +153,7 @@ let canoncicalOpTest =
         for job in ctx.Hr.Jobs do
         join emp in ctx.Hr.Employees on (job.JobId.Trim() + "x" = emp.JobId.Trim() + "x")
         where (
-            floor(job.MaxSalary)+1m > 4m
+            floor job.MaxSalary+1m > 4m
             && emp.Email.Length > 2
             && emp.HireDate.Date.AddYears(-3).Year + 1 > 1997
             && Math.Min(emp.Salary, 3m) = 3m

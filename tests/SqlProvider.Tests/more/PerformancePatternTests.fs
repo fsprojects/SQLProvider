@@ -64,11 +64,11 @@ let ``chunking large ID arrays should work efficiently``() =
         let chunkResults = 
             query {
                 for order in dc.Main.Orders do
-                where (chunk.Contains(order.OrderId))
+                where (chunk.Contains order.OrderId)
                 select order.OrderId
             } |> Seq.toArray
         
-        results.AddRange(chunkResults)
+        results.AddRange chunkResults
     
     let retrievedIds = results.ToArray() |> Array.sort
     let originalIds = allOrderIds |> Array.sort
@@ -322,7 +322,7 @@ let ``query performance should be consistent across multiple runs``() =
 
     for i in 1..runs do
         let (_, time) = measureQueryPerformance $"Run{i}" runQuery
-        times.Add(time)
+        times.Add time
 
     let avgTime = times |> Seq.averageBy float
     let maxTime = times |> Seq.max

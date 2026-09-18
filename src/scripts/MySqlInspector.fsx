@@ -17,7 +17,9 @@ open FSharp.Data.Sql.Providers
 open MySql
 
 fsi.AddPrintTransformer(fun (x:Type) -> x.FullName |> box)
+[<Literal>]
 let connectionString = "Server=MYSQL;Database=HR;Uid=admin;Pwd=password;"
+[<Literal>]
 let resolutionPath = @"D:\Appdev\SqlProvider\tests\SqlProvider.Tests"
 
 MySql.resolutionPath <- resolutionPath
@@ -58,8 +60,8 @@ MySql.connect connection (MySql.getSchema "Columns" [||])
 
 MySql.connect connection (MySql.getSprocs)
 |> List.map (function
-            | Schema.Root("Functions", Schema.Sproc(name)) -> name.Name.FullName
-            | Schema.Root("Procedures", Schema.Sproc(name)) -> name.Name.FullName
+            | Schema.Root("Functions", Schema.Sproc name) -> name.Name.FullName
+            | Schema.Root("Procedures", Schema.Sproc name) -> name.Name.FullName
             | _ -> "Zero"
            )
 

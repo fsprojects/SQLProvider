@@ -19,6 +19,7 @@ open FSharp.Data.Sql.Common
 open 
 
 fsi.AddPrintTransformer(fun (x:Type) -> x.FullName |> box)
+[<Literal>]
 let connectionString = "Data Source=D:\Appdev\SqlProvider\tests\ComposableQueryExample\libs\northwindEF.db;Version=3"
 S.resolutionPath <- @"D:\Appdev\SqlProvider\tests\ComposableQueryExample\libs"
 

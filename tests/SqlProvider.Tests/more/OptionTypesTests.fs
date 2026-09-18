@@ -207,7 +207,7 @@ let ``value option in joins`` () =
 let ``value option insertion and updates`` () =
     task {
         let ctx = sql.GetDataContext()
-        let cid = System.Guid.NewGuid().ToString()
+        let cid = Guid.NewGuid().ToString()
 
         // Create customer with Some region
         let customer1 = ctx.Main.Customers.Create()

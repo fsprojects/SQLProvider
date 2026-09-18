@@ -103,8 +103,11 @@ type Project = {
     /// List of dependencies
     dependencies:(string * string) list }
 
+[<Literal>]
 let project = "SQLProvider"
+[<Literal>]
 let summary = "Type providers for SQL database access."
+[<Literal>]
 let description = "Type providers for SQL database access."
 
 let projects =
@@ -148,17 +151,21 @@ let projects =
 let authors = [ "Ross McKinlay, Colin Bull, Tuomas Hietanen" ]
 
 // Tags for your project (for NuGet package)
+[<Literal>]
 let tags = "F#, fsharp, typeprovider, sql, sqlserver, mysql, sql-server, sqlite, postgresql, oracle, mariadb, firebirdsql, database, dotnet"
 
 // Pattern specifying assemblies to be tested using NUnit
+[<Literal>]
 let testAssemblies = "tests/**/bin/Release/*Tests*.dll"
 
 // Git configuration (used for publishing documentation in gh-pages branch)
 // The profile where the project is posted
+[<Literal>]
 let gitOwner = "fsprojects"
 let gitHome = "https://github.com/" + gitOwner
 
 // The name of the project on GitHub
+[<Literal>]
 let gitName = "SQLProvider"
 
 // The url for the raw files hosted
@@ -175,7 +182,7 @@ let release = ReleaseNotes.load "docs/RELEASE_NOTES.md"
 Target.create "AssemblyInfo" (fun _ ->
   projects
   |> Seq.iter (fun project ->
-      let fileName = "src/" + project.name + "/AssemblyInfo.fs"
+      let fileName = $"src/{project.name}/AssemblyInfo.fs"
       Fake.DotNet.AssemblyInfoFile.createFSharp fileName
           [ Fake.DotNet.AssemblyInfo.Title project.name
             Fake.DotNet.AssemblyInfo.Product "SQLProvider"
@@ -277,12 +284,14 @@ Target.create "SetupPostgreSQL" (fun _ ->
 
 let setupMssql url saPassword =
 
-    let connBuilder = SqlConnectionStringBuilder()
-    connBuilder.InitialCatalog <- "master"
-    connBuilder.UserID <- "sa"
-    connBuilder.DataSource <- url
-    connBuilder.Password <- saPassword
-    connBuilder.TrustServerCertificate <- true
+    let connBuilder =
+        SqlConnectionStringBuilder(
+            InitialCatalog = "master",
+            UserID = "sa",
+            DataSource = url,
+            Password = saPassword,
+            TrustServerCertificate = true
+        )
 
     let maxAttempts = if Fake.Core.BuildServer.buildServer = AppVeyor then 60 else 30
     let runCmd query =
@@ -310,7 +319,7 @@ let setupMssql url saPassword =
           match cache, lines with
           | [], [] -> ()
           | cmds, [] -> yield cmds
-          | cmds, l :: ls when l.Trim().ToUpper() = "GO" -> yield cmds; yield! cmdGen [] ls
+          | cmds, l :: ls when String.Equals(l.Trim(), "GO", StringComparison.OrdinalIgnoreCase) -> yield cmds; yield! cmdGen [] ls
           | cmds, l :: ls -> yield! cmdGen (l :: cmds) ls
         }
 
@@ -320,7 +329,7 @@ let setupMssql url saPassword =
 
     let testDbName = "sqlprovider"
     printfn "Creating test database %s on connection %s" testDbName connBuilder.ConnectionString
-    runCmd (sprintf "CREATE DATABASE %s" testDbName)
+    runCmd $"CREATE DATABASE %s{testDbName}"
     connBuilder.InitialCatalog <- testDbName
 
     (!! "src/DatabaseScripts/MSSQLServer/*.sql")
@@ -440,7 +449,7 @@ Target.create "WatchLocalDocs" (fun _ ->
 Target.create "ReleaseDocs" (fun _ ->
     let tempDocsDir = "temp/gh-pages"
     Fake.IO.Shell.cleanDir tempDocsDir
-    Repository.cloneSingleBranch "" (gitHome + "/" + gitName + ".git") "gh-pages" tempDocsDir
+    Repository.cloneSingleBranch "" ($"{gitHome}/{gitName}.git") "gh-pages" tempDocsDir
 
     //Fake.IO.Shell.deleteDir tempDocsDir
     Fake.IO.Shell.copyRecursive "docs/output" tempDocsDir true |> Fake.Core.Trace.tracefn "%A"
@@ -448,7 +457,7 @@ Target.create "ReleaseDocs" (fun _ ->
        printfn "GH Pages not found, couldn't release."
     else
        Git.Staging.stageAll tempDocsDir
-       Git.Commit.exec tempDocsDir (sprintf "Update generated documentation for version %s" release.NugetVersion)
+       Git.Commit.exec tempDocsDir $"Update generated documentation for version %s{release.NugetVersion}"
        Branches.push tempDocsDir
 )
 

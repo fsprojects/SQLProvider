@@ -44,7 +44,7 @@ let query1 =
     query {
       for customers  in ctx.Main.Customers do
       where (customers.ContactTitle = "USA")
-      select (customers)}
+      select customers}
 
 (**
 The variable that is returned from the query is sometimes called a computation. If you write to evaluate
@@ -116,11 +116,7 @@ let companyNameFilter inUse =
     let myFilter2 : IQueryable<CustomersEntity> -> IQueryable<CustomersEntity> = fun x -> x.Where(fun i -> i.CustomerId = "ALFKI")
 
     let queryable:(IQueryable<CustomersEntity> -> IQueryable<CustomersEntity>) =
-        match inUse with
-        |true ->
-            (fun iq -> iq.Where(fun (c:CustomersEntity) -> c.CompanyName = "The Big Cheese"))
-        |false ->
-            myFilter2
+        if inUse then (fun iq -> iq.Where(fun (c:CustomersEntity) -> c.CompanyName = "The Big Cheese")) else myFilter2
     queryable
 
 (**
@@ -133,7 +129,7 @@ let query1 =
     query {
         for customers  in ctx.Main.Customers do
         where (customers.ContactTitle = "USA")
-        select (customers)}
+        select customers}
 
 
 (**
@@ -185,7 +181,7 @@ let nestedQueryTest =
     let qry1 = query {
         for emp in ctx.Hr.Employees do
         where (emp.FirstName.StartsWith("S"))
-        select (emp.FirstName)
+        select emp.FirstName
     }
     query {
         for emp in ctx.Hr.Employees do

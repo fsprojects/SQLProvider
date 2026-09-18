@@ -101,7 +101,7 @@ let canoncicalOpTest =
         for cust in ctx.Northwind.Customers do
         join emp in ctx.Northwind.Employees on (cust.City.Value.Trim() + "x" = emp.City.Value.Trim() + "x")
         where (
-            abs(emp.EmployeeId)+1 > 4
+            abs emp.EmployeeId+1 > 4
             && cust.City.Value.Length > 1
             && cust.City.IsSome && cust.City.Value + "L" = "LondonL"
             && emp.BirthDate.Value.AddYears(3).Year + 1 > 1960

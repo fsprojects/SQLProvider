@@ -67,6 +67,7 @@ Another usually easier option is to give a runtime connection string as a parame
 In your source file:
 *)
 
+[<Literal>]
 let connexStringName = "MyConnectionString"
 
 (**
@@ -122,6 +123,7 @@ Number of instances to retrieve using the [individuals](individuals.html) featur
 Default is 1000.
 *)
 
+[<Literal>]
 let indivAmt = 500
 
 

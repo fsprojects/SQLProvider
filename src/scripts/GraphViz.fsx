@@ -47,7 +47,7 @@ module GraphViz  =
 
    let (|Convert|_|)(e:Expression) =
        match e.NodeType, e with
-       | ExpressionType.Convert, (:? UnaryExpression as ue) -> Some(ue)
+       | ExpressionType.Convert, (:? UnaryExpression as ue) -> Some ue
        | _ -> None
 
    let (|ConstantOrNullableConstant|_|) (e:Expression) = 
@@ -55,7 +55,7 @@ module GraphViz  =
        | ExpressionType.Constant, (:? ConstantExpression as ce) -> Some(ce.Type,Some(ce.Value))
        | ExpressionType.Convert, (:? UnaryExpression as ue ) -> 
            match ue.Operand with
-           | :? ConstantExpression as ce -> if ce.Value = null then Some(ce.Type,None) else Some(ce.Type,Some(ce.Value))
+           | :? ConstantExpression as ce -> if isNull ce.Value then Some(ce.Type,None) else Some(ce.Type,Some(ce.Value))
            | :? NewExpression as ne -> Some(ne.Constructor.DeclaringType,Some(Expression.Lambda(ne).Compile().DynamicInvoke()))
            | _ -> None
        | _ -> None
@@ -95,6 +95,7 @@ module GraphViz  =
        | ExpressionType.NotEqual,           (:? BinaryExpression as ce) -> Some (ConditionOperator.NotEqual,     ce.Left,ce.Right)
        | _ -> None   
 
+   [<Literal>]
    let dotExe = @"C:\Program Files (x86)\Graphviz2.36\bin\dot.exe"
    let generate text file = 
       let temp = System.IO.Path.GetTempFileName()
@@ -133,7 +134,7 @@ module GraphViz  =
                let lName = (sprintf "%i" (i+1))
                ~~~ (sprintf "%s:%s -> %s:0;" parentName lName e))
          match e with 
-         | Quote(e) ->
+         | Quote e ->
             let name = ("Quote" + nextIndex())   
             ~~~ (sprintf "%s %s" name (sprintf "[label=\"<0> Quote\"]"))
             let pName = eval e
@@ -169,7 +170,7 @@ module GraphViz  =
             ~~ (sprintf "%s %s" name (sprintf "[label=\"<0> New&#92;n%s" ci.DeclaringType.Name))
             processArgs args name "\"];"
             name
-         | NewArrayValues(values) -> 
+         | NewArrayValues values -> 
             let name = ("NewArray" + nextIndex())     
             ~~ (sprintf "%s %s" name "[label=\"<0> NewArray")       
             values
@@ -204,7 +205,7 @@ module GraphViz  =
                ~~~ (sprintf "%s:%s -> %s:0;" name "f0" o)
             | None -> () 
             name
-         | ParamName(n) ->
+         | ParamName n ->
             let name = "Param" + nextIndex() 
             ~~~ (sprintf "%s %s" name (sprintf "[label=\"<0> Param|<1> %s\"];" n ) )
             name
@@ -219,7 +220,7 @@ module GraphViz  =
             let v = if v.StartsWith("SqlDataProvider") then "SqlDataProvider" else v
             ~~~ (sprintf "%s %s" name (sprintf "[label=\"<0> Const|{<1> %s| <2> %s}\"];" t.Name v) )
             name
-         | Convert(ue) ->
+         | Convert ue ->
             let name = ("Convert" + nextIndex())   
             ~~~ (sprintf "%s %s" name (sprintf "[label=\"<0> Convert\"]"))
             let pName = eval ue.Operand

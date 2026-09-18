@@ -55,10 +55,10 @@ type ConditionOperator =
         | LessEqual     -> "<="
         | IsNull        -> "IS NULL"
         | NotNull       -> "IS NOT NULL"
-        | In            -> "IN"
-        | NestedIn      -> "IN"
-        | NotIn         -> "NOT IN"
-        | NestedNotIn   -> "NOT IN"
+        | In
+        | NestedIn -> "IN"
+        | NotIn
+        | NestedNotIn -> "NOT IN"
         | NestedExists  -> "EXISTS"
         | NestedNotExists  -> "NOT EXISTS"
 
@@ -96,7 +96,7 @@ type SelectOperations =
 /// Execute the operation on the database server side
 | DatabaseSide = 1 
 
-[<AutoOpenAttribute>]
+[<AutoOpen>]
 module ColumnSchema =
 
     type alias = string
@@ -256,7 +256,7 @@ module ColumnSchema =
 
 /// Contains custom SQL operators for use in query expressions.
 /// These operators are translated to their SQL equivalents during query compilation.
-[<AutoOpenAttribute>]
+[<AutoOpen>]
 module Operators =
     /// SQL IN operator. Tests if a value exists in a sequence.
     /// param a: The value to test

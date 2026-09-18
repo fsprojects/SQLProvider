@@ -49,7 +49,7 @@ let ``connection pooling pattern`` () =
     
     let returnConnection(ctx: sql.dataContext) =
         if pool.Count < maxPoolSize then
-            pool.Push(ctx)
+            pool.Push ctx
 
     
     task {
@@ -225,7 +225,7 @@ let ``connection timeout handling`` () =
             
             Assert.IsNotNull(result)
         with
-        | ex when ex.Message.Contains("timeout") ->
+        | ex when ex.Message.Contains "timeout" ->
             Assert.Pass("Timeout handled correctly")
         | ex ->
             Assert.Fail("Unexpected exception: " + ex.Message)

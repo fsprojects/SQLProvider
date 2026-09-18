@@ -2,6 +2,8 @@ namespace FSharp.Data.Sql.Common
     
 open System
 open System.Collections.Generic
+open System.Data.Common
+open System.IO
 
 #if NETSTANDARD
 module StandardExtensions =
@@ -53,7 +55,11 @@ module Utilities =
 
 
     let inline quoteWhiteSpace (str:String) = 
-        (if str.Contains(" ") then sprintf "\"%s\"" str else str)
+#if NETSTANDARD21
+        (if str.Contains ' ' then $"\"%s{str}\"" else str)
+#else
+        (if str.Contains " " then $"\"%s{str}\"" else str)
+#endif
 
     let inline internal isOpt (t:Type) = t.IsGenericType && (t.GetGenericTypeDefinition() = typedefof<Option<_>> || t.GetGenericTypeDefinition() = typedefof<ValueOption<_>>)
     let inline internal isCOpt (t:Type) = t.IsGenericType && t.GetGenericTypeDefinition() = typedefof<Option<_>>
@@ -84,8 +90,7 @@ module Utilities =
 
     let rec internal convertTypes (itm:obj) (returnType:Type) =
         if not(isNull itm) && Type.(=) (itm.GetType(), returnType) then itm
-        else
-        if isCOpt returnType && returnType.GenericTypeArguments.Length = 1 then
+        elif isCOpt returnType && returnType.GenericTypeArguments.Length = 1 then
             if isNull itm then None |> box
             else
             match convertTypes itm (returnType.GenericTypeArguments.[0]) with
@@ -165,9 +170,7 @@ module Utilities =
             elif Type.(=) (returnType, typeof<SByte>) then Convert.ToSByte itm |> box
             elif Type.(=) (returnType, typeof<Char>) then Convert.ToChar itm |> box
             else itm |> box
-        else
-
-        if Type.(=) (returnType, typeof<String>) then s |> box
+        elif Type.(=) (returnType, typeof<String>) then s |> box
         elif Type.(=) (returnType, typeof<Int32>) then
             let ok, x = Int32.TryParse s
             if ok then box x else Convert.ToInt32 itm |> box
@@ -232,24 +235,24 @@ module Utilities =
         | SqlColumnType.CanonicalOperation(op,key) ->
             let column = recursionBase key
             match op with // These are very standard:
-            | ToUpper -> sprintf "UPPER(%s)" column
-            | ToLower -> sprintf "LOWER(%s)" column
-            | Abs -> sprintf "ABS(%s)" column
-            | Ceil -> sprintf "CEILING(%s)" column
-            | Floor -> sprintf "FLOOR(%s)" column
-            | Round -> sprintf "ROUND(%s)" column
-            | RoundDecimals x -> sprintf "ROUND(%s,%d)" column x
-            | BasicMath(o, c) when o = "/" -> sprintf "(%s %s (1.0*%O))" column o c
-            | BasicMathLeft(o, c) when o = "/" -> sprintf "(%O %s (1.0*%s))" c o column
-            | BasicMath(o, c) -> sprintf "(%s %s %O)" column o c
-            | BasicMathLeft(o, c) -> sprintf "(%O %s %s)" c o column
-            | Sqrt -> sprintf "SQRT(%s)" column
-            | Sin -> sprintf "SIN(%s)" column
-            | Cos -> sprintf "COS(%s)" column
-            | Tan -> sprintf "TAN(%s)" column
-            | ASin -> sprintf "ASIN(%s)" column
-            | ACos -> sprintf "ACOS(%s)" column
-            | ATan -> sprintf "ATAN(%s)" column
+            | ToUpper -> $"UPPER(%s{column})"
+            | ToLower -> $"LOWER(%s{column})"
+            | Abs -> $"ABS(%s{column})"
+            | Ceil -> $"CEILING(%s{column})"
+            | Floor -> $"FLOOR(%s{column})"
+            | Round -> $"ROUND(%s{column})"
+            | RoundDecimals x -> $"ROUND(%s{column},%d{x})"
+            | BasicMath(o, c) when o = "/" -> $"(%s{column} %s{o} (1.0*%O{c}))"
+            | BasicMathLeft(o, c) when o = "/" -> $"(%O{c} %s{o} (1.0*%s{column}))"
+            | BasicMath(o, c) -> $"(%s{column} %s{o} %O{c})"
+            | BasicMathLeft(o, c) -> $"(%O{c} %s{o} %s{column})"
+            | Sqrt -> $"SQRT(%s{column})"
+            | Sin -> $"SIN(%s{column})"
+            | Cos -> $"COS(%s{column})"
+            | Tan -> $"TAN(%s{column})"
+            | ASin -> $"ASIN(%s{column})"
+            | ACos -> $"ACOS(%s{column})"
+            | ATan -> $"ATAN(%s{column})"
             | _ -> failwithf "Not yet supported: %O %s" op (key.ToString())
         | GroupColumn (AvgOp key, KeyColumn _) -> sprintf "AVG(%s)" (colSprint key)
         | GroupColumn (MinOp key, KeyColumn _) -> sprintf "MIN(%s)" (colSprint key)
@@ -275,14 +278,14 @@ module Utilities =
             let subItm = genericAliasNotation aliasSprint col
             aliasSprint (sprintf "%s_%O" (op.ToString().Replace(" ", "_")) subItm)
         | GroupColumn (KeyOp key,_) -> aliasSprint key
-        | GroupColumn (CountOp key,_) -> aliasSprint (sprintf "COUNT_%s" key)
-        | GroupColumn (CountDistOp key,_) -> aliasSprint (sprintf "COUNTD_%s" key)
-        | GroupColumn (AvgOp key,_) -> aliasSprint (sprintf "AVG_%s" key)
-        | GroupColumn (MinOp key,_) -> aliasSprint (sprintf "MIN_%s" key)
-        | GroupColumn (MaxOp key,_) -> aliasSprint (sprintf "MAX_%s" key)
-        | GroupColumn (SumOp key,_) -> aliasSprint (sprintf "SUM_%s" key)
-        | GroupColumn (StdDevOp key,_) -> aliasSprint (sprintf "STDDEV_%s" key)
-        | GroupColumn (VarianceOp key,_) -> aliasSprint (sprintf "VAR_%s" key)
+        | GroupColumn (CountOp key,_) -> aliasSprint $"COUNT_%s{key}"
+        | GroupColumn (CountDistOp key,_) -> aliasSprint $"COUNTD_%s{key}"
+        | GroupColumn (AvgOp key,_) -> aliasSprint $"AVG_%s{key}"
+        | GroupColumn (MinOp key,_) -> aliasSprint $"MIN_%s{key}"
+        | GroupColumn (MaxOp key,_) -> aliasSprint $"MAX_%s{key}"
+        | GroupColumn (SumOp key,_) -> aliasSprint $"SUM_%s{key}"
+        | GroupColumn (StdDevOp key,_) -> aliasSprint $"STDDEV_%s{key}"
+        | GroupColumn (VarianceOp key,_) -> aliasSprint $"VAR_%s{key}"
 
     let rec getBaseColumnName x =
         match x with
@@ -484,17 +487,22 @@ module SchemaProjections =
       else name
     
     /// Add ' until the name is unique
+    [<TailCall>]
     let rec avoidNameClashBy nameExists name =
       if nameExists name then avoidNameClashBy nameExists (name + "'")
       else name
         
     let buildTableName (tableName:string) = 
         //Current Name = [SCHEMA].[TABLE_NAME]
-        if(tableName.Contains("."))
+#if NETSTANDARD21
+        if(tableName.Contains '.')
+#else
+        if(tableName.Contains ".")
+#endif
         then 
             let tableName = tableName.Replace("[", "").Replace("]", "")
-            let startIndex = tableName.IndexOf('.')
-            nicePascalName (tableName.Substring(startIndex))
+            let startIndex = tableName.IndexOf '.'
+            nicePascalName (tableName.Substring startIndex)
         else nicePascalName tableName
 
     let buildFieldName (fieldName:string) = nicePascalName fieldName
@@ -508,7 +516,7 @@ module SchemaProjections =
                     |> Seq.toArray
         match names with
         | [||] -> ""
-        | [|name|] -> sprintf "and %s like '%s'" columnName name
+        | [|name|] -> $"and %s{columnName} like '%s{name}'"
         | _ -> names |> Array.map (sprintf "%s like '%s'" columnName)
                      |> String.concat " or "
                      |> sprintf "and (%s)"
@@ -527,16 +535,20 @@ module Reflection =
         | x ->
             match x.GetCustomAttributes(typeof<System.Runtime.Versioning.TargetFrameworkAttribute>, false) with
             | null -> ""
-            | itms when itms.Length > 0 -> (itms |> Seq.head :?> System.Runtime.Versioning.TargetFrameworkAttribute).FrameworkName
+            | itms when itms.Length > 0 -> (itms |> Array.head :?> System.Runtime.Versioning.TargetFrameworkAttribute).FrameworkName
             | _ -> ""
 
     let listResolutionFullPaths (resolutionPathSemicoloned:string) =
+#if NETSTANDARD21
+        if resolutionPathSemicoloned.Contains ';' then
+#else
         if resolutionPathSemicoloned.Contains ";" then
+#endif
             String.concat ";"
                 (resolutionPathSemicoloned.Split ';'
-                    |> Array.map (fun p -> p.Trim() |> System.IO.Path.GetFullPath))
+                    |> Array.map (fun p -> p.Trim() |> Path.GetFullPath))
         else
-            System.IO.Path.GetFullPath (resolutionPathSemicoloned.Trim())
+            Path.GetFullPath (resolutionPathSemicoloned.Trim())
 
     let tryLoadAssembly path = 
          try 
@@ -552,20 +564,24 @@ module Reflection =
     let tryLoadAssemblyFrom (resolutionPathSemicoloned:string) (referencedAssemblies:string[]) assemblyNames =
 
         let resolutionPaths =
+#if NETSTANDARD21
+            if resolutionPathSemicoloned.Contains ';' then
+#else
             if resolutionPathSemicoloned.Contains ";" then
-                resolutionPathSemicoloned.Split ';' |> Array.toList |> List.map(fun p -> p.Trim())
+#endif
+                resolutionPathSemicoloned.Split ';' |> Array.map(fun p -> p.Trim()) |> Array.toList
             else [ resolutionPathSemicoloned.Trim() ]
 
         let resolutionPaths =
             resolutionPaths
             |> List.map(fun resolutionPath ->
-                    let p = resolutionPath.Replace('/', System.IO.Path.DirectorySeparatorChar)
+                    let p = resolutionPath.Replace('/', Path.DirectorySeparatorChar)
                     if not(File.Exists p) then p else p |> Path.GetDirectoryName
                )
 
         let referencedPaths = 
             referencedAssemblies 
-            |> Array.filter (fun ra -> assemblyNames |> List.exists(fun (a:string) -> ra.Contains(a)))
+            |> Array.filter (fun ra -> assemblyNames |> List.exists(fun (a:string) -> ra.Contains a))
             |> Array.toList
         
         let resolutionPathsFiles =
@@ -607,7 +623,7 @@ module Reflection =
                 else
                     resolutionPaths
                     |> List.collect(fun resolutionPath ->
-                        if not(System.IO.Path.IsPathRooted resolutionPath) then
+                        if not(Path.IsPathRooted resolutionPath) then
                             dirs @ (dirs |> List.map(fun d -> Path.Combine(d, resolutionPath)))
                         else
                             dirs)
@@ -616,7 +632,7 @@ module Reflection =
 
         let currentPaths =
             myPaths |> List.map(fun myPath -> 
-                assemblyNames |> List.map (fun asm -> System.IO.Path.Combine(myPath,asm)))
+                assemblyNames |> List.map (fun asm -> Path.Combine(myPath,asm)))
             |> Seq.concat |> Seq.toList
 
         let allPaths =
@@ -668,8 +684,7 @@ module Reflection =
                         let assemblyPath = Path.Combine(dllPath,fileName)
                         if File.Exists assemblyPath then
                             let tryLoad = loadFunc assemblyPath true
-                            if isNull tryLoad then None else 
-                                Some(tryLoad)
+                            Option.ofObj tryLoad
                         else None)
                 match loaded with
                 | Some x -> 
@@ -678,21 +693,21 @@ module Reflection =
                     // Final try: nuget cache
                     try 
                         let currentPlatform = getPlatform(execAssembly.Force()).Split(',').[0]
-                        let c = System.IO.Path.Combine [| Environment.GetEnvironmentVariable("USERPROFILE"); ".nuget"; "packages" |]
-                        if System.IO.Directory.Exists c then
+                        let c = Path.Combine [| Environment.GetEnvironmentVariable("USERPROFILE"); ".nuget"; "packages" |]
+                        if Directory.Exists c then
                             let picked = 
-                                System.IO.Directory.GetFiles(c, fileName, SearchOption.AllDirectories)
-                                |> Array.sortByDescending(fun f -> f) // "runtime over lib"
+                                Directory.GetFiles(c, fileName, SearchOption.AllDirectories)
+                                |> Array.sortByDescending id // "runtime over lib"
                                 |> Array.tryPick(fun assemblyPath ->
                                     try
                                         let tmpAssembly = Assembly.Load(assemblyPath |> File.ReadAllBytes)
                                         if tmpAssembly.FullName = args.Name then
-                                            let loadedPlatform = getPlatform(tmpAssembly)
+                                            let loadedPlatform = getPlatform tmpAssembly
                                             match currentPlatform, loadedPlatform with
                                             | x, y when (x = "" || y = "" || x = y.Split(',').[0]) ->
                                                 // Ok...good to go. (Although, we could match better the target frameworks.)
                                                 //let tryLoad = loadFunc assemblyPath true
-                                                Some(tmpAssembly)
+                                                Some tmpAssembly
                                             | _ -> None
                                         else
                                             None
@@ -706,7 +721,7 @@ module Reflection =
                     null
         let mutable handler = Unchecked.defaultof<ResolveEventHandler>
         handler <- // try to avoid StackOverflowException of Assembly.LoadFrom calling handler again
-            System.ResolveEventHandler (fun _ args ->
+            ResolveEventHandler (fun _ args ->
                 let loadfunc (x:string) shouldCatch =
                     if not (isNull handler) then AppDomain.CurrentDomain.remove_AssemblyResolve handler
                     let res = 
@@ -736,13 +751,13 @@ module Reflection =
         | None ->
             let folders = 
                 allPaths
-                |> Seq.map (Path.GetDirectoryName)
+                |> Seq.map Path.GetDirectoryName
                 |> Seq.distinct
             let errors = 
                 allPaths
                 |> List.map (fun p -> 
                     match tryLoadAssembly p with
-                    | Some(Choice2Of2 err) when (err :? System.IO.FileNotFoundException) -> None //trivial
+                    | Some(Choice2Of2 err) when (err :? FileNotFoundException) -> None //trivial
                     | Some(Choice2Of2 err) -> Some err
                     | _ -> None
                 ) |> List.filter Option.isSome
@@ -750,7 +765,7 @@ module Reflection =
                 |> Seq.distinct |> Seq.toList
             let paths =
                 resolutionPaths
-                |> List.filter(fun resolutionPath -> not(String.IsNullOrEmpty resolutionPath) && not(System.IO.Directory.Exists resolutionPath))
+                |> List.filter(fun resolutionPath -> not (String.IsNullOrEmpty resolutionPath || Directory.Exists resolutionPath))
 
             if List.isEmpty paths then
                 Choice2Of2(folders, errors)
@@ -779,7 +794,7 @@ module Sql =
                yield collectfunc reader
         |]
 
-    let dataReaderToArrayAsync (reader:System.Data.Common.DbDataReader) =
+    let dataReaderToArrayAsync (reader:DbDataReader) =
         task {
             let res = ResizeArray<_>()
             while! reader.ReadAsync() do
@@ -803,7 +818,7 @@ module Sql =
 
     /// Note: SQLProvider reuses the connection through multiple instances, so you can't dispose it here.
     /// Instead it's created with ISQLProvider's CreateConnection method, and that is having always "use" to ensure it is disposed properly on "finally".
-    let connectAsync (con:System.Data.Common.DbConnection) (f: System.Data.Common.DbConnection -> System.Threading.Tasks.Task<'a>) =
+    let connectAsync (con:DbConnection) (f: DbConnection -> System.Threading.Tasks.Task<'a>) =
         task {
             if con.State <> ConnectionState.Open then 
                 do! con.OpenAsync()
@@ -820,7 +835,7 @@ module Sql =
         finally
             if connection.State = ConnectionState.Open then connection.Close()
 
-    let connectAndCloseAsync (con:System.Data.Common.DbConnection) (f: System.Data.Common.DbConnection -> System.Threading.Tasks.Task<'a>) =
+    let connectAndCloseAsync (con:DbConnection) (f: DbConnection -> System.Threading.Tasks.Task<'a>) =
         task {
             use connection = con
             try
@@ -836,7 +851,7 @@ module Sql =
         com.ExecuteReader() 
 
     let executeSqlAsync createCommand sql (con:IDbConnection) =
-        use com : System.Data.Common.DbCommand = createCommand sql con   
+        use com : DbCommand = createCommand sql con   
         com.ExecuteReaderAsync()
 
     let executeSqlAsDataTable createCommand sql con = 

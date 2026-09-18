@@ -4,6 +4,8 @@ open System
 open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Data
+open System.Data.Common
+open System.Reflection
 open FSharp.Data.Sql
 open FSharp.Data.Sql.Transactions
 open FSharp.Data.Sql.Schema
@@ -26,14 +28,14 @@ module internal Oracle =
 
     let findType name =
         match assembly.Value with
-        | Choice1Of2(assembly) -> 
+        | Choice1Of2 assembly -> 
             let types, err = 
                 try assembly.GetTypes(), None
-                with | :? System.Reflection.ReflectionTypeLoadException as e ->
+                with | :? ReflectionTypeLoadException as e ->
                     let msgs = e.LoaderExceptions |> Seq.map(fun e -> e.GetBaseException().Message) |> Seq.distinct
                     let details = "Details: " + Environment.NewLine + String.Join(Environment.NewLine, msgs)
                     let platform = Reflection.getPlatform(Reflection.execAssembly.Force())
-                    let errmsg = (e.Message + Environment.NewLine + details + (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else ""))
+                    let errmsg = (e.Message + Environment.NewLine + details + (if platform <> "" then $"{Environment.NewLine}Current execution platform: {platform}" else ""))
                     if e.Types.Length = 0 then
                         failwith errmsg
                     else e.Types, Some errmsg
@@ -83,7 +85,7 @@ module internal Oracle =
     let mutable findDbType : (string -> TypeMapping option)  = fun _ -> failwith "!"
 
     let createCommandParameter (param:QueryParameter) value =
-        let value = if isNull value then (box System.DBNull.Value) else value
+        let value = if isNull value then (box DBNull.Value) else value
 
 #if REFLECTIONLOAD
         let parameterType = parameterType.Value
@@ -100,8 +102,7 @@ module internal Oracle =
             param.TypeMapping.ProviderType |> ValueOption.iter (fun pt -> oracleDbTypeSetter.Invoke(p, [|pt|]) |> ignore)
         | ValueNone -> ()
 #else
-        let p1 = new Oracle.ManagedDataAccess.Client.OracleParameter()
-        p1.Direction <- param.Direction
+        let p1 = new Oracle.ManagedDataAccess.Client.OracleParameter(Direction = param.Direction)
         match param.TypeMapping.ProviderTypeName with
         | ValueSome _ ->
             p1.DbType <- param.TypeMapping.DbType
@@ -112,7 +113,7 @@ module internal Oracle =
 #endif
 
         match param.Length with
-        | ValueSome(length) when length >= 0 -> p.Size <- length
+        | ValueSome length when length >= 0 -> p.Size <- length
         | _ ->
                match param.TypeMapping.DbType with
                | DbType.String -> p.Size <- 32767
@@ -122,8 +123,8 @@ module internal Oracle =
     let fieldNotationAlias(al:alias,col:SqlColumnType) =
         let aliasSprint =
             match String.IsNullOrEmpty(al) with
-            | true -> fun c -> sprintf "\"%s\"" c
-            | false -> fun c -> sprintf "\"%s.%s\"" al c
+            | true -> fun c -> $"\"%s{c}\""
+            | false -> fun c -> $"\"%s{al}.%s{c}\""
         Utilities.genericAliasNotation aliasSprint col
 
     let createTypeMappings con =
@@ -135,16 +136,18 @@ module internal Oracle =
             oracleDbTypeSetter.Invoke(p, [|providerType|]) |> ignore
             dbTypeGetter.Invoke(p, [||]) :?> DbType
 #else
-            let p = new Oracle.ManagedDataAccess.Client.OracleParameter()
-            p.OracleDbType <- Enum.ToObject(typeof<Oracle.ManagedDataAccess.Client.OracleDbType>, providerType) :?> Oracle.ManagedDataAccess.Client.OracleDbType
+            use p =
+                new Oracle.ManagedDataAccess.Client.OracleParameter(
+                    OracleDbType = (Enum.ToObject(typeof<Oracle.ManagedDataAccess.Client.OracleDbType>, providerType) :?> Oracle.ManagedDataAccess.Client.OracleDbType)
+                )
             p.DbType
 #endif
 
         let getClrType (input:string) =
             (match input.ToLower() with
-            | "system.long"  -> typeof<System.Int64>
+            | "system.long"  -> typeof<Int64>
             | _ ->
-                match Utilities.getType(input) with
+                match Utilities.getType input with
                 | null -> typeof<String>
                 | x -> x).ToString()
 
@@ -178,10 +181,10 @@ module internal Oracle =
         if isNull instance then None else
             let typ = instance.GetType()
             let isNullp = 
-                let isNullProp = typ.GetProperty("IsNull")
+                let isNullProp = typ.GetProperty "IsNull"
                 if isNull isNullProp then false
                 else unbox<bool>(isNullProp.GetGetMethod().Invoke(instance, [||]))
-            let prop = typ.GetProperty("Value")
+            let prop = typ.GetProperty "Value"
             if not(isNullp || isNull prop)
             then prop.GetGetMethod().Invoke(instance, [||]) |> Some
             else None
@@ -191,22 +194,22 @@ module internal Oracle =
         try
             Activator.CreateInstance(connectionType.Value,[|box connectionString|]) :?> IDbConnection
         with
-        | :? System.Reflection.ReflectionTypeLoadException as ex ->
+        | :? ReflectionTypeLoadException as ex ->
             let errorfiles = ex.LoaderExceptions |> Array.map(fun e -> e.GetBaseException().Message) |> Seq.distinct |> Seq.toArray
             let msg = ex.Message + "\r\n" + String.Join("\r\n", errorfiles)
-            raise(System.Reflection.TargetInvocationException(msg, ex))
-        | :? System.Reflection.TargetInvocationException as ex when ((not(isNull ex.InnerException)) && ex.InnerException :? DllNotFoundException) ->
+            raise(TargetInvocationException(msg, ex))
+        | :? TargetInvocationException as ex when ((not(isNull ex.InnerException)) && ex.InnerException :? DllNotFoundException) ->
             let platform = Reflection.getPlatform(Reflection.execAssembly.Force())
             let msg = ex.GetBaseException().Message + ", Path: " + (Reflection.listResolutionFullPaths resolutionPath) +
-                        (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else "")
-            raise(System.Reflection.TargetInvocationException(msg, ex))
-        | :? System.TypeInitializationException as te when (te.InnerException :? System.Reflection.TargetInvocationException) ->
-            let ex = te.InnerException :?> System.Reflection.TargetInvocationException
+                        (if platform <> "" then $"{Environment.NewLine}Current execution platform: {platform}" else "")
+            raise(TargetInvocationException(msg, ex))
+        | :? TypeInitializationException as te when (te.InnerException :? TargetInvocationException) ->
+            let ex = te.InnerException :?> TargetInvocationException
             let platform = Reflection.getPlatform(Reflection.execAssembly.Force())
             let msg = ex.GetBaseException().Message + ", Path: " + (Reflection.listResolutionFullPaths resolutionPath) +
-                        (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else "")
-            raise(System.Reflection.TargetInvocationException(msg, ex.InnerException)) 
-        | :? System.TypeInitializationException as te when not(isNull te.InnerException) -> raise (te.GetBaseException())
+                        (if platform <> "" then $"{Environment.NewLine}Current execution platform: {platform}" else "")
+            raise(TargetInvocationException(msg, ex.InnerException)) 
+        | :? TypeInitializationException as te when not(isNull te.InnerException) -> raise (te.GetBaseException())
 #else
         new Oracle.ManagedDataAccess.Client.OracleConnection(connectionString) :> IDbConnection
 #endif
@@ -245,8 +248,8 @@ module internal Oracle =
                 data |> box
         | _, _ ->
             match tryReadValueProperty parameter.Value with
-            | Some(obj) -> obj |> box
-            | _ -> parameter.Value |> box
+            | Some obj -> obj |> box
+            | None -> parameter.Value |> box
 
     let readParameterAsync (parameter:IDbDataParameter) =
         task {
@@ -274,9 +277,10 @@ module internal Oracle =
                             )
                     return data |> Seq.ofArray |> box
             | _, _ ->
-                match tryReadValueProperty parameter.Value with
-                | Some(obj) -> return obj |> box
-                | _ -> return parameter.Value |> box
+                return
+                    match tryReadValueProperty parameter.Value with
+                    | Some obj -> obj |> box
+                    | None -> parameter.Value |> box
         }
 
     let read conn f sql =
@@ -341,7 +345,7 @@ module internal Oracle =
                 let typeinfo = 
                     let datalength = (Sql.dbUnbox row.[3]).ToString()
                     if datalength <> "0" then columnType
-                    else columnType + "(" + datalength + ")"
+                    else $"{columnType}({datalength})"
                 findDbType columnType
                 |> Option.map (fun m ->
                     let pkColumn = primaryKeys.TryGetValue(table.Name) |> function | true, pks -> pks = [columnName] | false, _ -> false
@@ -367,16 +371,16 @@ module internal Oracle =
             getSchema "ForeignKeys" [|owner;table|] con
             |> DataTable.mapChoose (fun row ->
                 let name = Sql.dbUnbox row.[4]
-                match primaryKeys.TryGetValue(table) with
+                match primaryKeys.TryGetValue table with
                 | true, pks ->
                     match pks, foreignKeyCols.TryFind name with
-                    | [pk], Some(fk) ->
+                    | [pk], Some fk ->
                          { Name = name
                            PrimaryTable = Table.CreateFullName(Sql.dbUnbox row.[1],Sql.dbUnbox row.[2])
                            PrimaryKey = pk
                            ForeignTable = Table.CreateFullName(Sql.dbUnbox row.[3],Sql.dbUnbox row.[5])
                            ForeignKey = fk } |> Some
-                    | _, Some(fk) -> None
+                    | _, Some fk -> None
                     | _, None -> None
                 | false, _ -> None
             ) |> Seq.toArray
@@ -391,7 +395,7 @@ module internal Oracle =
         (children, rels)
 
     let getIndivdualsQueryText amount (table:Table) =
-        sprintf "select * from ( select * from %s order by 1 desc) where ROWNUM <= %i" table.FullName amount
+        $"select * from ( select * from %s{table.FullName} order by 1 desc) where ROWNUM <= %i{amount}"
 
     let getIndivdualQueryText (table:Table) column =
         let tName = table.FullName
@@ -410,17 +414,15 @@ module internal Oracle =
         let owner = Sql.dbUnbox row.["OWNER"]
         let procName = Sql.dbUnbox row.["OBJECT_NAME"]
         let packageName = 
-            match row.Table.Columns.Contains("PACKAGE_NAME") with
-            | true -> Sql.dbUnbox row.["PACKAGE_NAME"]
-            | false -> ""
+            if row.Table.Columns.Contains "PACKAGE_NAME" then Sql.dbUnbox row.["PACKAGE_NAME"] else ""
         { ProcName = procName; Owner = owner; PackageName = packageName }
 
     let getSprocParameters (con:IDbConnection) (name:SprocName) =
         let querySprocParameters packageName sprocName =
             let sql = 
                 if String.IsNullOrWhiteSpace(packageName)
-                then sprintf "SELECT * FROM SYS.ALL_ARGUMENTS WHERE OBJECT_NAME = '%s' AND (OVERLOAD = 1 OR OVERLOAD IS NULL) AND DATA_LEVEL = 0" sprocName
-                else sprintf "SELECT * FROM SYS.ALL_ARGUMENTS WHERE OBJECT_NAME = '%s' AND PACKAGE_NAME = '%s' AND (OVERLOAD = 1 OR OVERLOAD IS NULL) AND DATA_LEVEL = 0" sprocName packageName 
+                then $"SELECT * FROM SYS.ALL_ARGUMENTS WHERE OBJECT_NAME = '%s{sprocName}' AND (OVERLOAD = 1 OR OVERLOAD IS NULL) AND DATA_LEVEL = 0"
+                else $"SELECT * FROM SYS.ALL_ARGUMENTS WHERE OBJECT_NAME = '%s{sprocName}' AND PACKAGE_NAME = '%s{packageName}' AND (OVERLOAD = 1 OR OVERLOAD IS NULL) AND DATA_LEVEL = 0" 
 
             Sql.executeSqlAsDataTable createCommand sql con
         
@@ -552,7 +554,7 @@ module internal Oracle =
                 Set(returnValues)
         entities
 
-    let executeSprocCommandAsync (com:System.Data.Common.DbCommand) (inputParameters:QueryParameter[]) (retCols:QueryParameter[]) (values:obj[]) =
+    let executeSprocCommandAsync (com:DbCommand) (inputParameters:QueryParameter[]) (retCols:QueryParameter[]) (values:obj[]) =
         task {
 
             let allParams, outps = executeSprocCommandCommon inputParameters retCols values
@@ -583,9 +585,10 @@ module internal Oracle =
                             match outps |> Array.tryFind (fun (_,p) -> p.ParameterName = col.Name) with
                             | Some(_,p) ->
                                 let! r = readParameterAsync p
-                                match col.TypeMapping.ProviderTypeName with
-                                | ValueSome "REF CURSOR" -> return ResultSet(col.Name, r :?> ResultSet)
-                                | _ -> return ScalarResultSet(col.Name, r)
+                                return
+                                    match col.TypeMapping.ProviderTypeName with
+                                    | ValueSome "REF CURSOR" -> ResultSet(col.Name, r :?> ResultSet)
+                                    | _ -> ScalarResultSet(col.Name, r)
                             | None -> return failwithf "Excepted return column %s but could not find it in the parameter set" col.Name
                         }
                     )
@@ -594,7 +597,7 @@ module internal Oracle =
 
 type internal OracleProvider(resolutionPath, contextSchemaPath, owner, referencedAssemblies, tableNames) =
     let schemaCache = SchemaCache.LoadOrEmpty(contextSchemaPath)
-    let myLock = new Object()
+    let myLock = Object()
 
     let isPrimaryKey tableName columnName = 
         match schemaCache.PrimaryKeys.TryGetValue tableName with
@@ -607,7 +610,7 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
         let columnNames, values =
             (([],0),entity.ColumnValues)
             ||> Seq.fold(fun (out,i) (k,v) ->
-                let name = sprintf ":param%i" i
+                let name = $":param%i{i}"
                 let p = provider.CreateCommandParameter(QueryParameter.Create(name,i), v)
                 (k,p)::out,i+1)
             |> fun (x,_)-> x
@@ -628,7 +631,7 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
                 | true, cols ->
                     match cols |> Map.tryFind pk with
                     | Some pkCol ->
-                        ~~(sprintf " RETURNING %s INTO :pkResult" pk)
+                        ~~ $" RETURNING %s{pk} INTO :pkResult"
                         [| provider.CreateCommandParameter(QueryParameter.Create(":pkResult", columnNames.Length, pkCol.TypeMapping, ParameterDirection.Output), DBNull.Value) |]
                     | None -> [||]
                 | _ -> [||]
@@ -654,7 +657,7 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
         let columns, parameters =
             (([],0),changedColumns)
             ||> List.fold(fun (out,i) col ->
-                let name = sprintf ":param%i" i
+                let name = $":param%i{i}"
                 let p =
                     match (entity :> IColumnHolder).GetColumnOption<obj> col with
                     | Some v -> provider.CreateCommandParameter(QueryParameter.Create(name,i), v)
@@ -672,7 +675,7 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
                 ((entity :> IColumnHolder).Table.FullName)
                 ((String.concat "," columns))
                 (String.concat "," (parameters |> Array.map (fun p -> p.ParameterName))))
-            ~~(String.concat " AND " (ks |> List.mapi(fun i k -> (sprintf "\"%s\" = :pk%i" k i))))
+            ~~(String.concat " AND " (ks |> List.mapi(fun i k -> $"\"%s{k}\" = :pk%i{i}")))
 
         let cmd = provider.CreateCommand(con, sb.ToString())
         parameters |> Array.iter (cmd.Parameters.Add >> ignore)
@@ -695,7 +698,7 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
         | [] -> ()
         | ks -> 
             ~~(sprintf "DELETE FROM %s WHERE " (entity :> IColumnHolder).Table.FullName)
-            ~~(String.concat " AND " (ks |> List.mapi(fun i k -> (sprintf "\"%s\" = :pk%i" k i))))
+            ~~(String.concat " AND " (ks |> List.mapi(fun i k -> $"\"%s{k}\" = :pk%i{i}")))
 
         let cmd = provider.CreateCommand(con, sb.ToString())
         pkValues |> List.iteri(fun i pkValue ->
@@ -774,7 +777,7 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
 
         member __.GetPrimaryKey(table) =
             match schemaCache.PrimaryKeys.TryGetValue table.Name with
-            | true, v -> match v with [x] -> Some(x) | _ -> None
+            | true, v -> match v with [x] -> Some x | _ -> None
             | _ -> None
 
         member __.GetColumns(con,table) =
@@ -841,41 +844,41 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
                     | SubstringWithLength(SqlConstant startPos,SqlCol(al2, col2)) -> sprintf "SUBSTR(%s, %s, %s)" column (fieldParam startPos) (fieldNotation al2 col2)
                     | SubstringWithLength(SqlCol(al2, col2), SqlConstant strLen) -> sprintf "SUBSTR(%s, %s, %s)" column (fieldNotation al2 col2) (fieldParam strLen)
                     | SubstringWithLength(SqlCol(al2, col2),SqlCol(al3, col3)) -> sprintf "SUBSTR(%s, %s, %s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
-                    | Trim -> sprintf "TRIM(%s)" column
-                    | Length -> sprintf "LENGTH(%s)" column
+                    | Trim -> $"TRIM(%s{column})"
+                    | Length -> $"LENGTH(%s{column})"
                     | IndexOf(SqlConstant search) -> sprintf "INSTR(%s,%s)" column (fieldParam search)
                     | IndexOf(SqlCol(al2, col2)) -> sprintf "INSTR(%s,%s)" column (fieldNotation al2 col2)
                     | IndexOfStart(SqlConstant search,(SqlConstant startPos)) -> sprintf "INSTR(%s,%s,%s)" column (fieldParam search) (fieldParam startPos)
                     | IndexOfStart(SqlConstant search, SqlCol(al2, col2)) -> sprintf "INSTR(%s,%s,%s)" column (fieldParam search) (fieldNotation al2 col2)
                     | IndexOfStart(SqlCol(al2, col2),(SqlConstant startPos)) -> sprintf "INSTR(%s,%s,%s)" column (fieldNotation al2 col2) (fieldParam startPos)
                     | IndexOfStart(SqlCol(al2, col2),SqlCol(al3, col3)) -> sprintf "INSTR(%s,%s,%s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
-                    | CastVarchar -> sprintf "CAST(%s AS VARCHAR)" column
-                    | CastInt -> sprintf "CAST(%s AS INT)" column
+                    | CastVarchar -> $"CAST(%s{column} AS VARCHAR)"
+                    | CastInt -> $"CAST(%s{column} AS INT)"
                     // Date functions
-                    | Date -> sprintf "TRUNC(%s)" column
-                    | Year -> sprintf "EXTRACT(YEAR FROM %s)" column
-                    | Month -> sprintf "EXTRACT(MONTH FROM %s)" column
-                    | Day -> sprintf "EXTRACT(DAY FROM %s)" column
-                    | Hour -> sprintf "EXTRACT(HOUR FROM %s)" column
-                    | Minute -> sprintf "EXTRACT(MINUTE FROM %s)" column
-                    | Second -> sprintf "EXTRACT(SECOND FROM %s)" column
+                    | Date -> $"TRUNC(%s{column})"
+                    | Year -> $"EXTRACT(YEAR FROM %s{column})"
+                    | Month -> $"EXTRACT(MONTH FROM %s{column})"
+                    | Day -> $"EXTRACT(DAY FROM %s{column})"
+                    | Hour -> $"EXTRACT(HOUR FROM %s{column})"
+                    | Minute -> $"EXTRACT(MINUTE FROM %s{column})"
+                    | Second -> $"EXTRACT(SECOND FROM %s{column})"
                     //Todo: Check if these support parameters. If not, use Utilities.fieldConstant instead of fieldParam
                     | AddYears(SqlConstant x) -> sprintf "(%s + INTERVAL %s YEAR)" column (fieldParam x)
                     | AddYears(SqlCol(al2, col2)) -> sprintf "(%s + INTERVAL %s YEAR)" column (fieldNotation al2 col2)
-                    | AddMonths x -> sprintf "(%s + INTERVAL '%d' MONTH)" column x
+                    | AddMonths x -> $"(%s{column} + INTERVAL '%d{x}' MONTH)"
                     | AddDays(SqlConstant x) -> sprintf "(%s + INTERVAL %s DAY)" column (fieldParam x) // SQL ignores decimal part :-(
                     | AddDays(SqlCol(al2, col2)) -> sprintf "(%s + INTERVAL %s DAY)" column (fieldNotation al2 col2)
-                    | AddHours x -> sprintf "(%s + INTERVAL '%f' HOUR)" column x
+                    | AddHours x -> $"(%s{column} + INTERVAL '%f{x}' HOUR)"
                     | AddMinutes(SqlConstant x) -> sprintf "(%s + INTERVAL %s MINUTE)" column (fieldParam x)
                     | AddMinutes(SqlCol(al2, col2)) -> sprintf "(%s + INTERVAL %s MINUTE)" column (fieldNotation al2 col2)
-                    | AddSeconds x -> sprintf "(%s + INTERVAL '%f' SECOND)" column x
+                    | AddSeconds x -> $"(%s{column} + INTERVAL '%f{x}' SECOND)"
                     | DateDiffDays(SqlCol(al2, col2)) -> sprintf "(%s-%s)" column (fieldNotation al2 col2)
                     | DateDiffSecs(SqlCol(al2, col2)) -> sprintf "(%s-%s)*60*60*24" column (fieldNotation al2 col2)
                     | DateDiffDays(SqlConstant x) -> sprintf "(%s-%s)" column (fieldParam x)
                     | DateDiffSecs(SqlConstant x) -> sprintf "(%s-%s)*60*60*24" column (fieldParam x)
                     // Math functions
-                    | Truncate -> sprintf "TRUNC(%s)" column
-                    | Ceil -> sprintf "CEIL(%s)" column
+                    | Truncate -> $"TRUNC(%s{column})"
+                    | Ceil -> $"CEIL(%s{column})"
                     | BasicMathOfColumns(o, a, c) -> sprintf "(%s %s %s)" column o (fieldNotation a c)
                     | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "(%s %s %s)" column o (fieldParam par)
                     | BasicMathLeft(o, par) when (par :? String || par :? Char) -> sprintf "(%s %s %s)" (fieldParam par) o column
@@ -894,7 +897,8 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
                     | CaseSqlPlain(Condition.ConstantFalse, _, itm2) -> sprintf " %s " (fieldParam itm2)
                     | CaseSqlPlain(f, itm, itm2) -> sprintf "CASE WHEN %s THEN %s ELSE %s END " (buildf f) (fieldParam itm) (fieldParam itm2)
                     | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
-                | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
+                | SqlColumnType.KeyColumn _
+                | SqlColumnType.GroupColumn _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
 
             and filterBuilder (~~) (f:Condition list) =
                 // the filter expressions
@@ -913,46 +917,46 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
                                             | Some(x) when (box x :? obj array) ->
                                                 // in and not in operators pass an array
                                                 let elements = box x :?> obj array
-                                                Array.init (elements.Length) (elements.GetValue >> createParam columnDataType)
+                                                Array.init elements.Length (elements.GetValue >> createParam columnDataType)
                                             | Some(x) -> [|createParam columnDataType (box x)|]
                                             | None ->    [|createParam columnDataType null|]
 
-                                    let prefix = if i>0 then (sprintf " %s " op) else ""
+                                    let prefix = if i>0 then $" %s{op} " else ""
                                     let paras = extractData data
                                     ~~(sprintf "%s%s" prefix <|
                                         match operator with
-                                        | FSharp.Data.Sql.IsNull -> sprintf "%s IS NULL" column
-                                        | FSharp.Data.Sql.NotNull -> sprintf "%s IS NOT NULL" column
+                                        | FSharp.Data.Sql.IsNull -> $"%s{column} IS NULL"
+                                        | FSharp.Data.Sql.NotNull -> $"%s{column} IS NOT NULL"
                                         | FSharp.Data.Sql.In ->
                                             if Array.isEmpty paras then
                                                 " (1=0) " // nothing is in the empty set
                                             else
                                                 let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
                                                 Array.iter parameters.Add paras
-                                                sprintf "%s IN (%s)" column text
+                                                $"%s{column} IN (%s{text})"
                                         | FSharp.Data.Sql.NestedIn ->
                                             let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
                                             Array.iter parameters.Add innerpars
-                                            sprintf "%s IN (%s)" column innersql
+                                            $"%s{column} IN (%s{innersql})"
                                         | FSharp.Data.Sql.NotIn ->
                                             if Array.isEmpty paras then
                                                 " (1=1) "
                                             else
                                                 let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
                                                 Array.iter parameters.Add paras
-                                                sprintf "%s NOT IN (%s)" column text
+                                                $"%s{column} NOT IN (%s{text})"
                                         | FSharp.Data.Sql.NestedNotIn ->
                                             let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
                                             Array.iter parameters.Add innerpars
-                                            sprintf "%s NOT IN (%s)" column innersql
+                                            $"%s{column} NOT IN (%s{innersql})"
                                         | FSharp.Data.Sql.NestedExists ->
                                             let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
                                             Array.iter parameters.Add innerpars
-                                            sprintf "EXISTS (%s)" innersql
+                                            $"EXISTS (%s{innersql})"
                                         | FSharp.Data.Sql.NestedNotExists ->
                                             let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
                                             Array.iter parameters.Add innerpars
-                                            sprintf "NOT EXISTS (%s)" innersql
+                                            $"NOT EXISTS (%s{innersql})"
                                         | _ ->
                                             let aliasformat = sprintf "%s %s %s" column
                                             match data with 
@@ -967,17 +971,17 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
                             // there's probably a nicer way to do this
                             let rec aux = function
                                 | [x] when preds.Length > 0 ->
-                                    ~~ (sprintf " %s " op)
+                                    ~~ $" %s{op} "
                                     filterBuilder' [x]
                                 | [x] -> filterBuilder' [x]
                                 | x::xs when preds.Length > 0 ->
-                                    ~~ (sprintf " %s " op)
+                                    ~~ $" %s{op} "
                                     filterBuilder' [x]
-                                    ~~ (sprintf " %s " op)
+                                    ~~ $" %s{op} "
                                     aux xs
                                 | x::xs ->
                                     filterBuilder' [x]
-                                    ~~ (sprintf " %s " op)
+                                    ~~ $" %s{op} "
                                     aux xs
                                 | [] -> ()
 
@@ -1013,8 +1017,8 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
                         let k = if k <> "" then k elif baseAlias <> "" then baseAlias else baseTable.Name
                         if v.Count = 0 then   // if no columns exist in the projection then get everything
                             for col in schemaCache.Columns.[cols] |> Seq.map (fun c -> c.Key) do
-                                if singleEntity then yield sprintf "%s.%s as \"%s\"" k col col
-                                else yield sprintf "%s.%s as \"%s.%s\"" k col k col
+                                if singleEntity then yield $"%s{k}.%s{col} as \"%s{col}\""
+                                else yield $"%s{k}.%s{col} as \"%s{k}.%s{col}\""
                         else
                             for colp in v |> Seq.distinct do
                                 match colp with
@@ -1031,16 +1035,16 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
             let columns =
                 let extracolumns =
                     match sqlQuery.Grouping with
-                    | [] -> FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation Oracle.fieldNotationAlias sqlQuery.AggregateOp
+                    | [] -> Utilities.parseAggregates fieldNotation Oracle.fieldNotationAlias sqlQuery.AggregateOp
                     | g  -> 
                         let keys = g |> List.collect fst |> List.map(fun (a,c) ->
                             let fn = fieldNotation a c
                             if not (tmpGrpParams.ContainsKey (a,c)) then
                                 tmpGrpParams.Add((a,c), fn)
                             if sqlQuery.Aliases.Count < 2 then fn
-                            else sprintf "%s as \"%s\"" fn fn)
+                            else $"%s{fn} as \"%s{fn}\"")
                         let aggs = g |> List.collect snd
-                        let res2 = FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation Oracle.fieldNotationAlias aggs |> List.toSeq
+                        let res2 = Utilities.parseAggregates fieldNotation Oracle.fieldNotationAlias aggs |> List.toSeq
                         [String.Join(", ", keys) + (if List.isEmpty aggs || List.isEmpty keys then ""  else ", ") + String.Join(", ", res2)] 
                 match extracolumns with
                 | [] -> selectcolumns
@@ -1077,20 +1081,24 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
                     ~~ (sprintf "%s %s" (fieldNotation alias column) (if not desc then " DESC NULLS LAST" else " ASC NULLS FIRST")))
 
             if isDeleteScript then
-                ~~(sprintf "DELETE FROM %s " baseTable.FullName)
+                ~~ $"DELETE FROM %s{baseTable.FullName} "
             else 
                 // SELECT
                 if sqlQuery.Distinct && sqlQuery.Count then
                     let colsAggrs = columns.Split([|" as "|], StringSplitOptions.None)
+#if NETSTANDARD21
+                    let distColumns = colsAggrs.[0] + (if colsAggrs.Length = 2 then "" else " || ',' || " + String.Join(" || ',' || ", colsAggrs |> Seq.filter(fun c -> c.Contains ',') |> Seq.map(fun c -> c.Substring(c.IndexOf(',')+1))))
+#else
                     let distColumns = colsAggrs.[0] + (if colsAggrs.Length = 2 then "" else " || ',' || " + String.Join(" || ',' || ", colsAggrs |> Seq.filter(fun c -> c.Contains ",") |> Seq.map(fun c -> c.Substring(c.IndexOf(',')+1))))
-                    ~~(sprintf "SELECT COUNT(DISTINCT %s) " distColumns)
-                elif sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columns)
+#endif
+                    ~~ $"SELECT COUNT(DISTINCT %s{distColumns}) "
+                elif sqlQuery.Distinct then ~~ $"SELECT DISTINCT %s{columns} "
                 elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
-                else  ~~(sprintf "SELECT %s " columns)
+                else  ~~ $"SELECT %s{columns} "
                 // FROM
                 let bal = if baseAlias = "" then baseTable.Name else baseAlias
-                ~~(sprintf "FROM %s %s " baseTable.FullName bal)
-                sqlQuery.CrossJoins |> Seq.iter(fun (a,t) -> ~~(sprintf ", %s %s " t.FullName a))
+                ~~ $"FROM %s{baseTable.FullName} %s{bal} "
+                sqlQuery.CrossJoins |> Seq.iter(fun (a,t) -> ~~ $", %s{t.FullName} %s{a} ")
             fromBuilder()
             // WHERE
             if sqlQuery.Filters.Length > 0 then
@@ -1123,16 +1131,16 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
             match sqlQuery.Union with
             | Some(UnionType.UnionAll, suquery, pars) -> 
                 parameters.AddRange pars
-                ~~(sprintf " UNION ALL %s " suquery)
+                ~~ $" UNION ALL %s{suquery} "
             | Some(UnionType.NormalUnion, suquery, pars) -> 
                 parameters.AddRange pars
-                ~~(sprintf " UNION %s " suquery)
+                ~~ $" UNION %s{suquery} "
             | Some(UnionType.Intersect, suquery, pars) -> 
                 parameters.AddRange pars
-                ~~(sprintf " INTERSECT %s " suquery)
+                ~~ $" INTERSECT %s{suquery} "
             | Some(UnionType.Except, suquery, pars) -> 
                 parameters.AddRange pars
-                ~~(sprintf " MINUS %s " suquery)
+                ~~ $" MINUS %s{suquery} "
             | None -> ()
 
             //I think on oracle this will potentially impact the ordering as the row num is generated before any
@@ -1141,10 +1149,10 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
             match sqlQuery.Skip, sqlQuery.Take with
             | ValueSome skip, ValueSome take ->
                 // OFFSET/FETCH requires Oracle 12c or newer
-                ~~(sprintf " OFFSET %i ROWS FETCH NEXT %i ROWS ONLY" skip take)
+                ~~ $" OFFSET %i{skip} ROWS FETCH NEXT %i{take} ROWS ONLY"
                 (sb.ToString(), parameters)
             | ValueSome skip, ValueNone ->
-                ~~(sprintf " OFFSET %i ROWS" skip)
+                ~~ $" OFFSET %i{skip} ROWS"
                 (sb.ToString(), parameters)
             | ValueNone, ValueSome v ->
                 let sql = sprintf "select * from (%s) where ROWNUM <= %i" (sb.ToString()) v
@@ -1175,8 +1183,7 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
                     | Created ->
                         use cmd = createInsertCommand provider con sb e
                         Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
-                        if timeout.IsSome then
-                            cmd.CommandTimeout <- timeout.Value
+                        match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
                         cmd.ExecuteNonQuery() |> ignore
                         let id =
                             // the generated key comes back in the RETURNING INTO output parameter, if one was added
@@ -1194,15 +1201,13 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
                     | Modified fields ->
                         use cmd = createUpdateCommand provider con sb e fields
                         Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
-                        if timeout.IsSome then
-                            cmd.CommandTimeout <- timeout.Value
+                        match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
                         cmd.ExecuteNonQuery() |> ignore
                         e._State <- Unchanged
                     | Delete ->
                         use cmd = createDeleteCommand provider con sb e
                         Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
-                        if timeout.IsSome then
-                            cmd.CommandTimeout <- timeout.Value
+                        match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
                         cmd.ExecuteNonQuery() |> ignore
                         // remove the pk to prevent this attempting to be used again
                         (e :> IColumnHolder).SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[(e :> IColumnHolder).Table.Name], None)
@@ -1236,10 +1241,9 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
                         match e._State with
                         | Created ->
                             task {
-                                use cmd = createInsertCommand provider con sb e :?> System.Data.Common.DbCommand
+                                use cmd = createInsertCommand provider con sb e :?> DbCommand
                                 Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
-                                if timeout.IsSome then
-                                    cmd.CommandTimeout <- timeout.Value
+                                match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
                                 let! _ = cmd.ExecuteNonQueryAsync()
                                 let id =
                                     // the generated key comes back in the RETURNING INTO output parameter, if one was added
@@ -1257,19 +1261,17 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
                             }
                         | Modified fields ->
                             task {
-                                use cmd = createUpdateCommand provider con sb e fields :?> System.Data.Common.DbCommand
+                                use cmd = createUpdateCommand provider con sb e fields :?> DbCommand
                                 Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
-                                if timeout.IsSome then
-                                    cmd.CommandTimeout <- timeout.Value
+                                match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
                                 let! c = cmd.ExecuteNonQueryAsync()
                                 e._State <- Unchanged
                             }
                         | Delete ->
                             task {
-                                use cmd = createDeleteCommand provider con sb e :?> System.Data.Common.DbCommand
+                                use cmd = createDeleteCommand provider con sb e :?> DbCommand
                                 Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
-                                if timeout.IsSome then
-                                    cmd.CommandTimeout <- timeout.Value
+                                match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
                                 let! c = cmd.ExecuteNonQueryAsync()
                                 // remove the pk to prevent this attempting to be used again
                                 (e :> IColumnHolder).SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[(e :> IColumnHolder).Table.Name], None)

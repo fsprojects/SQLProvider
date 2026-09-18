@@ -16,7 +16,7 @@ open StandardExtensions
 
 type internal MSAccessProvider(contextSchemaPath) =
     let schemaCache = SchemaCache.LoadOrEmpty(contextSchemaPath)
-    let myLock = new Object()
+    let myLock = Object()
 
     let mutable typeMappings = []
     let mutable findClrType : (string -> TypeMapping option)  = fun _ -> failwith "!"
@@ -25,18 +25,18 @@ type internal MSAccessProvider(contextSchemaPath) =
 
     let fieldNotationAlias(al:alias,col:SqlColumnType) =
         let aliasSprint =
-            match String.IsNullOrEmpty(al) with
-            | true -> sprintf "[%s]"
-            | false -> sprintf "[%s_%s]" al
+            if String.IsNullOrEmpty(al) then sprintf "[%s]" else sprintf "[%s_%s]" al
         Utilities.genericAliasNotation aliasSprint col
 
     let createTypeMappings (con:OleDbConnection) =
         if con.State <> ConnectionState.Open then con.Open()
-        let dt = con.GetSchema("DataTypes")
+        let dt = con.GetSchema "DataTypes"
 
         let getDbType(providerType:int) =
-            let p = OleDbParameter()
-            p.OleDbType <- (Enum.ToObject(typeof<OleDbType>, providerType) :?> OleDbType)
+            let p =
+                OleDbParameter(
+                    OleDbType = (Enum.ToObject(typeof<OleDbType>, providerType) :?> OleDbType)
+                )
             p.DbType
 
         let getClrType (input:string) =
@@ -79,13 +79,12 @@ type internal MSAccessProvider(contextSchemaPath) =
     let createInsertCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) =
         let (~~) (t:string) = sb.Append t |> ignore
 
-        let cmd = new OleDbCommand()
-        cmd.Connection <- con :?> OleDbConnection
+        let cmd = new OleDbCommand(Connection = (con :?> OleDbConnection))
 
         let columnNames, values =
             (([],0),entity.ColumnValues)
             ||> Seq.fold(fun (out,i) (k,v) ->
-                let name = sprintf "@param%i" i
+                let name = $"@param%i{i}"
                 let p = OleDbParameter(name,v)
                 (k,p)::out,i+1)
             |> fun (x,_)-> x
@@ -98,14 +97,13 @@ type internal MSAccessProvider(contextSchemaPath) =
             (entity :> IColumnHolder).Table.Name
             (String.concat "," columnNames)
             (String.concat "," (values |> Array.map(fun p -> p.ParameterName))))
-        cmd.Parameters.AddRange(values)
+        cmd.Parameters.AddRange values
         cmd.CommandText <- sb.ToString()
         cmd
 
     let createUpdateCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) (changedColumns: string list) =
         let (~~) (t:string) = sb.Append t |> ignore
-        let cmd = new OleDbCommand()
-        cmd.Connection <- con :?> OleDbConnection
+        let cmd = new OleDbCommand(Connection = (con :?> OleDbConnection))
         let pk =
             match schemaCache.PrimaryKeys.TryGetValue (entity :> IColumnHolder).Table.FullName with
             | false, _ ->
@@ -126,7 +124,7 @@ type internal MSAccessProvider(contextSchemaPath) =
         let data =
             (([],0),changedColumns)
             ||> List.fold(fun (out,i) col ->
-                let name = sprintf "@param%i" i
+                let name = $"@param%i{i}"
                 let p =
                     match (entity :> IColumnHolder).GetColumnOption<obj> col with
                     | Some v -> OleDbParameter(name,v)
@@ -141,8 +139,8 @@ type internal MSAccessProvider(contextSchemaPath) =
         | ks -> 
             ~~(sprintf "UPDATE [%s] SET %s WHERE "
                 ((entity :> IColumnHolder).Table.Name.Replace("\"", ""))
-                ((String.concat "," (data |> Array.map(fun (c,p) -> sprintf "%s = %s" c p.ParameterName )) )))
-            ~~(String.concat " AND " (ks |> List.mapi(fun i k -> (sprintf "%s = @pk%i" k i))))
+                ((String.concat "," (data |> Array.map(fun (c,p) -> $"%s{c} = %s{p.ParameterName}" )) )))
+            ~~(String.concat " AND " (ks |> List.mapi(fun i k -> $"%s{k} = @pk%i{i}")))
 
         cmd.Parameters.AddRange(data |> Array.map snd)
         pkValues |> List.iteri(fun i pkValue ->
@@ -154,8 +152,7 @@ type internal MSAccessProvider(contextSchemaPath) =
 
     let createDeleteCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) =
         let (~~) (t:string) = sb.Append t |> ignore
-        let cmd = new OleDbCommand()
-        cmd.Connection <- con :?> OleDbConnection
+        let cmd = new OleDbCommand(Connection = (con :?> OleDbConnection))
         sb.Clear() |> ignore
         let haspk = schemaCache.PrimaryKeys.ContainsKey((entity :> IColumnHolder).Table.FullName)
         let pk = if haspk then schemaCache.PrimaryKeys.[(entity :> IColumnHolder).Table.FullName] else []
@@ -172,7 +169,7 @@ type internal MSAccessProvider(contextSchemaPath) =
         | [] -> ()
         | ks -> 
             ~~(sprintf "DELETE FROM [%s] WHERE " ((entity :> IColumnHolder).Table.Name.Replace("\"", "")))
-            ~~(String.concat " AND " (ks |> List.mapi(fun i k -> (sprintf "%s = @id%i" k i))))
+            ~~(String.concat " AND " (ks |> List.mapi(fun i k -> $"%s{k} = @id%i{i}")))
 
         cmd.CommandText <- sb.ToString()
         cmd
@@ -209,9 +206,11 @@ type internal MSAccessProvider(contextSchemaPath) =
         member __.CreateCommand(connection,commandText) = upcast new OleDbCommand(commandText,connection:?>OleDbConnection)
 
         member __.CreateCommandParameter(param, value) =
-            let p = OleDbParameter(param.Name,value)
-            p.DbType <- param.TypeMapping.DbType
-            p.Direction <- param.Direction
+            let p =
+                OleDbParameter(param.Name,value,
+                    DbType = param.TypeMapping.DbType,
+                    Direction = param.Direction
+                )
             ValueOption.iter (fun l -> p.Size <- l) param.Length
             upcast p
 
@@ -265,14 +264,14 @@ type internal MSAccessProvider(contextSchemaPath) =
                                   TypeInfo = 
                                     try 
                                         let ti = 
-                                            if row.IsNull("CHARACTER_MAXIMUM_LENGTH") then ""
+                                            if row.IsNull "CHARACTER_MAXIMUM_LENGTH" then ""
                                             else row.["CHARACTER_MAXIMUM_LENGTH"].ToString()
                                         if String.IsNullOrEmpty ti then ValueNone
                                         else ValueSome ("Max length: " + ti)
                                     with :? KeyNotFoundException -> ValueNone
                                 }
                             (col.Name,col)
-                        |_ -> failwith "failed to map datatypes")
+                        |None -> failwith "failed to map datatypes")
                     |> Map.ofSeq
 
                 // only add to PK lookup if it's a single pk - no support for composite keys yet
@@ -304,8 +303,8 @@ type internal MSAccessProvider(contextSchemaPath) =
             (children,parents))
 
         member __.GetSprocs(_) = []
-        member __.GetIndividualsQueryText(table,amount) = sprintf "SELECT TOP %i * FROM [%s]" amount table.Name
-        member __.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM [%s] WHERE [%s] = @id" table.Name column
+        member __.GetIndividualsQueryText(table,amount) = $"SELECT TOP %i{amount} * FROM [%s{table.Name}]"
+        member __.GetIndividualQueryText(table,column) = $"SELECT * FROM [%s{table.Name}] WHERE [%s{column}] = @id"
 
         member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript, con) =
             let parameters = ResizeArray<_>()
@@ -339,9 +338,7 @@ type internal MSAccessProvider(contextSchemaPath) =
                     filterBuilder (~~) [c]
                     sb.ToString()
                 let colSprint =
-                    match String.IsNullOrEmpty(al) with
-                    | true -> sprintf "[%s]"
-                    | false -> sprintf "[%s].[%s]" al
+                    if String.IsNullOrEmpty(al) then sprintf "[%s]" else sprintf "[%s].[%s]" al
                 match c with
                 // Custom database spesific overrides for canonical function:
                 | SqlColumnType.CanonicalOperation(cf,col) ->
@@ -358,47 +355,47 @@ type internal MSAccessProvider(contextSchemaPath) =
                     | SubstringWithLength(SqlConstant startPos,SqlCol(al2, col2)) -> sprintf "Mid(%s, %s, %s)" column (fieldParam startPos) (fieldNotation al2 col2)
                     | SubstringWithLength(SqlCol(al2, col2), SqlConstant strLen) -> sprintf "Mid(%s, %s, %s)" column (fieldNotation al2 col2) (fieldParam strLen)
                     | SubstringWithLength(SqlCol(al2, col2), SqlCol(al3, col3)) -> sprintf "Mid(%s, %s, %s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
-                    | Trim -> sprintf "Trim(%s)" column
-                    | Length -> sprintf "Len(%s)" column
+                    | Trim -> $"Trim(%s{column})"
+                    | Length -> $"Len(%s{column})"
                     | IndexOf(SqlConstant search) -> sprintf "InStr(%s,%s)" (fieldParam search) column
                     | IndexOf(SqlCol(al2, col2)) -> sprintf "InStr(%s,%s)" (fieldNotation al2 col2) column
                     | IndexOfStart(SqlConstant search, SqlConstant startPos) -> sprintf "InStr(%s,%s,%s)" (fieldParam startPos) (fieldParam search) column
                     | IndexOfStart(SqlConstant search, SqlCol(al2, col2)) -> sprintf "InStr(%s,%s,%s)" (fieldNotation al2 col2) (fieldParam search) column
                     | IndexOfStart(SqlCol(al2, col2), SqlConstant startPos) -> sprintf "InStr(%s,%s,%s)" (fieldParam startPos) (fieldNotation al2 col2) column
                     | IndexOfStart(SqlCol(al2, col2), SqlCol(al3, col3)) -> sprintf "InStr(%s,%s,%s)" (fieldNotation al3 col3) (fieldNotation al2 col2) column
-                    | ToUpper -> sprintf "UCase(%s)" column
-                    | ToLower -> sprintf "LCase(%s)" column
-                    | CastVarchar -> sprintf "CStr(%s)" column
-                    | CastInt -> sprintf "Val(%s)" column
+                    | ToUpper -> $"UCase(%s{column})"
+                    | ToLower -> $"LCase(%s{column})"
+                    | CastVarchar -> $"CStr(%s{column})"
+                    | CastInt -> $"Val(%s{column})"
                     // Date functions
-                    | Date -> sprintf "DateValue(Format(%s, \"yyyy-mm-dd\"))" column
-                    | Year -> sprintf "Year(%s)" column
-                    | Month -> sprintf "Month(%s)" column
-                    | Day -> sprintf "Day(%s)" column
-                    | Hour -> sprintf "Hour(%s)" column
-                    | Minute -> sprintf "Minute(%s)" column
-                    | Second -> sprintf "Second(%s)" column
+                    | Date -> $"DateValue(Format(%s{column}, \"yyyy-mm-dd\"))"
+                    | Year -> $"Year(%s{column})"
+                    | Month -> $"Month(%s{column})"
+                    | Day -> $"Day(%s{column})"
+                    | Hour -> $"Hour(%s{column})"
+                    | Minute -> $"Minute(%s{column})"
+                    | Second -> $"Second(%s{column})"
                     | AddYears(SqlConstant x) -> sprintf "DateAdd(\"yyyy\", %s, %s)" (fieldParam x) column
                     | AddYears(SqlCol(al2, col2)) -> sprintf "DateAdd(\"yyyy\", %s, %s)" (fieldNotation al2 col2) column
-                    | AddMonths x -> sprintf "DateAdd(\"m\", %d, %s)" x column
+                    | AddMonths x -> $"DateAdd(\"m\", %d{x}, %s{column})"
                     | AddDays(SqlConstant x) -> sprintf "DateAdd(\"d\", %s, %s)" (fieldParam x) column // SQL ignores decimal part :-(
                     | AddDays(SqlCol(al2, col2)) -> sprintf "DateAdd(\"d\", %s, %s)" (fieldNotation al2 col2) column
-                    | AddHours x -> sprintf "DateAdd(\"h\", %f, %s)" x column
+                    | AddHours x -> $"DateAdd(\"h\", %f{x}, %s{column})"
                     | AddMinutes(SqlConstant x) -> sprintf "DateAdd(\"n\", %s, %s)" (fieldParam x) column
                     | AddMinutes(SqlCol(al2, col2)) -> sprintf "DateAdd(\"n\", %s, %s)" (fieldNotation al2 col2) column
-                    | AddSeconds x -> sprintf "DateAdd(\"s\", %f, %s)" x column
+                    | AddSeconds x -> $"DateAdd(\"s\", %f{x}, %s{column})"
                     | DateDiffDays(SqlCol(al2, col2)) -> sprintf "DateDiff('d',%s,%s)" (fieldNotation al2 col2) column
                     | DateDiffSecs(SqlCol(al2, col2)) -> sprintf "DateDiff('s',%s,%s)" (fieldNotation al2 col2) column
                     | DateDiffDays(SqlConstant x) -> sprintf "DateDiff('d',%s,%s)" (fieldParam x) column
                     | DateDiffSecs(SqlConstant x) -> sprintf "DateDiff('s',%s,%s)" (fieldParam x) column
                     // Math functions
-                    | Truncate -> sprintf "Fix(%s)" column
-                    | Ceil -> sprintf "-Int(-(%s))" column
-                    | Floor -> sprintf "Int(%s)" column
-                    | Sqrt -> sprintf "Sqr(%s)" column
-                    | ATan -> sprintf "Atn(%s)" column
-                    | ASin -> sprintf "Atn(%s / Sqr(1 - %s * %s))" column column column
-                    | ACos -> sprintf "Atn(-%s / Sqr(-%s * %s + 1)) + 2 * Atn(1)" column column column
+                    | Truncate -> $"Fix(%s{column})"
+                    | Ceil -> $"-Int(-(%s{column}))"
+                    | Floor -> $"Int(%s{column})"
+                    | Sqrt -> $"Sqr(%s{column})"
+                    | ATan -> $"Atn(%s{column})"
+                    | ASin -> $"Atn(%s{column} / Sqr(1 - %s{column} * %s{column}))"
+                    | ACos -> $"Atn(-%s{column} / Sqr(-%s{column} * %s{column} + 1)) + 2 * Atn(1)"
                     | BasicMathOfColumns(o, a, c) -> sprintf "(%s %s %s)" column (o.Replace("||", "&")) (fieldNotation a c)
                     | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "(%s %s %s)" column (o.Replace("||", "&")) (fieldParam par)
                     | BasicMathLeft(o, par) when (par :? String || par :? Char) -> sprintf "(%s %s %s)" (fieldParam par) (o.Replace("||", "&")) column
@@ -443,36 +440,36 @@ type internal MSAccessProvider(contextSchemaPath) =
                                             | Some(x) -> [|createParam columnDataType (box x)|]
                                             | None ->    [|createParam columnDataType DBNull.Value|]
 
-                                    let prefix = if i>0 then (sprintf " %s " op) else ""
+                                    let prefix = if i>0 then $" %s{op} " else ""
                                     let paras = extractData data
                                     ~~(sprintf "%s%s" prefix <|
                                         match operator with
-                                        | FSharp.Data.Sql.IsNull -> sprintf "%s IS NULL" column
-                                        | FSharp.Data.Sql.NotNull -> sprintf "%s IS NOT NULL" column
+                                        | FSharp.Data.Sql.IsNull -> $"%s{column} IS NULL"
+                                        | FSharp.Data.Sql.NotNull -> $"%s{column} IS NOT NULL"
                                         | FSharp.Data.Sql.In ->
                                             let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
                                             Array.iter parameters.Add paras
-                                            sprintf "%s IN (%s)" column text
+                                            $"%s{column} IN (%s{text})"
                                         | FSharp.Data.Sql.NestedIn when data.IsSome ->
                                             let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
                                             Array.iter parameters.Add innerpars
-                                            sprintf "%s IN (%s)" column innersql
+                                            $"%s{column} IN (%s{innersql})"
                                         | FSharp.Data.Sql.NotIn ->
                                             let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
                                             Array.iter parameters.Add paras
-                                            sprintf "%s NOT IN (%s)" column text
+                                            $"%s{column} NOT IN (%s{text})"
                                         | FSharp.Data.Sql.NestedNotIn when data.IsSome ->
                                             let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
                                             Array.iter parameters.Add innerpars
-                                            sprintf "%s NOT IN (%s)" column innersql
+                                            $"%s{column} NOT IN (%s{innersql})"
                                         | FSharp.Data.Sql.NestedExists -> 
                                             let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
                                             Array.iter parameters.Add innerpars
-                                            sprintf "EXISTS (%s)" innersql
+                                            $"EXISTS (%s{innersql})"
                                         | FSharp.Data.Sql.NestedNotExists -> 
                                             let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
                                             Array.iter parameters.Add innerpars
-                                            sprintf "NOT EXISTS (%s)" innersql
+                                            $"NOT EXISTS (%s{innersql})"
                                         | _ ->
                                             let aliasformat = sprintf "%s %s %s" column
                                             match data with 
@@ -487,17 +484,17 @@ type internal MSAccessProvider(contextSchemaPath) =
                             // there's probably a nicer way to do this
                             let rec aux = function
                                 | [x] when preds.Length > 0 ->
-                                    ~~ (sprintf " %s " op)
+                                    ~~ $" %s{op} "
                                     filterBuilder' [x]
                                 | [x] -> filterBuilder' [x]
                                 | x::xs when preds.Length > 0 ->
-                                    ~~ (sprintf " %s " op)
+                                    ~~ $" %s{op} "
                                     filterBuilder' [x]
-                                    ~~ (sprintf " %s " op)
+                                    ~~ $" %s{op} "
                                     aux xs
                                 | x::xs ->
                                     filterBuilder' [x]
-                                    ~~ (sprintf " %s " op)
+                                    ~~ $" %s{op} "
                                     aux xs
                                 | [] -> ()
 
@@ -532,14 +529,14 @@ type internal MSAccessProvider(contextSchemaPath) =
                         let k = if k <> "" then k elif baseAlias <> "" then baseAlias else baseTable.Name
                         if v.Count = 0 then   // if no columns exist in the projection then get everything
                             for col in schemaCache.Columns.[cols] |> Seq.map (fun c -> c.Key) do
-                                if singleEntity then yield sprintf "[%s].[%s] as [%s]" k col col
-                                else yield sprintf "[%s].[%s] as [%s_%s]" k col k col
+                                if singleEntity then yield $"[%s{k}].[%s{col}] as [%s{col}]"
+                                else yield $"[%s{k}].[%s{col}] as [%s{k}_%s{col}]"
                         else
                             for colp in v |> Seq.distinct do
                                 match colp with
                                 | EntityColumn col ->
-                                    if singleEntity then yield sprintf "[%s].[%s] as [%s]" k col col
-                                    else yield sprintf "[%s].[%s] as [%s_%s]" k col k col // F# makes this so easy :)
+                                    if singleEntity then yield $"[%s{k}].[%s{col}] as [%s{col}]"
+                                    else yield $"[%s{k}].[%s{col}] as [%s{k}_%s{col}]" // F# makes this so easy :)
                                 | OperationColumn(n,op) ->
                                     yield sprintf "%s as [%s]" (fieldNotation k op) n|])
 
@@ -550,16 +547,16 @@ type internal MSAccessProvider(contextSchemaPath) =
             let columns =
                 let extracolumns =
                     match sqlQuery.Grouping with
-                    | [] -> FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias sqlQuery.AggregateOp
+                    | [] -> Utilities.parseAggregates fieldNotation fieldNotationAlias sqlQuery.AggregateOp
                     | g  -> 
                         let keys = g |> List.collect fst |> List.map(fun (a,c) ->
                             let fn = fieldNotation a c
                             if not (tmpGrpParams.ContainsKey (a,c)) then
                                 tmpGrpParams.Add((a,c), fn)
                             if sqlQuery.Aliases.Count < 2 then fn
-                            else sprintf "%s as [%s]" fn fn)
+                            else $"%s{fn} as [%s{fn}]")
                         let aggs = g |> List.collect snd
-                        let res2 = FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias aggs |> List.toSeq
+                        let res2 = Utilities.parseAggregates fieldNotation fieldNotationAlias aggs |> List.toSeq
                         [String.Join(", ", keys) + (if List.isEmpty aggs || List.isEmpty keys then ""  else ", ") + String.Join(", ", res2)] 
                 match extracolumns with
                 | [] when String.IsNullOrEmpty(selectcolumns) -> "*"
@@ -607,18 +604,22 @@ type internal MSAccessProvider(contextSchemaPath) =
                 // SELECT
                 if sqlQuery.Distinct && sqlQuery.Count then
                     let colsAggrs = columns.Split([|" as "|], StringSplitOptions.None)
+#if NETSTANDARD21
+                    let distColumns = colsAggrs.[0] + (if colsAggrs.Length = 2 then "" else " & ',' & " + String.Join(" & ',' & ", colsAggrs |> Seq.filter(fun c -> c.Contains ',') |> Seq.map(fun c -> c.Substring(c.IndexOf(',')+1))))
+#else
                     let distColumns = colsAggrs.[0] + (if colsAggrs.Length = 2 then "" else " & ',' & " + String.Join(" & ',' & ", colsAggrs |> Seq.filter(fun c -> c.Contains ",") |> Seq.map(fun c -> c.Substring(c.IndexOf(',')+1))))
-                    ~~(sprintf "SELECT COUNT(DISTINCT %s) " distColumns)
-                elif sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s%s " (match sqlQuery.Take with ValueSome v -> sprintf "TOP %i " v | ValueNone -> "") columns)
+#endif
+                    ~~ $"SELECT COUNT(DISTINCT %s{distColumns}) "
+                elif sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s%s " (match sqlQuery.Take with ValueSome v -> $"TOP %i{v} " | ValueNone -> "") columns)
                 elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
-                else  ~~(sprintf "SELECT %s%s " (match sqlQuery.Take with ValueSome v -> sprintf "TOP %i " v | ValueNone -> "")   columns)
+                else  ~~(sprintf "SELECT %s%s " (match sqlQuery.Take with ValueSome v -> $"TOP %i{v} " | ValueNone -> "")   columns)
                 // FROM
 
                 let bal = if baseAlias = "" then baseTable.Name else baseAlias
                 ~~(sprintf "FROM %s[%s] as [%s] " (String('(',numLinks)) (baseTable.Name.Replace("\"","")) bal)
                 sqlQuery.CrossJoins |> Seq.iter(fun (a,t) -> ~~(sprintf ", [%s] as [%s] " (t.Name.Replace("\"","")) a))
 
-            fromBuilder(numLinks)
+            fromBuilder numLinks
             // WHERE
             if sqlQuery.Filters.Length > 0 then
                 // each filter is effectively the entire contents of each where clause in the linq query,
@@ -650,16 +651,16 @@ type internal MSAccessProvider(contextSchemaPath) =
             match sqlQuery.Union with
             | Some(UnionType.UnionAll, suquery, pars) -> 
                 parameters.AddRange pars
-                ~~(sprintf " UNION ALL %s " suquery)
+                ~~ $" UNION ALL %s{suquery} "
             | Some(UnionType.NormalUnion, suquery, pars) -> 
                 parameters.AddRange pars
-                ~~(sprintf " UNION %s " suquery)
+                ~~ $" UNION %s{suquery} "
             | Some(UnionType.Intersect, suquery, pars) -> 
                 parameters.AddRange pars
-                ~~(sprintf " INTERSECT %s " suquery)
+                ~~ $" INTERSECT %s{suquery} "
             | Some(UnionType.Except, suquery, pars) -> 
                 parameters.AddRange pars
-                ~~(sprintf " EXCEPT %s " suquery)
+                ~~ $" EXCEPT %s{suquery} "
             | None -> ()
 
             let sql = sb.ToString()
@@ -691,8 +692,7 @@ type internal MSAccessProvider(contextSchemaPath) =
                             use cmd = createInsertCommand con sb e
                             cmd.Transaction <- trnsx :?> OleDbTransaction
                             Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
-                            if timeout.IsSome then
-                                cmd.CommandTimeout <- timeout.Value
+                            match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
                             cmd.ExecuteNonQuery() |> ignore
                             // Jet/ACE doesn't support multi-statement commands, so the identity is fetched separately
                             use idCmd = new OleDbCommand("SELECT @@IDENTITY", con :?> OleDbConnection, trnsx :?> OleDbTransaction)
@@ -703,16 +703,14 @@ type internal MSAccessProvider(contextSchemaPath) =
                             use cmd = createUpdateCommand con sb e fields
                             cmd.Transaction <- trnsx :?> OleDbTransaction
                             Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
-                            if timeout.IsSome then
-                                cmd.CommandTimeout <- timeout.Value
+                            match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
                             cmd.ExecuteNonQuery() |> ignore
                             e._State <- Unchanged
                         | Delete ->
                             use cmd = createDeleteCommand con sb e
                             cmd.Transaction <- trnsx :?> OleDbTransaction
                             Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
-                            if timeout.IsSome then
-                                cmd.CommandTimeout <- timeout.Value
+                            match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
                             cmd.ExecuteNonQuery() |> ignore
                             // remove the pk to prevent this attempting to be used again
                             (e :> IColumnHolder).SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[(e :> IColumnHolder).Table.FullName], None)
@@ -753,8 +751,7 @@ type internal MSAccessProvider(contextSchemaPath) =
                                     use cmd = createInsertCommand con sb e
                                     cmd.Transaction <- trnsx :?> OleDbTransaction
                                     Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
-                                    if timeout.IsSome then
-                                        cmd.CommandTimeout <- timeout.Value
+                                    match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
                                     let! _ = cmd.ExecuteNonQueryAsync()
                                     // Jet/ACE doesn't support multi-statement commands, so the identity is fetched separately
                                     use idCmd = new OleDbCommand("SELECT @@IDENTITY", con :?> OleDbConnection, trnsx :?> OleDbTransaction)
@@ -767,8 +764,7 @@ type internal MSAccessProvider(contextSchemaPath) =
                                     use cmd = createUpdateCommand con sb e fields
                                     cmd.Transaction <- trnsx :?> OleDbTransaction
                                     Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
-                                    if timeout.IsSome then
-                                        cmd.CommandTimeout <- timeout.Value
+                                    match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
                                     let! c = cmd.ExecuteNonQueryAsync()
                                     e._State <- Unchanged
                                 }
@@ -777,8 +773,7 @@ type internal MSAccessProvider(contextSchemaPath) =
                                     use cmd = createDeleteCommand con sb e
                                     cmd.Transaction <- trnsx :?> OleDbTransaction
                                     Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
-                                    if timeout.IsSome then
-                                        cmd.CommandTimeout <- timeout.Value
+                                    match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
                                     let! c = cmd.ExecuteNonQueryAsync()
                                     // remove the pk to prevent this attempting to be used again
                                     (e :> IColumnHolder).SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[(e :> IColumnHolder).Table.FullName], None)

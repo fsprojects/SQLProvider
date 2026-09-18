@@ -4,6 +4,8 @@ open System
 open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Data
+open System.Data.Common
+open System.Reflection
 open FSharp.Data.Sql
 open FSharp.Data.Sql.Transactions
 open FSharp.Data.Sql.Schema
@@ -30,14 +32,14 @@ module MySql =
 
     let findType name =
         match assembly.Value with
-        | Choice1Of2(assembly) ->
+        | Choice1Of2 assembly ->
             let types, err =
                 try assembly.GetTypes(), None
-                with | :? System.Reflection.ReflectionTypeLoadException as e ->
+                with | :? ReflectionTypeLoadException as e ->
                     let msgs = e.LoaderExceptions |> Seq.map(fun e -> e.GetBaseException().Message) |> Seq.distinct
                     let details = "Details: " + Environment.NewLine + String.Join(Environment.NewLine, msgs)
                     let platform = Reflection.getPlatform(Reflection.execAssembly.Force())
-                    let errmsg = (e.Message + Environment.NewLine + details + (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else ""))
+                    let errmsg = (e.Message + Environment.NewLine + details + (if platform <> "" then $"{Environment.NewLine}Current execution platform: {platform}" else ""))
                     if e.Types.Length = 0 then
                         failwith errmsg
                     else e.Types, Some errmsg
@@ -82,7 +84,7 @@ module MySql =
             (conn :?> MySqlConnection).GetSchema(name, args)
 #endif
         with
-        | :?  System.Reflection.TargetInvocationException as re when ((not (isNull re.InnerException)) && re.InnerException :? System.NotSupportedException) ->
+        | :?  TargetInvocationException as re when ((not (isNull re.InnerException)) && re.InnerException :? NotSupportedException) ->
             let cont = connectionType.Value
             let schemacoll = cont.GetMethod("GetSchemaCollection",[|typeof<string>; typeof<string[]>|]).Invoke(conn,[|name; args|])
             let collType = schemacoll.GetType()
@@ -105,7 +107,7 @@ module MySql =
                             let cn = c.GetType().GetProperty("Name").GetValue(c,null) :?> string
                             let r = prop.Invoke(row, [| cn |])
                             if not (isNull r) then yield r
-                            else yield box(DBNull.Value)
+                            else yield box DBNull.Value
                     |]
                 dt.Rows.Add(xs) |> ignore
             dt
@@ -116,8 +118,8 @@ module MySql =
     let mutable findDbType : (string -> TypeMapping option)  = fun _ -> failwith "!"
 
     let createCommandParameter sprocCommand (param:QueryParameter) value =
-        let mapping = if (not(isNull value)) && (not sprocCommand) then (findClrType (value.GetType().ToString())) else None
-        let value = if isNull value then (box System.DBNull.Value) else value
+        let mapping = if not (isNull value || sprocCommand) then (findClrType (value.GetType().ToString())) else None
+        let value = if isNull value then (box DBNull.Value) else value
 
 #if REFLECTIONLOAD
         let parameterType =
@@ -131,10 +133,11 @@ module MySql =
         p.DbType <- (defaultArg mapping param.TypeMapping).DbType
         param.TypeMapping.ProviderType |> ValueOption.iter (fun pt -> mySqlDbTypeSetter.Invoke(p, [|pt|]) |> ignore)
 #else
-        let pm = new MySqlParameter(param.Name, value)
-        pm.Direction <-  param.Direction
-
-        pm.DbType <- (defaultArg mapping param.TypeMapping).DbType
+        let pm =
+            MySqlParameter(param.Name, value,
+                Direction = param.Direction,
+                DbType = (defaultArg mapping param.TypeMapping).DbType
+            )
         
         param.TypeMapping.ProviderType |> ValueOption.iter (fun pt -> pm.MySqlDbType <- Enum.ToObject(typeof<MySqlDbType>, pt) :?> MySqlDbType)
         let p = pm :> IDbDataParameter
@@ -153,13 +156,15 @@ module MySql =
 
     let fieldNotationAlias(al:alias,col:SqlColumnType) =
         let aliasSprint =
-            match String.IsNullOrEmpty(al) with
-            | true -> sprintf "'`%s`'"
-            | false -> sprintf "'`%s`.`%s`'" al
+            if String.IsNullOrEmpty(al) then sprintf "'`%s`'" else sprintf "'`%s`.`%s`'" al
         Utilities.genericAliasNotation aliasSprint col
 
     let ripQuotes (str:String) =
-        (if str.Contains(" ") then str.Replace("\"","") else str)
+#if NETSTANDARD21
+        (if str.Contains ' ' then str.Replace("\"","") else str)
+#else
+        (if str.Contains " " then str.Replace("\"","") else str)
+#endif
 
     let createTypeMappings con =
         let dt = getSchema "DataTypes" [||] con
@@ -173,8 +178,10 @@ module MySql =
             oracleDbTypeSetter.Invoke(p, [|providerType|]) |> ignore
             dbTypeGetter.Invoke(p, [||]) :?> DbType
 #else
-            let p = new MySqlParameter()
-            p.MySqlDbType <- Enum.ToObject(typeof<MySqlDbType>, providerType) :?> MySqlDbType
+            let p =
+                MySqlParameter(
+                    MySqlDbType = (Enum.ToObject(typeof<MySqlDbType>, providerType) :?> MySqlDbType)
+                )
             p.DbType
 #endif
 
@@ -220,22 +227,22 @@ module MySql =
         try
             Activator.CreateInstance(connectionType.Value,[|box connectionString|]) :?> IDbConnection
         with
-        | :? System.Reflection.ReflectionTypeLoadException as ex ->
+        | :? ReflectionTypeLoadException as ex ->
             let errorfiles = ex.LoaderExceptions |> Array.map(fun e -> e.GetBaseException().Message) |> Seq.distinct |> Seq.toArray
             let msg = ex.GetBaseException().Message + "\r\n" + String.Join("\r\n", errorfiles)
-            raise(System.Reflection.TargetInvocationException(msg, ex))
-        | :? System.Reflection.TargetInvocationException as ex when ((not(isNull ex.InnerException)) && ex.InnerException :? DllNotFoundException) ->
+            raise(TargetInvocationException(msg, ex))
+        | :? TargetInvocationException as ex when ((not(isNull ex.InnerException)) && ex.InnerException :? DllNotFoundException) ->
             let platform = Reflection.getPlatform(Reflection.execAssembly.Force())
             let msg = ex.GetBaseException().Message + ", Path: " + (Reflection.listResolutionFullPaths resolutionPath) +
-                        (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else "")
-            raise(System.Reflection.TargetInvocationException(msg, ex))
-        | :? System.TypeInitializationException as te when (te.InnerException :? System.Reflection.TargetInvocationException) ->
+                        (if platform <> "" then $"{Environment.NewLine}Current execution platform: {platform}" else "")
+            raise(TargetInvocationException(msg, ex))
+        | :? TypeInitializationException as te when (te.InnerException :? TargetInvocationException) ->
             let platform = Reflection.getPlatform(Reflection.execAssembly.Force())
-            let ex = te.InnerException :?> System.Reflection.TargetInvocationException
+            let ex = te.InnerException :?> TargetInvocationException
             let msg = ex.GetBaseException().Message + ", Path: " + (Reflection.listResolutionFullPaths resolutionPath) +
-                        (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else "")
-            raise(System.Reflection.TargetInvocationException(msg, ex.InnerException))
-        | :? System.TypeInitializationException as te when not(isNull te.InnerException) -> raise (te.GetBaseException())
+                        (if platform <> "" then $"{Environment.NewLine}Current execution platform: {platform}" else "")
+            raise(TargetInvocationException(msg, ex.InnerException))
+        | :? TypeInitializationException as te when not(isNull te.InnerException) -> raise (te.GetBaseException())
 #else
         new MySqlConnection(connectionString) :> IDbConnection
 #endif
@@ -257,9 +264,9 @@ module MySql =
 
     let getSprocName (row:DataRow) =
         let sprocSchema =
-            if row.Table.Columns.Contains("specific_schema") then row.["specific_schema"].ToString()
-            elif row.Table.Columns.Contains("routine_schema") then row.["routine_schema"].ToString()
-            elif schemas.Length = 1 then schemas |> Seq.head
+            if row.Table.Columns.Contains "specific_schema" then row.["specific_schema"].ToString()
+            elif row.Table.Columns.Contains "routine_schema" then row.["routine_schema"].ToString()
+            elif schemas.Length = 1 then schemas |> Array.head
             else ""
         let procName = (Sql.dbUnboxWithDefault<string> (Guid.NewGuid().ToString()) row.["specific_name"])
         { ProcName = procName; Owner = sprocSchema; PackageName = String.Empty; }
@@ -337,9 +344,10 @@ module MySql =
                 let! _ = reader.NextResultAsync()
                 return result
             | _ ->
-                match outps |> Array.tryFind (fun (_,p) -> p.ParameterName = retCol.Name) with
-                | Some(_,p) -> return ScalarResultSet(p.ParameterName, readParameter p)
-                | None -> return failwithf "Excepted return column %s but could not find it in the parameter set" retCol.Name
+                return
+                    match outps |> Array.tryFind (fun (_,p) -> p.ParameterName = retCol.Name) with
+                    | Some(_,p) -> ScalarResultSet(p.ParameterName, readParameter p)
+                    | None -> failwithf "Excepted return column %s but could not find it in the parameter set" retCol.Name
         }
 
     let executeSprocCommandCommon (inputParams:QueryParameter []) (retCols:QueryParameter[]) (values:obj[]) =
@@ -385,7 +393,7 @@ module MySql =
             use reader = com.ExecuteReader()
             Set(cols |> Array.map (processReturnColumn reader outps))
 
-    let executeSprocCommandAsync (com:System.Data.Common.DbCommand) (inputParams:QueryParameter[]) (retCols:QueryParameter[]) (values:obj[]) =
+    let executeSprocCommandAsync (com:DbCommand) (inputParams:QueryParameter[]) (retCols:QueryParameter[]) (values:obj[]) =
         task {
             let allParams, outps = executeSprocCommandCommon inputParams retCols values
             allParams |> Array.iter (fun (_,p) -> com.Parameters.Add(p) |> ignore)
@@ -403,9 +411,10 @@ module MySql =
                     if not reader.IsClosed then reader.Close()
                     return result
                 | _ ->
-                    match outps |> Array.tryFind (fun (_,p) -> p.ParameterName = retCol.Name) with
-                    | Some(_,p) -> return Scalar(p.ParameterName, readParameter p)
-                    | None -> return failwithf "Excepted return column %s but could not find it in the parameter set" retCol.Name
+                    return
+                        match outps |> Array.tryFind (fun (_,p) -> p.ParameterName = retCol.Name) with
+                        | Some(_,p) -> Scalar(p.ParameterName, readParameter p)
+                        | None -> failwithf "Excepted return column %s but could not find it in the parameter set" retCol.Name
             | cols ->
                 use! reader = com.ExecuteReaderAsync()
                 let! r = cols |> Array.toList |> Sql.evaluateOneByOne (processReturnColumnAsync reader outps)
@@ -415,7 +424,7 @@ module MySql =
 
 type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, referencedAssemblies) as this =
     let schemaCache = SchemaCache.LoadOrEmpty(contextSchemaPath)
-    let myLock = new Object()
+    let myLock = Object()
 
     let quotedTableName (table: Table) =
         let quotedFullName = table.QuotedFullName("`", "`")
@@ -430,7 +439,7 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
         let columnNamesWithValues =
             (([],0),entity.ColumnValues)
             ||> Seq.fold(fun (out,i) (k,v) ->
-                let name = sprintf "@param%i" i
+                let name = $"@param%i{i}"
                 let p = (this :> ISqlProvider).CreateCommandParameter((MySql.createParam name i v),v)
                 (k,p)::out,i+1)
             |> fun (x,_)-> x
@@ -449,10 +458,10 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
         | Throw -> ()
         | Update ->
           ~~(sprintf " ON DUPLICATE KEY UPDATE %s"
-                (String.concat "," (columnNamesWithValues |> Array.map(fun (c,p) -> sprintf "`%s`=%s" c p.ParameterName))))
+                (String.concat "," (columnNamesWithValues |> Array.map(fun (c,p) -> $"`%s{c}`=%s{p.ParameterName}"))))
         | DoNothing ->
           ~~(sprintf " ON DUPLICATE KEY UPDATE %s"
-                (String.concat "," (columnNamesWithValues |> Array.map(fun (c,_) -> sprintf "`%s`=`%s`" c c))))
+                (String.concat "," (columnNamesWithValues |> Array.map(fun (c,_) -> $"`%s{c}`=`%s{c}`"))))
 
         ~~"; SELECT LAST_INSERT_ID();"
 
@@ -483,7 +492,7 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
         let data =
             (([],0),changedColumns)
             ||> List.fold(fun (out,i) col ->
-                let name = sprintf "@param%i" i
+                let name = $"@param%i{i}"
                 let p =
                     match (entity :> IColumnHolder).GetColumnOption<obj> col with
                     | Some v -> (this :> ISqlProvider).CreateCommandParameter((MySql.createParam name i v),v)
@@ -498,8 +507,8 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
         | ks ->
             ~~(sprintf "UPDATE %s SET %s WHERE "
                 ((entity :> IColumnHolder).Table |> quotedTableName)
-                (String.concat "," (data |> Array.map(fun (c,p) -> sprintf "`%s` = %s" c p.ParameterName ))))
-            ~~(String.concat " AND " (ks |> List.mapi(fun i k -> (sprintf "`%s` = @pk%i" k i))) + ";")
+                (String.concat "," (data |> Array.map(fun (c,p) -> $"`%s{c}` = %s{p.ParameterName}" ))))
+            ~~(String.concat " AND " (ks |> List.mapi(fun i k -> $"`%s{k}` = @pk%i{i}")) + ";")
 
         data |> Array.map snd |> Array.iter (cmd.Parameters.Add >> ignore)
 
@@ -532,7 +541,7 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
         | [] -> ()
         | ks ->
             ~~(sprintf "DELETE FROM %s WHERE " ((entity :> IColumnHolder).Table |> quotedTableName))
-            ~~(String.concat " AND " (ks |> List.mapi(fun i k -> (sprintf "%s = @id%i" k i))) + ";")
+            ~~(String.concat " AND " (ks |> List.mapi(fun i k -> $"%s{k} = @id%i{i}")) + ";")
         cmd.CommandText <- sb.ToString()
         cmd
 
@@ -586,7 +595,7 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
             if con.State <> ConnectionState.Open then con.Open()
             use reader = com.ExecuteReader()
             if reader.Read() then
-                let comm = reader.GetString(0)
+                let comm = reader.GetString 0
                 if isNull comm then "" else comm
             else ""
         member __.GetColumnDescription(con,tableName,columnName) =
@@ -602,7 +611,7 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
             if con.State <> ConnectionState.Open then con.Open()
             use reader = com.ExecuteReader()
             if reader.Read() then
-                let comm = reader.GetString(0)
+                let comm = reader.GetString 0
                 if isNull comm then "" else comm 
             else ""
         member __.CreateConnection(connectionString) = MySql.createConnection connectionString
@@ -628,7 +637,7 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                     use com : IDbCommand = createCommand sql con
                     use reader = com.ExecuteReader()
                     [ while reader.Read() do
-                        let table ={ Schema = reader.GetString(0); Name = reader.GetString(1); Type=reader.GetString(2) }
+                        let table ={ Schema = reader.GetString 0; Name = reader.GetString 1; Type=reader.GetString 2 }
                         yield schemaCache.Tables.GetOrAdd(table |> quotedTableName,table) ] |> List.toArray
                 executeSql MySql.createCommand (sprintf "select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES where %s in (%s)" caseChane ((String.concat "," dbName))) con)
 
@@ -661,23 +670,27 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                 use reader = com.ExecuteReader()
                 let columns =
                     [ while reader.Read() do
-                        let dt = reader.GetString(1)
+                        let dt = reader.GetString 1
                         let maxlen =
-                            if reader.IsDBNull(2) then ""
+                            if reader.IsDBNull 2 then ""
                             else reader.GetValue(2).ToString()
+#if NETSTANDARD21
+                        let isUnsigned = not(reader.IsDBNull 6) && reader.GetString(6).Contains("UNSIGNED", StringComparison.OrdinalIgnoreCase)
+#else
                         let isUnsigned = not(reader.IsDBNull 6) && reader.GetString(6).ToUpperInvariant().Contains("UNSIGNED")
+#endif
                         let udt = if isUnsigned then dt + " unsigned" else dt
                         match MySql.findDbType udt with
                         | Some(m) ->
                             let col =
-                                { Column.Name = reader.GetString(0)
+                                { Column.Name = reader.GetString 0
                                   TypeMapping = m
-                                  IsNullable = let b = reader.GetString(4) in b = "YES"
+                                  IsNullable = let b = reader.GetString 4 in b = "YES"
                                   IsPrimaryKey = reader.GetString(5) = "PRIMARY KEY"
-                                  IsAutonumber = reader.GetString(7).Contains("auto_increment")
+                                  IsAutonumber = reader.GetString(7).Contains "auto_increment"
                                   HasDefault = not(reader.IsDBNull 8)
                                   IsComputed = not(reader.IsDBNull 9)
-                                  TypeInfo = if String.IsNullOrEmpty maxlen then ValueSome dt else ValueSome (dt + "(" + maxlen + ")")}
+                                  TypeInfo = if String.IsNullOrEmpty maxlen then ValueSome dt else ValueSome $"{dt}({maxlen})"}
                             if col.IsPrimaryKey then
                                 schemaCache.PrimaryKeys.AddOrUpdate(table |> quotedTableName, [col.Name], fun key old ->
                                     match col.Name with
@@ -687,7 +700,7 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                                            | os -> x::os |> Seq.distinct |> Seq.toList |> List.sort
                                 ) |> ignore
                             yield (col.Name,col)
-                        | _ -> ()]
+                        | None -> ()]
                     |> Map.ofList
                 con.Close()
                 schemaCache.Columns.AddOrUpdate(table |> quotedTableName, columns, fun x old -> match columns.Count with 0 -> old | x -> columns)
@@ -706,23 +719,23 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                             WHERE POSITION_IN_UNIQUE_CONSTRAINT is not null"
 
             let res = Sql.connect con (fun con ->
-                use com = (this:>ISqlProvider).CreateCommand(con,(sprintf "%s AND KCU1.TABLE_NAME = @table" baseQuery))
+                use com = (this:>ISqlProvider).CreateCommand(con,$"%s{baseQuery} AND KCU1.TABLE_NAME = @table")
                 com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@table", 0), (MySql.ripQuotes table.Name))) |> ignore
                 if con.State <> ConnectionState.Open then con.Open()
                 use reader = com.ExecuteReader()
                 let children =
                     [ while reader.Read() do
-                        yield { Name = reader.GetString(0); PrimaryTable=Table.CreateQuotedFullName(reader.GetString(2),reader.GetString(1), "`", "`"); PrimaryKey=reader.GetString(3)
-                                ForeignTable=Table.CreateQuotedFullName(reader.GetString(5),reader.GetString(4), "`", "`"); ForeignKey=reader.GetString(6) } ] |> List.toArray
+                        yield { Name = reader.GetString 0; PrimaryTable=Table.CreateQuotedFullName(reader.GetString(2),reader.GetString(1), "`", "`"); PrimaryKey=reader.GetString 3
+                                ForeignTable=Table.CreateQuotedFullName(reader.GetString(5),reader.GetString(4), "`", "`"); ForeignKey=reader.GetString 6 } ] |> List.toArray
                 reader.Dispose()
-                use com = (this:>ISqlProvider).CreateCommand(con,(sprintf "%s AND KCU1.REFERENCED_TABLE_NAME = @table" baseQuery))
+                use com = (this:>ISqlProvider).CreateCommand(con,$"%s{baseQuery} AND KCU1.REFERENCED_TABLE_NAME = @table")
                 com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@table", 0), (MySql.ripQuotes table.Name))) |> ignore
                 if con.State <> ConnectionState.Open then con.Open()
                 use reader = com.ExecuteReader()
                 let parents =
                     [ while reader.Read() do
-                        yield { Name = reader.GetString(0); PrimaryTable=Table.CreateQuotedFullName(reader.GetString(2),reader.GetString(1), "`", "`"); PrimaryKey=reader.GetString(3)
-                                ForeignTable= Table.CreateQuotedFullName(reader.GetString(5),reader.GetString(4), "`", "`"); ForeignKey=reader.GetString(6) } ] |> List.toArray
+                        yield { Name = reader.GetString 0; PrimaryTable=Table.CreateQuotedFullName(reader.GetString(2),reader.GetString(1), "`", "`"); PrimaryKey=reader.GetString 3
+                                ForeignTable= Table.CreateQuotedFullName(reader.GetString(5),reader.GetString(4), "`", "`"); ForeignKey=reader.GetString 6 } ] |> List.toArray
                 (children,parents))
             res)
 
@@ -759,9 +772,7 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                     filterBuilder (~~) [c]
                     sb.ToString()
                 let colSprint =
-                    match String.IsNullOrEmpty(al) with
-                    | true -> sprintf "`%s`"
-                    | false -> sprintf "`%s`.`%s`" al
+                    if String.IsNullOrEmpty(al) then sprintf "`%s`" else sprintf "`%s`.`%s`" al
                 match c with
                 // Custom database spesific overrides for canonical functions:
                 | SqlColumnType.CanonicalOperation(cf,col) ->
@@ -778,39 +789,39 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                     | SubstringWithLength(SqlConstant startPos,SqlCol(al2, col2)) -> sprintf "MID(%s, %s, %s)" column (fieldParam startPos) (fieldNotation al2 col2)
                     | SubstringWithLength(SqlCol(al2, col2), SqlConstant strLen) -> sprintf "MID(%s, %s, %s)" column (fieldNotation al2 col2) (fieldParam strLen)
                     | SubstringWithLength(SqlCol(al2, col2),SqlCol(al3, col3)) -> sprintf "MID(%s, %s, %s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
-                    | Trim -> sprintf "TRIM(%s)" column
-                    | Length -> sprintf "CHAR_LENGTH(%s)" column
+                    | Trim -> $"TRIM(%s{column})"
+                    | Length -> $"CHAR_LENGTH(%s{column})"
                     | IndexOf(SqlConstant search) -> sprintf "LOCATE(%s,%s)" (fieldParam search) column
                     | IndexOf(SqlCol(al2, col2)) -> sprintf "LOCATE(%s,%s)" (fieldNotation al2 col2) column
                     | IndexOfStart(SqlConstant search,(SqlConstant startPos)) -> sprintf "LOCATE(%s,%s,%s)" (fieldParam search) column (fieldParam startPos)
                     | IndexOfStart(SqlConstant search,SqlCol(al2, col2)) -> sprintf "LOCATE(%s,%s,%s)" (fieldParam search)  column (fieldNotation al2 col2)
                     | IndexOfStart(SqlCol(al2, col2),(SqlConstant startPos)) -> sprintf "LOCATE(%s,%s,%s)" (fieldNotation al2 col2) column (fieldParam startPos)
                     | IndexOfStart(SqlCol(al2, col2),SqlCol(al3, col3)) -> sprintf "LOCATE(%s,%s,%s)" (fieldNotation al2 col2) column (fieldNotation al3 col3)
-                    | CastVarchar -> sprintf "CAST(%s AS CHAR)" column
-                    | CastInt -> sprintf "CAST(%s AS INT)" column
+                    | CastVarchar -> $"CAST(%s{column} AS CHAR)"
+                    | CastInt -> $"CAST(%s{column} AS INT)"
                     // Date functions
-                    | Date -> sprintf "DATE(%s)" column
-                    | Year -> sprintf "YEAR(%s)" column
-                    | Month -> sprintf "MONTH(%s)" column
-                    | Day -> sprintf "DAY(%s)" column
-                    | Hour -> sprintf "HOUR(%s)" column
-                    | Minute -> sprintf "MINUTE(%s)" column
-                    | Second -> sprintf "SECOND(%s)" column
+                    | Date -> $"DATE(%s{column})"
+                    | Year -> $"YEAR(%s{column})"
+                    | Month -> $"MONTH(%s{column})"
+                    | Day -> $"DAY(%s{column})"
+                    | Hour -> $"HOUR(%s{column})"
+                    | Minute -> $"MINUTE(%s{column})"
+                    | Second -> $"SECOND(%s{column})"
                     | AddYears(SqlConstant x) -> sprintf "DATE_ADD(%s, INTERVAL %s YEAR)" column (fieldParam x)
                     | AddYears(SqlCol(al2, col2)) -> sprintf "DATE_ADD(%s, INTERVAL %s YEAR)" column (fieldNotation al2 col2)
-                    | AddMonths x -> sprintf "DATE_ADD(%s, INTERVAL %d MONTH)" column x
+                    | AddMonths x -> $"DATE_ADD(%s{column}, INTERVAL %d{x} MONTH)"
                     | AddDays(SqlConstant x) -> sprintf "DATE_ADD(%s, INTERVAL %s DAY)" column (fieldParam x) // SQL ignores decimal part :-(
                     | AddDays(SqlCol(al2, col2)) -> sprintf "DATE_ADD(%s, INTERVAL %s DAY)" column (fieldNotation al2 col2)
-                    | AddHours x -> sprintf "DATE_ADD(%s, INTERVAL %f HOUR)" column x
+                    | AddHours x -> $"DATE_ADD(%s{column}, INTERVAL %f{x} HOUR)"
                     | AddMinutes(SqlConstant x) -> sprintf "DATE_ADD(%s, INTERVAL %s MINUTE)" column (fieldParam x)
                     | AddMinutes(SqlCol(al2, col2)) -> sprintf "DATE_ADD(%s, INTERVAL %s MINUTE)" column (fieldNotation al2 col2)
-                    | AddSeconds x -> sprintf "DATE_ADD(%s, INTERVAL %f SECOND)" column x
+                    | AddSeconds x -> $"DATE_ADD(%s{column}, INTERVAL %f{x} SECOND)"
                     | DateDiffDays(SqlCol(al2, col2)) -> sprintf "DATEDIFF(%s, %s)" column (fieldNotation al2 col2)
                     | DateDiffSecs(SqlCol(al2, col2)) -> sprintf "TIMESTAMPDIFF(SECOND, %s, %s)" column (fieldNotation al2 col2)
                     | DateDiffDays(SqlConstant x) -> sprintf "DATEDIFF(%s, %s)" column (fieldParam x)
                     | DateDiffSecs(SqlConstant x) -> sprintf "TIMESTAMPDIFF(SECOND, %s, %s)" column (fieldParam x)
                     // Math functions
-                    | Truncate -> sprintf "TRUNCATE(%s)" column
+                    | Truncate -> $"TRUNCATE(%s{column})"
                     | BasicMathOfColumns(o, a, c) when o="||" -> sprintf "CONCAT(%s, %s)" column (fieldNotation a c)
                     | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "CONCAT(%s, %s)" column (fieldParam par)
                     | BasicMathLeft(o, par) when (par :? String || par :? Char) -> sprintf "CONCAT(%s, %s)" (fieldParam par) column
@@ -830,7 +841,8 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                     | CaseSqlPlain(f, itm, itm2) -> sprintf "IF(%s,%s,%s)" (buildf f) (fieldParam itm) (fieldParam itm2)
 
                     | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
-                | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
+                | SqlColumnType.KeyColumn _
+                | SqlColumnType.GroupColumn _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
 
             and filterBuilder (~~) (f:Condition list) =
                 // the filter expressions
@@ -849,7 +861,7 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                                             | Some(x) when (box x :? obj array) ->
                                                 // in and not in operators pass an array
                                                 let elements = box x :?> obj array
-                                                Array.init (elements.Length) (elements.GetValue >> createParamet columnDataType)
+                                                Array.init elements.Length (elements.GetValue >> createParamet columnDataType)
                                             | Some(x) -> [|createParamet columnDataType (box x)|]
                                             | None ->    [|createParamet columnDataType DBNull.Value|]
 
@@ -863,27 +875,27 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                                             let text = String.concat "," (array |> Array.map (fun p -> p.ParameterName))
                                             Array.iter parameters.Add array
                                             match operator with
-                                            | FSharp.Data.Sql.In -> sprintf "%s IN (%s)" column text
-                                            | FSharp.Data.Sql.NotIn -> sprintf "%s NOT IN (%s)" column text
+                                            | FSharp.Data.Sql.In -> $"%s{column} IN (%s{text})"
+                                            | FSharp.Data.Sql.NotIn -> $"%s{column} NOT IN (%s{text})"
                                             | _ -> failwithf "Should not be called with any other operator (%O)" operator
 
-                                    let prefix = if i>0 then (sprintf " %s " op) else ""
+                                    let prefix = if i>0 then $" %s{op} " else ""
                                     let paras = extractData data
 
                                     let operatorInQuery operator (array : IDbDataParameter[]) =
                                         let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
                                         Array.iter parameters.Add innerpars
                                         match operator with
-                                        | FSharp.Data.Sql.NestedExists -> sprintf "EXISTS (%s)" innersql
-                                        | FSharp.Data.Sql.NestedNotExists -> sprintf "NOT EXISTS (%s)" innersql
-                                        | FSharp.Data.Sql.NestedIn -> sprintf "%s IN (%s)" column innersql
-                                        | FSharp.Data.Sql.NestedNotIn -> sprintf "%s NOT IN (%s)" column innersql
+                                        | FSharp.Data.Sql.NestedExists -> $"EXISTS (%s{innersql})"
+                                        | FSharp.Data.Sql.NestedNotExists -> $"NOT EXISTS (%s{innersql})"
+                                        | FSharp.Data.Sql.NestedIn -> $"%s{column} IN (%s{innersql})"
+                                        | FSharp.Data.Sql.NestedNotIn -> $"%s{column} NOT IN (%s{innersql})"
                                         | _ -> failwithf "Should not be called with any other operator (%O)" operator
 
                                     ~~(sprintf "%s%s" prefix <|
                                         match operator with
-                                        | FSharp.Data.Sql.IsNull -> sprintf "%s IS NULL" column
-                                        | FSharp.Data.Sql.NotNull -> sprintf "%s IS NOT NULL" column
+                                        | FSharp.Data.Sql.IsNull -> $"%s{column} IS NULL"
+                                        | FSharp.Data.Sql.NotNull -> $"%s{column} IS NOT NULL"
                                         | FSharp.Data.Sql.In
                                         | FSharp.Data.Sql.NotIn -> operatorIn operator paras
                                         | FSharp.Data.Sql.NestedExists
@@ -905,17 +917,17 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                             // there's probably a nicer way to do this
                             let rec aux = function
                                 | [x] when preds.Length > 0 ->
-                                    ~~ (sprintf " %s " op)
+                                    ~~ $" %s{op} "
                                     filterBuilder' [x]
                                 | [x] -> filterBuilder' [x]
                                 | x::xs when preds.Length > 0 ->
-                                    ~~ (sprintf " %s " op)
+                                    ~~ $" %s{op} "
                                     filterBuilder' [x]
-                                    ~~ (sprintf " %s " op)
+                                    ~~ $" %s{op} "
                                     aux xs
                                 | x::xs ->
                                     filterBuilder' [x]
-                                    ~~ (sprintf " %s " op)
+                                    ~~ $" %s{op} "
                                     aux xs
                                 | [] -> ()
 
@@ -940,7 +952,7 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
             let getTable x =
                 match sqlQuery.Aliases.TryFind x with
                 | Some(a) -> a
-                | _ -> baseTable
+                | None -> baseTable
 
             let singleEntity = sqlQuery.Aliases.Count = 0
 
@@ -957,14 +969,14 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                         let k = if k <> "" then k elif baseAlias <> "" then baseAlias else baseTable.Name
                         if v.Count = 0 then   // if no columns exist in the projection then get everything
                             for col in schemaCache.Columns.[cols] |> Seq.map (fun c -> c.Key) do
-                                if singleEntity then yield sprintf "`%s`.`%s` as `%s`" k col col
-                                else yield sprintf "`%s`.`%s` as '`%s`.`%s`'" k col k col
+                                if singleEntity then yield $"`%s{k}`.`%s{col}` as `%s{col}`"
+                                else yield $"`%s{k}`.`%s{col}` as '`%s{k}`.`%s{col}`'"
                         else
                             for colp in v |> Seq.distinct do
                                 match colp with
                                 | EntityColumn col ->
-                                    if singleEntity then yield sprintf "`%s`.`%s` as `%s`" k col col
-                                    else yield sprintf "`%s`.`%s` as '`%s`.`%s`'" k col k col // F# makes this so easy :)
+                                    if singleEntity then yield $"`%s{k}`.`%s{col}` as `%s{col}`"
+                                    else yield $"`%s{k}`.`%s{col}` as '`%s{k}`.`%s{col}`'" // F# makes this so easy :)
                                 | OperationColumn(n,op) ->
                                     yield sprintf "%s as `%s`" (fieldNotation k op) n|])
 
@@ -975,16 +987,16 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
             let columns =
                 let extracolumns =
                     match sqlQuery.Grouping with
-                    | [] -> FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation MySql.fieldNotationAlias sqlQuery.AggregateOp
+                    | [] -> Utilities.parseAggregates fieldNotation MySql.fieldNotationAlias sqlQuery.AggregateOp
                     | g  ->
                         let keys = g |> List.collect fst |> List.map(fun (a,c) ->
                             let fn = fieldNotation a c
                             if not (tmpGrpParams.ContainsKey (a,c)) then
                                 tmpGrpParams.Add((a,c), fn)
                             if sqlQuery.Aliases.Count < 2 then fn
-                            else sprintf "%s as '%s'" fn fn)
+                            else $"%s{fn} as '%s{fn}'")
                         let aggs = g |> List.collect snd
-                        let res2 = FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation MySql.fieldNotationAlias aggs |> List.toSeq
+                        let res2 = Utilities.parseAggregates fieldNotation MySql.fieldNotationAlias aggs |> List.toSeq
                         [String.Join(", ", keys) + (if List.isEmpty aggs || List.isEmpty keys then ""  else ", ") + String.Join(", ", res2)]
                 match extracolumns with
                 | [] -> selectcolumns
@@ -1023,7 +1035,7 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
 
             let basetable = baseTable |> quotedTableName
             if isDeleteScript then
-                ~~(sprintf "DELETE FROM %s " basetable)
+                ~~ $"DELETE FROM %s{basetable} "
             else
                 // SELECT
                 if sqlQuery.Distinct && sqlQuery.Count then
@@ -1036,16 +1048,20 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                                 | [] -> h1
                                 | h::t -> sprintf "CONCAT(%s,%s)" h1 (concats h t)
 
+#if NETSTANDARD21
+                            let rest = colsAggrs |> Seq.filter(fun c -> c.Contains ',') |> Seq.map(fun c -> c.Substring(c.IndexOf(',')+1)) |> Seq.toList
+#else
                             let rest = colsAggrs |> Seq.filter(fun c -> c.Contains ",") |> Seq.map(fun c -> c.Substring(c.IndexOf(',')+1)) |> Seq.toList
+#endif
                             concats colsAggrs.[0] rest
-                    ~~(sprintf "SELECT COUNT(DISTINCT %s) " distColumns)
-                elif sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columns)
+                    ~~ $"SELECT COUNT(DISTINCT %s{distColumns}) "
+                elif sqlQuery.Distinct then ~~ $"SELECT DISTINCT %s{columns} "
                 elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
-                else  ~~(sprintf "SELECT %s " columns)
+                else  ~~ $"SELECT %s{columns} "
                 // FROM
                 let bal = if baseAlias = "" then baseTable.Name else baseAlias
-                ~~(sprintf "FROM %s as `%s` " basetable  bal)
-                sqlQuery.CrossJoins |> Seq.iter(fun (a,t) -> ~~(sprintf ",  %s as `%s` " t.Name a))
+                ~~ $"FROM %s{basetable} as `%s{bal}` "
+                sqlQuery.CrossJoins |> Seq.iter(fun (a,t) -> ~~ $",  %s{t.Name} as `%s{a}` ")
             fromBuilder()
             // WHERE
             if sqlQuery.Filters.Length > 0 then
@@ -1078,22 +1094,22 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
             match sqlQuery.Union with
             | Some(UnionType.UnionAll, suquery, pars) ->
                 parameters.AddRange pars
-                ~~(sprintf " UNION ALL %s " suquery)
+                ~~ $" UNION ALL %s{suquery} "
             | Some(UnionType.NormalUnion, suquery, pars) ->
                 parameters.AddRange pars
-                ~~(sprintf " UNION %s " suquery)
+                ~~ $" UNION %s{suquery} "
             | Some(UnionType.Intersect, suquery, pars) ->
                 parameters.AddRange pars
-                ~~(sprintf " INTERSECT %s " suquery)
+                ~~ $" INTERSECT %s{suquery} "
             | Some(UnionType.Except, suquery, pars) ->
                 parameters.AddRange pars
-                ~~(sprintf " EXCEPT %s " suquery)
+                ~~ $" EXCEPT %s{suquery} "
             | None -> ()
 
             match sqlQuery.Take, sqlQuery.Skip with
-            | ValueSome take, ValueSome skip ->  ~~(sprintf " LIMIT %i OFFSET %i;" take skip)
-            | ValueSome take, ValueNone ->  ~~(sprintf " LIMIT %i;" take)
-            | ValueNone, ValueSome skip -> ~~(sprintf " LIMIT %i OFFSET %i;" System.UInt64.MaxValue skip)
+            | ValueSome take, ValueSome skip ->  ~~ $" LIMIT %i{take} OFFSET %i{skip};"
+            | ValueSome take, ValueNone ->  ~~ $" LIMIT %i{take};"
+            | ValueNone, ValueSome skip -> ~~ $" LIMIT %i{UInt64.MaxValue} OFFSET %i{skip};"
             | ValueNone, ValueNone -> ()
 
             let sql = sb.ToString()
@@ -1121,23 +1137,20 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                     | Created ->
                         use cmd = createInsertCommand con sb e
                         Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
-                        if timeout.IsSome then
-                            cmd.CommandTimeout <- timeout.Value
+                        match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
                         let id = cmd.ExecuteScalar()
                         checkInsertedKey id e
                         e._State <- Unchanged
                     | Modified fields ->
                         use cmd = createUpdateCommand con sb e fields
                         Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
-                        if timeout.IsSome then
-                            cmd.CommandTimeout <- timeout.Value
+                        match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
                         cmd.ExecuteNonQuery() |> ignore
                         e._State <- Unchanged
                     | Delete ->
                         use cmd = createDeleteCommand con sb e
                         Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
-                        if timeout.IsSome then
-                            cmd.CommandTimeout <- timeout.Value
+                        match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
                         cmd.ExecuteNonQuery() |> ignore
                         // remove the pk to prevent this attempting to be used again
                         (e :> IColumnHolder).SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[(e :> IColumnHolder).Table |> quotedTableName], None)
@@ -1171,29 +1184,26 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                         match e._State with
                         | Created ->
                             task {
-                                use cmd = createInsertCommand con sb e :?> System.Data.Common.DbCommand
+                                use cmd = createInsertCommand con sb e :?> DbCommand
                                 Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
-                                if timeout.IsSome then
-                                    cmd.CommandTimeout <- timeout.Value
+                                match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
                                 let! id = cmd.ExecuteScalarAsync()
                                 checkInsertedKey id e
                                 e._State <- Unchanged
                             }
                         | Modified fields ->
                             task {
-                                use cmd = createUpdateCommand con sb e fields :?> System.Data.Common.DbCommand
+                                use cmd = createUpdateCommand con sb e fields :?> DbCommand
                                 Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
-                                if timeout.IsSome then
-                                    cmd.CommandTimeout <- timeout.Value
+                                match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
                                 let! c = cmd.ExecuteNonQueryAsync()
                                 e._State <- Unchanged
                             }
                         | Delete ->
                             task {
-                                use cmd = createDeleteCommand con sb e :?> System.Data.Common.DbCommand
+                                use cmd = createDeleteCommand con sb e :?> DbCommand
                                 Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
-                                if timeout.IsSome then
-                                    cmd.CommandTimeout <- timeout.Value
+                                match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
                                 let! c = cmd.ExecuteNonQueryAsync()
                                 // remove the pk to prevent this attempting to be used again
                                 (e :> IColumnHolder).SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[(e :> IColumnHolder).Table |> quotedTableName], None)

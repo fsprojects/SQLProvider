@@ -51,10 +51,10 @@ let example =
     query {
         for order in ctx.Main.Orders do
         where (order.Freight > 0m)
-        sortBy (order.ShipPostalCode)
+        sortBy order.ShipPostalCode
         skip 3
         take 4
-        select (order)
+        select order
     }
 
 let test = example |> Seq.toArray |> Array.map(fun i -> i.ColumnValues |> Map.ofSeq)
@@ -77,7 +77,7 @@ let exampleAsync =
             query {
                 for order in ctx.Main.Orders do
                 where (order.Freight > 0m)
-                select (order)
+                select order
             } |> Seq.executeQueryAsync
         return res
     }
@@ -375,7 +375,7 @@ this is still ok and will give you a very simple select-clause:
 *)
 
 let randomBoolean =
-    let r = System.Random()
+    let r = Random()
     fun () -> r.NextDouble() > 0.5
 let c1 = randomBoolean()
 let c2 = randomBoolean()
@@ -634,7 +634,7 @@ let orderIds =
 let subItems =
     query {
         for row in ctx.Main.OrderDetails do
-        where (orderIds.Contains(row.OrderId))
+        where (orderIds.Contains row.OrderId)
         select (row.OrderId, row.ProductId, row.Quantity)
     } |> Seq.toArray
 
@@ -670,8 +670,8 @@ for chunk in chunked do
     let all =
         query {
             for row in ctx.Main.OrderDetails do
-            where (chunk.Contains(row.OrderId))
-            select (row)
+            where (chunk.Contains row.OrderId)
+            select row
         } |> Seq.toArray
 
     all |> Array.iter(fun row -> row.Discount <- 0.1)
@@ -690,13 +690,13 @@ let nestedOrders =
     query {
         for order in ctx.Main.Orders do
         // where(...)
-        select (order.OrderId)
+        select order.OrderId
     }
 
 let subItemsAll =
     query {
         for row in ctx.Main.OrderDetails do
-        where (nestedOrders.Contains(row.OrderId))
+        where (nestedOrders.Contains row.OrderId)
         select (row.OrderId, row.ProductId, row.Quantity)
     } |> Seq.toArray
 

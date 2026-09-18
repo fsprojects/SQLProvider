@@ -43,7 +43,7 @@ let ``three table join with nullable foreign key should work``() =
             for order in dc.Main.Orders do
             join customer in dc.Main.Customers on (order.CustomerId.Value = customer.CustomerId)
             join employee in (!!) dc.Main.Employees on (order.EmployeeId.Value = employee.EmployeeId)
-            where (order.EmployeeId.IsSome)
+            where order.EmployeeId.IsSome
             take 5
             select (order.OrderId, customer.CompanyName, employee.FirstName + " " + employee.LastName)
         } |> Seq.toList
@@ -98,7 +98,7 @@ let ``left join should include records with no matches``() =
     Assert.IsTrue(result.Length > 0)
     
     let hasNoOrders = result |> List.exists (fun (_, orderInfo) -> orderInfo = "No Orders")
-    let hasOrders = result |> List.exists (fun (_, orderInfo) -> orderInfo.StartsWith("Order "))
+    let hasOrders = result |> List.exists (fun (_, orderInfo) -> orderInfo.StartsWith "Order ")
     
     // At least one customer should have no orders
     Assert.IsTrue(hasNoOrders)

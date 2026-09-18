@@ -46,6 +46,7 @@ connectionString key/value pair stored in App.config (TODO: confirm filename).
 *)
 
 // found in App.config (TODO: confirm)
+[<Literal>]
 let connexStringName = "DefaultConnectionString"
 
 (**
@@ -119,11 +120,14 @@ let myEmp =
     query {
         for jh in ctx.Hr.JobHistory do
         where (jh.Years > 10u)
-        select (jh)
+        select jh
     } |> Seq.head
 
+[<Literal>]
 let myUint32 = 10u
+[<Literal>]
 let myInt64 = 10L
+[<Literal>]
 let myUInt64 = 10UL
 
 (**
@@ -134,9 +138,11 @@ If you use a string column to save a Guid to the database, you may want to skip 
 when serializing them:
 
 *)
-let myGuid = System.Guid.NewGuid() //e.g. b8fa7880-ce44-4315-8d60-a160e5734c4b
+///e.g. b8fa7880-ce44-4315-8d60-a160e5734c4b
+let myGuid = System.Guid.NewGuid()
 
-let myGuidAsString = myGuid.ToString("N") // e.g. "b8fa7880ce4443158d60a160e5734c4b"
+/// e.g. "b8fa7880ce4443158d60a160e5734c4b"
+let myGuidAsString = myGuid.ToString("N")
 
 (**
 The problem with this is that you should never forget to use "N" anywhere.
