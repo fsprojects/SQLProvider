@@ -7,6 +7,7 @@ open QueryImplementation
 open FSharp.Data.Sql.Common
 open FSharp.Data.Sql.Patterns
 open System.Linq
+open System.Threading.Tasks
 
 /// Provides asynchronous operations for SQL queries.
 /// Use these functions when you need to execute queries asynchronously to avoid blocking threads.
@@ -65,18 +66,18 @@ module AsyncOperations =
         task {
             let! res = fetchTakeOne s
             let enu = res.GetEnumerator()
-            if enu.MoveNext() then
-                let firstItem = enu.Current
-                if isNull firstItem then return None
-                else
-                return Some (firstItem :?> 'T)
-            else return None
+            return
+                if enu.MoveNext() then
+                    let firstItem = enu.Current
+                    if isNull firstItem then None
+                    else
+                    Some (firstItem :?> 'T)
+                else None
         }
 
-    let getHeadAsync (s:Linq.IQueryable<'T>) : System.Threading.Tasks.Task<'T> =
+    let getHeadAsync (s:Linq.IQueryable<'T>) : Task<'T> =
         task {
-            let! h = getTryHeadAsync s
-            match h with
+            match! getTryHeadAsync s with
             | Some x -> return x
             | None -> return raise (ArgumentException "The input sequence was empty.")
         }
@@ -84,18 +85,18 @@ module AsyncOperations =
         task {
             let! res = fetchTakeN 2 s
             let enu = res.GetEnumerator()
-            if enu.MoveNext() then
-                let firstItem = enu.Current
+            return
                 if enu.MoveNext() then
-                    return firstItem :?>'TSource |> onTooMany
-                else 
-                if isNull firstItem then
-                    return onNone()
-                else
-                
-                return firstItem :?>'TSource |> onSuccess
+                    let firstItem = enu.Current
+                    if enu.MoveNext() then
+                        firstItem :?>'TSource |> onTooMany
+                    elif isNull firstItem then
+                        onNone()
+                    else
 
-            else return onNone()
+                    firstItem :?>'TSource |> onSuccess
+
+                else onNone()
         }
 
     let getExactlyOneAsync (s:Linq.IQueryable<'T>)=
@@ -117,16 +118,17 @@ module AsyncOperations =
             match findSqlService s with
             | Some svc, wrapper ->
                 let! res = executeQueryScalarAsync svc.DataContext svc.Provider (Count(svc.SqlExpression)) svc.TupleIndex
-                if res = box(DBNull.Value) then return 0 else
+                return
+                    if res = box DBNull.Value then 0 else
 
-                let t = (Utilities.convertTypes res typeof<int>)
+                    let t = (Utilities.convertTypes res typeof<int>)
 
-                return t |> unbox
+                    t |> unbox
             | None, _ ->
                 return s |> Seq.length
         }
 
-    let getAggAsync<'T when 'T : comparison> (agg:string) (s:Linq.IQueryable<'T>) : System.Threading.Tasks.Task<'T> =
+    let getAggAsync<'T when 'T : comparison> (agg:string) (s:Linq.IQueryable<'T>) : Task<'T> =
 
             match findSqlService s with
             | Some svc, wrapper ->
@@ -141,8 +143,8 @@ module AsyncOperations =
                             | "" when source.SqlExpression.HasAutoTupled() -> param
                             | "" -> ""
                             | _ ->
-                                let al = FSharp.Data.Sql.Common.Utilities.resolveTuplePropertyName entity source.TupleIndex
-                                if al.StartsWith("_") then al.TrimStart([|'_'|]) else al
+                                let al = Utilities.resolveTuplePropertyName entity source.TupleIndex
+                                if al.StartsWith "_" then al.TrimStart [|'_'|] else al
                     let sqlExpression =
 
                         let opName =
@@ -161,8 +163,9 @@ module AsyncOperations =
                         | x -> AggregateOp(alias,GroupColumn(opName, op),source.SqlExpression)
                     task {
                         let! res = executeQueryScalarAsync source.DataContext source.Provider sqlExpression source.TupleIndex
-                        if res = box(DBNull.Value) then return Unchecked.defaultof<'T> else
-                        return (Utilities.convertTypes res typeof<'T>) |> unbox
+                        return
+                            if res = box DBNull.Value then Unchecked.defaultof<'T> else
+                            (Utilities.convertTypes res typeof<'T>) |> unbox
                     }
                 | _ -> failwithf "Not supported %s. You must have last a select clause to a single column to aggregate. %s" agg (svc.SqlExpression.ToString())
             | None, _ -> failwithf "Supported only on SQLProvider database IQueryables. Was %s" (s.GetType().FullName)
@@ -181,34 +184,35 @@ module Seq =
     /// Returns None if no elements exists.
     let tryHeadAsync = getTryHeadAsync
     /// Execute SQLProvider query to get the sum of elements, and release the OS thread while query is being executed.
-    let sumAsync<'T when 'T : comparison> : System.Linq.IQueryable<'T> -> System.Threading.Tasks.Task<'T>  = getAggAsync "Sum"
+    let sumAsync<'T when 'T : comparison> : IQueryable<'T> -> Task<'T>  = getAggAsync "Sum"
     /// Execute SQLProvider query to get the max of elements, and release the OS thread while query is being executed.
-    let maxAsync<'T when 'T : comparison> : System.Linq.IQueryable<'T> -> System.Threading.Tasks.Task<'T>  = getAggAsync "Max"
+    let maxAsync<'T when 'T : comparison> : IQueryable<'T> -> Task<'T>  = getAggAsync "Max"
     /// Execute SQLProvider query to get the min of elements, and release the OS thread while query is being executed.
-    let minAsync<'T when 'T : comparison> : System.Linq.IQueryable<'T> -> System.Threading.Tasks.Task<'T>  = getAggAsync "Min"
+    let minAsync<'T when 'T : comparison> : IQueryable<'T> -> Task<'T>  = getAggAsync "Min"
     /// Execute SQLProvider query to get the avg of elements, and release the OS thread while query is being executed.
-    let averageAsync<'T when 'T : comparison> : System.Linq.IQueryable<'T> -> System.Threading.Tasks.Task<'T>  = getAggAsync "Average"
+    let averageAsync<'T when 'T : comparison> : IQueryable<'T> -> Task<'T>  = getAggAsync "Average"
     /// Execute SQLProvider query to get the standard deviation of elements, and release the OS thread while query is being executed.
-    let stdDevAsync<'T when 'T : comparison> : System.Linq.IQueryable<'T> -> System.Threading.Tasks.Task<'T>  = getAggAsync "StdDev"
+    let stdDevAsync<'T when 'T : comparison> : IQueryable<'T> -> Task<'T>  = getAggAsync "StdDev"
     /// Execute SQLProvider query to get the variance of elements, and release the OS thread while query is being executed.
-    let varianceAsync<'T when 'T : comparison> : System.Linq.IQueryable<'T> -> System.Threading.Tasks.Task<'T>  = getAggAsync "Variance"
+    let varianceAsync<'T when 'T : comparison> : IQueryable<'T> -> Task<'T>  = getAggAsync "Variance"
     /// WARNING! Execute SQLProvider DELETE FROM query to remove elements from the database.
-    let ``delete all items from single table``<'T> : System.Linq.IQueryable<'T> -> System.Threading.Tasks.Task<int> = function
+    let ``delete all items from single table``<'T> : IQueryable<'T> -> Task<int> = function
         | :? IWithSqlService as source ->
             if source.DataContext.IsReadOnly then failwith "Context is readonly" else
             task {
                 let! res = executeDeleteQueryAsync source.DataContext source.Provider source.SqlExpression source.TupleIndex
-                if res = box(DBNull.Value) then return Unchecked.defaultof<int> else
-                return (Utilities.convertTypes res typeof<int>) |> unbox
+                return
+                    if res = box DBNull.Value then Unchecked.defaultof<int> else
+                    (Utilities.convertTypes res typeof<int>) |> unbox
             }
         | x -> failwithf "Only SQLProvider queryables accepted. Only simple single-table deletion where-clauses supported. Unsupported type %O" x
     /// Execute SQLProvider query to get the only element of the sequence.
     /// Throws `ArgumentNullException` if the seq is empty.
     /// Throws `ArgumentException` if the seq contains more than one element.
-    let exactlyOneAsync<'T> : System.Linq.IQueryable<'T> -> System.Threading.Tasks.Task<'T> = getExactlyOneAsync
+    let exactlyOneAsync<'T> : IQueryable<'T> -> Task<'T> = getExactlyOneAsync
     /// Execute SQLProvider query to get the only element of the sequence.
     /// Returns `None` if there are zero or more than one element in the seq.
-    let tryExactlyOneAsync<'T> : System.Linq.IQueryable<'T> -> System.Threading.Tasks.Task<'T option> = getTryExactlyOneAsync
+    let tryExactlyOneAsync<'T> : IQueryable<'T> -> Task<'T option> = getTryExactlyOneAsync
 
 module Array =
     /// Execute SQLProvider query and release the OS thread while query is being executed.

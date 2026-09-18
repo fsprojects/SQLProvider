@@ -93,7 +93,7 @@ let someProductionFunction (ctx:sql.dataContext) (orderType:OrderDateFilter) (un
                 where ((cust.City = "London" || cust.City = "Paris" ) && (
                     (ignoreOrderDate || order.OrderDate < tomorrow) && (someLegacyCondition < 15)) &&
                     (ignoreShippedDate || order.ShippedDate < tomorrow) &&
-                    cust.CustomerId <> null && order.Freight > 10m
+                    (not (isNull cust.CustomerId)) && order.Freight > 10m
                 )
                 select (cust.PostalCode, order.Freight)
             }

@@ -6,6 +6,8 @@ open Microsoft.FSharp.Reflection
 
 module QuotationHelpers = 
 
+    let simpleTypeExpr instance = Expr.Value(instance)
+
     let rec coerceValues fieldTypeLookup fields = 
         Array.mapi (fun i v ->
                 let expr = 
@@ -16,8 +18,6 @@ module QuotationHelpers =
                 Expr.Coerce(expr, fieldTypeLookup i)
         ) fields |> List.ofArray
     
-    and simpleTypeExpr instance = Expr.Value(instance)
-
     and unionExpr instance = 
         let caseInfo, fields = FSharpValue.GetUnionFields(instance, instance.GetType())    
         let fieldInfo = caseInfo.GetFields()

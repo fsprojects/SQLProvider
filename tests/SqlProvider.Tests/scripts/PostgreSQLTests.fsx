@@ -2,7 +2,7 @@
 // Dynamic:
 #r @"../../bin/lib/net48/FSharp.Data.SqlProvider.Common.dll"
 #r @"../../bin/lib/net48/FSharp.Data.SqlProvider.dll"
-#r @"../../packages/NUnit/lib/nunit.framework.dll"
+#r "nuget: NUnit"
 #else
 module PostgreSQLTests
 #endif
@@ -163,7 +163,7 @@ let salesNamedDavid () =
     let ctx = HR.GetDataContext()
     query {
             for emp in ctx.Public.Employees do
-            join d in ctx.Public.Departments on (emp.DepartmentId = Some(d.DepartmentId))
+            join d in ctx.Public.Departments on (emp.DepartmentId = Some d.DepartmentId)
             where (d.DepartmentName |=| [|"Sales";"IT"|] && emp.FirstName =% "David")
             select (d.DepartmentName, emp.FirstName, emp.LastName)
     } |> Seq.toList |> Assert.IsNotEmpty
@@ -174,7 +174,7 @@ let employeesJob () =
     query {
             for emp in ctx.Public.Employees do
             for manager in emp.``public.employees by employee_id_1`` do
-            join dept in ctx.Public.Departments on (emp.DepartmentId = Some(dept.DepartmentId))
+            join dept in ctx.Public.Departments on (emp.DepartmentId = Some dept.DepartmentId)
             where ((dept.DepartmentName |=| [|"Sales";"Executive"|]) && emp.FirstName =% "David")
             select (emp.FirstName, emp.LastName, manager.FirstName, manager.LastName )
     } |> Seq.toList |> Assert.IsNotEmpty
@@ -198,7 +198,7 @@ let canonicalTest () =
     query {
             for emp in ctx.Public.Employees do
             join d in ctx.Public.Departments on (emp.DepartmentId.Value+1 = d.DepartmentId+1)
-            where (abs(d.LocationId.Value) > 1//.value
+            where (abs d.LocationId.Value > 1//.value
                 && emp.FirstName.Value + "D" = "DavidD"
                 && emp.LastName.Length > 6
                 && emp.HireDate.Date.AddYears(-10).Year < 1990
@@ -231,7 +231,7 @@ let countries () =
     |> Seq.map (fun e -> e.MapTo<Country>(fun (prop,value) ->
                                                match prop with
                                                | "Other" ->
-                                                    if value <> null
+                                                    if not (isNull value)
                                                     then JsonConvert.DeserializeObject<OtherCountryInformation>(value :?> string) |> box
                                                     else Unchecked.defaultof<OtherCountryInformation> |> box
                                                | _ -> value
@@ -259,7 +259,7 @@ let ``Reassign optional and array columns`` () =
       | [ant] -> ant
       | _ ->
           let newRegion = ctx.Public.Regions.Create()
-          newRegion.RegionName <- Some("Antartica")
+          newRegion.RegionName <- Some "Antartica"
           newRegion.RegionId <- 5
           newRegion.RegionAlternateNames <- oldNames
           ctx.SubmitUpdates()
@@ -268,7 +268,7 @@ let ``Reassign optional and array columns`` () =
     Assert.AreEqual(antartica.RegionName, Some("Antartica"))
     Assert.AreEqual(antartica.RegionAlternateNames, oldNames)
 
-    antartica.RegionName <- Some("ant")
+    antartica.RegionName <- Some "ant"
     antartica.RegionAlternateNames <- newNames
     ctx.SubmitUpdates()
 
@@ -292,7 +292,7 @@ let ``Existing item is successfully deleted, then restored``() =
 
     let removeIfExists employeeId startDate =
       let current = getIfexisting employeeId startDate
-      if current <> null then
+      if not (isNull current) then
           current.Delete()
           ctx.SubmitUpdates()
 
@@ -430,42 +430,42 @@ let ``Create and print PostgreSQL specific types``() =
   //tt.Bit0 <- Some(true)
   tt.Bit0 <- Some(System.Collections.BitArray(10, true))
   tt.BitVarying0 <- Some(System.Collections.BitArray([| true; true; false; false |]))
-  tt.Boolean0 <- Some(true)
+  tt.Boolean0 <- Some true
   //tt.Box0 <- Some(NpgsqlTypes.NpgsqlBox(0.0f, 1.0f, 2.0f, 3.0f))
-  tt.Bytea0 <- Some([| 1uy; 10uy |])
-  tt.Character0 <- Some("test")
-  tt.CharacterVarying0 <- Some("raudpats")
-  tt.Cid0 <- Some(87u)
+  tt.Bytea0 <- Some [| 1uy; 10uy |]
+  tt.Character0 <- Some "test"
+  tt.CharacterVarying0 <- Some "raudpats"
+  tt.Cid0 <- Some 87u
   //tt.Circle0 <- Some(circle(0.0f, 1.0f, 2.0))
-  tt.Date0 <- Some(DateTime.Today)
-  tt.DoublePrecision0 <- Some(100.0)
-  tt.Inet0 <- Some(System.Net.IPAddress.Any)
-  tt.Integer0 <- Some(1)
-  tt.InternalChar0 <- Some('c')
+  tt.Date0 <- Some DateTime.Today
+  tt.DoublePrecision0 <- Some 100.0
+  tt.Inet0 <- Some System.Net.IPAddress.Any
+  tt.Integer0 <- Some 1
+  tt.InternalChar0 <- Some 'c'
   tt.Interval0 <- Some(TimeSpan.FromDays(3.0))
-  tt.Json0 <- Some("{ }")
-  tt.Jsonb0 <- Some(@"{ ""x"": [] }")
+  tt.Json0 <- Some "{ }"
+  tt.Jsonb0 <- Some @"{ ""x"": [] }"
   tt.Macaddr0 <- Some(System.Net.NetworkInformation.PhysicalAddress([| 0uy; 0uy; 0uy; 0uy; 0uy; 0uy |]))
-  tt.Money0 <- Some(100M)
-  tt.Name0 <- Some("name")
-  tt.Numeric0 <- Some(99.76M)
-  tt.Oid0 <- Some(67u)
-  tt.Real0 <- Some(0.8f)
-  tt.Regtype0 <- Some(77u)
-  tt.Smallint0 <- Some(9000s)
+  tt.Money0 <- Some 100M
+  tt.Name0 <- Some "name"
+  tt.Numeric0 <- Some 99.76M
+  tt.Oid0 <- Some 67u
+  tt.Real0 <- Some 0.8f
+  tt.Regtype0 <- Some 77u
+  tt.Smallint0 <- Some 9000s
   tt.Smallserial0 <- 678s
   tt.Serial0 <- 77
-  tt.Text0 <- Some("kesine")
+  tt.Text0 <- Some "kesine"
   tt.Time0 <- Some(TimeSpan.FromMinutes(15.0))
   tt.Time0 <- Some(TimeSpan.FromMinutes(15.0))
-  tt.Timetz0 <- Some(DateTimeOffset.Now)
+  tt.Timetz0 <- Some DateTimeOffset.Now
   //tt.Timetz0 <- Some(NpgsqlTypes.NpgsqlTimeTZ.Now)
-  tt.Timestamp0 <- Some(DateTime.Now)
-  tt.Timestamptz0 <- Some(DateTime.Now)
+  tt.Timestamp0 <- Some DateTime.Now
+  tt.Timestamptz0 <- Some DateTime.Now
   //tt.Unknown0 <- Some(box 13)
   tt.Uuid0 <- Some(Guid.NewGuid())
-  tt.Xid0 <- Some(15u)
-  tt.Xml0 <- Some("xml")
+  tt.Xid0 <- Some 15u
+  tt.Xml0 <- Some "xml"
 
 
   // Mapping SQL to types originating in Npgsql currently does not work due to type provider SDK issues.
@@ -577,7 +577,7 @@ let ``Upsert on table with composite primary key``() =
       for jobHistory in ctx.Public.JobHistory do
       where (jobHistory.EmployeeId = employeeId)
       where (jobHistory.StartDate = startDate)
-      select (jobHistory.EndDate)
+      select jobHistory.EndDate
     }
     |> Seq.head
 

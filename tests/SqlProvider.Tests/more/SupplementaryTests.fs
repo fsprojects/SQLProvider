@@ -42,7 +42,7 @@ let ``option type IsSome filtering``() =
     let query = 
         query {
             for order in dc.Main.Orders do
-            where (order.ShippedDate.IsSome)
+            where order.ShippedDate.IsSome
             select order.OrderId
         }
     
@@ -55,7 +55,7 @@ let ``option type IsNone filtering``() =
     let query = 
         query {
             for order in dc.Main.Orders do
-            where (order.ShippedDate.IsNone)
+            where order.ShippedDate.IsNone
             select order.OrderId
         }
     
@@ -85,7 +85,7 @@ let ``option value extraction in queries``() =
     let query = 
         query {
             for order in dc.Main.Orders do
-            where (order.ShippedDate.IsSome)
+            where order.ShippedDate.IsSome
             select (order.OrderId, order.ShippedDate.Value)
         }
     
@@ -140,13 +140,13 @@ let ``conditional where clauses``() =
         | true, false -> 
             query {
                 for order in baseQuery do
-                where (order.ShippedDate.IsSome)
+                where order.ShippedDate.IsSome
                 select order
             }
         | false, true ->
             query {
                 for order in baseQuery do
-                where (order.ShippedDate.IsNone)
+                where order.ShippedDate.IsNone
                 select order
             }
         | false, false -> 
@@ -337,7 +337,7 @@ let ``null value handling in aggregations``() =
     let query = 
         query {
             for order in dc.Main.Orders do
-            groupBy (order.ShippedDate.IsSome) into g
+            groupBy order.ShippedDate.IsSome into g
             select (
                 g.Key,
                 g.Count(),

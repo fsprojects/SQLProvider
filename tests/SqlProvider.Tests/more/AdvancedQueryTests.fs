@@ -100,7 +100,7 @@ let ``option type handling with ValueSome pattern`` () =
     let customersWithRegion =
         query {
             for customer in ctx.Main.Customers do
-            where (customer.Region.IsSome)
+            where customer.Region.IsSome
             select (customer.CompanyName, customer.Region.Value)
         }
     

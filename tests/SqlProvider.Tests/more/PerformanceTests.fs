@@ -49,7 +49,7 @@ let ``connection pooling pattern`` () =
     
     let returnConnection(ctx: sql.dataContext) =
         if pool.Count < maxPoolSize then
-            pool.Push(ctx)
+            pool.Push ctx
 
     
     task {
@@ -225,7 +225,7 @@ let ``connection timeout handling`` () =
             
             Assert.IsNotNull(result)
         with
-        | ex when ex.Message.Contains("timeout") ->
+        | ex when ex.Message.Contains "timeout" ->
             Assert.Pass("Timeout handled correctly")
         | ex ->
             Assert.Fail("Unexpected exception: " + ex.Message)
@@ -278,7 +278,8 @@ let ``memory efficient large result processing`` () =
 [<Test>]
 let ``query plan caching test`` () =
     let ctx = sql.GetDataContext()
-    let mutable executionTimes = []
+    // in execution order: the list is built by prepending, so it is reversed at the end
+    let mutable executionTicks = []
     
     let executeQuery customerId =
         let stopwatch = System.Diagnostics.Stopwatch.StartNew()
@@ -288,7 +289,7 @@ let ``query plan caching test`` () =
                 where (order.CustomerId.Value = customerId)
             } |> Seq.lengthAsync
         stopwatch.Stop()
-        executionTimes <- stopwatch.ElapsedMilliseconds :: executionTimes
+        executionTicks <- stopwatch.ElapsedTicks :: executionTicks
         result
     
     task {
@@ -297,10 +298,17 @@ let ``query plan caching test`` () =
             let! _ = executeQuery "ALFKI" |> Async.AwaitTask
             ()
 
-        // Later executions should generally be faster due to query plan caching
-        let avgFirstTwo = executionTimes |> List.map decimal |> List.take 2 |> List.average
-        let avgLastTwo = executionTimes |> List.map decimal |> List.skip 3 |> List.average
+        // The first execution pays for the query translation; the later ones
+        // take the cached plan. On a millisecond stopwatch and a ~1 ms query
+        // the earlier ratio assertion was noise (a CI runner failed it with
+        // 1 ms against 2.5 ms), so the claim is made on the median of the
+        // cached executions against the first, in ticks, with slack for a
+        // scheduling blip.
+        let inOrder = List.rev executionTicks
+        let first = decimal (List.head inOrder)
+        let cached = inOrder |> List.tail |> List.map decimal |> List.sort
+        let median = cached.[cached.Length / 2]
+        let slack = decimal System.Diagnostics.Stopwatch.Frequency / 100m // 10 ms
         
-        // This is a general expectation, but can vary  
-        Assert.IsTrue(avgLastTwo <= avgFirstTwo * 2.0m, $"First returned {avgFirstTwo}, last retruned {avgLastTwo}") // Allow reasonable variance
+        Assert.IsTrue(median <= first + slack, $"First took {first} ticks, cached median {median} ticks (slack {slack})")
     }

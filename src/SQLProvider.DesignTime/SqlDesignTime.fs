@@ -2,7 +2,9 @@ namespace FSharp.Data.Sql
 
 open System
 open System.Data
+open System.IO
 open System.Reflection
+open System.Runtime.InteropServices
 open System.Threading.Tasks
 open Microsoft.FSharp.Core.CompilerServices
 open Microsoft.FSharp.Quotations
@@ -30,7 +32,7 @@ type DesignCacheKey =
                     string))                    //typeName
 
 type internal ParameterValue =
-    | UserProvided of string * string * Type
+    | UserProvided of pname: string * pcomment: string * ptype: Type
     | Default of Expr
 
 module DesignTimeUtils =
@@ -113,7 +115,7 @@ module DesignTimeUtils =
         let [<Literal>] FSHARP_DATA_SQL = "FSharp.Data.Sql.DuckDb"
 #endif
 
-        let mySaveLock = new Object();
+        let mySaveLock = Object();
         let mutable saveInProcess = false
 
         let empty = fun (_:Expr list) -> <@@ () @@>
@@ -137,11 +139,11 @@ module DesignTimeUtils =
         let transactionOptions = TransactionOptions.Default
 
         let createIndividualsType (con:IDbConnection option) (prov:ISqlProvider) (table:Table) (designTimeDc:Lazy<_>) dbVendor individualsAmount tableTypeDef =
-            let t = ProvidedTypeDefinition(table.Schema + "." + table.Name + "." + "Individuals", Some typeof<obj>, isErased=true)
+            let t = ProvidedTypeDefinition($"{table.Schema}.{table.Name}.Individuals", Some typeof<obj>, isErased=true)
             let individualsTypes = ResizeArray<_>()
             individualsTypes.Add t
 
-            t.AddXmlDocDelayed(fun _ -> sprintf "<summary>A sample of %s individuals from the SQL object as supplied in the static parameters</summary>" table.Name)
+            t.AddXmlDocDelayed(fun _ -> $"<summary>A sample of %s{table.Name} individuals from the SQL object as supplied in the static parameters</summary>")
             t.AddMember(ProvidedConstructor([ProvidedParameter("dataContext", typeof<ISqlDataContext>)], empty))
             t.AddMembersDelayed( fun _ ->
                 let columns =
@@ -167,13 +169,13 @@ module DesignTimeUtils =
 
                     let dcDone = designTimeDc.Force()
                     let entities =
-                        prov.GetSchemaCache().Individuals.GetOrAdd((table.FullName+"_"+pkName), fun k ->
+                        prov.GetSchemaCache().Individuals.GetOrAdd(($"{table.FullName}_{pkName}"), fun k ->
                             match con with
                             | Some con ->
                                 use com = prov.CreateCommand(con,prov.GetIndividualsQueryText(table,individualsAmount))
                                 if con.State <> ConnectionState.Open then con.Open()
                                 use reader = com.ExecuteReader()
-                                let ret = (dcDone :> ISqlDataContext).ReadEntities(table.FullName+"_"+pkName, columns, reader)
+                                let ret = (dcDone :> ISqlDataContext).ReadEntities($"{table.FullName}_{pkName}", columns, reader)
                                 reader.Close()
                                 if (dbVendor <> DatabaseProviderTypes.MSACCESS) then con.Close()
                                 let mapped = ret |> Array.choose(fun e ->
@@ -208,7 +210,7 @@ module DesignTimeUtils =
                         let dirtyName =
                             match value with
                             | null -> "<null>"
-                            | :? Array as a -> (sprintf "%A" a)
+                            | :? Array as a -> $"%A{a}"
                             | x -> x.ToString()
                         dirtyName.Replace("\r", "").Replace("\n", "").Replace("\t", "")
 
@@ -254,8 +256,8 @@ module DesignTimeUtils =
             let ty = Utilities.getType c.TypeMapping.ClrType
 
             let propTy = match nullable with
-                            | NullableColumnType.OPTION -> typedefof<option<_>>.MakeGenericType(ty)
-                            | NullableColumnType.VALUE_OPTION -> typedefof<ValueOption<_>>.MakeGenericType(ty)
+                            | NullableColumnType.OPTION -> typedefof<option<_>>.MakeGenericType ty
+                            | NullableColumnType.VALUE_OPTION -> typedefof<ValueOption<_>>.MakeGenericType ty
                             | _ -> ty
             let name = c.Name
             let prop =
@@ -265,30 +267,30 @@ module DesignTimeUtils =
                         match nullable with
                         | NullableColumnType.OPTION ->
                            (fun (args:Expr list) ->
-                            let meth = typeof<IColumnHolder>.GetMethod("GetColumnOption").MakeGenericMethod([|ty|])
+                            let meth = typeof<IColumnHolder>.GetMethod("GetColumnOption").MakeGenericMethod [|ty|]
                             Expr.Call(args.[0],meth,[Expr.Value name]))
                         | NullableColumnType.VALUE_OPTION ->
                            (fun (args:Expr list) ->
-                            let meth = typeof<IColumnHolder>.GetMethod("GetColumnValueOption").MakeGenericMethod([|ty|])
+                            let meth = typeof<IColumnHolder>.GetMethod("GetColumnValueOption").MakeGenericMethod [|ty|]
                             Expr.Call(args.[0],meth,[Expr.Value name]))
                         | _ ->
                            (fun (args:Expr list) ->
-                            let meth = typeof<IColumnHolder>.GetMethod("GetColumn").MakeGenericMethod([|ty|])
+                            let meth = typeof<IColumnHolder>.GetMethod("GetColumn").MakeGenericMethod [|ty|]
                             Expr.Call(args.[0],meth,[Expr.Value name]))
                     ,
                     setterCode =
                         match nullable with
                         | NullableColumnType.OPTION ->
                            (fun (args:Expr list) ->
-                            let meth = typeof<IColumnHolder>.GetMethod("SetColumnOption").MakeGenericMethod([|ty|])
+                            let meth = typeof<IColumnHolder>.GetMethod("SetColumnOption").MakeGenericMethod [|ty|]
                             Expr.Call(args.[0],meth,[Expr.Value name;args.[1]]))
                         | NullableColumnType.VALUE_OPTION ->
                            (fun (args:Expr list) ->
-                            let meth = typeof<IColumnHolder>.GetMethod("SetColumnValueOption").MakeGenericMethod([|ty|])
+                            let meth = typeof<IColumnHolder>.GetMethod("SetColumnValueOption").MakeGenericMethod [|ty|]
                             Expr.Call(args.[0],meth,[Expr.Value name;args.[1]]))
                         | _ ->
                            (fun (args:Expr list) ->
-                            let meth = typeof<SqlEntity>.GetMethod("SetColumn").MakeGenericMethod([|ty|])
+                            let meth = typeof<SqlEntity>.GetMethod("SetColumn").MakeGenericMethod [|ty|]
                             Expr.Call(args.[0],meth,[Expr.Value name;args.[1]])))
 
             let nfo = c.TypeInfo
@@ -300,20 +302,20 @@ module DesignTimeUtils =
                     let separator = if (String.IsNullOrWhiteSpace typeInfo) || (String.IsNullOrWhiteSpace details) then "" else "/"
                     sprintf "<summary>%s %s %s</summary>" (String.concat ": " [|name; details|]) separator typeInfo)
             | None ->
-                prop.AddXmlDocDelayed(fun () -> sprintf "<summary>Offline mode. %s</summary>" typeInfo)
+                prop.AddXmlDocDelayed(fun () -> $"<summary>Offline mode. %s{typeInfo}</summary>")
                 ()
             prop
 
         let generateSprocMethod (container:ProvidedTypeDefinition) (con:IDbConnection option) (prov:ISqlProvider) (sproc:CompileTimeSprocDefinition) =
 
-            let sprocname = SchemaProjections.buildSprocName(sproc.Name.DbName)
+            let sprocname = SchemaProjections.buildSprocName sproc.Name.DbName
                             |> SchemaProjections.avoidNameClashBy (container.GetMember >> Array.isEmpty >> not)
 
             let rt = ProvidedTypeDefinition(sprocname, Some typeof<obj>, isErased=true)
             let resultType = ProvidedTypeDefinition("Result", Some typeof<obj>, isErased=true)
             resultType.AddMember(ProvidedConstructor([ProvidedParameter("sqlDataContext", typeof<ISqlDataContext>)], empty))
             rt.AddMember resultType
-            container.AddMember(rt)
+            container.AddMember rt
 
             resultType.AddMembersDelayed(fun () ->
                     let sprocParameters =
@@ -354,13 +356,13 @@ module DesignTimeUtils =
                                         ProvidedProperty(
                                             name, ty,
                                             getterCode = (fun (args:Expr list) ->
-                                                let meth = typeof<IColumnHolder>.GetMethod("GetColumn").MakeGenericMethod([|ty|])
+                                                let meth = typeof<IColumnHolder>.GetMethod("GetColumn").MakeGenericMethod [|ty|]
                                                 Expr.Call(args.[0],meth,[Expr.Value name])),
                                             setterCode = (fun (args:Expr list) ->
-                                                let meth = typeof<SqlEntity>.GetMethod("SetColumn").MakeGenericMethod([|typeof<obj>|])
+                                                let meth = typeof<SqlEntity>.GetMethod("SetColumn").MakeGenericMethod [|typeof<obj>|]
                                                 Expr.Call(args.[0],meth,[Expr.Value name;Expr.Coerce(args.[1], typeof<obj>)])))
                                     rt.AddMember prop)
-                                resultType.AddMember(rt)
+                                resultType.AddMember rt
                                 rt :> Type
                     let retColsExpr =
                         QuotationHelpers.arrayExpr retCols |> snd
@@ -394,23 +396,24 @@ module DesignTimeUtils =
             )
 
             let niceUniqueSprocName =
-                SchemaProjections.buildSprocName(sproc.Name.ProcName)
+                SchemaProjections.buildSprocName sproc.Name.ProcName
                 |> SchemaProjections.avoidNameClashBy (container.GetProperty >> (<>) null)
 
             let p = ProvidedProperty(niceUniqueSprocName, resultType, getterCode = (fun args ->
                 let a0 = args.[0]
                 <@@ ((%%a0 : obj) :?>ISqlDataContext) @@>) )
             let dbName = sproc.Name.DbName
-            p.AddXmlDocDelayed(fun _ -> sprintf "<summary>%s</summary>" dbName)
+            p.AddXmlDocDelayed(fun _ -> $"<summary>%s{dbName}</summary>")
             p
 
 
+        [<TailCall>]
         let rec walkSproc con (prov:ISqlProvider) (path:string list) (parent:ProvidedTypeDefinition option) (createdTypes:Map<string list,ProvidedTypeDefinition>) (sproc:Sproc) =
             match sproc with
             | Root(typeName, next) ->
                 let path = (path @ [typeName])
                 match createdTypes.TryFind path with
-                | Some(typ) ->
+                | Some typ ->
                     walkSproc con prov path (Some typ) createdTypes next
                 | None ->
                     let typ = ProvidedTypeDefinition(typeName, Some typeof<obj>, isErased=true)
@@ -418,10 +421,10 @@ module DesignTimeUtils =
                     walkSproc con prov path (Some typ) (createdTypes.Add(path, typ)) next
             | Package(typeName, packageDefn) ->
                 match parent with
-                | Some(parent) ->
+                | Some parent ->
                     let path = (path @ [typeName])
                     let typ = ProvidedTypeDefinition(typeName, Some typeof<obj>, isErased=true)
-                    parent.AddMember(typ)
+                    parent.AddMember typ
                     parent.AddMember(ProvidedProperty(SchemaProjections.nicePascalName typeName, typ, getterCode = fun args ->
                         let a0 = args.[0]
                         <@@ ((%%a0 : obj) :?> ISqlDataContext) @@>))
@@ -438,10 +441,10 @@ module DesignTimeUtils =
                         typ.AddMembersDelayed(fun () ->
                             prov.GetSchemaCache().Packages |> Seq.toList |> List.map (generateSprocMethod typ con prov))
                     createdTypes.Add(path, typ)
-                | _ -> failwithf "Could not generate package path type undefined root or previous type"
-            | Sproc(sproc) ->
+                | None -> failwithf "Could not generate package path type undefined root or previous type"
+            | Sproc sproc ->
                     match parent with
-                    | Some(parent) ->
+                    | Some parent ->
                         match con with
                         | Some co ->
                             parent.AddMemberDelayed(fun () ->
@@ -452,9 +455,10 @@ module DesignTimeUtils =
                             createdTypes
                         | None ->
                             parent.AddMemberDelayed(fun () -> generateSprocMethod parent con prov sproc); createdTypes
-                    | _ -> failwithf "Could not generate sproc undefined root or previous type"
+                    | None -> failwithf "Could not generate sproc undefined root or previous type"
             | Empty -> createdTypes
 
+        [<TailCall>]
         let rec generateTypeTree con (prov:ISqlProvider) (createdTypes:Map<string list, ProvidedTypeDefinition>) (sprocs:Sproc list) =
             match sprocs with
             | [] ->
@@ -536,7 +540,7 @@ module DesignTimeUtils =
                 designTimeCommandsContainer.AddMember m
                 designTimeCommandsContainer, saveResponse, mOld, designTime, None
 
-        let rec createTypes (rootType:ProvidedTypeDefinition) (serviceType:ProvidedTypeDefinition) (readServiceType:ProvidedTypeDefinition) (config:TypeProviderConfig) (sqlRuntimeInfo:_) invalidate registerDispose (args) =
+        let rec createTypes (rootType:ProvidedTypeDefinition) (serviceType:ProvidedTypeDefinition) (readServiceType:ProvidedTypeDefinition) (config:TypeProviderConfig) (sqlRuntimeInfo:_) invalidate registerDispose args =
             let struct(connectionString, conStringName,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner,caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, ssdtPath, rootTypeName) = args
             let resolutionPath =
                 if String.IsNullOrWhiteSpace resolutionPath
@@ -558,8 +562,8 @@ module DesignTimeUtils =
                         match dbVendor with
                         | DatabaseProviderTypes.MSSQLSERVER_SSDT ->
                             if ssdtPath = "" then failwith "No SsdtPath was specified."
-                            elif not (ssdtPath.EndsWith(".dacpac")) then failwith "SsdtPath must point to a .dacpac file."
-                            elif not (System.IO.File.Exists ssdtPath) then failwith ("File not exists: " + ssdtPath)
+                            elif not (ssdtPath.EndsWith ".dacpac") then failwith "SsdtPath must point to a .dacpac file."
+                            elif not (File.Exists ssdtPath) then failwith ("File not exists: " + ssdtPath)
                             else Some Stubs.connection
                         | _ ->
                             match conString, conStringName with
@@ -602,11 +606,11 @@ module DesignTimeUtils =
                                         (cols,rel)
                                     | None ->
                                         let cols =
-                                            match prov.GetSchemaCache().Columns.TryGetValue(t.FullName) with
+                                            match prov.GetSchemaCache().Columns.TryGetValue t.FullName with
                                             | true,cols -> cols
                                             | false,_ -> Map.empty
                                         let rel =
-                                            match prov.GetSchemaCache().Relationships.TryGetValue(t.FullName) with
+                                            match prov.GetSchemaCache().Relationships.TryGetValue t.FullName with
                                             | true,rel -> rel
                                             | false,_ -> ([||],[||])
                                         (cols,rel))]
@@ -635,7 +639,7 @@ module DesignTimeUtils =
                                                 when prov.GetTables(con,CaseSensitivityChange.TOLOWER).Length > 0 ->
                                             ". Try adding parameter SqlDataProvider<CaseSensitivityChange=Common.CaseSensitivityChange.TOLOWER, ...> \r\nConnection: " + connectionString
                                         | _ when owner = "" -> ". Try adding parameter SqlDataProvider<Owner=...> where Owner value is database name or schema. \r\nConnection: " + connectionString
-                                        | _ -> " for schema or database " + owner + ". Connection: " + connectionString
+                                        | _ -> $" for schema or database {owner}. Connection: {connectionString}"
                                     | None -> ""
                                 let possibleError = "Tables not found" + hint
                                 let errInfo =
@@ -652,14 +656,14 @@ module DesignTimeUtils =
                                                             fun args ->
                                                                 let a0 = args.[0]
                                                                 try
-                                                                    <@@ ((%%a0 : obj) :?> ISqlDataContext).CreateEntity(fullname) @@>
+                                                                    <@@ ((%%a0 : obj) :?> ISqlDataContext).CreateEntity fullname @@>
                                                                 with
                                                                 | :? ArgumentException ->
-                                                                    <@@ (%%a0 : ISqlDataContext).CreateEntity(fullname) @@>
+                                                                    <@@ (%%a0 : ISqlDataContext).CreateEntity fullname @@>
                                                                 ))
-                            let desc = (sprintf "An instance of the %s %s belonging to schema %s" table.Type table.Name table.Schema)
+                            let desc = $"An instance of the %s{table.Type} %s{table.Name} belonging to schema %s{table.Schema}"
                             t.AddXmlDoc desc
-                            yield table.FullName,(t,sprintf "The %s %s belonging to schema %s" table.Type table.Name table.Schema,"", table.Schema) ]
+                            yield table.FullName,(t,$"The %s{table.Type} %s{table.Name} belonging to schema %s{table.Schema}","", table.Schema) ]
 
             let baseCollectionTypes =
                 lazy
@@ -690,7 +694,7 @@ module DesignTimeUtils =
                            | true, (tt,_,_,_) ->
                                 let ty = ty.MakeGenericType tt
                                 let constraintName = r.Name
-                                let niceName = getRelationshipName (sprintf "%s by %s" r.ForeignTable r.PrimaryKey)
+                                let niceName = getRelationshipName $"%s{r.ForeignTable} by %s{r.PrimaryKey}"
                                 let pt = r.PrimaryTable
                                 let pk = r.PrimaryKey
                                 let ft = r.ForeignTable
@@ -698,7 +702,7 @@ module DesignTimeUtils =
                                 let prop = ProvidedProperty(niceName,ty, getterCode = fun args ->
                                     let a0 = args.[0]
                                     <@@ (%%a0 : SqlEntity).DataContext.CreateRelated((%%a0 : SqlEntity),constraintName,pt,pk,ft,fk,RelationshipDirection.Children) @@> )
-                                prop.AddXmlDoc(sprintf "Related %s entities from the foreign side of the relationship, where the primary key is %s and the foreign key is %s. Constraint: %s" r.ForeignTable r.PrimaryKey r.ForeignKey constraintName)
+                                prop.AddXmlDoc $"Related %s{r.ForeignTable} entities from the foreign side of the relationship, where the primary key is %s{r.PrimaryKey} and the foreign key is %s{r.ForeignKey}. Constraint: %s{constraintName}"
                                 yield prop
                             | false, _ -> ()
                                 ] @
@@ -707,7 +711,7 @@ module DesignTimeUtils =
                            | true, (tt,_,_,_) ->
                                 let ty = ty.MakeGenericType tt
                                 let constraintName = r.Name
-                                let niceName = getRelationshipName (sprintf "%s by %s" r.PrimaryTable r.PrimaryKey)
+                                let niceName = getRelationshipName $"%s{r.PrimaryTable} by %s{r.PrimaryKey}"
                                 let pt = r.PrimaryTable
                                 let pk = r.PrimaryKey
                                 let ft = r.ForeignTable
@@ -715,7 +719,7 @@ module DesignTimeUtils =
                                 let prop = ProvidedProperty(niceName,ty, getterCode = fun args ->
                                     let a0 = args.[0]
                                     <@@ (%%a0 : SqlEntity).DataContext.CreateRelated((%%a0 : SqlEntity),constraintName,pt, pk,ft, fk,RelationshipDirection.Parents) @@> )
-                                prop.AddXmlDoc(sprintf "Related %s entities from the primary side of the relationship, where the primary key is %s and the foreign key is %s. Constraint: %s" r.PrimaryTable r.PrimaryKey r.ForeignKey constraintName)
+                                prop.AddXmlDoc $"Related %s{r.PrimaryTable} entities from the primary side of the relationship, where the primary key is %s{r.PrimaryKey} and the foreign key is %s{r.ForeignKey}. Constraint: %s{constraintName}"
                                 yield prop
                            | false, _ -> ()
                                 ]
@@ -776,7 +780,7 @@ module DesignTimeUtils =
                                     |> Array.map(fun (s,v) -> (SchemaProjections.nicePascalName v.Name) + " : " + (Utilities.getType v.TypeMapping.ClrType).Name + (if v.IsNullable then optType else ""))
                                 "type " + (SchemaProjections.nicePascalName key) + " = { " + (String.concat "; " items) + " }"
                             let p = ProvidedProperty(template, typeof<obj>, isStatic = true, getterCode = empty)
-                            p.AddXmlDoc("Remove quotes and copy paste this to your code.")
+                            p.AddXmlDoc "Remove quotes and copy paste this to your code."
                             p :> MemberInfo
                         )
                       templateContainer.AddMember templateTable
@@ -790,8 +794,8 @@ module DesignTimeUtils =
                           let requiredColumns =
                               columns
                               |> Map.toArray
-                              |> Array.map (fun (s,c) -> c)
-                              |> Array.filter (fun c -> (not c.IsNullable) && (not c.IsAutonumber) && (not c.IsComputed))
+                              |> Array.map snd
+                              |> Array.filter (fun c -> not (c.IsNullable || c.IsAutonumber || c.IsComputed))
 
                           let backwardCompatibilityOnly =
                               requiredColumns
@@ -813,7 +817,7 @@ module DesignTimeUtils =
                                       let individuals = ProvidedProperty("Individuals",Seq.head it, getterCode = fun args ->
                                           let a0 = args.[0]
                                           <@@ ((%%a0 : obj ):?> IWithDataContext ).DataContext @@> )
-                                      individuals.AddXmlDoc("<summary>Get individual items from the table. Requires single primary key.</summary>")
+                                      individuals.AddXmlDoc "<summary>Get individual items from the table. Requires single primary key.</summary>"
                                       yield individuals :> MemberInfo
                                } |> Seq.toList
 
@@ -823,7 +827,7 @@ module DesignTimeUtils =
                           let create1 = ProvidedMethod("Create", [], entityType, invokeCode = fun args ->
                               let a0 = args.[0]
                               <@@
-                                  let e = ((%%a0 : obj ):?> IWithDataContext).DataContext.CreateEntity(key)
+                                  let e = ((%%a0 : obj ):?> IWithDataContext).DataContext.CreateEntity key
                                   e._State <- Created
                                   ((%%a0 : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
                                   e
@@ -843,7 +847,7 @@ module DesignTimeUtils =
                                             |> List.mapi(fun i v -> Expr.NewTuple [ Expr.Value normalParameters.[i].Name
                                                                                     Expr.Coerce(v, typeof<obj>) ] ))
                                 <@@
-                                    let e = ((%%dc : obj ):?> IWithDataContext).DataContext.CreateEntity(key)
+                                    let e = ((%%dc : obj ):?> IWithDataContext).DataContext.CreateEntity key
                                     e._State <- Created
                                     e.SetData(%%columns : (string *obj) array)
                                     ((%%dc : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
@@ -864,7 +868,7 @@ module DesignTimeUtils =
                                             |> List.mapi(fun i v -> Expr.NewTuple [ Expr.Value backwardCompatibilityOnly.[i].Name
                                                                                     Expr.Coerce(v, typeof<obj>) ] ))
                                 <@@
-                                    let e = ((%%dc : obj ):?> IWithDataContext).DataContext.CreateEntity(key)
+                                    let e = ((%%dc : obj ):?> IWithDataContext).DataContext.CreateEntity key
                                     e._State <- Created
                                     e.SetData(%%columns : (string *obj) array)
                                     ((%%dc : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
@@ -876,7 +880,7 @@ module DesignTimeUtils =
                                 let dc = args.[0]
                                 let data = args.[1]
                                 <@@
-                                    let e = ((%%dc : obj ):?> IWithDataContext).DataContext.CreateEntity(key)
+                                    let e = ((%%dc : obj ):?> IWithDataContext).DataContext.CreateEntity key
                                     e._State <- Created
                                     e.SetData(%%data : (string * obj) seq)
                                     ((%%dc : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
@@ -885,7 +889,7 @@ module DesignTimeUtils =
                           let desc3 =
                               let cols = requiredColumns |> Seq.map(fun c -> c.Name)
                               "Item array of database columns: \r\n" + (String.concat ","  cols)
-                          create3.AddXmlDoc (sprintf "<summary>%s</summary>" desc3)
+                          create3.AddXmlDoc $"<summary>%s{desc3}</summary>"
 
                           // ``Create(...)``: ('a * 'b * 'c * ...) -> SqlEntity
                           let create4 =
@@ -903,7 +907,7 @@ module DesignTimeUtils =
                                             |> List.mapi(fun i v -> Expr.NewTuple [ Expr.Value normalParameters.[i].Name
                                                                                     Expr.Coerce(v, typeof<obj>) ] ))
                                 <@@
-                                    let e = ((%%dc : obj ):?> IWithDataContext).DataContext.CreateEntity(key)
+                                    let e = ((%%dc : obj ):?> IWithDataContext).DataContext.CreateEntity key
                                     e._State <- Created
                                     e.SetData(%%columns : (string *obj) array)
                                     ((%%dc : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
@@ -934,7 +938,7 @@ module DesignTimeUtils =
                                             |> List.mapi(fun i v -> Expr.NewTuple [ Expr.Value backwardCompatibilityOnly.[i].Name
                                                                                     Expr.Coerce(v, typeof<obj>) ] ))
                                 <@@
-                                    let e = ((%%dc : obj ):?> IWithDataContext).DataContext.CreateEntity(key)
+                                    let e = ((%%dc : obj ):?> IWithDataContext).DataContext.CreateEntity key
                                     e._State <- Created
                                     e.SetData(%%columns : (string *obj) array)
                                     ((%%dc : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
@@ -957,7 +961,7 @@ module DesignTimeUtils =
                                             |> List.mapi(fun i v -> Expr.NewTuple [ Expr.Value minimalParameters.[i].Name
                                                                                     Expr.Coerce(v, typeof<obj>) ] ))
                                 <@@
-                                    let e = ((%%dc : obj ):?> IWithDataContext).DataContext.CreateEntity(key)
+                                    let e = ((%%dc : obj ):?> IWithDataContext).DataContext.CreateEntity key
                                     e._State <- Created
                                     e.SetData(%%columns : (string *obj) array)
                                     ((%%dc : obj ):?> IWithDataContext ).DataContext.SubmitChangedEntity e
@@ -969,23 +973,23 @@ module DesignTimeUtils =
                                   let individuals = ProvidedProperty("Individuals",Seq.head it, getterCode = fun args ->
                                       let a0 = args.[0]
                                       <@@ ((%%a0 : obj ):?> IWithDataContext ).DataContext @@> )
-                                  individuals.AddXmlDoc("<summary>Get individual items from the table. Requires single primary key.</summary>")
+                                  individuals.AddXmlDoc "<summary>Get individual items from the table. Requires single primary key.</summary>"
                                   yield individuals :> MemberInfo
                               if normalParameters.Length > 0 then yield create2 :> MemberInfo
                               if backwardCompatibilityOnly.Length > 0 && normalParameters.Length <> backwardCompatibilityOnly.Length then
-                                 create2old.AddXmlDoc("This will be obsolete soon. Migrate away from this!")
+                                 create2old.AddXmlDoc "This will be obsolete soon. Migrate away from this!"
                                  yield create2old :> MemberInfo
                               yield create3 :> MemberInfo
                               yield create1 :> MemberInfo
                               if normalParameters.Length > 0 then
-                                 create4.AddXmlDoc("Create version that breaks if your columns change. Only non-nullable parameters.")
+                                 create4.AddXmlDoc "Create version that breaks if your columns change. Only non-nullable parameters."
                                  yield create4 :> MemberInfo
                               if minimalParameters.Length > 0 && normalParameters.Length <> minimalParameters.Length then
-                                 create5.AddXmlDoc("Create version that breaks if your columns change. No default value parameters.")
+                                 create5.AddXmlDoc "Create version that breaks if your columns change. No default value parameters."
                                  yield create5 :> MemberInfo
                               if backwardCompatibilityOnly.Length > 0 && backwardCompatibilityOnly.Length <> normalParameters.Length &&
                                  backwardCompatibilityOnly.Length <> minimalParameters.Length then
-                                     create4old.AddXmlDoc("This will be obsolete soon. Migrate away from this!")
+                                     create4old.AddXmlDoc "This will be obsolete soon. Migrate away from this!"
                                      yield create4old :> MemberInfo
 
                            } |> Seq.toList
@@ -994,14 +998,14 @@ module DesignTimeUtils =
                       let buildTableName = SchemaProjections.buildTableName >> caseInsensitivityCheck
                       let prop = ProvidedProperty(buildTableName(ct.Name),ct, getterCode = fun args ->
                           let a0 = args.[0]
-                          <@@ ((%%a0 : obj) :?> ISqlDataContext).CreateEntities(key) @@> )
+                          <@@ ((%%a0 : obj) :?> ISqlDataContext).CreateEntities key @@> )
                       let tname = ct.Name
                       match con with
                       | Some con ->
                           prop.AddXmlDocDelayed (fun () ->
                               let details = prov.GetTableDescription(con, tname).Replace("<","&lt;").Replace(">","&gt;")
                               let separator = if (String.IsNullOrWhiteSpace desc) || (String.IsNullOrWhiteSpace details) then "" else "/"
-                              sprintf "<summary>%s %s %s</summary>" details separator desc)
+                              $"<summary>%s{details} %s{separator} %s{desc}</summary>")
                       | None ->
                           prop.AddXmlDocDelayed (fun () -> "<summary>Offline mode.</summary>")
                           ()
@@ -1021,12 +1025,12 @@ module DesignTimeUtils =
                      let submit = ProvidedMethod("SubmitUpdates",[],typeof<unit>, invokeCode = fun args ->
                          let a0 = args.[0]
                          <@@ ((%%a0 : obj) :?> ISqlDataContext).SubmitPendingChanges() @@>)
-                     submit.AddXmlDoc("<summary>Save changes to data-source. May throws errors: To deal with non-saved items use GetUpdates() and ClearUpdates().</summary>")
+                     submit.AddXmlDoc "<summary>Save changes to data-source. May throws errors: To deal with non-saved items use GetUpdates() and ClearUpdates().</summary>"
                      yield submit :> MemberInfo
-                     let submitAsync = ProvidedMethod("SubmitUpdatesAsync",[],typeof<System.Threading.Tasks.Task>, invokeCode = fun args ->
+                     let submitAsync = ProvidedMethod("SubmitUpdatesAsync",[],typeof<Task>, invokeCode = fun args ->
                          let a0 = args.[0]
                          <@@ ((%%a0 : obj) :?> ISqlDataContext).SubmitPendingChangesAsync() :> Task @@>)
-                     submitAsync.AddXmlDoc("<summary>Save changes to data-source. May throws errors: Use Async.Catch and to deal with non-saved items use GetUpdates() and ClearUpdates().</summary>")
+                     submitAsync.AddXmlDoc "<summary>Save changes to data-source. May throws errors: Use Async.Catch and to deal with non-saved items use GetUpdates() and ClearUpdates().</summary>"
                      yield submitAsync :> MemberInfo
                      yield ProvidedMethod("GetUpdates",[],typeof<SqlEntity list>, invokeCode = fun args ->
                          let a0 = args.[0]
@@ -1087,17 +1091,17 @@ module DesignTimeUtils =
                  ]
 
             serviceType.AddMembers(addServiceTypeMembers false)
-            serviceType.AddXmlDoc("Use dataContext to explore database schema and querying data. It will carry database-connection and possible modifications within transaction, that you can commit via SubmitUpdates.")
+            serviceType.AddXmlDoc "Use dataContext to explore database schema and querying data. It will carry database-connection and possible modifications within transaction, that you can commit via SubmitUpdates."
             rootType.AddMembers [ serviceType ]
 
             readServiceType.AddMembersDelayed( fun () -> addServiceTypeMembers true)
-            readServiceType.AddXmlDoc("readDataContext to be used in schema exploration and querying. Like dataContext but not so easy to do accidental mutations of context state.")
+            readServiceType.AddXmlDoc "readDataContext to be used in schema exploration and querying. Like dataContext but not so easy to do accidental mutations of context state."
             rootType.AddMembersDelayed(fun () -> [ readServiceType ])
             serviceType.AddMemberDelayed(fun () ->
                         let p = ProvidedMethod("AsReadOnly", [], readServiceType, invokeCode = fun args ->
                             let a0 = args.[0]
                             <@@ ((%%a0 : obj) :?> ISqlDataContext) @@> )
-                        p.AddXmlDoc ("Context can be casted as readonly to use it when function takes a readonly parameter. Type corresponds to return of GetReadOnlyDataContext()")
+                        p.AddXmlDoc "Context can be casted as readonly to use it when function takes a readonly parameter. Type corresponds to return of GetReadOnlyDataContext()"
                         p :> MemberInfo)
 
             match con with
@@ -1191,9 +1195,7 @@ module DesignTimeUtils =
 
                         let actualParams = [|
                             for (customParam, defaultParam) in optionPairs do
-                                match overload |> Array.exists ((=) customParam) with
-                                | true -> yield UserProvided customParam
-                                | false -> yield Default defaultParam
+                                if overload |> Array.exists ((=) customParam) then yield UserProvided customParam else yield Default defaultParam
                         |]
 
                         // The code that gets actually executed
@@ -1231,7 +1233,7 @@ module DesignTimeUtils =
                             [ for actualParam in actualParams do
                                   match actualParam with
                                   | UserProvided(pname, pcomment, ptype) -> yield pname, pcomment, ptype
-                                  | _ -> ()
+                                  | Default _ -> ()
                             ]
 
                         let providerParams =
@@ -1239,7 +1241,7 @@ module DesignTimeUtils =
 
                         let xmlComments =
                             [|  yield "<summary>Returns an instance of the SQL Provider using the static parameters</summary>"
-                                for (pname, xmlInfo, _) in paramList -> "<param name='" + pname + "'>" + xmlInfo + "</param>"
+                                for (pname, xmlInfo, _) in paramList -> $"<param name='{pname}'>{xmlInfo}</param>"
                             |]
 
                         let method =
@@ -1256,7 +1258,7 @@ module DesignTimeUtils =
 
                         let xmlComments2 =
                             [|  yield "<summary>Returns an instance of the SQL Provider using the static parameters, without direct access to modify data.</summary>"
-                                for (pname, xmlInfo, _) in paramList -> "<param name='" + pname + "'>" + xmlInfo + "</param>"
+                                for (pname, xmlInfo, _) in paramList -> $"<param name='{pname}'>{xmlInfo}</param>"
                             |]
 
                         let rmethod =
@@ -1277,7 +1279,7 @@ module DesignTimeUtils =
 open DesignTimeUtils
 
 module DesignReflection =
-    let execAssembly = lazy System.Reflection.Assembly.GetExecutingAssembly()
+    let execAssembly = lazy Assembly.GetExecutingAssembly()
 
 type SqlRuntimeInfo (config : TypeProviderConfig) =
     let runtimeAssembly =
@@ -1320,55 +1322,55 @@ module internal FixReferenceAssemblies =
         let ifNotNull (x:Assembly) =
             if isNull x then ""
             elif String.IsNullOrWhiteSpace x.Location then ""
-            else x.Location |> System.IO.Path.GetDirectoryName
+            else x.Location |> Path.GetDirectoryName
 
         [__SOURCE_DIRECTORY__;
 #if !INTERACITVE
             DesignReflection.execAssembly.Force() |> ifNotNull;
 #endif
             Environment.CurrentDirectory;
-            System.Reflection.Assembly.GetEntryAssembly() |> ifNotNull;]
+            Assembly.GetEntryAssembly() |> ifNotNull;]
 
     let manualLoadNet8Runtime =
         lazy
-            let isWindows = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows)
-            let isMac = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.OSX)
+            let isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+            let isMac = RuntimeInformation.IsOSPlatform(OSPlatform.OSX)
 
             let libraries =
                 [|
         #if MSSQL
-                    System.IO.Path.Combine [| "runtimes"; (if isWindows then "win" else "unix"); "lib"; "net8.0"; "System.Data.SqlClient.dll" |]
-                    System.IO.Path.Combine [| "runtimes"; (if isWindows then "win" else "unix"); "lib"; "net8.0";"Microsoft.Data.SqlClient.dll" |]
+                    Path.Combine [| "runtimes"; (if isWindows then "win" else "unix"); "lib"; "net8.0"; "System.Data.SqlClient.dll" |]
+                    Path.Combine [| "runtimes"; (if isWindows then "win" else "unix"); "lib"; "net8.0";"Microsoft.Data.SqlClient.dll" |]
         #endif
         #if MSACCESS
-                    System.IO.Path.Combine [| "runtimes"; "win"; "lib"; "net8.0"; "System.Diagnostics.EventLog.Messages.dll" |]
-                    System.IO.Path.Combine [| "runtimes"; "win"; "lib"; "net8.0"; "System.Diagnostics.EventLog.dll" |]
-                    System.IO.Path.Combine [| "runtimes"; "win"; "lib"; "net8.0"; "System.Diagnostics.PerformanceCounter.dll" |]
-                    System.IO.Path.Combine [| "runtimes"; "win"; "lib"; "net6.0"; "System.Data.OleDb.dll" |]
+                    Path.Combine [| "runtimes"; "win"; "lib"; "net8.0"; "System.Diagnostics.EventLog.Messages.dll" |]
+                    Path.Combine [| "runtimes"; "win"; "lib"; "net8.0"; "System.Diagnostics.EventLog.dll" |]
+                    Path.Combine [| "runtimes"; "win"; "lib"; "net8.0"; "System.Diagnostics.PerformanceCounter.dll" |]
+                    Path.Combine [| "runtimes"; "win"; "lib"; "net6.0"; "System.Data.OleDb.dll" |]
         #endif
         #if ODBC
-                    System.IO.Path.Combine [| "runtimes"; (
+                    Path.Combine [| "runtimes"; (
                             if isWindows then "win"
                             elif isMac then "osx"
-                            elif System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux) then "linux"
-                            elif System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Create "FreeBSD") then "freebsd"
+                            elif RuntimeInformation.IsOSPlatform(OSPlatform.Linux) then "linux"
+                            elif RuntimeInformation.IsOSPlatform(OSPlatform.Create "FreeBSD") then "freebsd"
                             else ""
                         ); "lib"; "net6.0"; "System.Data.Odbc.dll" |]
         #endif
         #if ORACLE
-                    System.IO.Path.Combine [| "runtimes"; (
+                    Path.Combine [| "runtimes"; (
                             if isWindows then "win"
                             elif isMac then "osx"
-                            elif System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux) then "linux"
+                            elif RuntimeInformation.IsOSPlatform(OSPlatform.Linux) then "linux"
                             else ""
                         ); "lib"; "net8.0"; "System.DirectoryServices.Protocols.dll" |]
                     if isWindows then
-                        System.IO.Path.Combine [| "runtimes"; "win"; "lib"; "net8.0"; "System.Diagnostics.EventLog.Messages.dll" |]
-                        System.IO.Path.Combine [| "runtimes"; "win"; "lib"; "net8.0"; "System.Diagnostics.EventLog.dll" |]
-                        System.IO.Path.Combine [| "runtimes"; "win"; "lib"; "net8.0"; "System.Diagnostics.PerformanceCounter.dll" |]
-                        System.IO.Path.Combine [| "runtimes"; "win"; "lib"; "net8.0"; "System.Security.Cryptography.Pkcs.dll" |]
-                    if System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Create "Browser") then
-                        System.IO.Path.Combine [| "runtimes"; "browser"; "lib"; "net8.0"; "System.Text.Encodings.Web.dll" |]
+                        Path.Combine [| "runtimes"; "win"; "lib"; "net8.0"; "System.Diagnostics.EventLog.Messages.dll" |]
+                        Path.Combine [| "runtimes"; "win"; "lib"; "net8.0"; "System.Diagnostics.EventLog.dll" |]
+                        Path.Combine [| "runtimes"; "win"; "lib"; "net8.0"; "System.Diagnostics.PerformanceCounter.dll" |]
+                        Path.Combine [| "runtimes"; "win"; "lib"; "net8.0"; "System.Security.Cryptography.Pkcs.dll" |]
+                    if RuntimeInformation.IsOSPlatform(OSPlatform.Create "Browser") then
+                        Path.Combine [| "runtimes"; "browser"; "lib"; "net8.0"; "System.Text.Encodings.Web.dll" |]
         #endif
         #if POSTGRES
                     if System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Create "Browser") then
@@ -1378,9 +1380,9 @@ module internal FixReferenceAssemblies =
 
         #if DUCKDB
             let isArm = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture.ToString().StartsWith "Arm"
-            let isLinux = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux)
+            let isLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
             pathsToSeek() |> List.iter(fun basePath ->
-                let nativeLibrary = System.IO.Path.Combine [| basePath; "runtimes"; (
+                let nativeLibrary = Path.Combine [| basePath; "runtimes"; (
                         if isWindows then
                             if isArm then "win-arm64"
                             else "win-x64"
@@ -1391,7 +1393,7 @@ module internal FixReferenceAssemblies =
                             else "linux-x64"
                         else ""
                     ); "native" |]
-                if System.IO.Directory.Exists nativeLibrary then
+                if Directory.Exists nativeLibrary then
                     Environment.SetEnvironmentVariable("Path", Environment.GetEnvironmentVariable("Path") + ";" + nativeLibrary) // Path for native duckdb.dll
                 ()
             )
@@ -1399,11 +1401,11 @@ module internal FixReferenceAssemblies =
         #endif
         #if SQLITE
 
-            let isLinux = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux)
+            let isLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
             pathsToSeek() |> List.iter(fun basePath ->
-                let nativeLibrary = System.IO.Path.Combine [| basePath; "runtimes"; (
+                let nativeLibrary = Path.Combine [| basePath; "runtimes"; (
                         if isWindows then
-                            match System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture with
+                            match RuntimeInformation.ProcessArchitecture with
                             | System.Runtime.InteropServices.Architecture.X64 -> "win-x64"
                             | System.Runtime.InteropServices.Architecture.Arm64 -> "win-arm64"
                             | System.Runtime.InteropServices.Architecture.X86 -> "win-x86"
@@ -1417,13 +1419,13 @@ module internal FixReferenceAssemblies =
                         else ""
                     ); "native" |]
 
-                if System.IO.Directory.Exists nativeLibrary then
+                if Directory.Exists nativeLibrary then
                     Environment.SetEnvironmentVariable("Path", Environment.GetEnvironmentVariable("Path") + ";" + nativeLibrary) // Path for native libraries (net8.0)
 
                 let anotherLocation =
-                    System.IO.Path.Combine [| basePath; (if System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture = System.Runtime.InteropServices.Architecture.X64 then "x64" else "x86") |]
+                    Path.Combine [| basePath; (if RuntimeInformation.ProcessArchitecture = Architecture.X64 then "x64" else "x86") |]
 
-                if System.IO.Directory.Exists anotherLocation then
+                if Directory.Exists anotherLocation then
                     Environment.SetEnvironmentVariable("Path", Environment.GetEnvironmentVariable("Path") + ";" + anotherLocation) // net462
 
                 ()
@@ -1436,11 +1438,11 @@ module internal FixReferenceAssemblies =
 
             let tryLoad (asmPath:string) =
                 // Only Net8.0 compile-time need fixing. Path doesn't exist in other targetFrameworks.
-                if not (System.IO.Directory.Exists asmPath) then ()
+                if not (Directory.Exists asmPath) then ()
                 else
                     let checkAndLoad (file:string) =
                         let fileToSeek = asmPath + System.IO.Path.DirectorySeparatorChar.ToString() + file
-                        if System.IO.File.Exists (fileToSeek) then
+                        if File.Exists (fileToSeek) then
                             try
                                 Assembly.LoadFrom fileToSeek |> ignore
                             with

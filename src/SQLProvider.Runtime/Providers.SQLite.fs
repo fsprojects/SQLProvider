@@ -5,6 +5,8 @@ open System.IO
 open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Data
+open System.Data.Common
+open System.Reflection
 open FSharp.Data.Sql
 open FSharp.Data.Sql.Transactions
 open FSharp.Data.Sql.Schema
@@ -14,7 +16,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
     // note we intentionally do not hang onto a connection object at any time,
     // as the type provider will dicate the connection lifecycles
     let schemaCache = SchemaCache.LoadOrEmpty(contextSchemaPath)
-    let myLock = new Object()
+    let myLock = Object()
 
     /// This is custom getSchema operation for data libraries that doesn't support System.Data.Common GetSchema interface.
     let customGetSchema name conn =
@@ -22,18 +24,18 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
         let updateDataTableByTableOrView (masterType:string) =
             dt.Columns.AddRange([|"TABLE_TYPE";"TABLE_CATALOG";"TABLE_NAME"|]|>Array.map(fun x -> new DataColumn(x)))
 
-            let query = "SELECT type as TABLE_TYPE, 'main' as TABLE_CATALOG, name as TABLE_NAME FROM sqlite_master WHERE type='" + masterType + "';"
+            let query = $"SELECT type as TABLE_TYPE, 'main' as TABLE_CATALOG, name as TABLE_NAME FROM sqlite_master WHERE type='{masterType}';"
 
             use com = (this:>ISqlProvider).CreateCommand(conn,query)
             use reader = com.ExecuteReader()
             while reader.Read() do
-                dt.Rows.Add([|box(reader.GetString(0));box(reader.GetString(1));box(reader.GetString(2));|]) |> ignore
+                dt.Rows.Add([|box(reader.GetString 0);box(reader.GetString 1);box(reader.GetString 2);|]) |> ignore
             dt
 
         match name with
         | "DataTypes" ->
             dt.Columns.AddRange([|"DataType",typeof<string>;"TypeName",typeof<string>;"ProviderDbType",typeof<int>|]|>Array.map(fun (x,t) -> new DataColumn(x,t)))
-            let addrow(a:string,b:string,c:int) = dt.Rows.Add([|box(a);box(b);box(c);|]) |> ignore
+            let addrow(a:string,b:string,c:int) = dt.Rows.Add([|box a;box b;box c;|]) |> ignore
             [   "System.Int16","smallint",10
                 "System.Int32","int",11
                 "System.Double","real",8
@@ -83,7 +85,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                 "System.DateTime","time",6
                 //"System.DateTimeOffset","date",6 // or text?
                 "System.Guid","uniqueidentifier",4
-                "System.Guid","guid",4 ] |> List.iter(addrow)
+                "System.Guid","guid",4 ] |> List.iter addrow
             dt
         | "Tables" -> updateDataTableByTableOrView "table"
         | "Views" -> updateDataTableByTableOrView "view"
@@ -92,16 +94,16 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
             let tables =
                 use com = (this:>ISqlProvider).CreateCommand(conn,tablequery)
                 use reader = com.ExecuteReader()
-                [while reader.Read() do yield reader.GetString(0)]
+                [while reader.Read() do yield reader.GetString 0]
 
             dt.Columns.AddRange([|"TABLE_NAME";"FKEY_TO_CATALOG";"TABLE_CATALOG";"FKEY_TO_TABLE";"FKEY_FROM_COLUMN";"FKEY_TO_COLUMN";"CONSTRAINT_NAME"|]|>Array.map(fun x -> new DataColumn(x)))
 
             tables |> List.iter(fun tablename ->
-                let query = sprintf "pragma foreign_key_list(%s)" tablename
+                let query = $"pragma foreign_key_list(%s{tablename})"
                 use com = (this:>ISqlProvider).CreateCommand(conn,query)
                 use reader = com.ExecuteReader()
                 while reader.Read() do
-                    dt.Rows.Add([|box(tablename); box("main"); box("main"); box(reader.GetString(2));box(reader.GetString(3));box(reader.GetString(4));box("fk_"+tablename+reader.GetString(0));|]) |> ignore
+                    dt.Rows.Add([|box tablename; box "main"; box "main"; box(reader.GetString 2);box(reader.GetString 3);box(reader.GetString 4);box("fk_"+tablename+reader.GetString(0));|]) |> ignore
             )
             dt
         | s -> failwith ("Not supported [ " + s.ToString() + " ]. This custom getSchema will be removed when the corresponding System.Data.Common interface is supported by the connection driver. ")
@@ -152,11 +154,11 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
         | Choice1Of2(assembly) ->
             let types, err =
                 try assembly.GetTypes(), None
-                with | :? System.Reflection.ReflectionTypeLoadException as e ->
+                with | :? ReflectionTypeLoadException as e ->
                     let msgs = e.LoaderExceptions |> Seq.map(fun e -> e.GetBaseException().Message) |> Seq.distinct
                     let details = "Details: " + Environment.NewLine + String.Join(Environment.NewLine, msgs)
                     let platform = Reflection.getPlatform(Reflection.execAssembly.Force())
-                    let errmsg = (e.Message + Environment.NewLine + details + (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else ""))
+                    let errmsg = (e.Message + Environment.NewLine + details + (if platform <> "" then $"{Environment.NewLine}Current execution platform: {platform}" else ""))
                     if e.Types.Length = 0 then
                         failwith errmsg
                     else e.Types, Some errmsg
@@ -205,9 +207,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
 
     let fieldNotationAlias(al:alias,col:SqlColumnType) =
         let aliasSprint =
-            match String.IsNullOrEmpty(al) with
-            | true -> sprintf "'%s'"
-            | false -> sprintf "'[%s].[%s]'" al
+            if String.IsNullOrEmpty(al) then sprintf "'%s'" else sprintf "'[%s].[%s]'" al
         Utilities.genericAliasNotation aliasSprint col
 
     let getSchema name (conn:IDbConnection) =
@@ -221,7 +221,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
 #endif
 #if !REFLECTIONLOAD
         | SQLiteLibrary.SystemDataSQLite ->
-            (conn :?> System.Data.SQLite.SQLiteConnection).GetSchema(name)
+            (conn :?> System.Data.SQLite.SQLiteConnection).GetSchema name
 #endif
         | _ ->
             getSchemaMethod.Value.Invoke(conn,[|name|]) :?> DataTable
@@ -263,7 +263,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
         let columnNames, values =
             (([],0),entity.ColumnValues)
             ||> Seq.fold(fun (out,i) (k,v) ->
-                let name = sprintf "@param%i" i
+                let name = $"@param%i{i}"
                 let p = createParam name i v
                 (k,p)::out,i+1)
             |> fun (x,_)-> x
@@ -311,7 +311,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
         let data =
             (([],0),changedColumns)
             ||> List.fold(fun (out,i) col ->
-                let name = sprintf "@param%i" i
+                let name = $"@param%i{i}"
                 let p =
                     match (entity :> IColumnHolder).GetColumnOption<obj> col with
                     | Some v -> createParam name i v
@@ -326,8 +326,8 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
         | ks ->
             ~~(sprintf "UPDATE %s SET %s WHERE "
                 (entity :> IColumnHolder).Table.FullName
-                (String.concat "," (data |> Array.map(fun (c,p) -> sprintf "[%s] = %s" c p.ParameterName ) )))
-            ~~(String.concat " AND " (ks |> List.mapi(fun i k -> (sprintf "[%s] = @pk%i" k i))) + ";")
+                (String.concat "," (data |> Array.map(fun (c,p) -> $"[%s{c}] = %s{p.ParameterName}" ) )))
+            ~~(String.concat " AND " (ks |> List.mapi(fun i k -> $"[%s{k}] = @pk%i{i}")) + ";")
 
         data |> Array.map snd |> Array.iter (cmd.Parameters.Add >> ignore)
         pkValues |> List.iteri(fun i pkValue ->
@@ -358,13 +358,17 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
         | [] -> ()
         | ks ->
             ~~(sprintf "DELETE FROM %s WHERE " (entity :> IColumnHolder).Table.FullName)
-            ~~(String.concat " AND " (ks |> List.mapi(fun i k -> (sprintf "[%s] = @id%i" k i))) + ";")
+            ~~(String.concat " AND " (ks |> List.mapi(fun i k -> $"[%s{k}] = @id%i{i}")) + ";")
         cmd.CommandText <- sb.ToString()
         cmd
     let pragmacheck (values:obj array) =
         let checkp p =
             let p = p.ToString()
+#if NETSTANDARD21
+            if p.Contains('\'') || p.Contains('"') || p.Contains(';') then failwithf "Unsupported pragma: %s" p
+#else
             if p.Contains("'") || p.Contains("\"") || p.Contains(";") then failwithf "Unsupported pragma: %s" p
+#endif
             p
         match values.Length with
         | 1 -> checkp values.[0]
@@ -384,10 +388,14 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                 let basePath =
                     if String.IsNullOrEmpty(resolutionPath) || resolutionPath = Path.DirectorySeparatorChar.ToString()
                     then runtimeAssembly |> Path.GetFullPath
+#if NETSTANDARD21
+                    else (if resolutionPath.Contains ';' then
+#else
                     else (if resolutionPath.Contains ";" then
+#endif
                             resolutionPath.Split ';'
                             |> Array.map (fun p -> p.Trim() |> Path.GetFullPath)
-                            |> Array.filter System.IO.Directory.Exists
+                            |> Array.filter Directory.Exists
                             |> Array.tryHead |> Option.defaultValue (runtimeAssembly |> Path.GetFullPath)
                           else resolutionPath.Trim() |> Path.GetFullPath)
 
@@ -398,22 +406,22 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                 try
                     Activator.CreateInstance(connectionType.Value,[|box connectionString|]) :?> IDbConnection
                 with
-                | :? System.Reflection.ReflectionTypeLoadException as ex ->
+                | :? ReflectionTypeLoadException as ex ->
                     let errorfiles = ex.LoaderExceptions |> Array.map(fun e -> e.GetBaseException().Message) |> Seq.distinct |> Seq.toArray
                     let msg = ex.Message + "\r\n" + String.Join("\r\n", errorfiles) + (if Environment.Is64BitProcess then " (You are running on x64.)" else " (You are NOT running on x64.)")
-                    raise(System.Reflection.TargetInvocationException(msg, ex))
-                | :? System.Reflection.TargetInvocationException as ex when ((not(isNull ex.InnerException)) && ex.InnerException :? DllNotFoundException) ->
+                    raise(TargetInvocationException(msg, ex))
+                | :? TargetInvocationException as ex when ((not(isNull ex.InnerException)) && ex.InnerException :? DllNotFoundException) ->
                     let resp = Reflection.listResolutionFullPaths resolutionPath
                     let msg = ex.GetBaseException().Message + ", Path: " + resp + (if Environment.Is64BitProcess then " (You are running on x64.)" else " (You are NOT running on x64.)")
-                    raise(System.Reflection.TargetInvocationException(msg, ex))
-                | :? System.TypeInitializationException as te when (te.InnerException :? System.Reflection.TargetInvocationException) ->
-                    let ex = te.InnerException :?> System.Reflection.TargetInvocationException
+                    raise(TargetInvocationException(msg, ex))
+                | :? TypeInitializationException as te when (te.InnerException :? TargetInvocationException) ->
+                    let ex = te.InnerException :?> TargetInvocationException
                     let resp = Reflection.listResolutionFullPaths resolutionPath
                     let msg = ex.GetBaseException().Message + ", Path: " + resp + (if Environment.Is64BitProcess then " (You are running on x64.)" else " (You are NOT running on x64.)")
-                    raise(System.Reflection.TargetInvocationException(msg, ex.InnerException))
-                | :? System.Reflection.TargetInvocationException as ex when not(isNull ex.InnerException) ->
+                    raise(TargetInvocationException(msg, ex.InnerException))
+                | :? TargetInvocationException as ex when not(isNull ex.InnerException) ->
                     let msg = ex.GetBaseException().Message
-                    raise(System.Reflection.TargetInvocationException("Cannot create connection, db driver raised exception: " + msg, ex.InnerException))
+                    raise(TargetInvocationException("Cannot create connection, db driver raised exception: " + msg, ex.InnerException))
 #if REFLECTIONLOAD
             createDynamicConnection()
 #else
@@ -455,15 +463,19 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
 #else
             match sqliteLibrary with
             | SQLiteLibrary.SystemDataSQLite -> 
-                let p = System.Data.SQLite.SQLiteParameter(param.Name, value)
-                p.DbType <- param.TypeMapping.DbType
-                p.Direction <- param.Direction
+                let p =
+                    System.Data.SQLite.SQLiteParameter(param.Name, value,
+                        DbType = param.TypeMapping.DbType,
+                        Direction = param.Direction
+                    )
                 ValueOption.iter (fun l -> p.Size <- l) param.Length
                 p :> IDbDataParameter
             | SQLiteLibrary.MicrosoftDataSqlite -> 
-                let p = Microsoft.Data.Sqlite.SqliteParameter(param.Name, value)
-                p.DbType <- param.TypeMapping.DbType
-                p.Direction <- param.Direction
+                let p =
+                    Microsoft.Data.Sqlite.SqliteParameter(param.Name, value,
+                        DbType = param.TypeMapping.DbType,
+                        Direction = param.Direction
+                    )
                 ValueOption.iter (fun l -> p.Size <- l) param.Length
                 p :> IDbDataParameter
             | _ -> createDynamicParameter()
@@ -482,7 +494,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                     let result = ResultSet(col.Name, Sql.dataReaderToArray reader)
                     reader.NextResult() |> ignore
                     result
-                Set(cols |> Array.map (processReturnColumn))
+                Set(cols |> Array.map processReturnColumn)
 
         member __.ExecuteSprocCommandAsync(com, inputParameters, returnCols, values:obj array) =
             task {
@@ -501,7 +513,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                             let! _ = reader.NextResultAsync()
                             return result
                         }
-                    let! r = cols |> Seq.toList |> Sql.evaluateOneByOne (processReturnColumnAsync)
+                    let! r = cols |> Seq.toList |> Sql.evaluateOneByOne processReturnColumnAsync
                     if not reader.IsClosed then reader.Close()
                     return Set(r |> List.toArray)
             }
@@ -544,19 +556,23 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                     reader.GetString(0).ToLower()
 
                 if con.State <> ConnectionState.Open then con.Open()
-                let query = sprintf "pragma table_info(%s)" table.Name
+                let query = $"pragma table_info(%s{table.Name})"
                 use com = (this:>ISqlProvider).CreateCommand(con,query)
                 use reader = com.ExecuteReader()
                 let columns =
                     [ while reader.Read() do
-                        let colName = reader.GetString(1)
+                        let colName = reader.GetString 1
                         let dtv = reader.GetString(2).ToLower()
                         let dtv = if String.IsNullOrWhiteSpace dtv then typeofColumn colName else dtv
-                        let dt = if dtv.Contains("(") then dtv.Substring(0,dtv.IndexOf('(')) else dtv
+#if NETSTANDARD21
+                        let dt = if dtv.Contains '(' then dtv.Substring(0,dtv.IndexOf('(')) else dtv
+#else
+                        let dt = if dtv.Contains "(" then dtv.Substring(0,dtv.IndexOf('(')) else dtv
+#endif
                         let dt = dt.Trim()
                         match findDbType dt with
                         | Some(m) ->
-                            let pkColumn = reader.GetBoolean(5)
+                            let pkColumn = reader.GetBoolean 5
                             // Check if column is generated/computed (hidden column in pragma table_info is 6)
                             let isComputed = 
                                 try 
@@ -581,15 +597,14 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                                            | os -> x::os |> Seq.distinct |> Seq.toList |> List.sort
                                 ) |> ignore
                             yield (col.Name,col)
-                        | _ -> ()]
+                        | None -> ()]
                     |> Map.ofList
                 con.Close()
                 schemaCache.Columns.AddOrUpdate(table.FullName, columns, fun x old -> match columns.Count with 0 -> old | x -> columns)
 
         member __.GetRelationships(con,table) =
-          System.Threading.Monitor.Enter schemaCache.Relationships
-          try
-            match schemaCache.Relationships.TryGetValue(table.FullName) with
+          lock schemaCache.Relationships (fun () ->
+            match schemaCache.Relationships.TryGetValue table.FullName with
             | true,v -> v
             | _ ->
                 // SQLite doesn't have great metadata capabilities.
@@ -624,9 +639,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                 con.Close()
                 match schemaCache.Relationships.TryGetValue table.FullName with
                 | true,v -> v
-                | _ -> [||],[||]
-          finally
-            System.Threading.Monitor.Exit schemaCache.Relationships
+                | _ -> [||],[||])
 
         member __.GetSprocs(_) = // SQLite does not support stored procedures. Let's just add a possibilirt to query a pragma value.
              let inParamType = (findDbType "text").Value
@@ -643,8 +656,8 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                                         ReturnColumns = (fun _ name -> [QueryParameter.Create("ResultSet",0,outParamType,ParameterDirection.Output)])
                 }))
              ]
-        member __.GetIndividualsQueryText(table,amount) = sprintf "SELECT * FROM %s LIMIT %i;" table.FullName amount
-        member __.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM [%s].[%s] WHERE [%s].[%s].[%s] = @id" table.Schema table.Name table.Schema table.Name column
+        member __.GetIndividualsQueryText(table,amount) = $"SELECT * FROM %s{table.FullName} LIMIT %i{amount};"
+        member __.GetIndividualQueryText(table,column) = $"SELECT * FROM [%s{table.Schema}].[%s{table.Name}] WHERE [%s{table.Schema}].[%s{table.Name}].[%s{column}] = @id"
         member __.GetSchemaCache() = schemaCache
 
         member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript, con) =
@@ -674,9 +687,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                     filterBuilder (~~) [c]
                     sb.ToString()
                 let colSprint =
-                    match String.IsNullOrEmpty(al) with
-                    | true -> sprintf "[%s]"
-                    | false -> sprintf "[%s].[%s]" al
+                    if String.IsNullOrEmpty(al) then sprintf "[%s]" else sprintf "[%s].[%s]" al
                 match c with
                 // Custom database spesific overrides for canonical function:
                 | SqlColumnType.CanonicalOperation(cf,col) ->
@@ -692,38 +703,38 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                     | SubstringWithLength(SqlConstant startPos,SqlCol(al2, col2)) -> sprintf "SUBSTR(%s, %s, %s)" column (fieldParam startPos) (fieldNotation al2 col2)
                     | SubstringWithLength(SqlCol(al2, col2), SqlConstant strLen) -> sprintf "SUBSTR(%s, %s, %s)" column (fieldNotation al2 col2) (fieldParam strLen)
                     | SubstringWithLength(SqlCol(al2, col2),SqlCol(al3, col3)) -> sprintf "SUBSTR(%s, %s, %s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
-                    | Trim -> sprintf "TRIM(%s)" column
-                    | Length -> sprintf "LENGTH(%s)" column
+                    | Trim -> $"TRIM(%s{column})"
+                    | Length -> $"LENGTH(%s{column})"
                     | IndexOf(SqlConstant search) -> sprintf "INSTR(%s,%s)" column (fieldParam search)
                     | IndexOf(SqlCol(al2, col2)) -> sprintf "INSTR(%s,%s)" column (fieldNotation al2 col2)
                     | IndexOfStart(SqlConstant search, SqlConstant startPos) -> sprintf "CASE WHEN INSTR(SUBSTR(%s, %s), %s) > 0 THEN INSTR(SUBSTR(%s, %s), %s) + %s - 1 ELSE 0 END" column (fieldParam startPos) (fieldParam search) column (fieldParam startPos) (fieldParam search) (fieldParam startPos)
                     | IndexOfStart(SqlConstant search, SqlCol(al2, col2)) -> sprintf "CASE WHEN INSTR(SUBSTR(%s, %s), %s) > 0 THEN INSTR(SUBSTR(%s, %s), %s) + %s - 1 ELSE 0 END" column (fieldNotation al2 col2) (fieldParam search) column (fieldNotation al2 col2) (fieldParam search) (fieldNotation al2 col2)
                     | IndexOfStart(SqlCol(al2, col2), SqlConstant startPos) -> sprintf "CASE WHEN INSTR(SUBSTR(%s, %s), %s) > 0 THEN INSTR(SUBSTR(%s, %s), %s) + %s - 1 ELSE 0 END" column (fieldParam startPos) (fieldNotation al2 col2) column (fieldParam startPos) (fieldNotation al2 col2) (fieldParam startPos)
                     | IndexOfStart(SqlCol(al2, col2), SqlCol(al3, col3)) -> sprintf "CASE WHEN INSTR(SUBSTR(%s, %s), %s) > 0 THEN INSTR(SUBSTR(%s, %s), %s) + %s - 1 ELSE 0 END" column (fieldNotation al3 col3) (fieldNotation al2 col2) column (fieldNotation al3 col3) (fieldNotation al2 col2) (fieldNotation al3 col3)
-                    | CastVarchar -> sprintf "CAST(%s AS TEXT)" column
-                    | CastInt -> sprintf "CAST(%s AS INTEGER)" column
+                    | CastVarchar -> $"CAST(%s{column} AS TEXT)"
+                    | CastInt -> $"CAST(%s{column} AS INTEGER)"
                     // Date functions
-                    | Date -> sprintf "DATE(%s)" column
-                    | Year -> sprintf "CAST(STRFTIME('%%Y', %s) as INTEGER)" column
-                    | Month -> sprintf "CAST(STRFTIME('%%m', %s) as INTEGER)" column
-                    | Day -> sprintf "CAST(STRFTIME('%%d', %s) as INTEGER)" column
-                    | Hour -> sprintf "CAST(STRFTIME('%%H', %s) as INTEGER)" column
-                    | Minute -> sprintf "CAST(STRFTIME('%%M', %s) as INTEGER)" column
-                    | Second -> sprintf "CAST(STRFTIME('%%S', %s) as INTEGER)" column
+                    | Date -> $"DATE(%s{column})"
+                    | Year -> $"CAST(STRFTIME('%%Y', %s{column}) as INTEGER)"
+                    | Month -> $"CAST(STRFTIME('%%m', %s{column}) as INTEGER)"
+                    | Day -> $"CAST(STRFTIME('%%d', %s{column}) as INTEGER)"
+                    | Hour -> $"CAST(STRFTIME('%%H', %s{column}) as INTEGER)"
+                    | Minute -> $"CAST(STRFTIME('%%M', %s{column}) as INTEGER)"
+                    | Second -> $"CAST(STRFTIME('%%S', %s{column}) as INTEGER)"
                     | AddYears(SqlConstant x) -> sprintf "DATETIME(%s, '+%s year')" column (Utilities.fieldConstant x)
-                    | AddMonths x -> sprintf "DATETIME(%s, '+%d month')" column x
+                    | AddMonths x -> $"DATETIME(%s{column}, '+%d{x} month')"
                     | AddDays(SqlConstant x) -> sprintf "DATETIME(%s, '+%s day')" column (Utilities.fieldConstant x) // SQL ignores decimal part :-(
-                    | AddHours x -> sprintf "DATETIME(%s, '+%f hour')" column x
+                    | AddHours x -> $"DATETIME(%s{column}, '+%f{x} hour')"
                     | AddMinutes(SqlConstant x) -> sprintf "DATETIME(%s, '+%s minute')" column (Utilities.fieldConstant x)
-                    | AddSeconds x -> sprintf "DATETIME(%s, '+%f second')" column x
+                    | AddSeconds x -> $"DATETIME(%s{column}, '+%f{x} second')"
                     | DateDiffDays(SqlCol(al2, col2)) -> sprintf "CAST(JULIANDAY(%s) - JULIANDAY(%s) as INTEGER)" column (fieldNotation al2 col2)
                     | DateDiffSecs(SqlCol(al2, col2)) -> sprintf "(JULIANDAY(%s) - JULIANDAY(%s))*24*60*60" column (fieldNotation al2 col2)
                     | DateDiffDays(SqlConstant x) -> sprintf "CAST(JULIANDAY(%s) - JULIANDAY(%s) as INTEGER)" column (fieldParam x)
                     | DateDiffSecs(SqlConstant x) -> sprintf "(JULIANDAY(%s) - JULIANDAY(%s))*24*60*60" column (fieldParam x)
                     // Math functions
-                    | Truncate -> sprintf "SUBSTR(%s, 1, INSTR(%s, '.') + 1)" column column
-                    | Ceil -> sprintf "CAST(%s + 0.5 AS INT)" column // Ceil not supported, this will do
-                    | Floor -> sprintf "CAST(%s AS INT)" column // Floor not supported, this will do
+                    | Truncate -> $"SUBSTR(%s{column}, 1, INSTR(%s{column}, '.') + 1)"
+                    | Ceil -> $"CAST(%s{column} + 0.5 AS INT)" // Ceil not supported, this will do
+                    | Floor -> $"CAST(%s{column} AS INT)" // Floor not supported, this will do
                     | BasicMathOfColumns(o, a, c) -> sprintf "(%s %s %s)" column o (fieldNotation a c)
                     | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "(%s %s %s)" column o (fieldParam par)
                     | BasicMathLeft(o, par) when (par :? String || par :? Char) -> sprintf "(%s %s %s)" (fieldParam par) o column
@@ -769,42 +780,42 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                                             | Some(x) -> [|createParamet (nextParam()) columnDataType !param (box x)|]
                                             | None ->    [|createParamet (nextParam()) columnDataType !param DBNull.Value|]
 
-                                    let prefix = if i>0 then (sprintf " %s " op) else ""
+                                    let prefix = if i>0 then $" %s{op} " else ""
                                     let paras = extractData data
                                     ~~(sprintf "%s%s" prefix <|
                                         match operator with
-                                        | FSharp.Data.Sql.IsNull -> sprintf "%s IS NULL" column
-                                        | FSharp.Data.Sql.NotNull -> sprintf "%s IS NOT NULL" column
+                                        | FSharp.Data.Sql.IsNull -> $"%s{column} IS NULL"
+                                        | FSharp.Data.Sql.NotNull -> $"%s{column} IS NOT NULL"
                                         | FSharp.Data.Sql.In ->
                                             if Array.isEmpty paras then
                                                 " (1=0) " // nothing is in the empty set
                                             else
                                                 let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
                                                 Array.iter parameters.Add paras
-                                                sprintf "%s IN (%s)" column text
+                                                $"%s{column} IN (%s{text})"
                                         | FSharp.Data.Sql.NestedIn when data.IsSome ->
                                             let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
                                             Array.iter parameters.Add innerpars
-                                            sprintf "%s IN (%s)" column innersql
+                                            $"%s{column} IN (%s{innersql})"
                                         | FSharp.Data.Sql.NotIn ->
                                             if Array.isEmpty paras then
                                                 " (1=1) "
                                             else
                                                 let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
                                                 Array.iter parameters.Add paras
-                                                sprintf "%s NOT IN (%s)" column text
+                                                $"%s{column} NOT IN (%s{text})"
                                         | FSharp.Data.Sql.NestedNotIn when data.IsSome ->
                                             let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
                                             Array.iter parameters.Add innerpars
-                                            sprintf "%s NOT IN (%s)" column innersql
+                                            $"%s{column} NOT IN (%s{innersql})"
                                         | FSharp.Data.Sql.NestedExists when data.IsSome ->
                                             let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
                                             Array.iter parameters.Add innerpars
-                                            sprintf "EXISTS (%s)" innersql
+                                            $"EXISTS (%s{innersql})"
                                         | FSharp.Data.Sql.NestedNotExists when data.IsSome ->
                                             let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
                                             Array.iter parameters.Add innerpars
-                                            sprintf "NOT EXISTS (%s)" innersql
+                                            $"NOT EXISTS (%s{innersql})"
                                         | _ ->
                                             let aliasformat = sprintf "%s %s %s" column
                                             match data with
@@ -819,17 +830,17 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                             // there's probably a nicer way to do this
                             let rec aux = function
                                 | [x] when preds.Length > 0 ->
-                                    ~~ (sprintf " %s " op)
+                                    ~~ $" %s{op} "
                                     filterBuilder' [x]
                                 | [x] -> filterBuilder' [x]
                                 | x::xs when preds.Length > 0 ->
-                                    ~~ (sprintf " %s " op)
+                                    ~~ $" %s{op} "
                                     filterBuilder' [x]
-                                    ~~ (sprintf " %s " op)
+                                    ~~ $" %s{op} "
                                     aux xs
                                 | x::xs ->
                                     filterBuilder' [x]
-                                    ~~ (sprintf " %s " op)
+                                    ~~ $" %s{op} "
                                     aux xs
                                 | [] -> ()
 
@@ -867,14 +878,14 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                         let k = if k <> "" then k elif baseAlias <> "" then baseAlias else baseTable.Name
                         if v.Count = 0 then   // if no columns exist in the projection then get everything
                             for col in schemaCache.Columns.[cols] |> Seq.map (fun c -> c.Key) do
-                                if singleEntity then yield sprintf "[%s].[%s] as '%s'" k col col
-                                else yield sprintf "[%s].[%s] as '[%s].[%s]'" k col k col
+                                if singleEntity then yield $"[%s{k}].[%s{col}] as '%s{col}'"
+                                else yield $"[%s{k}].[%s{col}] as '[%s{k}].[%s{col}]'"
                         else
                             for colp in v |> Seq.distinct do
                                 match colp with
                                 | EntityColumn col ->
-                                    if singleEntity then yield sprintf "[%s].[%s] as '%s'" k col col
-                                    else yield sprintf "[%s].[%s] as '[%s].[%s]'" k col k col // F# makes this so easy :)
+                                    if singleEntity then yield $"[%s{k}].[%s{col}] as '%s{col}'"
+                                    else yield $"[%s{k}].[%s{col}] as '[%s{k}].[%s{col}]'" // F# makes this so easy :)
                                 | OperationColumn(n,op) ->
                                     yield sprintf "%s as [%s]" (fieldNotation k op) n|])
 
@@ -885,16 +896,16 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
             let columns =
                 let extracolumns =
                     match sqlQuery.Grouping with
-                    | [] -> FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias sqlQuery.AggregateOp
+                    | [] -> Utilities.parseAggregates fieldNotation fieldNotationAlias sqlQuery.AggregateOp
                     | g  ->
                         let keys = g |> List.collect fst |> List.map(fun (a,c) ->
                             let fn = fieldNotation a c
                             if not (tmpGrpParams.ContainsKey (a,c)) then
                                 tmpGrpParams.Add((a,c), fn)
                             if sqlQuery.Aliases.Count < 2 then fn
-                            else sprintf "%s as '%s'" fn fn)
+                            else $"%s{fn} as '%s{fn}'")
                         let aggs = g |> List.collect snd
-                        let res2 = FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation fieldNotationAlias aggs |> List.toSeq
+                        let res2 = Utilities.parseAggregates fieldNotation fieldNotationAlias aggs |> List.toSeq
                         [String.Join(", ", keys) + (if List.isEmpty aggs || List.isEmpty keys then ""  else ", ") + String.Join(", ", res2)]
                 match extracolumns with
                 | [] -> selectcolumns
@@ -931,20 +942,24 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                     ~~ (sprintf "%s %s" (fieldNotation alias column) (if not desc then "DESC " else "")))
 
             if isDeleteScript then
-                ~~(sprintf "DELETE FROM %s " baseTable.FullName)
+                ~~ $"DELETE FROM %s{baseTable.FullName} "
             else
                 // SELECT
                 if sqlQuery.Distinct && sqlQuery.Count then
                     let colsAggrs = columns.Split([|" as "|], StringSplitOptions.None)
+#if NETSTANDARD21
+                    let distColumns = colsAggrs.[0] + (if colsAggrs.Length = 2 then "" else " || ',' || " + String.Join(" || ',' || ", colsAggrs |> Seq.filter(fun c -> c.Contains ',') |> Seq.map(fun c -> c.Substring(c.IndexOf(',')+1))))
+#else
                     let distColumns = colsAggrs.[0] + (if colsAggrs.Length = 2 then "" else " || ',' || " + String.Join(" || ',' || ", colsAggrs |> Seq.filter(fun c -> c.Contains ",") |> Seq.map(fun c -> c.Substring(c.IndexOf(',')+1))))
-                    ~~(sprintf "SELECT COUNT(DISTINCT %s) " distColumns)
-                elif sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columns)
+#endif
+                    ~~ $"SELECT COUNT(DISTINCT %s{distColumns}) "
+                elif sqlQuery.Distinct then ~~ $"SELECT DISTINCT %s{columns} "
                 elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
-                else  ~~(sprintf "SELECT %s " columns)
+                else  ~~ $"SELECT %s{columns} "
                 // FROM
                 let bal = if baseAlias = "" then baseTable.Name else baseAlias
-                ~~(sprintf "FROM %s as [%s] " baseTable.FullName bal)
-                sqlQuery.CrossJoins |> Seq.iter(fun (a,t) -> ~~(sprintf ", %s as [%s] " t.FullName a))
+                ~~ $"FROM %s{baseTable.FullName} as [%s{bal}] "
+                sqlQuery.CrossJoins |> Seq.iter(fun (a,t) -> ~~ $", %s{t.FullName} as [%s{a}] ")
             fromBuilder()
             // WHERE
             if sqlQuery.Filters.Length > 0 then
@@ -977,22 +992,22 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
             match sqlQuery.Union with
             | Some(UnionType.UnionAll, suquery, pars) ->
                 parameters.AddRange pars
-                ~~(sprintf " UNION ALL %s " suquery)
+                ~~ $" UNION ALL %s{suquery} "
             | Some(UnionType.NormalUnion, suquery, pars) ->
                 parameters.AddRange pars
-                ~~(sprintf " UNION %s " suquery)
+                ~~ $" UNION %s{suquery} "
             | Some(UnionType.Intersect, suquery, pars) ->
                 parameters.AddRange pars
-                ~~(sprintf " INTERSECT %s " suquery)
+                ~~ $" INTERSECT %s{suquery} "
             | Some(UnionType.Except, suquery, pars) ->
                 parameters.AddRange pars
-                ~~(sprintf " EXCEPT %s " suquery)
+                ~~ $" EXCEPT %s{suquery} "
             | None -> ()
 
             match sqlQuery.Take, sqlQuery.Skip with
-            | ValueSome take, ValueSome skip ->  ~~(sprintf " LIMIT %i OFFSET %i;" take skip)
-            | ValueSome take, ValueNone ->  ~~(sprintf " LIMIT %i;" take)
-            | ValueNone, ValueSome skip -> ~~(sprintf " LIMIT %i OFFSET %i;" System.UInt32.MaxValue skip)
+            | ValueSome take, ValueSome skip ->  ~~ $" LIMIT %i{take} OFFSET %i{skip};"
+            | ValueSome take, ValueNone ->  ~~ $" LIMIT %i{take};"
+            | ValueNone, ValueSome skip -> ~~ $" LIMIT %i{UInt32.MaxValue} OFFSET %i{skip};"
             | ValueNone, ValueNone -> ()
 
             let sql = sb.ToString()
@@ -1010,27 +1025,24 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                     match e._State with
                     | Created ->
                         use cmd = createInsertCommand con sb e
-                        if trans.IsSome then cmd.Transaction <- trans.Value
+                        match trans with | Some v -> cmd.Transaction <- v | None -> ()
                         Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
-                        if timeout.IsSome then
-                            cmd.CommandTimeout <- timeout.Value
+                        match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
                         let id = cmd.ExecuteScalar()
                         CommonTasks.checkKey schemaCache.PrimaryKeys id e
                         e._State <- Unchanged
                     | Modified fields ->
                         use cmd = createUpdateCommand con sb e fields
-                        if trans.IsSome then cmd.Transaction <- trans.Value
+                        match trans with | Some v -> cmd.Transaction <- v | None -> ()
                         Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
-                        if timeout.IsSome then
-                            cmd.CommandTimeout <- timeout.Value
+                        match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
                         cmd.ExecuteNonQuery() |> ignore
                         e._State <- Unchanged
                     | Delete ->
                         use cmd = createDeleteCommand con sb e
-                        if trans.IsSome then cmd.Transaction <- trans.Value
+                        match trans with | Some v -> cmd.Transaction <- v | None -> ()
                         Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
-                        if timeout.IsSome then
-                            cmd.CommandTimeout <- timeout.Value
+                        match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
                         cmd.ExecuteNonQuery() |> ignore
                         // remove the pk to prevent this attempting to be used again
                         (e :> IColumnHolder).SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[(e :> IColumnHolder).Table.FullName], None)
@@ -1053,7 +1065,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                     | ex -> 
                         trans.Rollback()
                         con.Close()
-                        raise ex
+                        reraise ()
                 | _ -> 
                     use scope = TransactionUtils.ensureTransaction transactionOptions
                     try
@@ -1070,38 +1082,35 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
 
             CommonTasks.``ensure columns have been loaded`` (this :> ISqlProvider) con entities
 
-            let processFunc (trans : System.Data.Common.DbTransaction option) = task {
+            let processFunc (trans : DbTransaction option) = task {
                 // initially supporting update/create/delete of single entities, no hierarchies yet
                 let handleEntity (e: SqlEntity) =
                     match e._State with
                     | Created ->
                         task {
-                            use cmd = createInsertCommand con sb e :?> System.Data.Common.DbCommand
-                            if trans.IsSome then cmd.Transaction <- trans.Value
+                            use cmd = createInsertCommand con sb e :?> DbCommand
+                            match trans with | Some v -> cmd.Transaction <- v | None -> ()
                             Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
-                            if timeout.IsSome then
-                                cmd.CommandTimeout <- timeout.Value
+                            match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
                             let! id = cmd.ExecuteScalarAsync()
                             CommonTasks.checkKey schemaCache.PrimaryKeys id e
                             e._State <- Unchanged
                         }
                     | Modified fields ->
                         task {
-                            use cmd = createUpdateCommand con sb e fields :?> System.Data.Common.DbCommand
-                            if trans.IsSome then cmd.Transaction <- trans.Value
+                            use cmd = createUpdateCommand con sb e fields :?> DbCommand
+                            match trans with | Some v -> cmd.Transaction <- v | None -> ()
                             Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
-                            if timeout.IsSome then
-                                cmd.CommandTimeout <- timeout.Value
+                            match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
                             let! c = cmd.ExecuteNonQueryAsync()
                             e._State <- Unchanged
                         }
                     | Delete ->
                         task {
-                            use cmd = createDeleteCommand con sb e :?> System.Data.Common.DbCommand
-                            if trans.IsSome then cmd.Transaction <- trans.Value
+                            use cmd = createDeleteCommand con sb e :?> DbCommand
+                            match trans with | Some v -> cmd.Transaction <- v | None -> ()
                             Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
-                            if timeout.IsSome then
-                                cmd.CommandTimeout <- timeout.Value
+                            match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
                             let! c = cmd.ExecuteNonQueryAsync()
                             // remove the pk to prevent this attempting to be used again
                             (e :> IColumnHolder).SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[(e :> IColumnHolder).Table.FullName], None)

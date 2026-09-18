@@ -151,6 +151,6 @@ let ``none option in left join`` =
             //  the (!!) operator will perform an outer join on a relationship
             for prod in (!!) od.``main.Products by ProductID`` do
             // standard operators will work as expected; the following shows the like operator and IN operator
-            select (prod.DiscontinuedDate)
+            select prod.DiscontinuedDate
             // arbitrarily complex projections are supported
-        } |> Seq.toList |> List.head
+        } |> Seq.head

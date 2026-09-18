@@ -172,7 +172,8 @@ employees
                 employee.Create(x.ColumnValues)) // create twins
     |>  Seq.toList
 
-let twins = ctx.GetUpdates() // Retrieve the FSharp.Data.Sql.Common.SqlEntity objects
+/// Retrieve the FSharp.Data.Sql.Common.SqlEntity objects
+let twins = ctx.GetUpdates()
 
 ctx.ClearUpdates() // delete the updates
 ctx.GetUpdates() // Get the updates
@@ -283,11 +284,12 @@ To delete many items from a database table, `DELETE FROM [dbo].[EMPLOYEES] WHERE
 
 *)
 (*** hide ***)
+[<Literal>]
 let conditions = true
 
 query {
     for c in ctx.Main.Employees do
-    where (conditions)
+    where conditions
 } |> Seq.``delete all items from single table`` |> Async.AwaitTask |> Async.RunSynchronously
 
 (**
@@ -319,6 +321,7 @@ In the last case you'll be maintaining code like this:
 
 *)
 
+[<Literal>]
 let employeeId = 123
 // Got some untyped array of data from the client
 let createSomeItem (data: seq<string*obj>)  =
@@ -373,7 +376,7 @@ SetColumn takes an object, giving you more control over the type serialization.
 
 *)
 
-let setIfExists (columnName) =
+let setIfExists columnName =
    if emp.HasColumn(columnName, StringComparison.InvariantCultureIgnoreCase) then
       emp.SetColumn(columnName, "testValue")
 

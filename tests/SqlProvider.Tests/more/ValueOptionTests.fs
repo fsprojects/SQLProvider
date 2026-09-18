@@ -42,7 +42,7 @@ let ``valueOption column should filter correctly with IsSome``() =
     let result = 
         query {
             for customer in dc.Main.Customers do
-            where (customer.Region.IsSome)
+            where customer.Region.IsSome
             select customer.CustomerId
         } |> Seq.toList
     
@@ -100,7 +100,7 @@ let ``valueOption nullable foreign key join should work``() =
         query {
             for order in dc.Main.Orders do
             join employee in (!!) dc.Main.Employees on (order.EmployeeId.Value = employee.EmployeeId)
-            where (order.EmployeeId.IsSome)
+            where order.EmployeeId.IsSome
             take 5
             select (order.OrderId, employee.FirstName, employee.LastName)
         } |> Seq.toList
@@ -149,7 +149,7 @@ let ``valueOption count with filter should work``() =
     let countWithRegion = 
         query {
             for customer in dc.Main.Customers do
-            where (customer.Region.IsSome)
+            where customer.Region.IsSome
             select customer.CustomerId
             count
         }
@@ -199,7 +199,7 @@ let ``valueOption aggregation should handle nulls correctly``() =
     let regionCount = 
         query {
             for customer in dc.Main.Customers do
-            where (customer.Region.IsSome)
+            where customer.Region.IsSome
             select customer.Region
             count
         }

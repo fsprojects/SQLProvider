@@ -19,7 +19,7 @@ module DataTable =
 
     let groupBy f (dt:DataTable) = 
         map f dt
-        |> Seq.groupBy (fst) 
+        |> Seq.groupBy fst 
         |> Seq.map (fun (k, v) -> k, Seq.map snd v)
     
     let cache (cache:IDictionary<string,'a>) f (dt:DataTable) = 
@@ -35,7 +35,7 @@ module DataTable =
             [
                 for row in dt.Rows do
                     match f row with
-                    | Some(a) -> yield a
+                    | Some a -> yield a
                     | None -> ()
             ]
 
@@ -44,7 +44,7 @@ module DataTable =
         copy.Rows.Clear()
         for row in dt.Rows do
             match row |>  f with
-            | Some(a) -> copy.Rows.Add(a.ItemArray) |> ignore
+            | Some a -> copy.Rows.Add(a.ItemArray) |> ignore
             | None -> ()
         copy
 
@@ -68,7 +68,7 @@ module DataTable =
 
             let computeMaxWidth indx length = 
                 let len =
-                    match widths.TryGetValue(indx) with
+                    match widths.TryGetValue indx with
                     | true, len -> max len length
                     | false, _ -> length
                 widths.[indx] <- len

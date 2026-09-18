@@ -70,7 +70,7 @@ type MyWebServer() =
                     for  t2 in context.MyDataBase.MyTable2 do
                     join t1 in context.MyDataBase.MyTable1 on (t2.ForeignId = t1.Id)
                     where (t2.Id = id)
-                    select (t1)
+                    select t1
                 } |> Seq.executeQueryAsync
 
             fetched |> Seq.iter (fun entity ->

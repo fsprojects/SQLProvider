@@ -69,7 +69,7 @@ let mattisOrderDetails =
 let orderDetail =
     query {
         for c in odbcaContext.Dbo.OrderDetails do
-        select (c)
+        select c
         head
         }
 //orderDetail.Discount <- 0.5f
@@ -115,7 +115,7 @@ let canoncicalOpTest =
         for cust in odbcaContext.Dbo.Customers do
         join emp in odbcaContext.Dbo.Employees on (cust.City.Value.Trim() = emp.City.Value.Trim())
         where (
-            abs(emp.EmployeeId)+1 > 4
+            abs emp.EmployeeId+1 > 4
             && emp.BirthDate.Value.Month + 1 > 3
             && emp.HireDate.Value.Subtract(emp.HireDate.Value).Days = 0
         )
@@ -145,7 +145,7 @@ ctx.SubmitUpdates()
 let student =
     query {
         for c in ctx.Dbo.Student do
-        select (c)
+        select c
         head
     }
 

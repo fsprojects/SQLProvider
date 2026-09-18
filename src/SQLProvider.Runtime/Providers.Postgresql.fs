@@ -5,6 +5,7 @@ open System.Collections
 open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Data
+open System.Data.Common
 open System.Net
 open System.Net.NetworkInformation
 open System.Threading
@@ -27,7 +28,7 @@ module PostgreSQL =
     let assembly =
         lazy
             match Reflection.tryLoadAssemblyFrom resolutionPath referencedAssemblies assemblyNames with
-            | Choice1Of2(assembly) -> assembly
+            | Choice1Of2 assembly -> assembly
             | Choice2Of2(paths, errors) ->
                 let details = 
                     match errors with 
@@ -50,7 +51,7 @@ module PostgreSQL =
                 let msgs = e.LoaderExceptions |> Seq.map(fun e -> e.GetBaseException().Message) |> Seq.distinct
                 let details = "Details: " + Environment.NewLine + String.Join(Environment.NewLine, msgs)
                 let platform = Reflection.getPlatform(Reflection.execAssembly.Force())
-                let errmsg = (e.Message + Environment.NewLine + details + (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else ""))
+                let errmsg = (e.Message + Environment.NewLine + details + (if platform <> "" then $"{Environment.NewLine}Current execution platform: {platform}" else ""))
                 if e.Types.Length = 0 then
                     failwith errmsg
                 else e.Types, Some errmsg
@@ -80,8 +81,7 @@ module PostgreSQL =
         dbTypeSetter.Value.Invoke(p, [|providerType|]) |> ignore
         p.DbType
 #else
-        let p = Npgsql.NpgsqlParameter()
-        p.NpgsqlDbType <- enum<NpgsqlTypes.NpgsqlDbType> providerType
+        let p = Npgsql.NpgsqlParameter(NpgsqlDbType = (enum<NpgsqlTypes.NpgsqlDbType> providerType))
         p.DbType
 #endif
 
@@ -98,7 +98,7 @@ module PostgreSQL =
 
     let tryReadValueProperty instance =
         let typ = instance.GetType()
-        let prop = typ.GetProperty("Value")
+        let prop = typ.GetProperty "Value"
         if not (isNull prop)
         then prop.GetGetMethod().Invoke(instance, [||]) |> Some
         else None
@@ -111,7 +111,7 @@ module PostgreSQL =
     let createCommandParameter (param:QueryParameter) value =
         let normalizedValue =
             if not (isOptionValue value) then (if isNull value || (Type.(=) (value.GetType(), typeof<DBNull>)) then box DBNull.Value else value) else
-            match tryReadValueProperty value with Some(v) -> v | None -> box DBNull.Value
+            match tryReadValueProperty value with Some v -> v | None -> box DBNull.Value
 
         let isAnonymousParam =
             param.Direction <> ParameterDirection.Output &&
@@ -124,9 +124,10 @@ module PostgreSQL =
 
         ValueOption.iter (fun dbt -> dbTypeSetter.Value.Invoke(p, [| dbt |]) |> ignore) param.TypeMapping.ProviderType
 #else
-        let p = Npgsql.NpgsqlParameter()
-        p.ParameterName <- 
-          if isAnonymousParam then "" else param.Name
+        let p =
+            Npgsql.NpgsqlParameter(
+                ParameterName = (if isAnonymousParam then "" else param.Name)
+            )
 
         ValueOption.iter (fun dbt -> p.NpgsqlDbType <- enum<NpgsqlTypes.NpgsqlDbType> dbt) param.TypeMapping.ProviderType
         let p = p :> IDbDataParameter
@@ -138,9 +139,7 @@ module PostgreSQL =
         
     let fieldNotationAlias(al:alias,col:SqlColumnType) =
         let aliasSprint =
-            match String.IsNullOrEmpty(al) with
-            | true -> sprintf "\"%s\""
-            | false -> sprintf "\"%s.%s\"" al
+            if String.IsNullOrEmpty(al) then sprintf "\"%s\"" else sprintf "\"%s.%s\"" al
         Utilities.genericAliasNotation aliasSprint col
 
     // store the enum value for Array; it will be combined later with the generic argument
@@ -252,10 +251,10 @@ module PostgreSQL =
             |> List.choose (
                 function
                 | name, Some(clrType, providerType) -> 
-                    Some (name, { ProviderTypeName = ValueSome(name)
+                    Some (name, { ProviderTypeName = ValueSome name
                                   ClrType = clrType.AssemblyQualifiedName
                                   DbType = getDbType providerType
-                                  ProviderType = ValueSome(providerType) })    
+                                  ProviderType = ValueSome providerType })    
                 | _ -> None
             )
             |> Map.ofList
@@ -289,7 +288,7 @@ module PostgreSQL =
         | :? System.Reflection.TargetInvocationException as ex when ((not(isNull ex.InnerException)) && ex.InnerException :? DllNotFoundException) ->
             let platform = Reflection.getPlatform(Reflection.execAssembly.Force())
             let msg = ex.GetBaseException().Message + " , Path: " + (Reflection.listResolutionFullPaths resolutionPath) +
-                        (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else "")
+                        (if platform <> "" then $"{Environment.NewLine}Current execution platform: {platform}" else "")
             raise(System.Reflection.TargetInvocationException(msg, ex))
         | :? System.Reflection.TargetInvocationException as e when not(isNull e.InnerException) ->
             match e.GetBaseException() with
@@ -300,15 +299,15 @@ module PostgreSQL =
             | be ->
                 let platform = Reflection.getPlatform(Reflection.execAssembly.Force())
                 let msg = be.Message + ", Path: " + (Reflection.listResolutionFullPaths resolutionPath) +
-                            (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else "")
+                            (if platform <> "" then $"{Environment.NewLine}Current execution platform: {platform}" else "")
                 failwithf "Could not create the connection, most likely this means that the connectionString is wrong. See error from Npgsql to troubleshoot: %s %s" msg e.InnerException.Message
-        | :? System.TypeInitializationException as te when (te.InnerException :? System.Reflection.TargetInvocationException) ->
+        | :? TypeInitializationException as te when (te.InnerException :? System.Reflection.TargetInvocationException) ->
             let ex = te.InnerException :?> System.Reflection.TargetInvocationException
             let platform = Reflection.getPlatform(Reflection.execAssembly.Force())
             let msg = ex.GetBaseException().Message + ", Path: " + (Reflection.listResolutionFullPaths resolutionPath) +
-                        (if platform <> "" then Environment.NewLine +  "Current execution platform: " + platform else "")
+                        (if platform <> "" then $"{Environment.NewLine}Current execution platform: {platform}" else "")
             raise(System.Reflection.TargetInvocationException(msg, ex.InnerException)) 
-        | :? System.TypeInitializationException as te when not(isNull te.InnerException) -> raise (te.GetBaseException())
+        | :? TypeInitializationException as te when not(isNull te.InnerException) -> raise (te.GetBaseException())
 #else
         new Npgsql.NpgsqlConnection(connectionString) :> IDbConnection
 #endif
@@ -336,8 +335,8 @@ module PostgreSQL =
             | value -> Sql.dataReaderToArray (value :?> IDataReader) |> Seq.toArray |> box
         | _ ->
             match tryReadValueProperty parameter.Value with
-            | Some(obj) -> obj |> box
-            | _ -> parameter.Value |> box
+            | Some obj -> obj |> box
+            | None -> parameter.Value |> box
 
     let executeSprocCommandCommon (inputParams:QueryParameter []) (retCols:QueryParameter[]) (values:obj[]) =
         let inputParameters = inputParams |> Array.filter (fun p -> p.Direction = ParameterDirection.Input)
@@ -388,7 +387,7 @@ module PostgreSQL =
                         let i = ref 1
                         while reader.NextResult() do
                              results := ResultSet("ReturnValue" + (string !i), Sql.dataReaderToArray reader) :: !results
-                             incr(i)
+                             incr i
                         Set(!results)
                     | _ ->
                         match outps |> Array.tryFind (fun (_,p) -> p.ParameterName = col.Name) with
@@ -411,9 +410,9 @@ module PostgreSQL =
                 tran.Commit()
         entities
 
-    let executeSprocCommandAsync (com:System.Data.Common.DbCommand) (inputParams:QueryParameter[]) (retCols:QueryParameter[]) (values:obj[]) =
+    let executeSprocCommandAsync (com:DbCommand) (inputParams:QueryParameter[]) (retCols:QueryParameter[]) (values:obj[]) =
+        let allParams, outps = executeSprocCommandCommon inputParams retCols values
         task {
-            let allParams, outps = executeSprocCommandCommon inputParams retCols values
             allParams |> Array.iter (fun (_,p) -> com.Parameters.Add(p) |> ignore)
 
             let tran = com.Connection.BeginTransaction()
@@ -455,7 +454,7 @@ module PostgreSQL =
                             while! reader.NextResultAsync() do // This could be done more simply with Sql.evaluateOneByOne like other providers do!
                                 let! r = Sql.dataReaderToArrayAsync reader
                                 results := ResultSet("ReturnValue" + (string !i), r) :: !results
-                                incr(i)
+                                incr i
                             if not reader.IsClosed then reader.Close()
                             return Set(!results)
                         }
@@ -521,7 +520,7 @@ module PostgreSQL =
                          PackageName = String.Empty }
             let sparams =
                 let args = Sql.dbUnbox<string> r.["args"] 
-                args.Split('\n')
+                args.Split '\n'
                 |> Seq.filter (not << String.IsNullOrEmpty)
                 |> Seq.mapi (fun i arg -> i, arg)
                 |> Seq.fold (fun acc (i, arg) ->
@@ -529,7 +528,7 @@ module PostgreSQL =
                     | None -> None
                     | Some sparams -> 
                         let direction, name, typeName =
-                            match arg.Split(';') with
+                            match arg.Split ';' with
                             | [| direction; name; typeName |] -> direction, name, typeName
                             | _ -> failwith "Invalid procedure argument description."
 
@@ -555,10 +554,10 @@ module PostgreSQL =
                     | null -> sp, rcolumns
                     | "record" ->
                         match findDbType "record" with
-                        | Some(m) ->
+                        | Some m ->
                             // TODO: query parameters can contain output parameters which could be used to populate provided properties to return value type.
                             let sparams = sp |> List.filter (fun p -> p.Direction = ParameterDirection.Input)
-                            sparams, [ QueryParameter.Create("ReturnValue", -1, { m with ProviderTypeName = ValueSome("record") }, ParameterDirection.ReturnValue) ]
+                            sparams, [ QueryParameter.Create("ReturnValue", -1, { m with ProviderTypeName = ValueSome "record" }, ParameterDirection.ReturnValue) ]
                         | None -> sp, rcolumns
                     | rtype ->
                         findDbType rtype
@@ -571,7 +570,7 @@ module PostgreSQL =
 
 type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, referencedAssemblies) =
     let schemaCache = SchemaCache.LoadOrEmpty(contextSchemaPath)
-    let myLock = new Object()
+    let myLock = Object()
 
     let createInsertCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) =
         let (~~) (t:string) = sb.Append t |> ignore
@@ -584,7 +583,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
         let columnNamesWithValues = 
             (([],0), entity.ColumnValuesWithDefinition)
             ||> Seq.fold(fun (out, i) (k,v,c) ->
-                let name = sprintf "@param%i" i
+                let name = $"@param%i{i}"
                 let qp = match c with
                          | Some(c) -> QueryParameter.Create(name,i,c.TypeMapping)
                          | None -> QueryParameter.Create(name,i)
@@ -601,7 +600,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
         match columnNames with
         | [] -> ~~(sprintf "DEFAULT VALUES")
         | _ -> ~~(sprintf "(%s) VALUES (%s)"
-                    (String.Join(",",columnNames |> List.map (fun c -> sprintf "\"%s\"" c)))
+                    (String.Join(",",columnNames |> List.map (fun c -> $"\"%s{c}\"")))
                     (String.Join(",",values |> List.map(fun p -> p.ParameterName))))
 
         match entity.OnConflict with
@@ -609,12 +608,12 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
         | Update ->
           ~~(sprintf " ON CONFLICT (%s) DO UPDATE SET %s "                
                 (String.concat "," (pk |> List.map (sprintf "\"%s\"")))
-                (String.concat "," (columnNamesWithValues |> List.map(fun (c,p) -> sprintf "\"%s\" = %s" c p.ParameterName ) )))
+                (String.concat "," (columnNamesWithValues |> List.map(fun (c,p) -> $"\"%s{c}\" = %s{p.ParameterName}" ) )))
         | DoNothing ->
           ~~(sprintf " ON CONFLICT DO NOTHING ")
 
         match haspk, pk with
-        | true, [itm] -> ~~(sprintf " RETURNING \"%s\";" itm)
+        | true, [itm] -> ~~ $" RETURNING \"%s{itm}\";"
         | _ -> ()
 
         values |> List.iter (cmd.Parameters.Add >> ignore)
@@ -644,7 +643,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
         let data =
             (([],0),changedColumns)
             ||> List.fold(fun (out,i) col ->
-                let name = sprintf "@param%i" i
+                let name = $"@param%i{i}"
                 let qp, v =
                     match (entity :> IColumnHolder).GetColumnOptionWithDefinition col with
                     | Some(v, Some(c)) -> QueryParameter.Create(name,i,c.TypeMapping), v
@@ -661,8 +660,8 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
         | ks -> 
             ~~(sprintf "UPDATE \"%s\".\"%s\" SET %s WHERE "
                 (entity :> IColumnHolder).Table.Schema (entity :> IColumnHolder).Table.Name
-                (String.concat "," (data |> Array.map(fun (c,p) -> sprintf "\"%s\" = %s" c p.ParameterName ) )))
-            ~~(String.concat " AND " (ks |> List.mapi(fun i k -> (sprintf "\"%s\" = @pk%i" k i))) + ";")
+                (String.concat "," (data |> Array.map(fun (c,p) -> $"\"%s{c}\" = %s{p.ParameterName}" ) )))
+            ~~(String.concat " AND " (ks |> List.mapi(fun i k -> $"\"%s{k}\" = @pk%i{i}")) + ";")
 
         data |> Array.map snd |> Array.iter (cmd.Parameters.Add >> ignore)
         pkValues |> List.iteri(fun i pkValue ->
@@ -694,7 +693,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
         | [] -> ()
         | ks -> 
             ~~(sprintf "DELETE FROM \"%s\".\"%s\" WHERE " (entity :> IColumnHolder).Table.Schema (entity :> IColumnHolder).Table.Name)
-            ~~(String.concat " AND " (ks |> List.mapi(fun i k -> (sprintf "\"%s\" = @id%i" k i))))
+            ~~(String.concat " AND " (ks |> List.mapi(fun i k -> $"\"%s{k}\" = @id%i{i}")))
 
         cmd.CommandText <- sb.ToString()
         cmd
@@ -898,7 +897,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
         member __.GetRelationships(con,table) =
             Monitor.Enter schemaCache.Relationships
             try
-                match schemaCache.Relationships.TryGetValue(table.FullName) with
+                match schemaCache.Relationships.TryGetValue table.FullName with
                 | true,v -> v
                 | _ ->
                     let baseQuery = @"SELECT
@@ -926,33 +925,33 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                                         AND KCU2.ORDINAL_POSITION = KCU1.ORDINAL_POSITION "
                     if con.State <> ConnectionState.Open then con.Open()
 
-                    use command = PostgreSQL.createCommand (sprintf "%s WHERE KCU2.TABLE_NAME = @table" baseQuery) con
+                    use command = PostgreSQL.createCommand $"%s{baseQuery} WHERE KCU2.TABLE_NAME = @table" con
                     PostgreSQL.createCommandParameter (QueryParameter.Create("@table", 0)) table.Name |> command.Parameters.Add |> ignore
                     use reader = command.ExecuteReader()
 
                     let children : Relationship array =
                         [ while reader.Read() do
                             yield {
-                                    Name = reader.GetString(0);
+                                    Name = reader.GetString 0;
                                     PrimaryTable=Table.CreateFullName(reader.GetString(9), reader.GetString(5));
-                                    PrimaryKey=reader.GetString(6)
+                                    PrimaryKey=reader.GetString 6
                                     ForeignTable=Table.CreateFullName(reader.GetString(8), reader.GetString(1));
-                                    ForeignKey=reader.GetString(2)
+                                    ForeignKey=reader.GetString 2
                                   } ] |> List.toArray
                     reader.Dispose()
 
-                    use command = PostgreSQL.createCommand (sprintf "%s WHERE KCU1.TABLE_NAME = @table" baseQuery) con
+                    use command = PostgreSQL.createCommand $"%s{baseQuery} WHERE KCU1.TABLE_NAME = @table" con
                     PostgreSQL.createCommandParameter (QueryParameter.Create("@table", 0)) table.Name |> command.Parameters.Add |> ignore
                     use reader = command.ExecuteReader()
 
                     let parents : Relationship array =
                         [ while reader.Read() do
                             yield {
-                                    Name = reader.GetString(0);
+                                    Name = reader.GetString 0;
                                     PrimaryTable = Table.CreateFullName(reader.GetString(9), reader.GetString(5));
-                                    PrimaryKey = reader.GetString(6)
+                                    PrimaryKey = reader.GetString 6
                                     ForeignTable = Table.CreateFullName(reader.GetString(8), reader.GetString(1));
-                                    ForeignKey = reader.GetString(2)
+                                    ForeignKey = reader.GetString 2
                                   } ] |> List.toArray
                     schemaCache.Relationships.[table.FullName] <- (children,parents)
                     con.Close()
@@ -961,8 +960,8 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                     Monitor.Exit schemaCache.Relationships
 
         member __.GetSprocs(con) = Sql.connect con PostgreSQL.getSprocs
-        member __.GetIndividualsQueryText(table,amount) = sprintf "SELECT * FROM \"%s\".\"%s\" LIMIT %i;" table.Schema table.Name amount
-        member __.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM \"%s\".\"%s\" WHERE \"%s\".\"%s\".\"%s\" = @id" table.Schema table.Name table.Schema table.Name  column
+        member __.GetIndividualsQueryText(table,amount) = $"SELECT * FROM \"%s{table.Schema}\".\"%s{table.Name}\" LIMIT %i{amount};"
+        member __.GetIndividualQueryText(table,column) = $"SELECT * FROM \"%s{table.Schema}\".\"%s{table.Name}\" WHERE \"%s{table.Schema}\".\"%s{table.Name}\".\"%s{column}\" = @id"
 
         member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript, con) =
             // NOTE: presently this is identical to the SQLite code (except the whitespace qualifiers),
@@ -994,9 +993,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                     filterBuilder (~~) [c]
                     sb.ToString()
                 let colSprint =
-                    match String.IsNullOrEmpty(al) with
-                    | true -> sprintf "\"%s\""
-                    | false -> sprintf "\"%s\".\"%s\"" al
+                    if String.IsNullOrEmpty(al) then sprintf "\"%s\"" else sprintf "\"%s\".\"%s\"" al
                 match c with
                 // Custom database spesific overrides for canonical functions:
                 | SqlColumnType.CanonicalOperation(cf,col) ->
@@ -1013,43 +1010,43 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                     | SubstringWithLength(SqlConstant startPos,SqlCol(al2, col2)) -> sprintf "SUBSTRING(%s from %s for %s)" column (fieldParam startPos) (fieldNotation al2 col2)
                     | SubstringWithLength(SqlCol(al2, col2), SqlConstant strLen) -> sprintf "SUBSTRING(%s from %s for %s)" column (fieldNotation al2 col2) (fieldParam strLen)
                     | SubstringWithLength(SqlCol(al2, col2),SqlCol(al3, col3)) -> sprintf "SUBSTRING(%s from %s for %s)" column (fieldNotation al2 col2) (fieldNotation al3 col3)
-                    | Trim -> sprintf "TRIM(BOTH ' ' FROM %s)" column
-                    | Length -> sprintf "CHAR_LENGTH(%s)" column
+                    | Trim -> $"TRIM(BOTH ' ' FROM %s{column})"
+                    | Length -> $"CHAR_LENGTH(%s{column})"
                     | IndexOf(SqlConstant search) -> sprintf "STRPOS(%s,%s)" (fieldParam search) column
                     | IndexOf(SqlCol(al2, col2)) -> sprintf "STRPOS(%s,%s)" (fieldNotation al2 col2) column
                     | IndexOfStart(SqlConstant search, SqlConstant startPos) -> sprintf "CASE WHEN STRPOS(SUBSTRING(%s FROM %s::integer), %s) > 0 THEN STRPOS(SUBSTRING(%s FROM %s::integer), %s) + %s::integer - 1 ELSE 0 END" column (fieldParam startPos) (fieldParam search) column (fieldParam startPos) (fieldParam search) (fieldParam startPos)
                     | IndexOfStart(SqlConstant search, SqlCol(al2, col2)) -> sprintf "CASE WHEN STRPOS(SUBSTRING(%s FROM %s::integer), %s) > 0 THEN STRPOS(SUBSTRING(%s FROM %s::integer), %s) + %s::integer - 1 ELSE 0 END" column (fieldNotation al2 col2) (fieldParam search) column (fieldNotation al2 col2) (fieldParam search) (fieldNotation al2 col2)
                     | IndexOfStart(SqlCol(al2, col2), SqlConstant startPos) -> sprintf "CASE WHEN STRPOS(SUBSTRING(%s FROM %s::integer), %s) > 0 THEN STRPOS(SUBSTRING(%s FROM %s::integer), %s) + %s::integer - 1 ELSE 0 END" column (fieldParam startPos) (fieldNotation al2 col2) column (fieldParam startPos) (fieldNotation al2 col2) (fieldParam startPos)
                     | IndexOfStart(SqlCol(al2, col2), SqlCol(al3, col3)) -> sprintf "CASE WHEN STRPOS(SUBSTRING(%s FROM %s::integer), %s) > 0 THEN STRPOS(SUBSTRING(%s FROM %s::integer), %s) + %s::integer - 1 ELSE 0 END" column (fieldNotation al3 col3) (fieldNotation al2 col2) column (fieldNotation al3 col3) (fieldNotation al2 col2) (fieldNotation al3 col3)
-                    | CastVarchar -> sprintf "(%s::varchar)" column
-                    | CastInt -> sprintf "(%s::int)" column
+                    | CastVarchar -> $"(%s{column}::varchar)"
+                    | CastInt -> $"(%s{column}::int)"
                     // Date functions
-                    | Date -> sprintf "DATE_TRUNC('day', %s)" column
-                    | Year -> sprintf "DATE_PART('year', %s)" column
-                    | Month -> sprintf "DATE_PART('month', %s)" column
-                    | Day -> sprintf "DATE_PART('day', %s)" column
-                    | Hour -> sprintf "DATE_PART('hour', %s)" column
-                    | Minute -> sprintf "DATE_PART('minute', %s)" column
-                    | Second -> sprintf "DATE_PART('second', %s)" column
+                    | Date -> $"DATE_TRUNC('day', %s{column})"
+                    | Year -> $"DATE_PART('year', %s{column})"
+                    | Month -> $"DATE_PART('month', %s{column})"
+                    | Day -> $"DATE_PART('day', %s{column})"
+                    | Hour -> $"DATE_PART('hour', %s{column})"
+                    | Minute -> $"DATE_PART('minute', %s{column})"
+                    | Second -> $"DATE_PART('second', %s{column})"
                     //Todo: Check if these support parameters. If not, use Utilities.fieldConstant instead of fieldParam
                     | AddYears(SqlConstant x) -> sprintf "(%s + INTERVAL '1 year' * %s)" column (fieldParam x)
                     | AddYears(SqlCol(al2, col2)) -> sprintf "(%s + INTERVAL '1 year' * %s)" column (fieldNotation al2 col2)
-                    | AddMonths x -> sprintf "(%s + INTERVAL '1 month' * %d)" column x
+                    | AddMonths x -> $"(%s{column} + INTERVAL '1 month' * %d{x})"
                     | AddDays(SqlConstant x) -> sprintf "(%s + INTERVAL '1 day' * %s)" column (fieldParam x) // SQL ignores decimal part :-(
                     | AddDays(SqlCol(al2, col2)) -> sprintf "(%s + INTERVAL '1 day' * %s)" column (fieldNotation al2 col2)
-                    | AddHours x -> sprintf "(%s + INTERVAL '1 hour' * %f)" column x
+                    | AddHours x -> $"(%s{column} + INTERVAL '1 hour' * %f{x})"
                     | AddMinutes(SqlConstant x) -> sprintf "(%s + INTERVAL '1 minute' * %s)" column (fieldParam x)
                     | AddMinutes(SqlCol(al2, col2)) -> sprintf "(%s + INTERVAL '1 minute' * %s)" column (fieldNotation al2 col2)
-                    | AddSeconds x -> sprintf "(%s + INTERVAL '1 second' * %f)" column x
+                    | AddSeconds x -> $"(%s{column} + INTERVAL '1 second' * %f{x})"
                     | DateDiffDays(SqlCol(al2, col2)) -> sprintf "CAST(%s AS date) - CAST(%s AS date)" column (fieldNotation al2 col2)
                     | DateDiffSecs(SqlCol(al2, col2)) -> sprintf "EXTRACT(EPOCH FROM (%s::timestamp - %s::timestamp))" column (fieldNotation al2 col2)
                     | DateDiffDays(SqlConstant x) -> sprintf "CAST(%s AS date) - CAST(%s AS date)" column (fieldParam x)
                     | DateDiffSecs(SqlConstant x) -> sprintf "EXTRACT(EPOCH FROM (%s::timestamp - %s::timestamp))" column (fieldParam x)
                     // Math functions
-                    | Truncate -> sprintf "TRUNC(%s)" column
+                    | Truncate -> $"TRUNC(%s{column})"
                     // Postgres has ROUND(double precision) but NOT ROUND(double precision, int) -
                     // only ROUND(numeric, int). Cast so 2-arg rounding works for float/real columns too.
-                    | RoundDecimals n -> sprintf "ROUND(%s::numeric, %d)" column n
+                    | RoundDecimals n -> $"ROUND(%s{column}::numeric, %d{n})"
                     | BasicMathOfColumns(o, a, c) when o = "/" -> sprintf "(%s %s (1.0*%s))" column o (fieldNotation a c)
                     | BasicMathOfColumns(o, a, c) -> sprintf "(%s %s %s)" column o (fieldNotation a c)
                     | BasicMath(o, par) when (par :? String || par :? Char) -> sprintf "(%s %s %s)" column o (fieldParam par)
@@ -1069,7 +1066,8 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                     | CaseSqlPlain(Condition.ConstantFalse, _, itm2) -> sprintf " %s " (fieldParam itm2)
                     | CaseSqlPlain(f, itm, itm2) -> sprintf "CASE WHEN %s THEN %s ELSE %s END " (buildf f) (fieldParam itm) (fieldParam itm2)
                     | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
-                | _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
+                | SqlColumnType.KeyColumn _
+                | SqlColumnType.GroupColumn _ -> Utilities.genericFieldNotation (fieldNotation al) colSprint c
         
             and filterBuilder (~~) (f:Condition list) =
                 // the filter expressions
@@ -1092,42 +1090,42 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                                                 [|createParam columnDataType (box x)|]
                                             | None ->    [|createParam columnDataType DBNull.Value|]
 
-                                    let prefix = if i>0 then (sprintf " %s " op) else ""
+                                    let prefix = if i>0 then $" %s{op} " else ""
                                     let paras = extractData data
                                     ~~(sprintf "%s%s" prefix <|
                                         match operator with
-                                        | FSharp.Data.Sql.IsNull -> sprintf "%s IS NULL" column
-                                        | FSharp.Data.Sql.NotNull -> sprintf "%s IS NOT NULL" column
+                                        | FSharp.Data.Sql.IsNull -> $"%s{column} IS NULL"
+                                        | FSharp.Data.Sql.NotNull -> $"%s{column} IS NOT NULL"
                                         | FSharp.Data.Sql.In ->
                                             if Array.isEmpty paras then
                                                 " (1=0) " // nothing is in the empty set
                                             else
                                                 let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
                                                 Array.iter parameters.Add paras
-                                                sprintf "%s IN (%s)" column text
+                                                $"%s{column} IN (%s{text})"
                                         | FSharp.Data.Sql.NestedIn ->
                                             let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
                                             Array.iter parameters.Add innerpars
-                                            sprintf "%s IN (%s)" column innersql
+                                            $"%s{column} IN (%s{innersql})"
                                         | FSharp.Data.Sql.NotIn ->
                                             if Array.isEmpty paras then
                                                 " (1=1) "
                                             else
                                                 let text = String.Join(",",paras |> Array.map (fun p -> p.ParameterName))
                                                 Array.iter parameters.Add paras
-                                                sprintf "%s NOT IN (%s)" column text
+                                                $"%s{column} NOT IN (%s{text})"
                                         | FSharp.Data.Sql.NestedNotIn ->
                                             let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
                                             Array.iter parameters.Add innerpars
-                                            sprintf "%s NOT IN (%s)" column innersql
+                                            $"%s{column} NOT IN (%s{innersql})"
                                         | FSharp.Data.Sql.NestedExists ->
                                             let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
                                             Array.iter parameters.Add innerpars
-                                            sprintf "EXISTS (%s)" innersql
+                                            $"EXISTS (%s{innersql})"
                                         | FSharp.Data.Sql.NestedNotExists ->
                                             let innersql, innerpars = data.Value |> box :?> string * IDbDataParameter[]
                                             Array.iter parameters.Add innerpars
-                                            sprintf "NOT EXISTS (%s)" innersql
+                                            $"NOT EXISTS (%s{innersql})"
                                         | _ ->
                                             let aliasformat = sprintf "%s %s %s" column
                                             match data with 
@@ -1142,17 +1140,17 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                             // there's probably a nicer way to do this
                             let rec aux = function
                                 | [x] when preds.Length > 0 ->
-                                    ~~ (sprintf " %s " op)
+                                    ~~ $" %s{op} "
                                     filterBuilder' [x]
                                 | [x] -> filterBuilder' [x]
                                 | x::xs when preds.Length > 0 ->
-                                    ~~ (sprintf " %s " op)
+                                    ~~ $" %s{op} "
                                     filterBuilder' [x]
-                                    ~~ (sprintf " %s " op)
+                                    ~~ $" %s{op} "
                                     aux xs
                                 | x::xs ->
                                     filterBuilder' [x]
-                                    ~~ (sprintf " %s " op)
+                                    ~~ $" %s{op} "
                                     aux xs
                                 | [] -> ()
 
@@ -1191,14 +1189,14 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                         let k = if k <> "" then k elif baseAlias <> "" then baseAlias else baseTable.Name
                         if v.Count = 0 then   // if no columns exist in the projection then get everything
                             for col in schemaCache.Columns.[cols] |> Seq.map (fun c -> c.Key) do
-                                if singleEntity then yield sprintf "\"%s\".\"%s\" as \"%s\"" k col col
-                                else yield sprintf "\"%s\".\"%s\" as \"%s.%s\"" k col k col
+                                if singleEntity then yield $"\"%s{k}\".\"%s{col}\" as \"%s{col}\""
+                                else yield $"\"%s{k}\".\"%s{col}\" as \"%s{k}.%s{col}\""
                         else
                             for colp in v |> Seq.distinct do
                                 match colp with
                                 | EntityColumn col ->
-                                    if singleEntity then yield sprintf "\"%s\".\"%s\" as \"%s\"" k col col
-                                    else yield sprintf "\"%s\".\"%s\" as \"%s.%s\"" k col k col // F# makes this so easy :)
+                                    if singleEntity then yield $"\"%s{k}\".\"%s{col}\" as \"%s{col}\""
+                                    else yield $"\"%s{k}\".\"%s{col}\" as \"%s{k}.%s{col}\"" // F# makes this so easy :)
                                 | OperationColumn(n,op) ->
                                     yield sprintf "%s as \"%s\"" (fieldNotation k op) n|])
 
@@ -1209,7 +1207,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
             let columns =
                 let extracolumns =
                     match sqlQuery.Grouping with
-                    | [] -> FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation PostgreSQL.fieldNotationAlias sqlQuery.AggregateOp
+                    | [] -> Utilities.parseAggregates fieldNotation PostgreSQL.fieldNotationAlias sqlQuery.AggregateOp
                     | g  -> 
                         let keys = g |> List.collect fst |> List.map(fun (a,c) ->
                             let fn = fieldNotation a c
@@ -1218,7 +1216,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                             if sqlQuery.Aliases.Count < 2 then fn
                             else sprintf "%s as \"%s\"" fn (fn.Replace("\"", "")))
                         let aggs = g |> List.collect snd
-                        let res2 = FSharp.Data.Sql.Common.Utilities.parseAggregates fieldNotation PostgreSQL.fieldNotationAlias aggs |> List.toSeq
+                        let res2 = Utilities.parseAggregates fieldNotation PostgreSQL.fieldNotationAlias aggs |> List.toSeq
                         [String.Join(", ", keys) + (if List.isEmpty aggs || List.isEmpty keys then ""  else ", ") + String.Join(", ", res2)] 
                 match extracolumns with
                 | [] -> selectcolumns
@@ -1255,21 +1253,25 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                     ~~ (sprintf "%s %s" (fieldNotation alias column) (if not desc then "DESC " else "")))
 
             if isDeleteScript then
-                ~~(sprintf "DELETE FROM \"%s\".\"%s\" " baseTable.Schema baseTable.Name)
+                ~~ $"DELETE FROM \"%s{baseTable.Schema}\".\"%s{baseTable.Name}\" "
             else 
                 // SELECT
                 if sqlQuery.Distinct && sqlQuery.Count then
                     let colsAggrs = columns.Split([|" as "|], StringSplitOptions.None)
+#if NETSTANDARD21
+                    let distColumns = colsAggrs.[0] + (if colsAggrs.Length = 2 then "" else " || ',' || " + String.Join(" || ',' || ", colsAggrs |> Seq.filter(fun c -> c.Contains ',') |> Seq.map(fun c -> c.Substring(c.IndexOf(',')+1))))
+#else
                     let distColumns = colsAggrs.[0] + (if colsAggrs.Length = 2 then "" else " || ',' || " + String.Join(" || ',' || ", colsAggrs |> Seq.filter(fun c -> c.Contains ",") |> Seq.map(fun c -> c.Substring(c.IndexOf(',')+1))))
-                    ~~(sprintf "SELECT COUNT(DISTINCT %s) " distColumns)
-                elif sqlQuery.Distinct then ~~(sprintf "SELECT DISTINCT %s " columns)
+#endif
+                    ~~ $"SELECT COUNT(DISTINCT %s{distColumns}) "
+                elif sqlQuery.Distinct then ~~ $"SELECT DISTINCT %s{columns} "
                 elif sqlQuery.Count then ~~("SELECT COUNT(1) ")
-                else  ~~(sprintf "SELECT %s " columns)
+                else  ~~ $"SELECT %s{columns} "
 
                 // FROM
                 let bal = if baseAlias = "" then baseTable.Name else baseAlias
-                ~~(sprintf "FROM \"%s\".\"%s\" as \"%s\" " baseTable.Schema baseTable.Name bal)
-                sqlQuery.CrossJoins |> Seq.iter(fun (a,t) -> ~~(sprintf ", \"%s\".\"%s\" as \"%s\" " t.Schema t.Name a))
+                ~~ $"FROM \"%s{baseTable.Schema}\".\"%s{baseTable.Name}\" as \"%s{bal}\" "
+                sqlQuery.CrossJoins |> Seq.iter(fun (a,t) -> ~~ $", \"%s{t.Schema}\".\"%s{t.Name}\" as \"%s{a}\" ")
             fromBuilder()
             // WHERE
             if sqlQuery.Filters.Length > 0 then
@@ -1302,22 +1304,22 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
             match sqlQuery.Union with
             | Some(UnionType.UnionAll, suquery, pars) -> 
                 parameters.AddRange pars
-                ~~(sprintf " UNION ALL %s " suquery)
+                ~~ $" UNION ALL %s{suquery} "
             | Some(UnionType.NormalUnion, suquery, pars) -> 
                 parameters.AddRange pars
-                ~~(sprintf " UNION %s " suquery)
+                ~~ $" UNION %s{suquery} "
             | Some(UnionType.Intersect, suquery, pars) -> 
                 parameters.AddRange pars
-                ~~(sprintf " INTERSECT %s " suquery)
+                ~~ $" INTERSECT %s{suquery} "
             | Some(UnionType.Except, suquery, pars) -> 
                 parameters.AddRange pars
-                ~~(sprintf " EXCEPT %s " suquery)
+                ~~ $" EXCEPT %s{suquery} "
             | None -> ()
 
             match sqlQuery.Take, sqlQuery.Skip with
-            | ValueSome take, ValueSome skip ->  ~~(sprintf " LIMIT %i OFFSET %i;" take skip)
-            | ValueSome take, ValueNone ->  ~~(sprintf " LIMIT %i;" take)
-            | ValueNone, ValueSome skip -> ~~(sprintf " LIMIT ALL OFFSET %i;" skip)
+            | ValueSome take, ValueSome skip ->  ~~ $" LIMIT %i{take} OFFSET %i{skip};"
+            | ValueSome take, ValueNone ->  ~~ $" LIMIT %i{take};"
+            | ValueNone, ValueSome skip -> ~~ $" LIMIT ALL OFFSET %i{skip};"
             | ValueNone, ValueNone -> ()
 
             let sql = sb.ToString()
@@ -1344,23 +1346,20 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                     | Created ->
                         use cmd = createInsertCommand con sb e
                         Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
-                        if timeout.IsSome then
-                            cmd.CommandTimeout <- timeout.Value
+                        match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
                         let id = cmd.ExecuteScalar()
                         CommonTasks.checkKey schemaCache.PrimaryKeys id e
                         e._State <- Unchanged
                     | Modified fields ->
                         use cmd = createUpdateCommand con sb e fields
                         Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
-                        if timeout.IsSome then
-                            cmd.CommandTimeout <- timeout.Value
+                        match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
                         cmd.ExecuteNonQuery() |> ignore
                         e._State <- Unchanged
                     | Delete ->
                         use cmd = createDeleteCommand con sb e
                         Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
-                        if timeout.IsSome then
-                            cmd.CommandTimeout <- timeout.Value
+                        match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
                         cmd.ExecuteNonQuery() |> ignore
                         // remove the pk to prevent this attempting to be used again
                         (e :> IColumnHolder).SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[(e :> IColumnHolder).Table.FullName], None)
@@ -1393,29 +1392,26 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                         match e._State with
                         | Created ->
                             task {
-                                use cmd = createInsertCommand con sb e :?> System.Data.Common.DbCommand
+                                use cmd = createInsertCommand con sb e :?> DbCommand
                                 Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
-                                if timeout.IsSome then
-                                    cmd.CommandTimeout <- timeout.Value
+                                match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
                                 let! id = cmd.ExecuteScalarAsync()
                                 CommonTasks.checkKey schemaCache.PrimaryKeys id e
                                 e._State <- Unchanged
                             }
                         | Modified fields ->
                             task {
-                                use cmd = createUpdateCommand con sb e fields :?> System.Data.Common.DbCommand
+                                use cmd = createUpdateCommand con sb e fields :?> DbCommand
                                 Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
-                                if timeout.IsSome then
-                                    cmd.CommandTimeout <- timeout.Value
+                                match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
                                 let! c = cmd.ExecuteNonQueryAsync()
                                 e._State <- Unchanged
                             }
                         | Delete ->
                             task {
-                                use cmd = createDeleteCommand con sb e :?> System.Data.Common.DbCommand
+                                use cmd = createDeleteCommand con sb e :?> DbCommand
                                 Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
-                                if timeout.IsSome then
-                                    cmd.CommandTimeout <- timeout.Value
+                                match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
                                 let! c = cmd.ExecuteNonQueryAsync()
                                 // remove the pk to prevent this attempting to be used again
                                 (e :> IColumnHolder).SetPkColumnOptionSilent(schemaCache.PrimaryKeys.[(e :> IColumnHolder).Table.FullName], None)

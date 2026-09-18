@@ -41,7 +41,7 @@ let ``If Error during transactions, database should rollback to the initial stat
         createCustomer dc |> ignore
         dc.SubmitUpdates()
     with
-    | ex when ex.Message.Contains("UNIQUE constraint failed") -> 
+    | ex when ex.Message.Contains "UNIQUE constraint failed" -> 
         ()
 
     let newCustomers = 
@@ -52,9 +52,12 @@ let ``If Error during transactions, database should rollback to the initial stat
     // Clean up
     dc.ClearUpdates() |> ignore    
     let createdOpt = newCustomers |> List.tryFind (fun x -> x.CustomerId = "SQLPROVIDER")
-    if createdOpt.IsSome then 
-        createdOpt.Value.Delete() 
+    match createdOpt with
+    | Some v ->
+        v.Delete() 
         dc.SubmitUpdates()
+    | None ->
+        ()
     
     Assert.AreEqual(originalCustomers.Length, newCustomers.Length)
 
@@ -74,7 +77,7 @@ let ``If Error during transactions, database should rollback to the initial stat
     with
     | :? System.AggregateException as ex ->
         if ex.GetBaseException().Message.Contains("UNIQUE constraint failed") |> not then 
-            raise ex
+            reraise ()
 
     let newCustomers = 
         query { for cust in dc.Main.Customers do
@@ -84,9 +87,12 @@ let ``If Error during transactions, database should rollback to the initial stat
     // Clean up
     dc.ClearUpdates() |> ignore    
     let createdOpt = newCustomers |> List.tryFind (fun x -> x.CustomerId = "SQLPROVIDER")
-    if createdOpt.IsSome then 
-        createdOpt.Value.Delete() 
+    match createdOpt with
+    | Some v ->
+        v.Delete() 
         dc.SubmitUpdates()
+    | None ->
+        ()
     
     Assert.AreEqual(originalCustomers.Length, newCustomers.Length)
     

@@ -52,7 +52,7 @@ let ``subquery as filter should work correctly``() =
     let result =
         query {
             for customer in dc.Main.Customers do
-            where (largeOrderCustomers.Contains(customer.CustomerId))
+            where (largeOrderCustomers.Contains customer.CustomerId)
             take 5
             select (customer.CustomerId, customer.CompanyName)
         } |> Seq.toList
@@ -89,7 +89,7 @@ let ``multiple subqueries combined should work``() =
         query {
             for customer in dc.Main.Customers do
             where (recentOrderCustomers.Contains(customer.CustomerId) &&
-                   expensiveOrderCustomers.Contains(customer.CustomerId))
+                   expensiveOrderCustomers.Contains customer.CustomerId)
             select (customer.CustomerId, customer.CompanyName)
         } |> Seq.toList
     
@@ -113,7 +113,7 @@ let ``exists pattern using contains should work``() =
     let result =
         query {
             for customer in dc.Main.Customers do
-            where (seafoodCustomerIds.Contains(customer.CustomerId))
+            where (seafoodCustomerIds.Contains customer.CustomerId)
             select (customer.CustomerId, customer.CompanyName)
         } |> Seq.toList
     
@@ -126,7 +126,7 @@ let ``not exists pattern should work``() =
     let customerIdsWithOrders =
         query {
             for order in dc.Main.Orders do
-            where (order.CustomerId.IsSome)
+            where order.CustomerId.IsSome
             distinct
             select order.CustomerId.Value
         }
@@ -134,7 +134,7 @@ let ``not exists pattern should work``() =
     let result =
         query {
             for customer in dc.Main.Customers do
-            where (not (customerIdsWithOrders.Contains(customer.CustomerId)))
+            where (not (customerIdsWithOrders.Contains customer.CustomerId))
             select (customer.CustomerId, customer.CompanyName)
         } |> Seq.toList
     
@@ -201,14 +201,14 @@ let ``query composition with filter functions should work``() =
                     distinct
                     select order.CustomerId.Value
                 }
-            customers.Where(fun c -> customerIds.Contains(c.CustomerId))
+            customers.Where(fun c -> customerIds.Contains c.CustomerId)
     
     // Compose filters
     let filteredCustomers =
         dc.Main.Customers.AsQueryable()
         |> byCountry "USA"
         |> hasOrders
-        |> fun q -> q.Take(3)
+        |> fun q -> q.Take 3
         |> Seq.toList
     
     filteredCustomers |> List.iter (fun customer -> 
@@ -246,7 +246,7 @@ let ``dynamic query building should work``() =
                         distinct
                         select order.CustomerId.Value
                     }
-                withCityFilter.Where(fun c -> customerIds.Contains(c.CustomerId))
+                withCityFilter.Where(fun c -> customerIds.Contains c.CustomerId)
             else
                 withCityFilter
         
@@ -261,7 +261,7 @@ let ``dynamic query building should work``() =
                         distinct
                         select order.CustomerId.Value
                     }
-                withOrdersFilter.Where(fun c -> highValueCustomers.Contains(c.CustomerId))
+                withOrdersFilter.Where(fun c -> highValueCustomers.Contains c.CustomerId)
             | None ->
                 withOrdersFilter
         
@@ -295,14 +295,14 @@ let ``complex subquery with multiple levels should work``() =
     let europeanOrderIds =
         query {
             for order in dc.Main.Orders do
-            where (europeanCustomerIds.Contains(order.CustomerId.Value))
+            where (europeanCustomerIds.Contains order.CustomerId.Value)
             select order.OrderId
         }
     
     let popularProductIds =
         query {
             for orderDetail in dc.Main.OrderDetails do
-            where (europeanOrderIds.Contains(orderDetail.OrderId))
+            where (europeanOrderIds.Contains orderDetail.OrderId)
             groupBy orderDetail.ProductId into productGroup
             where (productGroup.Count() > 2) // Ordered by at least 3 European customers
             select productGroup.Key
@@ -311,7 +311,7 @@ let ``complex subquery with multiple levels should work``() =
     let result =
         query {
             for product in dc.Main.Products do
-            where (popularProductIds.Contains(product.ProductId))
+            where (popularProductIds.Contains product.ProductId)
             take 5
             select (product.ProductName, product.ProductId)
         } |> Seq.toList
@@ -334,7 +334,7 @@ let ``subquery result caching should work``() =
     let ordersWithExpensiveProducts =
         query {
             for orderDetail in dc.Main.OrderDetails do
-            where (expensiveProductIds.Contains(orderDetail.ProductId))
+            where (expensiveProductIds.Contains orderDetail.ProductId)
             select orderDetail.OrderId
         } |> Seq.distinct |> Seq.toList
     
@@ -349,7 +349,7 @@ let ``subquery result caching should work``() =
     let result =
         query {
             for customer in dc.Main.Customers do
-            where (customersOrderingExpensiveProducts.Contains(customer.CustomerId))
+            where (customersOrderingExpensiveProducts.Contains customer.CustomerId)
             take 5
             select (customer.CompanyName, customer.CustomerId)
         } |> Seq.toList

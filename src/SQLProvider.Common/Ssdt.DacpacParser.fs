@@ -187,7 +187,7 @@ module RegexParsers =
 let extractModelXml (dacPacPath: string) = 
     use stream = new IO.FileStream(dacPacPath, IO.FileMode.Open, IO.FileAccess.Read)
     use zip = new ZipArchive(stream, ZipArchiveMode.Read, false)
-    let modelEntry = zip.GetEntry("model.xml")
+    let modelEntry = zip.GetEntry "model.xml"
     use modelStream = modelEntry.Open()
     use rdr = new IO.StreamReader(modelStream)
     rdr.ReadToEnd()
@@ -201,7 +201,7 @@ let toXmlNamespaceDoc ns xml =
     let doc = XmlDocument()
     let nsMgr = XmlNamespaceManager(doc.NameTable)
     nsMgr.AddNamespace("x", ns)
-    doc.LoadXml(xml)
+    doc.LoadXml xml
 
     let node (path: string) (node: XmlNode) =
         node.SelectSingleNode(path, nsMgr)
@@ -309,7 +309,7 @@ let parseXml(xml: string) =
             Some
                 { SsdtColumn.Name = colName
                   SsdtColumn.FullName = fullName
-                  SsdtColumn.AllowNulls = match allowNulls with | Some allowNulls -> allowNulls = "True" | _ -> true
+                  SsdtColumn.AllowNulls = match allowNulls with | Some allowNulls -> allowNulls = "True" | None -> true
                   SsdtColumn.DataType = dataType |> removeBrackets
                   SsdtColumn.HasDefault = false
                   SsdtColumn.Description = "Simple Column"
@@ -338,7 +338,7 @@ let parseXml(xml: string) =
                   SsdtColumn.Description =
                     "Computed Column" +
                         if annotation.IsNone && dataType = "SQL_VARIANT"
-                        then ". You can add type annotation to definition SQL to get type. E.g. " + colName + " AS ('c' /* varchar not null */)"
+                        then $". You can add type annotation to definition SQL to get type. E.g. {colName} AS ('c' /* varchar not null */)"
                         else ""
                   SsdtColumn.IsIdentity = false
                   SsdtColumn.ComputedColumn = true}
@@ -402,13 +402,13 @@ let parseXml(xml: string) =
     /// Recursively resolves column references.
     let resolveColumnRefPath (tableColumnsByPath: Map<string, SsdtColumn>) (viewColumnsByPath: Map<string, SsdtViewColumn>) (viewCol: SsdtViewColumn) =
         let rec resolve (path: string) =
-            match tableColumnsByPath.TryFind(path) with
+            match tableColumnsByPath.TryFind path with
             | Some tblCol ->
                 { tblCol with
                     FullName = viewCol.FullName
                     Name = viewCol.FullName |> RegexParsers.splitFullName |> Array.last } |> Some
             | None -> 
-                match viewColumnsByPath.TryFind(path) with
+                match viewColumnsByPath.TryFind path with
                 | Some viewCol when viewCol.ColumnRefPath <> ValueSome path ->
                     match viewCol.ColumnRefPath with
                     | ValueSome colRefPath -> resolve colRefPath
@@ -560,7 +560,7 @@ let parseXml(xml: string) =
                         | None -> false // Default to "SQL_VARIANT" (obj) with no nulls if annotation is not found
                     let description =
                         if dataType = "SQL_VARIANT"
-                        then sprintf "Unable to resolve this column's data type from the .dacpac file; consider adding a type annotation in the view. Ex: %s /* varchar not null */ " colName
+                        then $"Unable to resolve this column's data type from the .dacpac file; consider adding a type annotation in the view. Ex: %s{colName} /* varchar not null */ "
                         else "This column's data type was resolved from a comment annotation in the SSDT view definition."
 
                     if dataType = "SQL_VARIANT" && tcOpt.IsSome then tcOpt.Value else

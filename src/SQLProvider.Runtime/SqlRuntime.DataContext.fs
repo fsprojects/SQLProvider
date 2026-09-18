@@ -67,7 +67,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType:Data
     // Async-compatible mutex serializing SubmitPendingChanges and SubmitPendingChangesAsync,
     // so concurrent submits cannot process the same pending entities twice.
     let submitLock = lazy new System.Threading.SemaphoreSlim(1, 1)
-    let pendingChanges = lazy (if isReadOnly then null else System.Collections.Concurrent.ConcurrentDictionary<SqlEntity, DateTime>())
+    let pendingChanges = lazy (if isReadOnly then null else ConcurrentDictionary<SqlEntity, DateTime>())
 
     let provider =
         let addCache() =
@@ -77,7 +77,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType:Data
                 if not (prov.GetSchemaCache().IsOffline) then
                     use con =
                         if prov.DesignConnection then
-                            let con = prov.CreateConnection(connectionString)
+                            let con = prov.CreateConnection connectionString
                             con.Open()
                             con
                         else
@@ -85,7 +85,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType:Data
 
                     // create type mappings and also trigger the table info read so the provider has
                     // the minimum base set of data available
-                    prov.CreateTypeMappings(con)
+                    prov.CreateTypeMappings con
                     prov.GetTables(con,caseSensitivity) |> ignore
                     if prov.CloseConnectionAfterQuery && con.State <> ConnectionState.Closed then con.Close()
                 prov
@@ -101,21 +101,21 @@ type public SqlDataContext (typeName, connectionString:string, providerType:Data
     interface ISqlDataContext with
         member __.ConnectionString with get() = connectionString
         member __.CommandTimeout with get() = commandTimeout
-        member __.CreateConnection() = provider.CreateConnection(connectionString)
+        member __.CreateConnection() = provider.CreateConnection connectionString
         member __.IsReadOnly = isReadOnly
 
         member __.GetPrimaryKeyDefinition(tableName) =
             let schemaCache = provider.GetSchemaCache()
             match schemaCache.IsOffline with
             | false ->
-                use con = provider.CreateConnection(connectionString)
+                use con = provider.CreateConnection connectionString
                 provider.GetTables(con, caseSensitivity)
                 |> Array.tryFind (fun t -> t.Name = tableName)
-                |> Option.bind (fun t -> provider.GetPrimaryKey(t))
+                |> Option.bind (fun t -> provider.GetPrimaryKey t)
             | true ->
-                schemaCache.Tables.TryGetValue(tableName)
+                schemaCache.Tables.TryGetValue tableName
                 |> function
-                    | true, t -> provider.GetPrimaryKey(t)
+                    | true, t -> provider.GetPrimaryKey t
                     | false, _ -> None
             |> (fun x -> defaultArg x "")
 
@@ -126,7 +126,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType:Data
         member __.SubmitPendingChanges() =
             if isReadOnly then failwith "Context is readonly" else
             let pendingChanges = pendingChanges.Force()
-            use con = provider.CreateConnection(connectionString)
+            use con = provider.CreateConnection connectionString
             let semaphore = submitLock.Force()
             semaphore.Wait()
             try
@@ -139,7 +139,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType:Data
             if isReadOnly then failwith "Context is readonly" else
             let pendingChanges = pendingChanges.Force()
             task {
-                use con = provider.CreateConnection(connectionString) :?> System.Data.Common.DbConnection
+                use con = provider.CreateConnection connectionString :?> DbConnection
                 let semaphore = submitLock.Force()
                 do! semaphore.WaitAsync()
                 try
@@ -156,12 +156,11 @@ type public SqlDataContext (typeName, connectionString:string, providerType:Data
             QueryFactory.createEntities(this, provider, table)
 
         member this.CallSproc(def:RunTimeSprocDefinition, retCols:QueryParameter[], values:obj array) =
-            use con = provider.CreateConnection(connectionString)
+            use con = provider.CreateConnection connectionString
             con.Open()
             use com = provider.CreateCommand(con, def.Name.DbName)
-            if commandTimeout.IsSome then
-                com.CommandTimeout <- commandTimeout.Value
-            let param, entity, toEntityArray = CommonTasks.initCallSproc (this) def values con com provider.StoredProcedures
+            match commandTimeout with | Some v -> com.CommandTimeout <- v | None -> ()
+            let param, entity, toEntityArray = CommonTasks.initCallSproc this def values con com provider.StoredProcedures
 
             let entities =
                 match provider.ExecuteSprocCommand(com, param, retCols, values) with
@@ -182,16 +181,15 @@ type public SqlDataContext (typeName, connectionString:string, providerType:Data
 
         member this.CallSprocAsync(def:RunTimeSprocDefinition, retCols:QueryParameter[], values:obj array) =
             task {
-                use con = provider.CreateConnection(connectionString) :?> System.Data.Common.DbConnection
+                use con = provider.CreateConnection connectionString :?> DbConnection
                 do! con.OpenAsync()
 
                 use com = provider.CreateCommand(con, def.Name.DbName)
-                if commandTimeout.IsSome then
-                    com.CommandTimeout <- commandTimeout.Value
-                let param, entity, toEntityArray = CommonTasks.initCallSproc (this) def values con com provider.StoredProcedures
+                match commandTimeout with | Some v -> com.CommandTimeout <- v | None -> ()
+                let param, entity, toEntityArray = CommonTasks.initCallSproc this def values con com provider.StoredProcedures
 
                 let! resOrErr =
-                    provider.ExecuteSprocCommandAsync((com:?> System.Data.Common.DbCommand), param, retCols, values)
+                    provider.ExecuteSprocCommandAsync((com:?> DbCommand), param, retCols, values)
                      |> Async.AwaitTask
                      |> Async.Catch
                      |> Async.StartImmediateAsTask
@@ -219,7 +217,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType:Data
             }
 
         member this.GetIndividual(table,id) : SqlEntity =
-            use con = provider.CreateConnection(connectionString)
+            use con = provider.CreateConnection connectionString
             con.Open()
             let table = Table.FromFullName table
             // this line is to ensure the columns for the table have been retrieved and therefore
@@ -232,8 +230,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType:Data
                     // this fail case should not really be possible unless the runtime database is different to the design-time one
                     failwithf "Primary key could not be found on object %s. Individuals only supported on objects with a single primary key." table.FullName
             use com = provider.CreateCommand(con,provider.GetIndividualQueryText(table,pk.Name))
-            if commandTimeout.IsSome then
-                com.CommandTimeout <- commandTimeout.Value
+            match commandTimeout with | Some v -> com.CommandTimeout <- v | None -> ()
             //todo: establish pk SQL data type
             com.Parameters.Add (provider.CreateCommandParameter(QueryParameter.Create("@id", 0, pk.TypeMapping),id)) |> ignore
             if con.State <> ConnectionState.Open then con.Open()
@@ -259,10 +256,9 @@ type public SqlDataContext (typeName, connectionString:string, providerType:Data
                 while! reader.ReadAsync() do
                     let e = SqlEntity(this, name, columns, reader.FieldCount)
                     for i = 0 to reader.FieldCount - 1 do
-                        let! valu = reader.GetFieldValueAsync i
-                        match valu with
+                        match! reader.GetFieldValueAsync i with
                         | null ->  (e :> IColumnHolder).SetColumnSilent(reader.GetName i,null)
-                        | nullItm when System.Convert.IsDBNull nullItm -> (e :> IColumnHolder).SetColumnSilent(reader.GetName i,null)
+                        | nullItm when Convert.IsDBNull nullItm -> (e :> IColumnHolder).SetColumnSilent(reader.GetName i,null)
                         | value -> (e :> IColumnHolder).SetColumnSilent(reader.GetName i,value)
                     res.Add e
                 return res |> Seq.toArray
@@ -270,15 +266,15 @@ type public SqlDataContext (typeName, connectionString:string, providerType:Data
 
         member this.CreateEntity(tableName) =
             if isReadOnly then failwith "Context is readonly" else
-            use con = provider.CreateConnection(connectionString)
+            use con = provider.CreateConnection connectionString
             let columns = provider.GetColumns(con, Table.FromFullName(tableName))
-            new SqlEntity(this, tableName, columns, columns.Count)
+            SqlEntity(this, tableName, columns, columns.Count)
 
         member __.SqlOperationsInSelect with get() = sqlOperationsInSelect
 
         member __.SaveContextSchema(filePath) =
             DcCache.providerCache
-            |> Seq.iter (fun prov -> prov.Value.Value.GetSchemaCache().Save(filePath))
+            |> Seq.iter (fun prov -> prov.Value.Value.GetSchemaCache().Save filePath)
 
 #if !DESIGNTIME
     #if COMMON

@@ -18,6 +18,7 @@ open FSharp.Data.Sql.Providers
 open FSharp.Data.Sql.Common
 
 fsi.AddPrintTransformer(fun (x:Type) -> x.FullName |> box)
+[<Literal>]
 let connectionString = "User ID=colinbull;Host=localhost;Port=5432;Database=sqlprovider;"
 PostgreSQL.resolutionPath <- Path.GetFullPath(__SOURCE_DIRECTORY__ + @"/../../packages/tests/Npgsql/lib/net45/")
 

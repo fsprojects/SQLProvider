@@ -7,7 +7,7 @@ let [<Literal>] resolutionPath = __SOURCE_DIRECTORY__ + @"/../../files/sqlite"
 let [<Literal>] connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"\..\northwindEF.db;Version=3;Read Only=false;FailIfMissing=True;"
 
 (*** hide ***)
-(*
+(**
 
 # SQL Provider Basics
 
@@ -83,6 +83,7 @@ If you want to use non-literal connectionString at runtime (e.g. encrypted produ
 passwords), you can pass your runtime connectionString parameter to GetDataContext:
 *)
 
+[<Literal>]
 let connectionString2 = "(insert runtime connection here)"
 let ctx2 = sql.GetDataContext connectionString2
 

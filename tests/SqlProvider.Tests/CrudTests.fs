@@ -14,6 +14,7 @@ open FSharp.Data.Sql
 open System.Linq
 open NUnit.Framework
 open System
+open System.Threading.Tasks
 open System.Transactions
 
 [<Literal>]
@@ -52,7 +53,7 @@ let createCustomer (dc:sql.dataContext) =
 
 [<Test>]
 let ``Can create and delete an entity``() =
-    let dcTestParam = sql.GetDataContext(200)
+    let dcTestParam = sql.GetDataContext 200
     let dc = sql.GetDataContext()
 
     let originalCustomers =
@@ -128,7 +129,7 @@ let ``Can persist a blob``() =
     let imageBytes = [| 0uy .. 100uy |]
 
     let savedEntity = dc.Main.Pictures.``Create(Image)`` imageBytes
-    savedEntity.Id <- 123L+int64(System.Random().Next(10000))
+    savedEntity.Id <- 123L+int64(Random().Next 10000)
     dc.SubmitUpdates()
 
     let reloadedEntity =
@@ -173,7 +174,7 @@ let ``Conflict resolution is correctly applied``() =
     let getCurrentAddress =
         query { for cust in dc.Main.Customers do
                 where (cust.CustomerId = ent.CustomerId)
-                select (cust.Address)
+                select cust.Address
         }
 
     // Works when reusing the same entity with changed properties
@@ -216,19 +217,23 @@ module UtilsTests =
     let ``List.evaluateOneByOne test``() =
         // This is a helper for executing Tasks as one-by-one to not mess data connections or contexts.
         // If you use Aync, use rateher Async.Sequential
-        let initList = [1;2;3;4;5;6;7;8;9]
-        let processList =
-            initList |> List.evaluateOneByOne(fun x -> task {
-                // Execute some query here, in a rare case that you need to hit database with N queries.
-                return x + 0
-            })
-        processList.Wait()
-        Assert.AreEqual(initList, processList.Result)
+        task {
+            let initList = [1;2;3;4;5;6;7;8;9]
+            let processList =
+                initList |> List.evaluateOneByOne(fun x -> task {
+                    // Execute some query here, in a rare case that you need to hit database with N queries.
+                    return x + 0
+                })
+            do! (processList :> Task)
+            Assert.AreEqual(initList, processList.Result)
+        } :> Task
 
     [<Test>]
     let ``List.evaluateOneByOne test, no stackoverflow``() =
-        let initList = [1 .. 5000]
-        let processList =
-            initList |> List.evaluateOneByOne(fun x -> task { return x + 0 })
-        processList.Wait()
-        Assert.AreEqual(initList, processList.Result)
+        task {
+            let initList = [1 .. 5000]
+            let processList =
+                initList |> List.evaluateOneByOne(fun x -> task { return x + 0 })
+            do! (processList :> Task)
+            Assert.AreEqual(initList, processList.Result)
+        } :> Task
