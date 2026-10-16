@@ -26,7 +26,8 @@ nuget Microsoft.Extensions.Logging.Abstractions 8.0.3
 group Build
 
     source https://api.nuget.org/v3/index.json
-    storage: none
+    // build.fsx references packages/build/* directly, so this group needs the packages folder
+    storage: packages
     framework: net6.0
 
     nuget Microsoft.SourceLink.GitHub prerelease copy_local: true
