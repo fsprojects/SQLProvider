@@ -1,7 +1,7 @@
 <Project>
     <PropertyGroup>
         <!-- summary is not migrated from project.json, but you can use the <Description> property for that if needed. -->
-        <PackageTags>f#, fsharp</PackageTags>
+        <PackageTags>sql, database, typeprovider, f#, fsharp, dotnet, orm, linq</PackageTags>
         <PackageProjectUrl>https://github.com/fsprojects/SQLProvider</PackageProjectUrl>
         <PackageLicenseUrl>https://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt</PackageLicenseUrl>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>

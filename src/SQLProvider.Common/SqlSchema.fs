@@ -58,6 +58,14 @@ type QueryParameter =
               Direction = defaultArg direction ParameterDirection.Input
               Length = match length with Some x -> ValueSome x | None -> ValueNone }
 
+/// Helpers for stored procedure parameter lists.
+module SprocParameters =
+    /// Drops repeated named parameters (same name and direction), keeping the first occurrence.
+    /// Unnamed parameters (e.g. a function's return value) are always kept.
+    let distinctNamed (parameters: QueryParameter list) =
+        let seen = System.Collections.Generic.HashSet<struct(string * ParameterDirection)>()
+        parameters |> List.filter (fun p -> String.IsNullOrEmpty p.Name || seen.Add(struct(p.Name, p.Direction)))
+
 /// Represents a database table column with its metadata and characteristics.
 /// Contains all information needed to generate typed properties and handle data conversion.
 [<Struct>]

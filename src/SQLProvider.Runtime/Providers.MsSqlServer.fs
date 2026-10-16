@@ -288,7 +288,9 @@ module MSSqlServer =
 
         let inps =
              inputParameters
-             |> Array.filter (fun p -> p.Direction <> ParameterDirection.ReturnValue)
+             // Values are supplied only for Input/InputOutput parameters (the generated Invoke signature);
+             // an offline ContextSchema can also list result-set and return-value columns here.
+             |> Array.filter (fun p -> p.Direction = ParameterDirection.Input || p.Direction = ParameterDirection.InputOutput)
              |> Array.mapi(fun i ip ->
                  let p = createCommandParameter ip values.[i]
                  (ip.Ordinal, ip.Name, p))

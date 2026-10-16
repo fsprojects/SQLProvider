@@ -124,12 +124,13 @@ module DesignTimeUtils =
             match con with
             | Some con ->
                 let returnParams = sprocDefinition.ReturnColumns con param
-                prov.GetSchemaCache().SprocsParams.AddOrUpdate(sprocname, returnParams, fun _ inputParams -> inputParams @ returnParams) |> ignore
+                // InputOutput parameters are also return columns, so don't store them twice
+                prov.GetSchemaCache().SprocsParams.AddOrUpdate(sprocname, returnParams, fun _ inputParams -> SprocParameters.distinctNamed (inputParams @ returnParams)) |> ignore
                 returnParams
             | None ->
                 let ok, pars = prov.GetSchemaCache().SprocsParams.TryGetValue sprocname
                 if ok then
-                    pars |> List.filter (fun p ->
+                    pars |> SprocParameters.distinctNamed |> List.filter (fun p ->
                         not (p.Name |> String.IsNullOrWhiteSpace)
                         && (p.Direction = ParameterDirection.Output
                         || p.Direction = ParameterDirection.InputOutput
@@ -323,7 +324,8 @@ module DesignTimeUtils =
                         match con with
                         | None ->
                             match prov.GetSchemaCache().SprocsParams.TryGetValue sprocname with
-                            | true, x -> x
+                            // Schema files saved before de-duplication may list InputOutput parameters twice
+                            | true, x -> SprocParameters.distinctNamed x
                             | false, _ -> []
                         | Some con ->
                             (lazy
