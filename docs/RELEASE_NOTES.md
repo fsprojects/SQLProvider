@@ -1,3 +1,7 @@
+### 1.5.28 - 17.10.2026
+- Fix for IndexOutOfRangeException when invoking a stored procedure, #878
+- Code cleanups with fsharp-refactor tool
+
 ### 1.5.27 - 29.07.2026
 - TypeProviders.SDK update (ProvidedTypes.fs) for threat-safety and performance
 

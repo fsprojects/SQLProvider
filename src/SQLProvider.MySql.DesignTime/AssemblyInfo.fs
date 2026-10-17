@@ -5,13 +5,13 @@ open System.Reflection
 [<assembly: AssemblyTitleAttribute("SQLProvider.MySql.DesignTime")>]
 [<assembly: AssemblyProductAttribute("SQLProvider")>]
 [<assembly: AssemblyDescriptionAttribute("Type providers for MySQL database and MariaDB database access.")>]
-[<assembly: AssemblyVersionAttribute("1.5.27")>]
-[<assembly: AssemblyFileVersionAttribute("1.5.27")>]
+[<assembly: AssemblyVersionAttribute("1.5.28")>]
+[<assembly: AssemblyFileVersionAttribute("1.5.28")>]
 do ()
 
 module internal AssemblyVersionInformation =
     let [<Literal>] AssemblyTitle = "SQLProvider.MySql.DesignTime"
     let [<Literal>] AssemblyProduct = "SQLProvider"
     let [<Literal>] AssemblyDescription = "Type providers for MySQL database and MariaDB database access."
-    let [<Literal>] AssemblyVersion = "1.5.27"
-    let [<Literal>] AssemblyFileVersion = "1.5.27"
+    let [<Literal>] AssemblyVersion = "1.5.28"
+    let [<Literal>] AssemblyFileVersion = "1.5.28"
