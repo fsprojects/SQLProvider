@@ -210,11 +210,11 @@ module ColumnSchema =
     | Least of SqlItemOrColumn
     // Other
     /// Basic mathematical operation with a constant value
-    | BasicMath of string*obj //operation, constant
+    | BasicMath of operation:string*constant:obj //operation, constant
     /// Left-side basic mathematical operation with a constant value
-    | BasicMathLeft of string*obj //operation, constant
+    | BasicMathLeft of operation:string*constant:obj //operation, constant
     /// Basic mathematical operation between columns
-    | BasicMathOfColumns of string*string*SqlColumnType //operation, alias, column
+    | BasicMathOfColumns of operation:string*alias:string*column:SqlColumnType //operation, alias, column
     /// SQL CASE expression with condition and false value
     | CaseSql of Condition * SqlItemOrColumn // operation, if-false
     /// SQL CASE expression with negated condition and true value
@@ -240,7 +240,7 @@ module ColumnSchema =
     // where (x.Substring(x.IndexOf("."), (x.Length-x.IndexOf("."))
     and SqlItemOrColumn =
     /// A database column with table alias and column type
-    | SqlCol of string*SqlColumnType //alias*column
+    | SqlCol of alias:string*column:SqlColumnType //alias*column
     /// A constant value to be used in SQL expressions
     | SqlConstant of obj
 
@@ -249,7 +249,7 @@ module ColumnSchema =
     /// A direct entity column reference
     | EntityColumn of string
     /// A column with operations applied for computed expressions
-    | OperationColumn of string*SqlColumnType//name*operations
+    | OperationColumn of name:string*operations:SqlColumnType//name*operations
 
 // Dummy operators, these are placeholders that are replaced in the expression tree traversal with special server-side operations such as In, Like
 // The operators here are used to force the compiler to statically check against the correct types

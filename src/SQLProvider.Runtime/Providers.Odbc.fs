@@ -737,8 +737,8 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
                         Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                         match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
                         cmd.ExecuteNonQuery() |> ignore
-                        let id = (lastInsertId con).ExecuteScalar()
-                        CommonTasks.checkKey schemaCache.PrimaryKeys id e
+                        let pid = (lastInsertId con).ExecuteScalar()
+                        CommonTasks.checkKey schemaCache.PrimaryKeys pid e
                         e._State <- Unchanged
                     | Modified fields ->
                         use cmd = createUpdateCommand con sb e fields
@@ -785,8 +785,8 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
                                 Common.QueryEvents.PublishSqlQueryCol con.ConnectionString cmd.CommandText cmd.Parameters
                                 match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
                                 let! c = cmd.ExecuteNonQueryAsync()
-                                let id = (lastInsertId con).ExecuteScalar()
-                                CommonTasks.checkKey schemaCache.PrimaryKeys id e
+                                let pid = (lastInsertId con).ExecuteScalar()
+                                CommonTasks.checkKey schemaCache.PrimaryKeys pid e
                                 e._State <- Unchanged
                             }
                         | Modified fields ->

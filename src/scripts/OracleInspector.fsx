@@ -19,6 +19,7 @@ open FSharp.Data.Sql.Common
 open Oracle
 
 fsi.AddPrintTransformer(fun (x:Type) -> x.FullName |> box)
+[<Literal>]
 let connectionString = "Data Source=(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)(HOST=192.168.1.90)(PORT=1521)))(CONNECT_DATA=(SERVER=DEDICATED)(SERVICE_NAME=XE)));User Id=HR;Password=password;"
 Oracle.resolutionPath <- "/Users/colinbull/appdev/SqlProvider/packages/tests/Oracle.ManagedDataAccess/lib/net40"
 

@@ -59,9 +59,9 @@ let ``valueOption column should filter by value correctly``() =
         } |> Seq.toList
     
     Assert.IsTrue(result.Length > 0)
-    result |> List.iter (fun (id, region) -> 
+    result |> List.iter (fun (pid, region) -> 
         Assert.AreEqual("WA", region)
-        printfn "Customer %s in region %s" id region)
+        printfn "Customer %s in region %s" pid region)
 
 [<Test>]
 let ``valueOption should work with pattern matching in select``() =
@@ -76,9 +76,9 @@ let ``valueOption should work with pattern matching in select``() =
         } |> Seq.toList
     
     Assert.AreEqual(5, result.Length)
-    result |> List.iter (fun (id, region) -> 
+    result |> List.iter (fun (pid, region) -> 
         Assert.IsTrue(not (String.IsNullOrEmpty region))
-        printfn "Customer %s: %s" id region)
+        printfn "Customer %s: %s" pid region)
 
 [<Test>]
 let ``valueOption should work with defaultValue``() =
@@ -90,9 +90,9 @@ let ``valueOption should work with defaultValue``() =
         } |> Seq.toList
     
     Assert.AreEqual(5, result.Length)
-    result |> List.iter (fun (id, region) -> 
+    result |> List.iter (fun (pid, region) -> 
         Assert.IsTrue(not (String.IsNullOrEmpty region))
-        printfn "Customer %s: %s" id region)
+        printfn "Customer %s: %s" pid region)
 
 [<Test>]
 let ``valueOption nullable foreign key join should work``() =

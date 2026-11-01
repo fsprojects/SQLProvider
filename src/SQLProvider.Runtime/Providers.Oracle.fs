@@ -417,7 +417,7 @@ module internal Oracle =
             if row.Table.Columns.Contains "PACKAGE_NAME" then Sql.dbUnbox row.["PACKAGE_NAME"] else ""
         { ProcName = procName; Owner = owner; PackageName = packageName }
 
-    let getSprocParameters (con:IDbConnection) (name:SprocName) =
+    let getSprocParameters (name:SprocName) (con:IDbConnection) =
         let querySprocParameters packageName sprocName =
             let sql = 
                 if String.IsNullOrWhiteSpace(packageName)
@@ -452,7 +452,7 @@ module internal Oracle =
         |> Seq.sortBy (fun x -> x.Ordinal)
         |> Seq.toList
     
-    let getPackageSprocs (con:IDbConnection) packageName = 
+    let getPackageSprocs packageName (con:IDbConnection) = 
         let sql = 
             sprintf """SELECT * 
                        FROM SYS.ALL_PROCEDURES 
@@ -473,7 +473,7 @@ module internal Oracle =
                        
                     { ProcName = procName; Owner = owner; PackageName = packageName }
 
-                { Name = name; Params = (fun con -> getSprocParameters con name); ReturnColumns = (fun _ sparams -> getSprocReturnColumns sparams) }
+                { Name = name; Params = (getSprocParameters name); ReturnColumns = (fun _ sparams -> getSprocReturnColumns sparams) }
             
             )
         procs
@@ -482,11 +482,11 @@ module internal Oracle =
 
         let buildDef classType row =
             let name = getSprocName row
-            Root(classType, Sproc({ Name = name; Params = (fun con -> getSprocParameters con name); ReturnColumns = (fun _ sparams -> getSprocReturnColumns sparams) }))
+            Root(classType, Sproc({ Name = name; Params = (getSprocParameters name); ReturnColumns = (fun _ sparams -> getSprocReturnColumns sparams) }))
         
         let buildPackageDef classType (row:DataRow) =
             let name = Sql.dbUnbox<string> row.["OBJECT_NAME"]
-            Root(classType, Package(name, { Name = name; Sprocs = (fun con -> getPackageSprocs con name) }))
+            Root(classType, Package(name, { Name = name; Sprocs = (getPackageSprocs name) }))
 
         let functions =
             (getSchema "Functions" [|owner|] con)
@@ -1185,14 +1185,14 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
                         Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                         match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
                         cmd.ExecuteNonQuery() |> ignore
-                        let id =
+                        let pid =
                             // the generated key comes back in the RETURNING INTO output parameter, if one was added
                             if cmd.Parameters.Contains ":pkResult" then (cmd.Parameters.[":pkResult"] :?> IDbDataParameter).Value
                             else null
                         match schemaCache.PrimaryKeys.TryGetValue (e :> IColumnHolder).Table.Name with
                         | true, pk ->
                             match (e :> IColumnHolder).GetPkColumnOption pk with
-                            | [] ->  (e :> IColumnHolder).SetPkColumnSilent(pk, id)
+                            | [] ->  (e :> IColumnHolder).SetPkColumnSilent(pk, pid)
                             | _ -> () // if the primary key exists, do nothing
                                             // this is because non-identity columns will have been set
                                             // manually and in that case scope_identity would bring back 0 "" or whatever
@@ -1245,14 +1245,14 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
                                 Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                                 match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
                                 let! _ = cmd.ExecuteNonQueryAsync()
-                                let id =
+                                let pid =
                                     // the generated key comes back in the RETURNING INTO output parameter, if one was added
                                     if cmd.Parameters.Contains ":pkResult" then (cmd.Parameters.[":pkResult"] :> IDbDataParameter).Value
                                     else null
                                 match schemaCache.PrimaryKeys.TryGetValue (e :> IColumnHolder).Table.Name with
                                 | true, pk ->
                                     match (e :> IColumnHolder).GetPkColumnOption pk with
-                                    | [] ->  (e :> IColumnHolder).SetPkColumnSilent(pk, id)
+                                    | [] ->  (e :> IColumnHolder).SetPkColumnSilent(pk, pid)
                                     | _ -> () // if the primary key exists, do nothing
                                                     // this is because non-identity columns will have been set
                                                     // manually and in that case scope_identity would bring back 0 "" or whatever

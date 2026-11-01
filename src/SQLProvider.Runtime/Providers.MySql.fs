@@ -554,7 +554,7 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
         | true, pkKey ->
             match (e :> IColumnHolder).GetPkColumnOption<obj> pkKey with
             | [] ->
-                let id =
+                let pid =
                     if isNull id || Convert.IsDBNull id then id
                     else
                         match pkKey, schemaCache.Columns.TryGetValue tableKey with
@@ -566,7 +566,7 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                                 | clrType -> try Convert.ChangeType(id, clrType) with _ -> id
                             | None -> id
                         | _ -> id
-                (e :> IColumnHolder).SetPkColumnSilent(pkKey, id)
+                (e :> IColumnHolder).SetPkColumnSilent(pkKey, pid)
             | _ -> () // if the primary key exists, do nothing
                       // this is because non-identity columns will have been set
                       // manually and in that case LAST_INSERT_ID would bring back 0
@@ -1138,8 +1138,8 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                         use cmd = createInsertCommand con sb e
                         Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                         match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
-                        let id = cmd.ExecuteScalar()
-                        checkInsertedKey id e
+                        let pid = cmd.ExecuteScalar()
+                        checkInsertedKey pid e
                         e._State <- Unchanged
                     | Modified fields ->
                         use cmd = createUpdateCommand con sb e fields
@@ -1187,8 +1187,8 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                                 use cmd = createInsertCommand con sb e :?> DbCommand
                                 Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                                 match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
-                                let! id = cmd.ExecuteScalarAsync()
-                                checkInsertedKey id e
+                                let! pid = cmd.ExecuteScalarAsync()
+                                checkInsertedKey pid e
                                 e._State <- Unchanged
                             }
                         | Modified fields ->

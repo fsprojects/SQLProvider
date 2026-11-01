@@ -91,8 +91,8 @@ let ``option value extraction in queries``() =
     
     let results = query |> Array.ofSeq
     Assert.IsTrue(results.Length > 0)
-    results |> Array.iter (fun (id, shipDate) -> 
-        Assert.IsTrue(id > 0)
+    results |> Array.iter (fun (pid, shipDate) -> 
+        Assert.IsTrue(pid > 0)
         Assert.IsTrue(shipDate <> DateTime.MinValue)
     )
 

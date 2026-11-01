@@ -1347,8 +1347,8 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                         use cmd = createInsertCommand con sb e
                         Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                         match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
-                        let id = cmd.ExecuteScalar()
-                        CommonTasks.checkKey schemaCache.PrimaryKeys id e
+                        let pid = cmd.ExecuteScalar()
+                        CommonTasks.checkKey schemaCache.PrimaryKeys pid e
                         e._State <- Unchanged
                     | Modified fields ->
                         use cmd = createUpdateCommand con sb e fields
@@ -1395,8 +1395,8 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                                 use cmd = createInsertCommand con sb e :?> DbCommand
                                 Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                                 match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
-                                let! id = cmd.ExecuteScalarAsync()
-                                CommonTasks.checkKey schemaCache.PrimaryKeys id e
+                                let! pid = cmd.ExecuteScalarAsync()
+                                CommonTasks.checkKey schemaCache.PrimaryKeys pid e
                                 e._State <- Unchanged
                             }
                         | Modified fields ->

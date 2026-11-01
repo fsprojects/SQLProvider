@@ -136,7 +136,7 @@ let countries =
     |> Seq.map (fun e -> e.MapTo<Country>(fun (prop,value) ->
                                                match prop with
                                                | "Other" ->
-                                                    if value <> null
+                                                    if not (isNull value)
                                                     then JsonConvert.DeserializeObject<OtherCountryInformation>(value :?> string) |> box
                                                     else Unchecked.defaultof<OtherCountryInformation> |> box
                                                | _ -> value

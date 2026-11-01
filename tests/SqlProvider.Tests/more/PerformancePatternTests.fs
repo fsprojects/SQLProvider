@@ -101,7 +101,7 @@ let ``pagination should work correctly``() =
     Assert.AreEqual(pageSize, page2.Length)
     
     // Pages should not overlap
-    let overlap = page1 |> Array.exists (fun id -> page2 |> Array.contains id)
+    let overlap = page1 |> Array.exists (fun pid -> page2 |> Array.contains pid)
     Assert.IsFalse(overlap)
     
     // Should be in order
@@ -146,7 +146,7 @@ let ``cursor-based pagination should be more efficient for large offsets``() =
     let secondPageItems = if secondPage.Length > pageSize then secondPage |> Array.take pageSize else secondPage
     
     // Verify no overlap
-    let overlap = firstPageItems |> Array.exists (fun id -> secondPageItems |> Array.contains id)
+    let overlap = firstPageItems |> Array.exists (fun pid -> secondPageItems |> Array.contains pid)
     Assert.IsFalse(overlap)
     
     printfn "First page: %A" firstPageItems

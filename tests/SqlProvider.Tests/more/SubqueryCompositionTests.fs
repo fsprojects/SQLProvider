@@ -94,8 +94,8 @@ let ``multiple subqueries combined should work``() =
         } |> Seq.toList
     
     Assert.IsTrue(result.Length > 0)
-    result |> List.iter (fun (id, company) -> 
-        printfn "Recent + expensive customer: %s (%s)" company id)
+    result |> List.iter (fun (pid, company) -> 
+        printfn "Recent + expensive customer: %s (%s)" company pid)
 
 [<Test>]
 let ``exists pattern using contains should work``() =
@@ -117,8 +117,8 @@ let ``exists pattern using contains should work``() =
             select (customer.CustomerId, customer.CompanyName)
         } |> Seq.toList
     
-    result |> List.iter (fun (id, company) -> 
-        printfn "Seafood customer: %s (%s)" company id)
+    result |> List.iter (fun (pid, company) -> 
+        printfn "Seafood customer: %s (%s)" company pid)
 
 [<Test>]
 let ``not exists pattern should work``() =
@@ -140,8 +140,8 @@ let ``not exists pattern should work``() =
     
     // Print results even if empty (some databases might have all customers with orders)
     printfn "Customers with no orders: %d" result.Length
-    result |> List.iter (fun (id, company) -> 
-        printfn "No orders: %s (%s)" company id)
+    result |> List.iter (fun (pid, company) -> 
+        printfn "No orders: %s (%s)" company pid)
 
 [<Test>]
 let ``correlated subquery pattern should work``() =
@@ -317,8 +317,8 @@ let ``complex subquery with multiple levels should work``() =
         } |> Seq.toList
     
     Assert.IsTrue(result.Length > 0)
-    result |> List.iter (fun (name, id) -> 
-        printfn "Popular European product: %s (ID: %d)" name id)
+    result |> List.iter (fun (name, pid) -> 
+        printfn "Popular European product: %s (ID: %d)" name pid)
 
 [<Test>]
 let ``subquery result caching should work``() =
@@ -358,5 +358,5 @@ let ``subquery result caching should work``() =
     printfn "Found %d expensive products, %d orders, %d unique customers" 
             expensiveProductIds.Length ordersWithExpensiveProducts.Length result.Length
     
-    result |> List.iter (fun (company, id) -> 
-        printfn "Customer ordering expensive products: %s (%s)" company id)
+    result |> List.iter (fun (company, pid) -> 
+        printfn "Customer ordering expensive products: %s (%s)" company pid)

@@ -696,8 +696,8 @@ type internal MSAccessProvider(contextSchemaPath) =
                             cmd.ExecuteNonQuery() |> ignore
                             // Jet/ACE doesn't support multi-statement commands, so the identity is fetched separately
                             use idCmd = new OleDbCommand("SELECT @@IDENTITY", con :?> OleDbConnection, trnsx :?> OleDbTransaction)
-                            let id = idCmd.ExecuteScalar()
-                            CommonTasks.checkKey schemaCache.PrimaryKeys id e
+                            let pid = idCmd.ExecuteScalar()
+                            CommonTasks.checkKey schemaCache.PrimaryKeys pid e
                             e._State <- Unchanged
                         | Modified fields ->
                             use cmd = createUpdateCommand con sb e fields
@@ -755,8 +755,8 @@ type internal MSAccessProvider(contextSchemaPath) =
                                     let! _ = cmd.ExecuteNonQueryAsync()
                                     // Jet/ACE doesn't support multi-statement commands, so the identity is fetched separately
                                     use idCmd = new OleDbCommand("SELECT @@IDENTITY", con :?> OleDbConnection, trnsx :?> OleDbTransaction)
-                                    let! id = idCmd.ExecuteScalarAsync()
-                                    CommonTasks.checkKey schemaCache.PrimaryKeys id e
+                                    let! pid = idCmd.ExecuteScalarAsync()
+                                    CommonTasks.checkKey schemaCache.PrimaryKeys pid e
                                     e._State <- Unchanged
                                 }
                             | Modified fields ->

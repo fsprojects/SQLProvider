@@ -267,9 +267,9 @@ let ``option from join select with exactly one``() =
 
     match qry with
     | Some(cust, ord) ->
-        let id = cust.CustomerId
+        let pid = cust.CustomerId
         let ordId = ord.OrderId
-        Assert.AreEqual("ALFKI",id)
+        Assert.AreEqual("ALFKI",pid)
         Assert.AreEqual(10643,ordId)
     | None ->
         Assert.Fail()
@@ -300,9 +300,9 @@ let ``over 8 joins test``() =
 
     match qry with
     | Some(cust, ord) ->
-        let id = cust.CustomerId
+        let pid = cust.CustomerId
         let ordId = ord.OrderId
-        Assert.AreEqual("ALFKI",id)
+        Assert.AreEqual("ALFKI",pid)
         Assert.AreEqual(10643,ordId)
     | None ->
         Assert.Fail()
@@ -462,8 +462,8 @@ let ``option from simple select with exactly one``() =
 
     match qry with
     | Some cust ->
-        let id = cust.CustomerId
-        Assert.AreEqual("ALFKI",id)
+        let pid = cust.CustomerId
+        Assert.AreEqual("ALFKI",pid)
         let city = cust.City
         cust.City <- city + " upd "
         dc.SubmitUpdates()

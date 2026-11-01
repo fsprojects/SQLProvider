@@ -213,6 +213,7 @@ type OnConflict =
 
 /// Attribute for mapping entity properties to database columns with different names.
 /// Use this when your database column name differs from your preferred F# property name.
+[<Sealed>]
 type MappedColumnAttribute(name: string) = 
     inherit Attribute()
     /// Gets the database column name this property maps to
