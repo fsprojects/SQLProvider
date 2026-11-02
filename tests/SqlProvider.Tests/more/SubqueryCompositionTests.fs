@@ -37,7 +37,7 @@ FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executin
 
 let dc = sql.GetDataContext()
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "LIMIT 5|TOP 5|FETCH NEXT 5", "JOIN", "DISTINCT")>]
 let ``subquery as filter should work correctly``() =
     // Find customers who have placed large orders
     let largeOrderCustomers =
@@ -63,7 +63,7 @@ let ``subquery as filter should work correctly``() =
         Assert.IsTrue(not (String.IsNullOrEmpty company))
         printfn "Large order customer: %s (%s)" company id)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "JOIN", "DISTINCT")>]
 let ``multiple subqueries combined should work``() =
     // Find customers who have placed recent orders
     let recentOrderCustomers =
@@ -97,7 +97,7 @@ let ``multiple subqueries combined should work``() =
     result |> List.iter (fun (pid, company) -> 
         printfn "Recent + expensive customer: %s (%s)" company pid)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "JOIN", "DISTINCT")>]
 let ``exists pattern using contains should work``() =
     // Find customers who have ordered seafood products (CategoryId = 8)
     let seafoodCustomerIds =
@@ -120,7 +120,7 @@ let ``exists pattern using contains should work``() =
     result |> List.iter (fun (pid, company) -> 
         printfn "Seafood customer: %s (%s)" company pid)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "DISTINCT")>]
 let ``not exists pattern should work``() =
     // Find customers who have never placed an order
     let customerIdsWithOrders =
@@ -143,7 +143,7 @@ let ``not exists pattern should work``() =
     result |> List.iter (fun (pid, company) -> 
         printfn "No orders: %s (%s)" company pid)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("GROUP BY", "JOIN")>]
 let ``correlated subquery pattern should work``() =
     // Find customers with above-average order counts for their country
     let result =
@@ -183,7 +183,7 @@ let ``correlated subquery pattern should work``() =
 
 type CustomerFilter = IQueryable<sql.dataContext.``main.CustomersEntity``> -> IQueryable<sql.dataContext.``main.CustomersEntity``>
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("DISTINCT")>]
 let ``query composition with filter functions should work``() =
     // Define reusable query filters
     
@@ -222,7 +222,7 @@ type SearchCriteria = {
     MinOrderValue: float option
 }
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "JOIN", "DISTINCT")>]
 let ``dynamic query building should work``() =
    
     let buildCustomerQuery (criteria: SearchCriteria) =
@@ -282,7 +282,7 @@ let ``dynamic query building should work``() =
         Assert.AreEqual("London", customer.City.Value)
         printfn "London customer with orders: %s" customer.CompanyName)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE|HAVING", "LIMIT 5|TOP 5|FETCH NEXT 5", "GROUP BY")>]
 let ``complex subquery with multiple levels should work``() =
     // Find products that were ordered by customers from specific regions
     let europeanCustomerIds =
@@ -320,7 +320,7 @@ let ``complex subquery with multiple levels should work``() =
     result |> List.iter (fun (name, pid) -> 
         printfn "Popular European product: %s (ID: %d)" name pid)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "LIMIT 5|TOP 5|FETCH NEXT 5", "DISTINCT")>]
 let ``subquery result caching should work``() =
     // Simulate caching subquery results for reuse
     let expensiveProductIds =
@@ -361,7 +361,7 @@ let ``subquery result caching should work``() =
     result |> List.iter (fun (company, pid) -> 
         printfn "Customer ordering expensive products: %s (%s)" company pid)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``parameters of a subquery nested in another subquery are bound``() =
     let minQty = 50s
     let allCases = false
@@ -396,7 +396,7 @@ let ``parameters of a subquery nested in another subquery are bound``() =
     Assert.AreEqual(expected, runQuery ())
     Assert.AreEqual(expected, runQuery ())
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``parameters of three nested subquery levels are bound``() =
     let minQty = 50s
     let country = "Germany"

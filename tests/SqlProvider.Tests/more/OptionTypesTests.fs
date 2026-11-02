@@ -35,7 +35,7 @@ type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %O")
 
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``value option basic usage`` () =
     let ctx = sql.GetDataContext()
     
@@ -68,7 +68,7 @@ let ``value option pattern matching`` () =
     
     Assert.IsNotEmpty(categorizeCustomers)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``value option filtering patterns`` () =
     let ctx = sql.GetDataContext()
     
@@ -140,7 +140,7 @@ let ``value option mapping and transformation`` () =
     
     Assert.IsNotEmpty(upperCaseRegions)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``value option with nullable datetime`` () =
     let ctx = sql.GetDataContext()
     
@@ -161,7 +161,7 @@ let ``value option with nullable datetime`` () =
     
     Assert.IsNotEmpty(ordersWithShipDate)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "DISTINCT", "COUNT(")>]
 let ``value option aggregations`` () =
     let ctx = sql.GetDataContext()
     
@@ -185,7 +185,7 @@ let ``value option aggregations`` () =
     Assert.Greater(regionsCount, 0)
     Assert.IsNotEmpty(distinctRegions)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "JOIN")>]
 let ``value option in joins`` () =
     let ctx = sql.GetDataContext()
     
@@ -249,7 +249,7 @@ let ``value option insertion and updates`` () =
         do! ctx.SubmitUpdatesAsync()
     }
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``value option complex expressions`` () =
     let ctx = sql.GetDataContext()
     
@@ -313,7 +313,7 @@ let ``value option bind operations`` () =
     
     Assert.IsNotEmpty(processCustomerData)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``value option with nullable foreign keys`` () =
     let ctx = sql.GetDataContext()
     

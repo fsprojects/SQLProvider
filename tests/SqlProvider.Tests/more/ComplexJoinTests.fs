@@ -36,7 +36,7 @@ FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executin
 
 let dc = sql.GetDataContext()
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "LIMIT 5|TOP 5|FETCH NEXT 5", "JOIN", "LEFT OUTER JOIN|LEFT JOIN")>]
 let ``three table join with nullable foreign key should work``() =
     let result = 
         query {
@@ -55,7 +55,7 @@ let ``three table join with nullable foreign key should work``() =
         Assert.IsTrue(not (String.IsNullOrEmpty employee))
         printfn "Order %d: %s handled by %s" orderId company employee)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "LIMIT 5|TOP 5|FETCH NEXT 5", "JOIN")>]
 let ``four table join should work correctly``() =
     let result = 
         query {
@@ -83,7 +83,7 @@ let ``four table join should work correctly``() =
         printfn "Order %d: %s ordered %d x %s at $%.2f" 
                 order.OrderId order.CompanyName order.Quantity order.ProductName order.UnitPrice)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("JOIN", "LEFT OUTER JOIN|LEFT JOIN")>]
 let ``left join should include records with no matches``() =
     let result = 
         query {
@@ -110,7 +110,7 @@ let ``left join should include records with no matches``() =
         Assert.IsTrue(not (String.IsNullOrEmpty company))
         printfn "%s: %s" company orderInfo)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "LIMIT 3|TOP 3|FETCH NEXT 3", "JOIN")>]
 let ``conditional join with complex where clause should work``() =
     let startDate = DateTime(1996, 1, 1)
     let endDate = DateTime(1996, 12, 31)
@@ -135,7 +135,7 @@ let ``conditional join with complex where clause should work``() =
         Assert.IsTrue(orderDate >= startDate && orderDate <= endDate)
         printfn "London customer %s: Order %d (%d items) on %A" company orderId quantity orderDate)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE|HAVING", "GROUP BY", "JOIN")>]
 let ``multiple joins with aggregation should work``() =
     let result = 
         query {
@@ -152,7 +152,7 @@ let ``multiple joins with aggregation should work``() =
         Assert.IsTrue(orderDetailCount > 0)
         printfn "London customer %s has %d order details" company orderDetailCount)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("LIMIT 5|TOP 5|FETCH NEXT 5", "JOIN")>]
 let ``join with calculated fields should work``() =
     let result = 
         query {
@@ -182,7 +182,7 @@ let ``join with calculated fields should work``() =
         printfn "Order %d: %s, Qty: %d, Price: $%.2f, Total: $%.2f, Discounted: $%.2f" 
                 line.OrderId line.ProductName line.Quantity line.UnitPrice line.LineTotal line.DiscountedTotal)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "LIMIT 3|TOP 3|FETCH NEXT 3", "JOIN")>]
 let ``complex join with multiple conditions should work``() =
     let result = 
         query {
@@ -204,7 +204,7 @@ let ``complex join with multiple conditions should work``() =
         Assert.IsTrue(not (String.IsNullOrEmpty product))
         printfn "UK customer %s ordered %s at $%.2f on %A" company product price orderDate)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("LIMIT 5|TOP 5|FETCH NEXT 5", "GROUP BY", "JOIN")>]
 let ``join with union-like pattern should work``() =
     // Get customer info with order summary
     let customerOrders = 
@@ -234,7 +234,7 @@ let ``join with union-like pattern should work``() =
         Assert.IsTrue(customer.OrderCount >= 0)
         printfn "Customer %s (%s) has %d orders" customer.CompanyName customer.CustomerId customer.OrderCount)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "LIMIT 3|TOP 3|FETCH NEXT 3", "JOIN", "LEFT OUTER JOIN|LEFT JOIN")>]
 let ``nested join conditions should work``() =
     // Find orders where the employee's city matches the customer's city
     let result = 
@@ -254,7 +254,7 @@ let ``nested join conditions should work``() =
         Assert.IsTrue(not (String.IsNullOrEmpty city))
         printfn "Order %d: %s in %s handled by local employee %s" orderId company city employee)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "LIMIT 10|TOP 10|FETCH NEXT 10", "JOIN")>]
 let ``join performance with filtering should be efficient``() =
     // Test that filtering before joining is more efficient
     let stopwatch = System.Diagnostics.Stopwatch.StartNew()

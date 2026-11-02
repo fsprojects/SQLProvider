@@ -14,7 +14,7 @@ let private cursorType = TypeMapping.Create(typeof<obj>.ToString(), DbType.Objec
 let private param name ordinal typeMapping direction =
     QueryParameter.Create(name, ordinal, typeMapping, direction)
 
-[<Test>]
+[<Test; SqlCheck.NoSql>]
 let ``MSSQL sproc call ignores result set columns from an offline schema``() =
     let resultSet = param "ResultSet" 0 cursorType ParameterDirection.Output
     // Offline the cached parameter list has the result set appended to the real parameters
@@ -32,7 +32,7 @@ let ``MSSQL sproc call ignores result set columns from an offline schema``() =
     Assert.AreEqual([| box 1; box 2 |], values)
     Assert.AreEqual(1, outps.Length)
 
-[<Test>]
+[<Test; SqlCheck.NoSql>]
 let ``MSSQL function call passes the return value parameter``() =
     let returnValue = param "ReturnValue" 0 intType ParameterDirection.ReturnValue
     let inputParameters =
@@ -45,7 +45,7 @@ let ``MSSQL function call passes the return value parameter``() =
     let names = allParams |> Array.map (fun (_,_,p) -> (p :?> IDataParameter).ParameterName)
     Assert.AreEqual([| "@RETURN_VALUE"; "@a" |], names)
 
-[<Test>]
+[<Test; SqlCheck.NoSql>]
 let ``distinctNamed drops repeated named parameters only``() =
     let parameters =
         [ param "" 0 intType ParameterDirection.ReturnValue

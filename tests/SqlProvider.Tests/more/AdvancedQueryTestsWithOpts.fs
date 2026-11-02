@@ -34,7 +34,7 @@ let resolutionPath = __SOURCE_DIRECTORY__ + "/../libs"
 type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString, CaseSensitivityChange=Common.CaseSensitivityChange.ORIGINAL, ResolutionPath = resolutionPath, SQLiteLibrary=sqliteLib, UseOptionTypes = Common.NullableColumnType.VALUE_OPTION>
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %O")
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "LIMIT 5|TOP 5|FETCH NEXT 5", "JOIN", "LEFT OUTER JOIN|LEFT JOIN")>]
 let ``three table join with forced join operator``() =
     let dc = sql.GetDataContext()
     let query = 
@@ -51,7 +51,7 @@ let ``three table join with forced join operator``() =
     Assert.IsTrue(results.Length > 0)
     Assert.IsTrue(results.Length <= 5)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "JOIN", "LEFT OUTER JOIN|LEFT JOIN")>]
 let ``multiple table join with complex filtering``() =
     let dc = sql.GetDataContext()
     let query = 
@@ -74,7 +74,7 @@ let ``multiple table join with complex filtering``() =
 
 // Subquery and Contains Test Examples
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "DISTINCT")>]
 let ``contains with subquery``() =
     let dc = sql.GetDataContext()
     
@@ -96,7 +96,7 @@ let ``contains with subquery``() =
     let results = query |> Array.ofSeq
     Assert.IsTrue(results.Length > 0)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "JOIN", "LEFT OUTER JOIN|LEFT JOIN", "DISTINCT")>]
 let ``multiple subqueries with complex conditions``() =
     let dc = sql.GetDataContext()
     
@@ -131,7 +131,7 @@ let ``multiple subqueries with complex conditions``() =
     let results = query |> Array.ofSeq
     Assert.IsTrue(results.Length > 0)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``nested subquery with exists pattern``() =
     let dc = sql.GetDataContext()
     
@@ -153,7 +153,7 @@ let ``nested subquery with exists pattern``() =
 // Advanced Sorting and Pagination Tests
 
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("ORDER BY", "LIMIT 10|TOP 10|FETCH NEXT 10")>]
 let ``multiple sort criteria with thenBy``() =
     let dc = sql.GetDataContext()
     let query = 
@@ -175,7 +175,7 @@ let ``multiple sort criteria with thenBy``() =
         let cities = items |> Array.map (fun (_, city, _) -> city) |> Array.distinct |> Array.sort
         Assert.IsTrue(cities.Length > 0)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("ORDER BY", "LIMIT|TOP|FETCH NEXT")>]
 let ``pagination with skip and take``() =
     let dc = sql.GetDataContext()
     let pageSize = 5
@@ -193,7 +193,7 @@ let ``pagination with skip and take``() =
     let results = query |> Array.ofSeq
     Assert.IsTrue(results.Length <= pageSize)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("ORDER BY", "LIMIT 10|TOP 10|FETCH NEXT 10")>]
 let ``conditional sorting based on runtime parameter``() =
     let dc = sql.GetDataContext()
     
@@ -223,7 +223,7 @@ let ``conditional sorting based on runtime parameter``() =
 
 // Async Execution Tests
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("LIMIT 10|TOP 10|FETCH NEXT 10")>]
 let ``async array execution``() =
     task {
         let dc = sql.GetDataContext()
@@ -237,7 +237,7 @@ let ``async array execution``() =
         Assert.AreEqual(10, results.Length)
     }
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("LIMIT 5|TOP 5|FETCH NEXT 5")>]
 let ``async list execution``() =
     task {
         let dc = sql.GetDataContext()
@@ -251,7 +251,7 @@ let ``async list execution``() =
         Assert.AreEqual(5, results.Length)
     }
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``async single result with tryHeadAsync``() =
     task {
         let dc = sql.GetDataContext()
@@ -266,7 +266,7 @@ let ``async single result with tryHeadAsync``() =
         Assert.AreEqual("ALFKI", result.Value.CustomerId)
     }
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("LIMIT 1|TOP 1|FETCH NEXT 1")>]
 let ``async single result with headAsync``() =
     task {
         let dc = sql.GetDataContext()
@@ -281,7 +281,7 @@ let ``async single result with headAsync``() =
         Assert.IsTrue(result.Length > 0)
     }
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("LIMIT 10|TOP 10|FETCH NEXT 10")>]
 let ``parallel async query execution``() =
     task {
         let dc = sql.GetDataContext()
@@ -309,7 +309,7 @@ let ``parallel async query execution``() =
 
 // Option Type Handling Tests
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``filtering with option type IsSome``() =
     let dc = sql.GetDataContext()
     let query = 
@@ -322,7 +322,7 @@ let ``filtering with option type IsSome``() =
     let results = query |> Array.ofSeq
     Assert.IsTrue(results.Length > 0)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``filtering with option type IsNone``() =
     let dc = sql.GetDataContext()
     let query = 
@@ -335,7 +335,7 @@ let ``filtering with option type IsNone``() =
     let results = query |> Array.ofSeq
     Assert.IsTrue(results.Length >= 0) // May be 0 if all orders are shipped
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``complex option type filtering``() =
     let dc = sql.GetDataContext()
     let query = 
@@ -354,7 +354,7 @@ let ``complex option type filtering``() =
 
 // Performance and Integration Tests
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("ORDER BY", "LIMIT|TOP|FETCH NEXT")>]
 let ``large result set with chunked processing``() =
     task {
         let dc = sql.GetDataContext()
@@ -383,7 +383,7 @@ let ``large result set with chunked processing``() =
         Assert.IsTrue(totalProcessed > 0)
     }
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "DISTINCT")>]
 let ``complex business logic query``() =
     let dc = sql.GetDataContext()
     

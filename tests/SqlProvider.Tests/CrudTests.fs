@@ -213,7 +213,7 @@ let ``Conflict resolution is correctly applied``() =
 
 module UtilsTests =
 
-    [<Test>]
+    [<Test; SqlCheck.NoSql>]
     let ``List.evaluateOneByOne test``() =
         // This is a helper for executing Tasks as one-by-one to not mess data connections or contexts.
         // If you use Aync, use rateher Async.Sequential
@@ -228,7 +228,7 @@ module UtilsTests =
             Assert.AreEqual(initList, processList.Result)
         } :> Task
 
-    [<Test>]
+    [<Test; SqlCheck.NoSql>]
     let ``List.evaluateOneByOne test, no stackoverflow``() =
         task {
             let initList = [1 .. 5000]

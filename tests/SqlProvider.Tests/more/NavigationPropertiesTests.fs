@@ -61,7 +61,7 @@ let ``multiple level navigation`` () =
     
     Assert.IsNotEmpty(customerOrderDetails)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``navigation with filtering`` () =
     let ctx = sql.GetDataContext()
     
@@ -75,7 +75,7 @@ let ``navigation with filtering`` () =
     
     Assert.IsNotEmpty(recentCustomerOrders)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("COUNT(")>]
 let ``navigation with aggregation`` () =
     let ctx = sql.GetDataContext()
     
@@ -106,7 +106,7 @@ let ``reverse navigation properties`` () =
     
     Assert.IsNotEmpty(orderCustomers)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("ORDER BY")>]
 let ``navigation with sorting`` () =
     let ctx = sql.GetDataContext()
     
@@ -121,7 +121,7 @@ let ``navigation with sorting`` () =
     
     Assert.IsNotEmpty(sortedCustomerOrders)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``navigation with date filtering`` () =
     let ctx = sql.GetDataContext()
     
@@ -135,7 +135,7 @@ let ``navigation with date filtering`` () =
     
     Assert.IsNotEmpty(recentCustomerActivity)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "DISTINCT")>]
 let ``navigation with distinct results`` () =
     let ctx = sql.GetDataContext()
     
@@ -151,7 +151,7 @@ let ``navigation with distinct results`` () =
     
     Assert.IsNotEmpty(customersWithLargeOrders)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("COUNT(")>]
 let ``navigation with conditional logic`` () =
     let ctx = sql.GetDataContext()
     
@@ -172,7 +172,7 @@ let ``navigation with conditional logic`` () =
     
     Assert.IsNotEmpty(customerCategories)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("ORDER BY", "LIMIT|TOP|FETCH NEXT")>]
 let ``navigation with pagination`` () =
     let ctx = sql.GetDataContext()
     let pageSize = 10

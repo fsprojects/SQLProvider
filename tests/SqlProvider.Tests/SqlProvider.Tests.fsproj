@@ -20,6 +20,7 @@
     <IsLinux Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true'">true</IsLinux>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="SqlCheck.fs" />
     <Compile Include="more\AdvancedQueryTests.fs" />
     <Compile Include="more\AdvancedQueryTestsWithOpts.fs" />
     <Compile Include="more\ComplexJoinTests.fs" />

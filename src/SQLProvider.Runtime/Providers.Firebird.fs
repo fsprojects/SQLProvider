@@ -1010,12 +1010,13 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
                     match sqlQuery.Grouping with
                     | [] -> Utilities.parseAggregates fieldNotation Firebird.fieldNotationAlias sqlQuery.AggregateOp
                     | g  -> 
-                        let keys = g |> List.collect fst |> List.map(fun (a,c) ->
+                        let keyColumns = g |> List.collect fst
+                        let keys = keyColumns |> List.mapi(fun i (a,c) ->
                             let fn = fieldNotation a c
                             if not (tmpGrpParams.ContainsKey (a,c)) then
                                 tmpGrpParams.Add((a,c), fn)
-                            if sqlQuery.Aliases.Count < 2 then fn
-                            else $"%s{fn} as [%s{fn}]")
+                            let plain = if sqlQuery.Aliases.Count < 2 then fn else $"%s{fn} as [%s{fn}]"
+                            CommonTasks.groupKeyColumn keyColumns i c fn plain)
                         let aggs = g |> List.collect snd
                         let res2 = Utilities.parseAggregates fieldNotation Firebird.fieldNotationAlias aggs |> List.toSeq
                         [String.Join(", ", keys) + (if List.isEmpty aggs || List.isEmpty keys then ""  else ", ") + String.Join(", ", res2)] 

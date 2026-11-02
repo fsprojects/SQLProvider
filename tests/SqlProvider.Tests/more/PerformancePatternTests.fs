@@ -46,7 +46,7 @@ let measureQueryPerformance<'T> (queryName: string) (query: unit -> 'T) =
     printfn "Query '%s' completed in %d ms" queryName stopwatch.ElapsedMilliseconds
     result, stopwatch.ElapsedMilliseconds
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``chunking large ID arrays should work efficiently``() =
     // Get a list of order IDs to test with
     let allOrderIds = 
@@ -77,7 +77,7 @@ let ``chunking large ID arrays should work efficiently``() =
     Assert.IsTrue(Array.forall2 (=) originalIds retrievedIds)
     printfn "Successfully processed %d orders in %d chunks" allOrderIds.Length chunks.Length
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("ORDER BY", "LIMIT|TOP|FETCH NEXT")>]
 let ``pagination should work correctly``() =
     let pageSize = 5
     let page1 = 
@@ -112,7 +112,7 @@ let ``pagination should work correctly``() =
     printfn "Page 1: %A" page1
     printfn "Page 2: %A" page2
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "ORDER BY", "LIMIT|TOP|FETCH NEXT")>]
 let ``cursor-based pagination should be more efficient for large offsets``() =
     // Simulate cursor pagination
     let pageSize = 3
@@ -152,7 +152,7 @@ let ``cursor-based pagination should be more efficient for large offsets``() =
     printfn "First page: %A" firstPageItems
     printfn "Second page: %A" secondPageItems
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "LIMIT 10|TOP 10|FETCH NEXT 10", "JOIN")>]
 let ``early filtering should be more efficient than late filtering``() =
     let testDate = DateTime(1997, 1, 1)
     
@@ -185,7 +185,7 @@ let ``early filtering should be more efficient than late filtering``() =
     
     printfn "Early filtering found %d results" earlyResults.Length
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("LIMIT 20|TOP 20|FETCH NEXT 20")>]
 let ``selective column loading should be more efficient``() =
     // Selective loading - only needed columns
     let (selectiveResults, selectiveTime) = measureQueryPerformance "SelectiveLoading" (fun () ->
@@ -215,7 +215,7 @@ let ``selective column loading should be more efficient``() =
     
     printfn "Selective loading: %d ms, Full loading: %d ms" selectiveTime fullTime
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("JOIN")>]
 let ``streaming large datasets should control memory usage``() =
     let processedCount = ref 0
     let maxItemsToProcess = 50 // Limit for test
@@ -244,7 +244,7 @@ let ``streaming large datasets should control memory usage``() =
     
     printfn "Streamed %d items in %d ms" !processedCount streamTime
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("ORDER BY", "LIMIT|TOP|FETCH NEXT")>]
 let ``batch processing should handle large datasets efficiently``() =
     let batchSize = 10
     let maxBatches = 3 // Limit for test
@@ -280,7 +280,7 @@ let ``batch processing should handle large datasets efficiently``() =
     
     printfn "Processed %d items in %d batches (%d ms)" !totalProcessed !batchesProcessed batchTime
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "ORDER BY")>]
 let ``index-friendly queries should perform well``() =
     // Query using indexed column (OrderId is typically indexed)
     let (indexedResults, indexedTime) = measureQueryPerformance "IndexedQuery" (fun () ->
@@ -304,7 +304,7 @@ let ``index-friendly queries should perform well``() =
     
     printfn "Indexed query returned %d results in %d ms" indexedResults.Length indexedTime
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("LIMIT 10|TOP 10|FETCH NEXT 10")>]
 let ``query performance should be consistent across multiple runs``() =
     let runs = 3
     let times = ResizeArray<int64>()
@@ -337,7 +337,7 @@ let ``query performance should be consistent across multiple runs``() =
     
     printfn "Query times: Min=%d ms, Max=%d ms, Avg=%.1f ms" minTime maxTime avgTime
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "LIMIT 5|TOP 5|FETCH NEXT 5", "JOIN")>]
 let ``complex query optimization should show measurable improvement``() =
     // Complex query with multiple joins and filters
     let complexQuery() =

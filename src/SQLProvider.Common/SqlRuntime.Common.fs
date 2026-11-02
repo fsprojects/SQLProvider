@@ -1015,6 +1015,15 @@ module CommonTasks =
                             // manually and in that case scope_identity would bring back 0 "" or whatever
         | false, _ -> ()
 
+    /// The select-list entry of a group-key column. In a key of several columns, a computed one (a CASE for x.IsSome or
+    /// x.IsNone) is aliased key<position>: left unaliased, two of them come back under one result name (PostgreSQL and
+    /// SQL Server do not name them by their text), and the key tuple cannot be rebuilt. Every other key column keeps
+    /// `plain`, the provider's usual entry.
+    let groupKeyColumn (keys:(alias*SqlColumnType) list) (index:int) (column:SqlColumnType) (notation:string) (plain:string) =
+        match column with
+        | CanonicalOperation _ when keys.Length > 1 -> sprintf "%s as key%i" notation index
+        | _ -> plain
+
     let parseHaving fieldNotation (keys:(alias*SqlColumnType) list) (conditionList : Condition list) =
         if keys.Length <> 1 then
             failwithf "Unsupported having. Expected 1 key column, found: %i" keys.Length

@@ -37,7 +37,7 @@ type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %O")
 
 
-[<Test>]
+[<Test; SqlCheck.NoSql>]
 let ``connection pooling pattern`` () =
     let pool = ConcurrentStack<sql.dataContext>()
     let maxPoolSize = 5
@@ -64,7 +64,7 @@ let ``connection pooling pattern`` () =
         Assert.Greater(pool.Count, 0)
     }
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("LIMIT|TOP|FETCH NEXT", "COUNT(")>]
 let ``batch processing pattern`` () =
     let batchSize = 100
     
@@ -102,7 +102,7 @@ let ``batch processing pattern`` () =
         Assert.AreEqual(totalCustomers, processedCount)
     }
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``memoization pattern test`` () =
     let cache = ConcurrentDictionary<string, Task<int>>()
     let mutable callCount = 0
@@ -173,7 +173,7 @@ let ``chunked processing for large datasets`` () =
         Assert.AreEqual(allCustomers.Length, totalProcessed)
     }
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "LIMIT 10|TOP 10|FETCH NEXT 10")>]
 let ``parallel query execution`` () =
     let getCustomerOrderCount customerId =
         task {
@@ -206,7 +206,7 @@ let ``parallel query execution`` () =
         Assert.IsTrue(results |> Array.forall (fun (_, count) -> count >= 0))
     }
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("GROUP BY", "JOIN")>]
 let ``connection timeout handling`` () =
     task {
         try
@@ -223,7 +223,8 @@ let ``connection timeout handling`` () =
                     select (g.Key, g.Sum(fun (_,_,x) -> x.UnitPrice * decimal x.Quantity))
                 } |> Seq.executeQueryAsync |> Async.AwaitTask
             
-            Assert.IsNotNull(result)
+            // Enumerating runs the query: for this shape executeQueryAsync returns it unexecuted
+            Assert.IsNotEmpty(result)
         with
         | ex when ex.Message.Contains "timeout" ->
             Assert.Pass("Timeout handled correctly")
@@ -275,7 +276,7 @@ let ``memory efficient large result processing`` () =
         Assert.Greater(totalValue, 0.0m)
     }
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``query plan caching test`` () =
     let ctx = sql.GetDataContext()
     // in execution order: the list is built by prepending, so it is reversed at the end

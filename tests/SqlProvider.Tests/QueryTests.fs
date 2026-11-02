@@ -60,7 +60,7 @@ let ``simple select with contains query``() =
         }
     Assert.IsTrue(qry)    
 
-[<Test >]
+[<Test ; SqlCheck.ExpectSql("WHERE")>]
 let ``simple select with tuple by the new projections``() =
     let dc = sql.GetDataContext()
     let qry = 
@@ -72,7 +72,7 @@ let ``simple select with tuple by the new projections``() =
     let firstId = qry |> List.head |> fst
     Assert.AreEqual("ALFKI", firstId)
 
-[<Test >]
+[<Test ; SqlCheck.ExpectSql("WHERE")>]
 let ``simple select with anon-record by the new projections``() =
     let dc = sql.GetDataContext()
     let qry = 
@@ -84,7 +84,7 @@ let ``simple select with anon-record by the new projections``() =
     let firstItm = qry |> List.head
     Assert.AreEqual("ALFKI", firstItm.A)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``simple select with contains query with where``() =
     let dc = sql.GetDataContext()
     let qry = 
@@ -107,7 +107,7 @@ let ``simple select with contains query when not exists``() =
         }
     Assert.IsFalse(qry)    
 
-[<Test >]
+[<Test ; SqlCheck.ExpectSql("COUNT(")>]
 let ``simple select with count``() =
     let dc = sql.GetDataContext()
     let qry = 
@@ -118,7 +118,7 @@ let ``simple select with count``() =
         }
     Assert.AreEqual(91, qry)   
 
-[<Test >] // Generates COUNT(DISTINCT CustomerId)
+[<Test ; SqlCheck.ExpectSql("DISTINCT", "COUNT(")>] // Generates COUNT(DISTINCT CustomerId)
 let ``simple select with distinct count``() =
     let dc = sql.GetDataContext()
     let qry = 
@@ -141,7 +141,7 @@ let ``simple select with distinct avg``() =
         }
     Assert.AreEqual(91, qry)
 
-[<Test >]
+[<Test ; SqlCheck.ExpectSql("LIMIT 1|TOP 1|FETCH NEXT 1")>]
 let ``simple select with read only context``() =
 
     let dc2 = sql.GetReadOnlyDataContext()
@@ -162,7 +162,7 @@ let ``simple select with read only context``() =
     | _ ->
         Assert.True true
 
-[<Test >]
+[<Test ; SqlCheck.ExpectSql("LIMIT 1|TOP 1|FETCH NEXT 1")>]
 let ``simple select with read only context should contain the same types for easier code share``() =
     let getCust customers =
         let res = 
@@ -241,7 +241,7 @@ let ``simple select with last or default when exists``() =
         }
     Assert.AreEqual("WOLZA", qry)  
 
-[<Test >]
+[<Test ; SqlCheck.ExpectSql("WHERE")>]
 let ``simple select with exactly one``() =
     let dc = sql.GetDataContext()
     let qry = 
@@ -253,7 +253,7 @@ let ``simple select with exactly one``() =
         }
     Assert.AreEqual("ALFKI", qry)  
 
-[<Test >]
+[<Test ; SqlCheck.ExpectSql("WHERE", "JOIN")>]
 let ``option from join select with exactly one``() =
     let dc = sql.GetDataContext()
     let qry = 
@@ -274,7 +274,7 @@ let ``option from join select with exactly one``() =
     | None ->
         Assert.Fail()
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "JOIN")>]
 let ``over 8 joins test``() =
     let dc = sql.GetDataContext()
     let qry = 
@@ -307,7 +307,7 @@ let ``over 8 joins test``() =
     | None ->
         Assert.Fail()
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "JOIN", "LEFT OUTER JOIN|LEFT JOIN")>]
 let ``outer join with inner join test``() =
     let dc = sql.GetDataContext()
     let qry = 
@@ -327,7 +327,7 @@ let ``outer join with inner join test``() =
 
     Assert.AreNotEqual(None,qry)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "LEFT OUTER JOIN|LEFT JOIN")>]
 let ``leftOuterJoin yields null entity for unmatched row``() =
     let dc = sql.GetDataContext()
     // When the whole joined entity is selected, it must be null for customers with no orders.
@@ -346,7 +346,7 @@ let ``leftOuterJoin yields null entity for unmatched row``() =
     Assert.AreEqual(6, alfki.Length)
     Assert.IsTrue(alfki |> Array.forall (fun (_,o) -> not (obj.ReferenceEquals(o, null))))
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("LEFT OUTER JOIN|LEFT JOIN")>]
 let ``leftOuterJoin chained over three tables``() =
     let dc = sql.GetDataContext()
     // Two chained left joins: Customers -> Orders -> OrderDetails. Equivalent to a SQL
@@ -366,7 +366,7 @@ let ``leftOuterJoin chained over three tables``() =
     // ALFKI's 6 orders have 12 order-detail lines in total.
     Assert.AreEqual(12, res |> Array.filter (fun (c,_,_) -> c = "ALFKI") |> Array.length)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("JOIN", "LEFT OUTER JOIN|LEFT JOIN")>]
 let ``leftOuterJoin after an inner join``() =
     let dc = sql.GetDataContext()
     let res =
@@ -382,7 +382,7 @@ let ``leftOuterJoin after an inner join``() =
     Assert.AreEqual(823, res.Length)
     Assert.AreEqual(72, res |> Array.filter (fun (_,_,e) -> obj.ReferenceEquals(e, null)) |> Array.length)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("GROUP BY", "LEFT OUTER JOIN|LEFT JOIN")>]
 let ``leftOuterJoin with groupBy over the outer table``() =
     let dc = sql.GetDataContext()
     let res =
@@ -400,7 +400,7 @@ let ``leftOuterJoin with groupBy over the outer table``() =
     // so a customer with no orders has count 1, not 0.
     Assert.AreEqual(1, res.["FISSA"])
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``groupJoin flattened without DefaultIfEmpty behaves as an inner join``() =
     let dc = sql.GetDataContext()
     let res =
@@ -415,7 +415,7 @@ let ``groupJoin flattened without DefaultIfEmpty behaves as an inner join``() =
     Assert.AreEqual(6, res.Length)
     Assert.IsTrue(res |> Array.forall (fun (c,_) -> c = "ALFKI"))
 
-[<Test>]
+[<Test; SqlCheck.NoSql>]
 let ``groupJoin with a group aggregate fails loudly``() =
     let dc = sql.GetDataContext()
     // Aggregating the join group can't be modelled as a flat join; it must fail with a clear
@@ -429,7 +429,7 @@ let ``groupJoin with a group aggregate fails loudly``() =
             } |> Seq.toArray |> ignore)
     StringAssert.Contains("groupJoin", ex.Message)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``simple select two queries test``() =
     let dc = sql.GetDataContext SelectOperations.DatabaseSide
     // Works also with: let dc = sql.GetDataContext(SelectOperations.DotNetSide)
@@ -449,7 +449,7 @@ let ``simple select two queries test``() =
     Assert.AreEqual(itm1.CustomerId, itm2.CustomerId)
     Assert.IsTrue isOk
 
-[<Test >]
+[<Test ; SqlCheck.ExpectSql("WHERE")>]
 let ``option from simple select with exactly one``() =
     let dc = sql.GetDataContext()
     let qry = 
@@ -473,7 +473,7 @@ let ``option from simple select with exactly one``() =
         Assert.Fail()
      
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``simple select with exactly one when not exists``() =
     let dc = sql.GetDataContext()
     let qry = 
@@ -487,7 +487,7 @@ let ``simple select with exactly one when not exists``() =
     Assert.AreEqual(null, qry)  
 
 
-[<Test >]
+[<Test ; SqlCheck.ExpectSql("WHERE")>]
 let ``simple select with head``() =
     let dc = sql.GetDataContext()
     let qry = 
@@ -499,7 +499,7 @@ let ``simple select with head``() =
         }
     Assert.AreEqual("ALFKI", qry)  
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``simple select with head or Default``() =
     let dc = sql.GetDataContext()
     let qry = 
@@ -511,7 +511,7 @@ let ``simple select with head or Default``() =
         }
     Assert.AreEqual("ALFKI", qry)  
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``simple select with head or Default when not exists``() =
     let dc = sql.GetDataContext()
     let qry = 
@@ -560,7 +560,7 @@ let ``simplest select query into temp``() =
     CollectionAssert.IsNotEmpty qry
     Assert.AreEqual("Germany", fst qry.[0])
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``simplest select into where``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -618,7 +618,7 @@ let ``simple select query let temp``() =
     //Assert.AreEqual("Berlintest", qry.[0])
 
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``simple select query let where``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -632,7 +632,7 @@ let ``simple select query let where``() =
     CollectionAssert.IsNotEmpty qry
     CollectionAssert.Contains(qry, "Berlintest")
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``simple select query let temp used in where``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -671,7 +671,7 @@ let ``simple select query with operations in select``() =
     CollectionAssert.IsNotEmpty qry
     CollectionAssert.Contains(qry, "Germany Berliner Platz 431")
 
-[<Test >]
+[<Test ; SqlCheck.ExpectSql("WHERE")>]
 let ``simple select where query``() =
     let dc = sql.GetDataContext()
     let qry = 
@@ -686,7 +686,7 @@ let ``simple select where query``() =
     Assert.AreEqual("Berlin", qry.[0].City)
 
 
-[<Test >]
+[<Test ; SqlCheck.ExpectSql("WHERE")>]
 let ``simple select where null query``() =
     let dc = sql.GetDataContext()
     let qry = 
@@ -701,7 +701,7 @@ let ``simple select where null query``() =
     Assert.AreEqual("Berlin", qry.[0].City)
 
 
-[<Test >]
+[<Test ; SqlCheck.ExpectSql("WHERE")>]
 let ``simple select where query right side``() =
     let dc = sql.GetDataContext()
     let qry = 
@@ -715,7 +715,7 @@ let ``simple select where query right side``() =
     Assert.AreEqual(1, qry.Length)
     Assert.AreEqual("Berlin", qry.[0].City)
 
-[<Test >]
+[<Test ; SqlCheck.ExpectSql("WHERE")>]
 let ``simple select where query between col properties``() =
     let dc = sql.GetDataContext()
     let qry = 
@@ -740,7 +740,7 @@ let ``simple nth query``() =
     Assert.AreEqual("London", qry.City)
 
 
-[<Test >]
+[<Test ; SqlCheck.ExpectSql("WHERE")>]
 let ``simple select where not query``() =
     let dc = sql.GetDataContext()
     let qry = 
@@ -753,7 +753,7 @@ let ``simple select where not query``() =
     CollectionAssert.IsNotEmpty qry
     Assert.AreEqual(90, qry.Length)
 
-[<Test >]
+[<Test ; SqlCheck.ExpectSql("WHERE")>]
 let ``simple select where in query``() =
     let dc = sql.GetDataContext()
     let arr = ["ALFKI"; "ANATR"; "AROUT"]
@@ -769,7 +769,7 @@ let ``simple select where in query``() =
     Assert.AreEqual(3, qry.Length)
     Assert.IsTrue(qry.Contains "ANATR")
 
-[<Test >]
+[<Test ; SqlCheck.ExpectSql("WHERE")>]
 let ``simple select where in set query``() =
     let dc = sql.GetDataContext()
     let itmSet = ["ALFKI"; "ANATR"; "AROUT"] |> Set.ofList
@@ -786,7 +786,7 @@ let ``simple select where in set query``() =
     Assert.IsTrue(qry.Contains "ANATR")
 
     
-[<Test >]
+[<Test ; SqlCheck.ExpectSql("WHERE")>]
 let ``simple select where not-in query``() =
     let dc = sql.GetDataContext()
     let arr = ["ALFKI"; "ANATR"; "AROUT"]
@@ -802,7 +802,7 @@ let ``simple select where not-in query``() =
     Assert.AreEqual(88, qry.Length)
     Assert.IsFalse(qry.Contains "ANATR")
 
-[<Test >]
+[<Test ; SqlCheck.ExpectSql("WHERE")>]
 let ``simple select where in queryable query``() =
 
     let dc = sql.GetDataContext()
@@ -825,7 +825,7 @@ let ``simple select where in queryable query``() =
     Assert.AreEqual(6, query2.Length)
     Assert.IsTrue(query2.Contains "EASTC")
 
-[<Test >]
+[<Test ; SqlCheck.ExpectSql("WHERE", "LEFT OUTER JOIN|LEFT JOIN")>]
 let ``simple select where inner-join box-check and not in queryable query``() =
 
     let dc = sql.GetDataContext()
@@ -850,7 +850,7 @@ let ``simple select where inner-join box-check and not in queryable query``() =
     Assert.AreEqual(3, query2.Length)
     CollectionAssert.Contains(query2, "FISSA")
 
-[<Test >]
+[<Test ; SqlCheck.ExpectSql("WHERE", "IN(")>]
 let ``simple select where in query custom syntax``() =
     let dc = sql.GetDataContext()
     let arr = ["ALFKI"; "ANATR"; "AROUT"]
@@ -865,7 +865,7 @@ let ``simple select where in query custom syntax``() =
     Assert.AreEqual(3, qry.Length)
     Assert.IsTrue(qry.Contains "ANATR")
 
-[<Test >]
+[<Test ; SqlCheck.ExpectSql("WHERE")>]
 let ``simple select where like query``() =
     let dc = sql.GetDataContext()
     let qry = 
@@ -878,7 +878,7 @@ let ``simple select where like query``() =
     CollectionAssert.IsNotEmpty qry
     CollectionAssert.Contains(qry, "FRANR")
 
-[<Test >]
+[<Test ; SqlCheck.ExpectSql("WHERE")>]
 let ``simple select where like query2``() =
     let dc = sql.GetDataContext()
 
@@ -901,7 +901,7 @@ let ``simple select where like query2``() =
     CollectionAssert.Contains(qry, "ALFKI")
 
 
-[<Test >]
+[<Test ; SqlCheck.ExpectSql("WHERE")>]
 let ``simple select where query with operations in where``() =
     let dc = sql.GetDataContext()
     let qry = 
@@ -915,7 +915,7 @@ let ``simple select where query with operations in where``() =
     Assert.AreEqual(1, qry.Length)
     Assert.AreEqual("Berlin", qry.[0].City)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("MIN(")>]
 let ``simple select query with minBy``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -925,7 +925,7 @@ let ``simple select query with minBy``() =
         }   
     Assert.AreEqual(0m, qry)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("MIN(")>]
 let ``simple select query with minBy2``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -936,7 +936,7 @@ let ``simple select query with minBy2``() =
     Assert.AreEqual(0., qry)
 
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("MIN(")>]
 let ``simple select query with minBy DateTime``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -946,7 +946,7 @@ let ``simple select query with minBy DateTime``() =
         }   
     Assert.AreEqual(DateTime(1937, 09, 19), qry)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("SUM(")>]
 let ``simple select query with sumBy``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -971,7 +971,7 @@ let ``simple select query with sumBy join``() =
     Assert.Greater(56501m, qry)
     Assert.Less(56499m, qry)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``subquery with 1 tables``() = 
     let dc = sql.GetDataContext()
 
@@ -1005,7 +1005,7 @@ let ``subquery with 2 tables``() =
 
     Assert.IsNotEmpty(qry2)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "ORDER BY", "JOIN")>]
 let ``simple where before join test``() = 
     let dc = sql.GetDataContext()
 
@@ -1022,7 +1022,7 @@ let ``simple where before join test``() =
     Assert.LessOrEqual((fst qry.[0]), (fst qry.[1000]))
     CollectionAssert.Contains(qry, (10257L, 10257L))
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "ORDER BY")>]
 let ``simple where before join test2``() = 
     let dc = sql.GetDataContext()
 
@@ -1057,7 +1057,7 @@ let ``simple navigation sum async``() =
         Assert.GreaterOrEqual(res, 0m)
     } :> Task
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "ORDER BY")>]
 let ``simple where before join test3``() = 
     let dc = sql.GetDataContext()
 
@@ -1076,7 +1076,7 @@ let ``simple where before join test3``() =
     Assert.AreEqual(qry.Length, 24)
     Assert.LessOrEqual(qry.[0].ShipCity, qry.[20].ShipCity)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("SUM(")>]
 let ``simple select query with sumBy times two``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -1088,7 +1088,7 @@ let ``simple select query with sumBy times two``() =
     Assert.Less(3393418m, qry)
 
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("AVG(")>]
 let ``simple select query with averageBy``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -1099,7 +1099,7 @@ let ``simple select query with averageBy``() =
     Assert.Greater(27m, qry)
     Assert.Less(26m, qry)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("AVG(")>]
 let ``simple select query with averageBy length``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -1111,7 +1111,7 @@ let ``simple select query with averageBy length``() =
     Assert.Less(13m, qry)
 
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("GROUP BY")>]
 let ``simplest select query with groupBy``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -1122,7 +1122,7 @@ let ``simplest select query with groupBy``() =
 
     Assert.IsNotEmpty(qry)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("GROUP BY")>]
 let ``simplest select query with groupBy 2 columns``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -1133,7 +1133,7 @@ let ``simplest select query with groupBy 2 columns``() =
 
     Assert.IsNotEmpty(qry)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("GROUP BY")>]
 let ``simplest select query with groupBy key aggregate``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -1146,7 +1146,7 @@ let ``simplest select query with groupBy key aggregate``() =
     Assert.IsNotEmpty(qry)
 
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("GROUP BY")>]
 let ``simplest select query with groupBy aggregate``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -1158,7 +1158,7 @@ let ``simplest select query with groupBy aggregate``() =
 
     Assert.IsNotEmpty(qry)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("GROUP BY")>]
 let ``simplest select query with groupBy aggregate via select``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -1170,7 +1170,7 @@ let ``simplest select query with groupBy aggregate via select``() =
 
     Assert.IsNotEmpty(qry)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("GROUP BY", "SUM(")>]
 let ``simplest select query with groupBy aggregate temp total``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -1211,7 +1211,7 @@ let ``simplest select query with groupBy constant with operation``() =
 
     Assert.AreEqual(qry, 24)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("JOIN")>]
 let ``simple select query with join groupBy constant``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -1228,7 +1228,7 @@ let ``simple select query with join groupBy constant``() =
 
     Assert.IsNotEmpty(qry)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("GROUP BY")>]
 let ``simple select query with groupBy``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -1241,7 +1241,7 @@ let ``simple select query with groupBy``() =
     Assert.IsNotEmpty(res)
     Assert.AreEqual(6, res.["London"])
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE|HAVING", "ORDER BY", "GROUP BY")>]
 let ``simple select query with groupBy and then sort``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -1259,7 +1259,7 @@ let ``simple select query with groupBy and then sort``() =
     Assert.Less(50, lonAvg)
     Assert.Greater(100, lonAvg)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("GROUP BY")>]
 let ``simple select query with groupBy multiple columns``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -1271,7 +1271,7 @@ let ``simple select query with groupBy multiple columns``() =
     let res = qry |> dict  
     Assert.IsNotEmpty(res)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("GROUP BY")>]
 let ``simple select query with groupBy sum``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -1297,7 +1297,7 @@ let ``simple select query with groupBy sum``() =
     Assert.Less(689m, plusones)
     Assert.Greater(plustwos, plusones)
         
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE|HAVING", "GROUP BY")>]
 let ``simple select query with groupBy having count``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -1312,7 +1312,7 @@ let ``simple select query with groupBy having count``() =
     Assert.IsNotEmpty(res)
     Assert.AreEqual(3, res.["Buenos Aires"])
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE|HAVING", "GROUP BY")>]
 let ``simple select query with groupBy where and having``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -1330,7 +1330,7 @@ let ``simple select query with groupBy where and having``() =
     Assert.AreEqual(9L, res.["Seattle"])
 
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE|HAVING", "GROUP BY")>]
 let ``simple select query with groupBy having key``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -1344,7 +1344,7 @@ let ``simple select query with groupBy having key``() =
     Assert.IsNotEmpty(res)
     Assert.AreEqual(6, res.["London"])
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE|HAVING", "GROUP BY")>]
 let ``simple select query with groupBy having nested``() = 
     let dc = sql.GetDataContext()
     let subQry = 
@@ -1364,7 +1364,7 @@ let ``simple select query with groupBy having nested``() =
     Assert.IsNotEmpty(qry)
     Assert.Contains("AROUT", qry)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("GROUP BY")>]
 let ``simple select query with groupBy date``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -1376,7 +1376,7 @@ let ``simple select query with groupBy date``() =
     let res = qry |> dict  
     Assert.IsNotEmpty(res)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE|HAVING", "GROUP BY")>]
 let ``simple select query with groupBy2``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -1389,7 +1389,7 @@ let ``simple select query with groupBy2``() =
     Assert.IsNotNull(qry)
     Assert.AreEqual(7, qry.Sum(fun k -> k.Value))
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE|HAVING", "GROUP BY")>]
 let ``simple select query with groupBy complex operations``() = 
     let dc = sql.GetDataContext SelectOperations.DatabaseSide
     let old = DateTime(1990,01,01)
@@ -1406,7 +1406,7 @@ let ``simple select query with groupBy complex operations``() =
     Assert.AreEqual(458.91m, qry.["Belgium", "Bruxelles"])
     Assert.AreEqual(2151.67m, qry.["UK", "London"])
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE|HAVING", "GROUP BY", "JOIN")>]
 let ``simple select query with groupBy join complex operations``() = 
     let dc = sql.GetDataContext()
     let old = DateTime(1990,01,01)
@@ -1422,7 +1422,7 @@ let ``simple select query with groupBy join complex operations``() =
         } |> Seq.toArray
     Assert.IsNotNull(qry)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("GROUP BY")>]
 let ``simple groupValBy item``() =
     let dc = sql.GetDataContext()
     let qry = 
@@ -1432,7 +1432,7 @@ let ``simple groupValBy item``() =
         } |> Seq.toList
     Assert.IsNotEmpty(qry)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("GROUP BY")>]
 let ``simple select query with groupValBy``() =
     let dc = sql.GetDataContext()
     let qry = 
@@ -1443,7 +1443,7 @@ let ``simple select query with groupValBy``() =
         } |> dict  
     Assert.IsNotEmpty(qry)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("GROUP BY")>]
 let ``complex select query with groupValBy``() =
     let dc = sql.GetDataContext()
     let qry = 
@@ -1495,7 +1495,7 @@ let ``simple select query with case on client``() =
     CollectionAssert.Contains(qry, "London")
     CollectionAssert.Contains(qry, "Outside UK")
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("ORDER BY")>]
 let ``simple select and sort query``() =
     let dc = sql.GetDataContext()
     let qry = 
@@ -1508,7 +1508,7 @@ let ``simple select and sort query``() =
     CollectionAssert.IsNotEmpty qry    
     CollectionAssert.AreEquivalent([|"Aachen"; "Albuquerque"; "Anchorage"|], qry.[0..2])
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("ORDER BY")>]
 let ``simple select and sort query2``() =
     let dc = sql.GetDataContext()
     let sortbyCity=true
@@ -1536,7 +1536,7 @@ type SortbyCity =
         | SortbyCity.B -> "b"
         | SortbyCity.Asdf -> "asdf"
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("ORDER BY")>]
 let ``simple select and sort query3``() =
     let dc = sql.GetDataContext()
     let sortbyCity=SortbyCity.Asdf
@@ -1556,7 +1556,7 @@ let ``simple select and sort query3``() =
     CollectionAssert.AreEquivalent([|"Aachen"; "Albuquerque"; "Anchorage"|], qry.[0..2])
 
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("ORDER BY")>]
 let ``simple select and sort desc query``() =
     let dc = sql.GetDataContext()
     let qry = 
@@ -1569,7 +1569,7 @@ let ``simple select and sort desc query``() =
     CollectionAssert.IsNotEmpty qry    
     CollectionAssert.AreEquivalent([|"Århus"; "Warszawa"; "Walla Walla"|], qry.[0..2])
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("ORDER BY")>]
 let ``simple select and sort query with then by query``() =
     let dc = sql.GetDataContext()
     let qry = 
@@ -1583,7 +1583,7 @@ let ``simple select and sort query with then by query``() =
     CollectionAssert.IsNotEmpty qry    
     CollectionAssert.AreEquivalent([|"Buenos Aires"; "Buenos Aires"; "Buenos Aires"; "Graz"|], qry.[0..3])
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("ORDER BY")>]
 let ``simple select and sort query with then by desc query``() =
     let dc = sql.GetDataContext()
     let qry = 
@@ -1597,7 +1597,7 @@ let ``simple select and sort query with then by desc query``() =
     CollectionAssert.IsNotEmpty qry    
     CollectionAssert.AreEquivalent([|"Buenos Aires"; "Buenos Aires"; "Buenos Aires"; "Salzburg"|], qry.[0..3])
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("ORDER BY", "LIMIT 1|TOP 1|FETCH NEXT 1")>]
 let ``simple sort query with lambda cast to IComparable``() =
     let dc = sql.GetDataContext()
     let qry =
@@ -1611,7 +1611,7 @@ let ``simple sort query with lambda cast to IComparable``() =
     CollectionAssert.IsNotEmpty qry
     CollectionAssert.AreEquivalent([|"Berlin"|], qry)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``simple date opearations with implicit convert``() = 
     let dc = sql.GetDataContext()
     let today = DateTime.Today
@@ -1623,7 +1623,7 @@ let ``simple date opearations with implicit convert``() =
         } |> Seq.toList
     CollectionAssert.IsNotEmpty qry
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("ORDER BY", "LIMIT 1|TOP 1|FETCH NEXT 1")>]
 let ``simple sort query with then by desc query with lambda cast to IComparable``() =
     let dc = sql.GetDataContext()
     let qry =
@@ -1638,7 +1638,7 @@ let ``simple sort query with then by desc query with lambda cast to IComparable`
     CollectionAssert.IsNotEmpty qry
     CollectionAssert.AreEquivalent([|"Berlin"|], qry)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("JOIN")>]
 let ``simple select query with join``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -1658,7 +1658,7 @@ let ``simple select query with join``() =
         |], qry.[0..3])
 
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE|HAVING", "GROUP BY", "JOIN")>]
 let ``simple select query with join and then groupBy``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -1673,7 +1673,7 @@ let ``simple select query with join and then groupBy``() =
     Assert.IsNotEmpty(res)
     Assert.AreEqual("WX3 6FW", res.["London","London"])
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE|HAVING", "GROUP BY", "JOIN")>]
 let ``simple select query with join and then groupBy 2``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -1689,7 +1689,7 @@ let ``simple select query with join and then groupBy 2``() =
     Assert.IsNotEmpty(res)
     Assert.AreEqual(32, res.Length)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("GROUP BY", "JOIN")>]
 let ``simple select query with joins and then groupBy``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -1733,7 +1733,7 @@ let ``simple select query with groupBy and then join``() =
     let res = qry |> Seq.toList  
     Assert.IsNotEmpty(res)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("JOIN")>]
 let ``simple select query with join multi columns``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -1772,7 +1772,7 @@ let ``simple select query with join using relationships``() =
             "VICTE", DateTime(1996,7,8)
         |], qry.[0..3])
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("JOIN")>]
 let ``simple select query with group join``() =
     let dc = sql.GetDataContext()
     let qry = 
@@ -1821,7 +1821,7 @@ let ``simple select query with multiple joins on relationships``() =
             "HANAR", 65L, 15s
         |], qry.[0..7])
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("LEFT OUTER JOIN|LEFT JOIN")>]
 let ``simple select query with left outer join``() =
     let dc = sql.GetDataContext()
     let qry =
@@ -1843,7 +1843,7 @@ let ``simple select query with left outer join``() =
     Assert.AreEqual(1, fissa.Length)
     Assert.AreEqual(Unchecked.defaultof<DateTime>, snd fissa.[0])
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("SUM(")>]
 let ``simple sumBy``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -1877,7 +1877,7 @@ let ``simple async sum with operations``() =
         Assert.That(qry, Is.EqualTo(3454230.7769M).Within(0.1M))
     } :> Task
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("JOIN")>]
 let ``simple async sum with join and operations``() = 
     task {
         let dc = sql.GetDataContext()
@@ -1917,7 +1917,7 @@ let ``simple async sum with operations 2``() =
         Assert.That(qry, Is.EqualTo(31886.0M).Within(1.0M))
     } :> Task
 
-[<Test>] 
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 // Note: 
 // Use float if you try to do any math, don't use decimal.
 // Decimal is by intention of SQL-drivers handled as text to be non-lossy,
@@ -1933,7 +1933,7 @@ let ``simple math op``() =
 
     CollectionAssert.IsNotEmpty qry
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("AVG(")>]
 let ``simple averageBy``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -1953,7 +1953,7 @@ let ``simple averageByNullable``() =
         }
     Assert.That(qry, Is.EqualTo(26.2185m).Within(0.001M))
 
-[<Test >]
+[<Test ; SqlCheck.ExpectSql("DISTINCT")>]
 let ``simple select with distinct``() =
     let dc = sql.GetDataContext()
     let qry = 
@@ -1967,7 +1967,7 @@ let ``simple select with distinct``() =
     Assert.AreEqual(69, qry.Length) 
     CollectionAssert.AreEquivalent([|"Aachen"; "Albuquerque"; "Anchorage"|], qry.[0..2])
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("OFFSET 5")>]
 let ``simple select with skip``() =
     let dc = sql.GetDataContext()
     let qry = 
@@ -1982,7 +1982,7 @@ let ``simple select with skip``() =
     Assert.AreEqual(86, qry.Length) 
     CollectionAssert.AreEquivalent([|"Bergamo"; "Berlin"; "Bern"|], qry.[0..2])
 
-[<Test >]
+[<Test ; SqlCheck.ExpectSql("LIMIT 5|TOP 5|FETCH NEXT 5")>]
 let ``simple select with take``() =
     let dc = sql.GetDataContext()
     let qry = 
@@ -2057,7 +2057,7 @@ let ``simple select into a generic type with pipe`` () =
 
         CollectionAssert.IsNotEmpty qry
 
-[<Test >]
+[<Test ; SqlCheck.ExpectSql("WHERE")>]
 let ``simple select with bool outside query``() = 
     let dc = sql.GetDataContext()
     let rnd = Random()
@@ -2079,7 +2079,7 @@ let ``simple select with bool outside query``() =
     CollectionAssert.IsNotEmpty qry
 
 
-[<Test >]
+[<Test ; SqlCheck.ExpectSql("WHERE")>]
 let ``simple select with bool outside query2``() = 
     let dc = sql.GetDataContext()
     let rnd = Random()
@@ -2100,7 +2100,7 @@ let ``simple select with bool outside query2``() =
     
     CollectionAssert.IsNotEmpty qry
 
-[<Test >]
+[<Test ; SqlCheck.ExpectSql("LIMIT 3|TOP 3|FETCH NEXT 3")>]
 let ``simple select cross-join test``() = 
     //crossjoin: SELECT ... FROM Customers, Employees
     let dc = sql.GetDataContext()
@@ -2115,7 +2115,7 @@ let ``simple select cross-join test``() =
     CollectionAssert.Contains(qry, ("Maria Anders", "Buchanan"))
 
 
-[<Test >]
+[<Test ; SqlCheck.ExpectSql("WHERE", "LIMIT 3|TOP 3|FETCH NEXT 3")>]
 let ``simple select cross-join test 3 tables``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -2163,7 +2163,7 @@ let ``simple select nested query``() =
     Assert.IsNotNull(qry)    
     CollectionAssert.Contains(qry, "Fuller")
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``simple select nested emp query``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -2179,7 +2179,7 @@ let ``simple select nested emp query``() =
     Assert.IsNotNull(qry)    
     CollectionAssert.Contains(qry, "Anne")
 
-[<Test >]
+[<Test ; SqlCheck.ExpectSql("WHERE")>]
 let ``simple select entityValue form another query``() = 
     let dc = sql.GetDataContext()
     let ent1 = 
@@ -2198,7 +2198,7 @@ let ``simple select entityValue form another query``() =
     Assert.IsNotNull(ent2)    
     Assert.AreEqual(ent1.CustomerId, ent2.CustomerId)    
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("ORDER BY")>]
 let ``simple select nested query sort``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -2213,7 +2213,7 @@ let ``simple select nested query sort``() =
         } |> Seq.toList
     Assert.IsNotNull(qry)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "JOIN")>]
 let ``simple select join twice to same table``() = 
     let dc = sql.GetDataContext()
     let qry = 
@@ -2229,7 +2229,7 @@ let ``simple select join twice to same table``() =
     Assert.AreEqual("Butte",c1)    
     Assert.AreEqual("Kirkland",c2)    
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "JOIN")>]
 let ``simple select with multiple table joins with 4 tables``() =
     let dc = sql.GetDataContext()
     let results =
@@ -2260,7 +2260,7 @@ let ``simple select query async``() =
         CollectionAssert.IsNotEmpty task.Result
     } :> Task
 
-[<Test >]
+[<Test ; SqlCheck.ExpectSql("WHERE")>]
 let ``simple select query async2``() = 
     task {
         let dc = sql.GetDataContext() 
@@ -2279,7 +2279,7 @@ let ``simple select query async2``() =
         CollectionAssert.Contains(r, ("55 Grizzly Peak Rd.", "Butte", "Liu Wong"))
     } :> Task
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``simple select query async3``() =
     task {
         let dc = sql.GetDataContext() 
@@ -2299,7 +2299,7 @@ let ``simple select query async3``() =
         ()
     } :> Task
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``simple select query async4``() =
     task {
         let dc = sql.GetDataContext() 
@@ -2320,7 +2320,7 @@ let ``simple select query async4``() =
     } :> Task
 
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``simple select query async5``() =
     task {
         let dc = sql.GetDataContext()
@@ -2348,7 +2348,7 @@ type CustomType = {
     Country : String;
 }
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``simple select query async6``() =
     task {
         let dc = sql.GetDataContext()
@@ -2371,7 +2371,7 @@ let ``simple select query async6``() =
         ()
     } :> Task
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``simple select query lengthAsync``() =
     task {
         let dc = sql.GetDataContext()
@@ -2384,7 +2384,7 @@ let ``simple select query lengthAsync``() =
         Assert.IsTrue(count >= 0)
     }
 
-[<Test >] // Generates COUNT(DISTINCT CustomerId)
+[<Test ; SqlCheck.ExpectSql("WHERE", "DISTINCT")>] // Generates COUNT(DISTINCT CustomerId)
 let ``simple select with distinct count async``() =
     task {
         let! _ = async {
@@ -2420,7 +2420,7 @@ let ``simple select query with different return types options``() =
     
     CollectionAssert.IsNotEmpty qry
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``simple select with contains query with where boolean option type``() =
     let dc = sqlOption.GetDataContext()
     let qry = 
@@ -2432,7 +2432,7 @@ let ``simple select with contains query with where boolean option type``() =
         }
     Assert.IsTrue(qry)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``simple select with contains query with where not boolean option type``() =
     let dc = sqlOption.GetDataContext()
     let qry =
@@ -2444,7 +2444,7 @@ let ``simple select with contains query with where not boolean option type``() =
         }
     Assert.IsTrue(qry)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("LEFT OUTER JOIN|LEFT JOIN")>]
 let ``leftOuterJoin with option types yields None for unmatched columns``() =
     // Issue #540: with UseOptionTypes, the left-joined columns must be None when there is no match.
     let dc = sqlOption.GetDataContext()
@@ -2464,7 +2464,7 @@ let ``leftOuterJoin with option types yields None for unmatched columns``() =
     Assert.AreEqual(1, fissa.Length)
     Assert.AreEqual(None, snd fissa.[0])
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "LEFT OUTER JOIN|LEFT JOIN")>]
 let ``leftOuterJoin anti-join finds customers without orders``() =
     // The classic anti-join: LEFT JOIN + IS NULL on the joined side. The where on the
     // left-joined column must translate to `IS NULL` and keep only the unmatched rows.
@@ -2479,7 +2479,7 @@ let ``leftOuterJoin anti-join finds customers without orders``() =
         } |> Seq.toArray
     CollectionAssert.AreEquivalent([|"FISSA"; "PARIS"; "WOLZA"|], res)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``simple select with where boolean option types``() =
     let dc = sqlOption.GetDataContext()
     let getOptionFilter (city : string option) = 
@@ -2497,7 +2497,7 @@ let ``simple select with where boolean option types``() =
 
 type MyOpt = {MyItem: string option}
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``simple select with custom option types in where``() =
     let dc = sqlOption.GetDataContext()
     let someItem = {MyItem = Some "London"}
@@ -2511,7 +2511,7 @@ let ``simple select with custom option types in where``() =
         }
     Assert.AreEqual("AROUT",qry)    
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``simple async sum with option operations``() = 
     task {
         let dc = sqlOption.GetDataContext()
@@ -2524,7 +2524,7 @@ let ``simple async sum with option operations``() =
         Assert.That(qry, Is.EqualTo(603221955M).Within(10M))
     } :> Task
 
-[<Test >]
+[<Test ; SqlCheck.ExpectSql("JOIN", "LEFT OUTER JOIN|LEFT JOIN")>]
 let ``simple select query with left join``() = 
     let dc = sqlOption.GetDataContext()
     let qry = 
@@ -2537,7 +2537,7 @@ let ``simple select query with left join``() =
     CollectionAssert.IsNotEmpty qry
     Assert.AreEqual(91, qry.Length)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``simple math operations query``() =
     let dc = sql.GetDataContext()
     let qry = 
@@ -2549,7 +2549,7 @@ let ``simple math operations query``() =
 
     Assert.AreEqual(44L, qry.Head)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``simple math operations query2``() =
     let dc = sql.GetDataContext()
     let qry2 = 
@@ -2560,7 +2560,7 @@ let ``simple math operations query2``() =
         } |> Seq.toList
     CollectionAssert.IsEmpty qry2
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``simple canonical operation substing query``() =
     let dc = sql.GetDataContext()
     let qry = 
@@ -2575,7 +2575,7 @@ let ``simple canonical operation substing query``() =
     Assert.AreEqual(1, qry.Length)
     Assert.IsTrue(qry.Contains "ANATR")
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``simple canonical operation inverted operations query``() =
     let dc = sql.GetDataContext()
     let qry = 
@@ -2589,7 +2589,7 @@ let ``simple canonical operation inverted operations query``() =
     Assert.AreEqual(13, qry.Length)
     CollectionAssert.Contains(qry, 10514L)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "ORDER BY", "JOIN", "DISTINCT")>]
 let ``simple canonical operations query``() =
     let dc = sql.GetDataContext()
 
@@ -2618,7 +2618,7 @@ let ``simple canonical operations query``() =
     Assert.AreEqual(12, qry.Length)
     Assert.IsTrue(qry.[0] |> fun (id,c,b) -> c="London" && b.Month>2)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "JOIN", "DISTINCT")>]
 let ``simple canonical operations case-when-elses``() =
     let dc = sql.GetDataContext()
 
@@ -2646,7 +2646,7 @@ let ``simple canonical operations case-when-elses``() =
     CollectionAssert.IsNotEmpty qry2
     CollectionAssert.Contains(qry2, "London")
 
-[<Test >]
+[<Test ; SqlCheck.ExpectSql("JOIN", "DISTINCT")>]
 let ``simple operations in select query``() =
     let dc = sql.GetDataContext()
     //let dc = sql.GetDataContext(SelectOperations.DatabaseSide) // same results, maybe different order
@@ -2671,7 +2671,7 @@ let ``simple operations in select query``() =
     CollectionAssert.IsNotEmpty qry
     Assert.AreEqual(6, qry.Length)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "JOIN", "DISTINCT")>]
 let ``simple canonical operations in nested select query``() =
     let dc = sql.GetDataContext()
 
@@ -2694,7 +2694,7 @@ let ``simple canonical operations in nested select query``() =
     CollectionAssert.IsNotEmpty qry2
     Assert.AreEqual(6, qry2.Length)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("ORDER BY", "JOIN")>]
 let ``simple canonical join query``() =
     let dc = sql.GetDataContext()
 
@@ -2721,7 +2721,7 @@ let ``simple canonical join query``() =
     CollectionAssert.IsNotEmpty qry2
     CollectionAssert.AreEqual(qry1, qry2)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``simple query yield test``() = 
     let dc = sql.GetDataContext()
     let query1 = 
@@ -2735,7 +2735,7 @@ let ``simple query yield test``() =
     CollectionAssert.IsNotEmpty res
     CollectionAssert.Contains(query1, "London1")
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "UNION", "INTERSECT", "EXCEPT")>]
 let ``simple union query test``() = 
     let dc = sql.GetDataContext()
     let query1 = 
@@ -2785,7 +2785,7 @@ let ``simple union all query test``() =
     Assert.IsNotEmpty(res2)
     CollectionAssert.Contains(res2, "Sevilla")
     
-[<Test>]
+[<Test; SqlCheck.ExpectSql("GROUP BY")>]
 let ``verify groupBy results``() = 
     let dc = sql.GetDataContext()
     let enumtest =
@@ -2810,7 +2810,7 @@ let ``verify groupBy results``() =
 
     CollectionAssert.AreEqual(inlogics,groupqry)
 
-[<Test >]
+[<Test ; SqlCheck.ExpectSql("WHERE")>]
 let ``simple delete where query``() =
     task {
         let dc = sql.GetDataContext()
@@ -2821,7 +2821,7 @@ let ``simple delete where query``() =
         ()
     } :> Task
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("LEFT OUTER JOIN|LEFT JOIN")>]
 let ``simple left join``() = 
     let dc = sqlOption.GetDataContext()
     let qry = 
@@ -2853,7 +2853,7 @@ let ``simple query sproc result``() =
         Assert.IsNotNull(pragmaSchemaAsync.ResultSet)
     } :> Task
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``simple select with subquery exists subquery``() =
     let dc = sql.GetDataContext()
     let qry = 
@@ -2869,7 +2869,7 @@ let ``simple select with subquery exists subquery``() =
     Assert.AreEqual(91, qry.Count())
     CollectionAssert.Contains(qry, "QUEEN")
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("JOIN")>]
 let ``simple select with join subqry``() =
     let dc = sql.GetDataContext()
     let subqry =
@@ -2887,7 +2887,7 @@ let ``simple select with join subqry``() =
     Assert.AreEqual(91, qry.Count())
     CollectionAssert.Contains(qry |> List.map fst, "QUEEN")
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "JOIN")>]
 let ``simple select with join to filtered subqry``() =
     let dc = sql.GetDataContext()
     let expected =
@@ -2910,7 +2910,7 @@ let ``simple select with join to filtered subqry``() =
         } |> Seq.toList |> List.sort
     Assert.AreEqual(expected, qry)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``simple select with subquery exists parameter from main query``() =
     let dc = sql.GetDataContext()
     let qry = 
@@ -2927,7 +2927,7 @@ let ``simple select with subquery exists parameter from main query``() =
     Assert.AreEqual(718, qry.Count())
     CollectionAssert.Contains(qry, 10305L)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``simple select with subquery not exists parameter from main query``() =
     let dc = sql.GetDataContext()
     let qry = 
@@ -2997,7 +2997,7 @@ let ``simple select navigation properties``() =
     let oid = alfkiOrders |> Seq.head
     Assert.AreEqual(10643L,oid)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "JOIN")>]
 let ``where join order shouldn't matter``() = 
     let dc = sql.GetDataContext()
 
@@ -3023,7 +3023,7 @@ let ``where join order shouldn't matter``() =
     CollectionAssert.Contains(qry1, (10372L, 10372L))
     CollectionAssert.Contains(qry2, (10372L, 10372L))
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "DISTINCT", "IN(")>]
 let ``simple select with subquery of subqueries``() =
     let dc = sql.GetDataContext()
     let subquery (subQueryIds:IQueryable<string>) = 
@@ -3067,7 +3067,7 @@ type Employee = {
     LastName : string
     HireDate : DateTime
 }
-[<Test>]
+[<Test; SqlCheck.ExpectSql("LIMIT 5|TOP 5|FETCH NEXT 5", "OFFSET 2")>]
 let ``simple mapTo test``() =
     let dc = sql.GetDataContext()
     let qry =
@@ -3097,7 +3097,7 @@ let ``simple select query with different return types valueoptions``() =
     
     CollectionAssert.IsNotEmpty qry
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("LEFT OUTER JOIN|LEFT JOIN")>]
 let ``leftOuterJoin with value-option types yields ValueNone for unmatched columns``() =
     // With VALUE_OPTION, a left-joined column is a ValueOption: ValueNone when there is no match,
     // ValueSome otherwise. (The entity itself is never option-wrapped, so selecting it whole is null.)
@@ -3118,7 +3118,7 @@ let ``leftOuterJoin with value-option types yields ValueNone for unmatched colum
     Assert.AreEqual(1, fissa.Length)
     Assert.IsTrue(ValueOption.isNone (snd fissa.[0]))
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``simple select with ValueOption type query``() =
     let dcv = sqlValueOption.GetDataContext()
     let qry = 
@@ -3130,7 +3130,7 @@ let ``simple select with ValueOption type query``() =
 
     qry |> Assert.IsNotEmpty
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("GROUP BY")>]
 let ``simple select with group-by ValueOption type query``() =
     let dcv = sqlValueOption.GetDataContext()
     let qry = 
@@ -3145,7 +3145,7 @@ let ``simple select with group-by ValueOption type query``() =
 
     res |> Assert.IsNotEmpty
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("GROUP BY")>]
 let ``simple select with group-by count distinct type query``() =
     let dcv = sqlValueOption.GetDataContext()
     let qry = 
@@ -3160,7 +3160,7 @@ let ``simple select with group-by count distinct type query``() =
 
     res |> Assert.IsNotEmpty
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``valueoption copyOfStruct test``() =
     let dcv = sqlValueOption.GetDataContext()
     let qry = 
@@ -3211,7 +3211,7 @@ let test_querylogic_cont (ctx:sqlValueOption.dataContext) =
         }
     itms |> Seq.toList
 
-[<Test>]
+[<Test; SqlCheck.NoSql>]
 let ``mock for unit-testing: datacontext``() =
     
     let sampleDataMap =
@@ -3286,7 +3286,7 @@ let ``simple select query with MapTo with options``() =
     Assert.AreEqual(Some "VINET", mapped2.CustomerId)
     Assert.True(mapped2.ShipRegion.IsNone)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "JOIN")>]
 let ``exists-subquery correlated over outer join``() =
     let dc = sql.GetDataContext()
     // ground truth client-side
@@ -3307,7 +3307,7 @@ let ``exists-subquery correlated over outer join``() =
         } |> Seq.toList |> List.sort
     Assert.AreEqual(expected, actual)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "JOIN")>]
 let ``exists-subquery with inner join correlated over outer join``() =
     let dc = sql.GetDataContext()
     let custIds = query { for c in dc.Main.Customers do select c.CustomerId } |> Seq.toList |> Set.ofList
@@ -3333,7 +3333,7 @@ let ``exists-subquery with inner join correlated over outer join``() =
         } |> Seq.toList |> List.sort
     Assert.AreEqual(expected, actual)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "JOIN")>]
 let ``exists-subquery with inner join correlated to simple outer``() =
     let dc = sql.GetDataContext()
     let orders = query { for o in dc.Main.Orders do select o.OrderId } |> Seq.toList
@@ -3354,7 +3354,7 @@ let ``exists-subquery with inner join correlated to simple outer``() =
         } |> Seq.toList |> List.sort
     Assert.AreEqual(expected, actual)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE|HAVING", "GROUP BY", "JOIN")>]
 let ``groupBy with value-option columns in the key keeps their types``() =
     let dc = sqlValueOption.GetDataContext()
     let actual =
@@ -3380,7 +3380,7 @@ let ``groupBy with value-option columns in the key keeps their types``() =
     Assert.IsTrue(expected |> Array.exists (fun ((_, _, _, shipped), _) -> shipped.IsNone))
     Assert.AreEqual(expected, actual)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE|HAVING", "GROUP BY", "JOIN")>]
 let ``groupBy with option columns in the key keeps their types``() =
     let dc = sqlOption.GetDataContext()
     let actual =
@@ -3403,7 +3403,7 @@ let ``groupBy with option columns in the key keeps their types``() =
     Assert.IsTrue(expected |> Array.exists (fun ((_, _, shipped), _) -> shipped.IsNone))
     Assert.AreEqual(expected, actual)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE|HAVING", "GROUP BY", "JOIN")>]
 let ``groupBy with a computed IsSome in the key``() =
     let dc = sqlValueOption.GetDataContext()
     let actual =
@@ -3425,3 +3425,34 @@ let ``groupBy with a computed IsSome in the key``() =
         |> Array.sort
     Assert.IsTrue(expected |> Array.exists (fun ((_, _, shipped), _) -> not shipped))
     Assert.AreEqual(expected, actual)
+
+[<Test; SqlCheck.ExpectSql("GROUP BY")>]
+let ``groupBy with two computed keys and no join gives each key its own result name``() =
+    let dc = sqlValueOption.GetDataContext()
+    let commands = System.Collections.Concurrent.ConcurrentQueue<string>()
+    let capture = Handler<Common.QueryEvents.SqlEventData>(fun _ e -> commands.Enqueue e.Command)
+    Common.QueryEvents.SqlQueryEvent.AddHandler capture
+    try
+        let actual =
+            query {
+                for order in dc.Main.Orders do
+                groupBy (order.ShippedDate.IsSome, order.ShipRegion.IsNone) into g
+                select (g.Key, g.Count())
+            } |> Seq.toArray |> Array.sort
+        let expected =
+            query {
+                for order in dc.Main.Orders do
+                select (order.ShippedDate, order.ShipRegion)
+            } |> Seq.toArray
+            |> Array.countBy (fun (shipped, region) -> (shipped.IsSome, region.IsNone))
+            |> Array.sort
+        // Both keys vary, so a lost key would show
+        Assert.IsTrue(expected |> Array.exists (fun ((shipped, _), _) -> not shipped))
+        Assert.IsTrue(expected |> Array.exists (fun ((_, noRegion), _) -> noRegion))
+        Assert.AreEqual(expected, actual)
+        // Unaliased, PostgreSQL and SQL Server return both CASE columns under one name
+        let grouped = commands |> Seq.find (fun command -> command.Contains "GROUP BY")
+        StringAssert.Contains(" as key0", grouped)
+        StringAssert.Contains(" as key1", grouped)
+    finally
+        Common.QueryEvents.SqlQueryEvent.RemoveHandler capture

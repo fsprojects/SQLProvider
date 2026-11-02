@@ -37,7 +37,7 @@ FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executin
 
 let dc = sql.GetDataContext()
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``valueOption column should filter correctly with IsSome``() =
     let result = 
         query {
@@ -49,7 +49,7 @@ let ``valueOption column should filter correctly with IsSome``() =
     Assert.IsTrue(result.Length > 0)
     printfn "Found %d customers with region" result.Length
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``valueOption column should filter by value correctly``() =
     let result = 
         query {
@@ -63,7 +63,7 @@ let ``valueOption column should filter by value correctly``() =
         Assert.AreEqual("WA", region)
         printfn "Customer %s in region %s" pid region)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("LIMIT 5|TOP 5|FETCH NEXT 5")>]
 let ``valueOption should work with pattern matching in select``() =
     let result = 
         query {
@@ -80,7 +80,7 @@ let ``valueOption should work with pattern matching in select``() =
         Assert.IsTrue(not (String.IsNullOrEmpty region))
         printfn "Customer %s: %s" pid region)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("LIMIT 5|TOP 5|FETCH NEXT 5")>]
 let ``valueOption should work with defaultValue``() =
     let result = 
         query {
@@ -94,7 +94,7 @@ let ``valueOption should work with defaultValue``() =
         Assert.IsTrue(not (String.IsNullOrEmpty region))
         printfn "Customer %s: %s" pid region)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "LIMIT 5|TOP 5|FETCH NEXT 5", "JOIN", "LEFT OUTER JOIN|LEFT JOIN")>]
 let ``valueOption nullable foreign key join should work``() =
     let result = 
         query {
@@ -111,7 +111,7 @@ let ``valueOption nullable foreign key join should work``() =
         Assert.IsTrue(not (String.IsNullOrEmpty firstName))
         printfn "Order %d handled by %s %s" orderId firstName lastName)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "LIMIT 5|TOP 5|FETCH NEXT 5")>]
 let ``valueOption date comparison should work``() =
     let testDate = DateTime(1996, 7, 1)
     let result = 
@@ -127,7 +127,7 @@ let ``valueOption date comparison should work``() =
         Assert.IsTrue(orderDate >= testDate)
         printfn "Order %d on %A" orderId orderDate)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "LIMIT 3|TOP 3|FETCH NEXT 3")>]
 let ``valueOption complex where clause should work``() =
     let result = 
         query {
@@ -144,7 +144,7 @@ let ``valueOption complex where clause should work``() =
         Assert.IsTrue(shipped > required)
         printfn "Late order %d: required %A, shipped %A" orderId required shipped)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "COUNT(")>]
 let ``valueOption count with filter should work``() =
     let countWithRegion = 
         query {
@@ -165,7 +165,7 @@ let ``valueOption count with filter should work``() =
     Assert.IsTrue(countWithRegion <= totalCount)
     printfn "Customers with region: %d out of %d total" countWithRegion totalCount
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("LIMIT 5|TOP 5|FETCH NEXT 5")>]
 let ``valueOption computed values should work``() =
     let result = 
         query {
@@ -193,7 +193,7 @@ let ``valueOption computed values should work``() =
         | ValueNone -> printfn "Order %d shipping time unknown, late: %b" order.OrderId order.IsLate)
 
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "COUNT(")>]
 let ``valueOption aggregation should handle nulls correctly``() =
     // Count of non-null regions
     let regionCount = 

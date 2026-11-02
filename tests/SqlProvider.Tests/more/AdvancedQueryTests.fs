@@ -41,7 +41,7 @@ type sqlOpt = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionStr
 //    // Setup test data
 //    ()
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``complex join with navigation properties`` () =
     let ctx = sql.GetDataContext()
     let query = 
@@ -56,7 +56,7 @@ let ``complex join with navigation properties`` () =
     let results = query |> Seq.toList
     Assert.IsNotEmpty(results)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "JOIN")>]
 let ``subquery with exists pattern`` () =
     let ctx = sql.GetDataContext()
     
@@ -75,7 +75,7 @@ let ``subquery with exists pattern`` () =
     let results = expensiveOrderCustomers |> Seq.toList
     Assert.IsNotEmpty(results)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("GROUP BY", "JOIN")>]
 let ``complex aggregation with grouping`` () =
     let ctx = sql.GetDataContext()
     
@@ -93,7 +93,7 @@ let ``complex aggregation with grouping`` () =
     let results = orderStats |> Seq.toList
     Assert.IsNotEmpty(results)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``option type handling with ValueSome pattern`` () =
     let ctx = sqlOpt.GetDataContext()
     
@@ -107,7 +107,7 @@ let ``option type handling with ValueSome pattern`` () =
     let results = customersWithRegion |> Seq.toList
     Assert.IsNotEmpty(results)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("ORDER BY", "LIMIT|TOP|FETCH NEXT")>]
 let ``pagination with complex sorting`` () =
     let ctx = sql.GetDataContext()
     let pageSize = 10
@@ -128,7 +128,7 @@ let ``pagination with complex sorting`` () =
     Assert.LessOrEqual(results.Length, pageSize)
 
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``dynamic filtering with multiple optional parameters`` () =
     let ctx = sql.GetDataContext()
     
@@ -156,7 +156,7 @@ let ``dynamic filtering with multiple optional parameters`` () =
     Assert.IsNotEmpty(results1)
     Assert.IsNotEmpty(results2)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE", "COUNT(")>]
 let ``complex case when expression`` () =
     let ctx = sql.GetDataContext()
     

@@ -36,7 +36,7 @@ type sql = SqlDataProvider<Common.DatabaseProviderTypes.SQLITE, connectionString
 FSharp.Data.Sql.Common.QueryEvents.SqlQueryEvent |> Event.add (printfn "Executing SQL: %O")
 
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``option type IsSome filtering``() =
     let dc = sql.GetDataContext()
     let query = 
@@ -49,7 +49,7 @@ let ``option type IsSome filtering``() =
     let results = query |> Array.ofSeq
     Assert.IsTrue(results.Length > 0)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``option type IsNone filtering``() =
     let dc = sql.GetDataContext()
     let query = 
@@ -62,7 +62,7 @@ let ``option type IsNone filtering``() =
     let results = query |> Array.ofSeq
     Assert.IsTrue(results.Length >= 0) // May be 0 if all orders are shipped
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``complex option type conditions``() =
     let dc = sql.GetDataContext()
     let query = 
@@ -79,7 +79,7 @@ let ``complex option type conditions``() =
     let results = query |> Array.ofSeq
     Assert.IsTrue(results.Length >= 0)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``option value extraction in queries``() =
     let dc = sql.GetDataContext()
     let query = 
@@ -96,7 +96,7 @@ let ``option value extraction in queries``() =
         Assert.IsTrue(shipDate <> DateTime.MinValue)
     )
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE|HAVING", "GROUP BY")>]
 let ``option type aggregations``() =
     let dc = sql.GetDataContext()
     let query = 
@@ -123,7 +123,7 @@ let ``option type aggregations``() =
 // Dynamic Query Composition Tests
 //module DynamicQueryTests =
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``conditional where clauses``() =
     let dc = sql.GetDataContext()
     
@@ -167,7 +167,7 @@ let ``conditional where clauses``() =
     Assert.AreEqual(0, noneSelected.Length)
     Assert.IsTrue(allOrders.Length >= shippedOnly.Length + unshippedOnly.Length)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("ORDER BY", "LIMIT 5|TOP 5|FETCH NEXT 5")>]
 let ``dynamic sorting based on parameter``() =
     let dc = sql.GetDataContext()
     
@@ -198,7 +198,7 @@ let ``dynamic sorting based on parameter``() =
     let countriesSorted = byCountry |> Array.map fst |> Array.pairwise |> Array.forall (fun (a, b) -> a <= b)
     Assert.IsTrue(countriesSorted)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``conditional filtering with multiple parameters``() =
     let dc = sql.GetDataContext()
     
@@ -251,7 +251,7 @@ let ``conditional filtering with multiple parameters``() =
 // Advanced Aggregation Tests
 //module AggregationTests =
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("GROUP BY")>]
 let ``groupBy with multiple aggregations``() =
     let dc = sql.GetDataContext()
     let query = 
@@ -279,7 +279,7 @@ let ``groupBy with multiple aggregations``() =
         Assert.IsTrue(minPrice <= maxPrice)
     )
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE|HAVING", "GROUP BY")>]
 let ``complex groupBy with having clause equivalent``() =
     let dc = sql.GetDataContext()
     let query = 
@@ -301,7 +301,7 @@ let ``complex groupBy with having clause equivalent``() =
 // Performance and Edge Case Tests
 //module PerformanceTests =
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("ORDER BY", "LIMIT|TOP|FETCH NEXT")>]
 let ``large dataset pagination performance``() =
     task {
         let dc = sql.GetDataContext()
@@ -329,7 +329,7 @@ let ``large dataset pagination performance``() =
         Assert.IsTrue(totalProcessed > 0)
     }
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("GROUP BY")>]
 let ``null value handling in aggregations``() =
     let dc = sql.GetDataContext()
     
@@ -352,7 +352,7 @@ let ``null value handling in aggregations``() =
     let shippedGroup = results |> Array.tryFind (fun (isShipped, _, _) -> isShipped)
     Assert.IsTrue(shippedGroup.IsSome)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("WHERE")>]
 let ``empty result set handling``() =
     let dc = sql.GetDataContext()
     
@@ -367,7 +367,7 @@ let ``empty result set handling``() =
     let results = query |> Array.ofSeq
     Assert.AreEqual(0, results.Length)
 
-[<Test>]
+[<Test; SqlCheck.ExpectSql("LIMIT 10|TOP 10|FETCH NEXT 10")>]
 let ``concurrent query execution``() =
     task {
         let dc = sql.GetDataContext()
