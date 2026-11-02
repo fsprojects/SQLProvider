@@ -433,3 +433,65 @@ let ``parameters of three nested subquery levels are bound``() =
 
     Assert.IsNotEmpty expected
     Assert.AreEqual(expected, result)
+
+[<Test; SqlCheck.ExpectSql("GROUP BY", "MAX(")>]
+let ``a grouped sub-query selecting only an aggregate gives one column to IN``() =
+    let latestOrderIds =
+        query {
+            for order in dc.Main.Orders do
+            groupBy order.CustomerId into g
+            select (g.Max(fun order -> order.OrderId))
+        }
+
+    let result =
+        query {
+            for order in dc.Main.Orders do
+            where (latestOrderIds.Contains order.OrderId)
+            select order.OrderId
+        } |> Seq.toArray |> Array.sort
+
+    let expected =
+        query { for o in dc.Main.Orders do select (o.CustomerId, o.OrderId) }
+        |> Seq.groupBy fst |> Seq.map (fun (_, rows) -> rows |> Seq.map snd |> Seq.max) |> Seq.toArray |> Array.sort
+
+    Assert.IsNotEmpty expected
+    Assert.AreEqual(expected, result)
+
+[<Test; SqlCheck.ExpectSql("GROUP BY", "MAX(", "NOT IN")>]
+let ``a grouped sub-query selecting only an aggregate gives one column to NOT IN``() =
+    let latestOrderIds =
+        query {
+            for order in dc.Main.Orders do
+            groupBy order.CustomerId into g
+            select (g.Max(fun order -> order.OrderId))
+        }
+
+    let result =
+        query {
+            for order in dc.Main.Orders do
+            where (not (latestOrderIds.Contains order.OrderId))
+            select order.OrderId
+        } |> Seq.toArray |> Array.sort
+
+    let latest =
+        query { for o in dc.Main.Orders do select (o.CustomerId, o.OrderId) }
+        |> Seq.groupBy fst |> Seq.map (fun (_, rows) -> rows |> Seq.map snd |> Seq.max) |> Set.ofSeq
+
+    let expected =
+        query { for o in dc.Main.Orders do select o.OrderId }
+        |> Seq.filter (latest.Contains >> not) |> Seq.toArray |> Array.sort
+
+    Assert.IsNotEmpty expected
+    Assert.AreEqual(expected, result)
+
+[<Test; SqlCheck.NoSql>]
+let ``a grouped query keeps its key in the select outside IN sub-queries``() =
+    let latestOrderIds =
+        query {
+            for order in dc.Main.Orders do
+            groupBy order.CustomerId into g
+            select (g.Max(fun order -> order.OrderId))
+        }
+
+    let sql, _ = FSharp.Data.Sql.Runtime.QueryInspection.toQueryString latestOrderIds
+    StringAssert.Contains("[CustomerID]", sql.Substring(0, sql.IndexOf "FROM"))

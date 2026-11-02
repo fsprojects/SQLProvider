@@ -671,7 +671,8 @@ module internal QueryImplementation =
                         let svc = (qry :?> IWithSqlService)
 
                         use con = svc.Provider.CreateConnection svc.DataContext.ConnectionString
-                        let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression svc.SqlExpression svc.TupleIndex con svc.Provider false true
+                        // IN / NOT IN takes one column: a grouped sub-query selects its aggregate without the keys
+                        let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpressionWith false svc.SqlExpression svc.TupleIndex con svc.Provider false true
 
                         let ``nested param names`` = $"@param{abs(query.GetHashCode())}{nestCount}nested"
                         nestCount <- nestCount + 1

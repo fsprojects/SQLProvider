@@ -1,6 +1,7 @@
 ### 1.5.29 - 02.11.2026
 - Fix: parameters of a sub-query nested in another sub-query are bound (IN, EXISTS, UNION and the like)
 - Fix: groupBy keys with option or value-option columns, and with x.IsSome / x.IsNone in a tuple key
+- Fix: a grouped sub-query of IN / NOT IN that selects an aggregate selects it without the group keys, #746
 - PostgreSQL: identity columns count as generated, so the typed ``Create(...)`` no longer takes them. Breaking for code that passed a value to a BY DEFAULT identity column: use Create() and set it, or Create(data). A saved ContextSchemaPath cache keeps the old signature until regenerated.
 
 ### 1.5.28 - 17.10.2026

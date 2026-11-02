@@ -1,7 +1,4 @@
 (*** hide ***)
-
-(*** hide ***)
-#I @"../../../bin/mssql/lib/net8.0/"
 #I @"../../../bin/mssql/lib/net8.0/"
 #r "FSharp.Data.SqlProvider.Common.dll"
 #r "FSharp.Data.SqlProvider.MsSql.dll"

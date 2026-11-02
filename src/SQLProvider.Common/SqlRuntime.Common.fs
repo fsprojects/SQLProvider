@@ -708,6 +708,14 @@ type SqlExp =
                 | AggregateOp(_,_,rest) -> isSortBy rest
             isSortBy this
 
+/// One groupBy of a query: its key columns and the aggregates over each group.
+type GroupingColumns =
+    { Keys       : (alias * SqlColumnType) list
+      Aggregates : (alias * SqlColumnType) list
+      /// The key columns are selected besides the aggregates. False only for a sub-query of IN / NOT IN that selects
+      /// aggregates: it may return one column, so it selects the aggregates alone.
+      SelectKeys : bool }
+
 type SqlQuery =
     { Filters       : Condition list
       HavingFilters : Condition list
@@ -716,13 +724,13 @@ type SqlQuery =
       Aliases       : Map<string, Table>
       Ordering      : (alias * SqlColumnType * bool) list
       Projection    : Expression list
-      Grouping      : (list<alias * SqlColumnType> * list<alias * SqlColumnType>) list //key columns, aggregate columns
+      Grouping      : GroupingColumns list
       Distinct      : bool
       UltimateChild : (string * Table) option
       Skip          : int voption
       Take          : int voption
       Union         : (UnionType*string*seq<IDbDataParameter>) option
-      Count         : bool 
+      Count         : bool
       AggregateOp   : (alias * SqlColumnType) list }
     with
         static member Empty = { Filters = []; Links = []; Grouping = []; Aliases = Map.empty; Ordering = []; Count = false; AggregateOp = []; CrossJoins = []
@@ -760,7 +768,7 @@ type SqlQuery =
                                         let baseAlias:alias = grp.PrimaryTable.Name
                                         let f = grp.KeyColumns |> List.map (fun (al,k) -> legaliseName (if al<>"" then al else baseAlias), k)
                                         let s = grp.AggregateColumns |> List.map (fun (al,opKey) -> legaliseName (if al<>"" then al else baseAlias), opKey)
-                                        (f,s)::q.Grouping
+                                        { Keys = f; Aggregates = s; SelectKeys = true }::q.Grouping
                                     Projection = match grp.Projection with Some p -> p::q.Projection | None -> q.Projection } rest
                 | FilterClause(c,rest) ->  convert { q with Filters = (c)::q.Filters } rest
                 | HavingClause(c,rest) ->  convert { q with HavingFilters = (c)::q.HavingFilters } rest
@@ -1035,6 +1043,13 @@ module CommonTasks =
                 |> Seq.find (fun name -> not (taken.Contains(name.ToUpperInvariant())))
             sprintf "%s as %s" notation alias
         | _ -> plain
+
+    /// The select list of a grouped query: the key columns (`keys`, in the order of the groupings' Keys) of each
+    /// grouping that selects its keys, then the aggregates.
+    let groupSelectColumns (grouping:GroupingColumns list) (keys:string list) (aggregates:string seq) =
+        let selected = grouping |> List.collect (fun grp -> grp.Keys |> List.map (fun _ -> grp.SelectKeys))
+        let keys = List.zip selected keys |> List.filter fst |> List.map snd
+        String.Join(", ", keys @ List.ofSeq aggregates)
 
     let parseHaving fieldNotation (keys:(alias*SqlColumnType) list) (conditionList : Condition list) =
         if keys.Length <> 1 then

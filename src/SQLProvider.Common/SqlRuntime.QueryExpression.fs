@@ -632,7 +632,9 @@ module internal QueryExpressionTransformer =
 
         newProjection, projectionMap, groupProjectionMap
 
-    let convertExpression exp (entityIndex:string ResizeArray) con (provider:ISqlProvider) isDeleteScript useCanonicalsOnSelect =
+    /// As convertExpression; `selectGroupKeys` false leaves the group keys out of the select of a grouped query that
+    /// selects aggregates, for a sub-query of IN / NOT IN, which may return one column.
+    let convertExpressionWith (selectGroupKeys: bool) exp (entityIndex:string ResizeArray) con (provider:ISqlProvider) isDeleteScript useCanonicalsOnSelect =
         // first convert the abstract query tree into a more useful format
         let legaliseName (alias:alias) =
                 if alias.StartsWith "_" then alias.TrimStart [|'_'|] else alias
@@ -832,7 +834,8 @@ module internal QueryExpressionTransformer =
                             | c -> c
                             
                         let gatheredAggregations = 
-                            sqlQuery.Grouping |> List.map(fun (group,x) ->
+                            sqlQuery.Grouping |> List.map(fun grp ->
+                                let group, x = grp.Keys, grp.Aggregates
                                 // GroupBy: collect aggreagte operations
                                 // Should gather the column names what we want to aggregate, not just operations.
                                 let aggregations:(alias * SqlColumnType) list =
@@ -909,7 +912,11 @@ module internal QueryExpressionTransformer =
                     match lst |> List.filter(fun (keys,agg) -> not agg.IsEmpty) with
                     | [] -> lst
                     | filtered -> filtered
-                { sqlQuery with Grouping = cleaned |> Seq.distinct |> Seq.toList }
+                { sqlQuery with
+                    Grouping =
+                        cleaned
+                        |> List.distinct
+                        |> List.map (fun (keys, aggs) -> { Keys = keys; Aggregates = aggs; SelectKeys = true }) }
             else sqlQuery
 
         // a special case here to handle queries that start from the relationship of an individual
@@ -1050,7 +1057,7 @@ module internal QueryExpressionTransformer =
                                                                 | x -> (x,resolveC b,c) 
                                                             | a,c,b -> resolve a, resolveC c,b) sqlQuery.Ordering 
                                        // Resolve other canonical function columns also:
-                                       Grouping = sqlQuery.Grouping |> List.map(fun (g,a) -> g|>List.map(fun (ga, gk) -> resolve ga, resolveC gk), a|>List.map(fun(ag,aa)->resolve ag,resolveC aa)) 
+                                       Grouping = sqlQuery.Grouping |> List.map(fun grp -> { grp with Keys = grp.Keys |> List.map(fun (ga, gk) -> resolve ga, resolveC gk); Aggregates = grp.Aggregates |> List.map(fun(ag,aa)->resolve ag,resolveC aa) })
                                        AggregateOp = sqlQuery.AggregateOp |> List.map(fun (a,c) -> (resolve a, resolveC c))
                        }
 
@@ -1121,6 +1128,15 @@ module internal QueryExpressionTransformer =
                                 let myLock = provider.GetLockObject()
                                 lock myLock (fun () -> provider.GetColumns (con,table) |> ignore ))
 
+        // A grouping without aggregates selects its keys: they are its only columns
+        let sqlQuery =
+            if selectGroupKeys then sqlQuery
+            else { sqlQuery with Grouping = sqlQuery.Grouping |> List.map (fun grp -> { grp with SelectKeys = grp.Aggregates.IsEmpty }) }
+
         let (sql,parameters) = provider.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript,con)
 
         (sql,parameters,projectionDelegate,baseTable)
+
+    /// The query of an expression as the SQL text, its parameters, the projection and the base table.
+    let convertExpression exp (entityIndex:string ResizeArray) con (provider:ISqlProvider) isDeleteScript useCanonicalsOnSelect =
+        convertExpressionWith true exp entityIndex con provider isDeleteScript useCanonicalsOnSelect
