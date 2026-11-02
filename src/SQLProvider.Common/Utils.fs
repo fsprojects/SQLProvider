@@ -88,10 +88,14 @@ module Utilities =
     let getType typename =
         Type.GetType typename
 
+    /// Some/ValueSome case of the given option or voption type holding the value.
+    let private makeSomeOf (optionType:Type) (value:obj) =
+        Microsoft.FSharp.Reflection.FSharpValue.MakeUnion(Microsoft.FSharp.Reflection.FSharpType.GetUnionCases(optionType).[1], [|value|])
+
     let rec internal convertTypes (itm:obj) (returnType:Type) =
         if not(isNull itm) && Type.(=) (itm.GetType(), returnType) then itm
         elif isCOpt returnType && returnType.GenericTypeArguments.Length = 1 then
-            if isNull itm then None |> box
+            if isNull itm || itm :? DBNull then None |> box
             else
             match convertTypes itm (returnType.GenericTypeArguments.[0]) with
             | :? String as t -> Option.Some t |> box
@@ -115,9 +119,11 @@ module Utilities =
             | :? Guid as t -> Option.Some t |> box
             | t ->
                 if isCOpt (t.GetType()) then t |> box
+                elif returnType.GenericTypeArguments.[0].IsInstanceOfType t then makeSomeOf returnType t
                 else Option.Some t |> box
         elif isVOpt returnType && returnType.GenericTypeArguments.Length = 1 then
-            if isNull itm then ValueNone |> box
+            // ValueNone of the requested type: a generic ValueNone would box as ValueOption<obj>
+            if isNull itm || itm :? DBNull then Activator.CreateInstance returnType
             else
             match convertTypes itm (returnType.GenericTypeArguments.[0]) with
             | :? String as t -> ValueOption.Some t |> box
@@ -141,6 +147,7 @@ module Utilities =
             | :? Guid as t -> ValueOption.Some t |> box
             | t ->
                 if isVOpt (t.GetType()) then t|> box
+                elif returnType.GenericTypeArguments.[0].IsInstanceOfType t then makeSomeOf returnType t
                 else ValueOption.Some t |> box
 
         elif returnType.Name.StartsWith("Nullable") && returnType.GenericTypeArguments.Length = 1 then

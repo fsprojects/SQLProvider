@@ -360,3 +360,76 @@ let ``subquery result caching should work``() =
     
     result |> List.iter (fun (company, pid) -> 
         printfn "Customer ordering expensive products: %s (%s)" company pid)
+
+[<Test>]
+let ``parameters of a subquery nested in another subquery are bound``() =
+    let minQty = 50s
+    let allCases = false
+    let onlyCase = "ERNSH"
+    let openOnly = true
+    let bigOrders =
+        query {
+            for detail in dc.Main.OrderDetails do
+            where (detail.Quantity > minQty)
+            select detail.OrderId
+        }
+    let chosen =
+        query {
+            for order in dc.Main.Orders do
+            where ((allCases || order.CustomerId.Value = onlyCase) && (not openOnly || not (bigOrders.Contains order.OrderId)))
+            select order.OrderId
+        }
+    let runQuery () =
+        query {
+            for order in dc.Main.Orders do
+            where (chosen.Contains order.OrderId)
+            select order.OrderId
+        } |> Seq.toArray |> Array.sort
+
+    let bigIds = query { for d in dc.Main.OrderDetails do select (d.OrderId, d.Quantity) } |> Seq.filter (fun (_, q) -> q > minQty) |> Seq.map fst |> Set.ofSeq
+    let expected =
+        query { for o in dc.Main.Orders do select (o.OrderId, o.CustomerId) }
+        |> Seq.filter (fun (id, c) -> c = ValueSome onlyCase && not (bigIds.Contains id))
+        |> Seq.map fst |> Seq.toArray |> Array.sort
+
+    Assert.IsNotEmpty expected
+    Assert.AreEqual(expected, runQuery ())
+    Assert.AreEqual(expected, runQuery ())
+
+[<Test>]
+let ``parameters of three nested subquery levels are bound``() =
+    let minQty = 50s
+    let country = "Germany"
+    let bigOrders =
+        query {
+            for detail in dc.Main.OrderDetails do
+            where (detail.Quantity > minQty)
+            select detail.OrderId
+        }
+    let germanBigOrders =
+        query {
+            for order in dc.Main.Orders do
+            where (order.ShipCountry.Value = country && bigOrders.Contains order.OrderId)
+            select order.OrderId
+        }
+    let customersOfThose =
+        query {
+            for order in dc.Main.Orders do
+            where (order.OrderId > 0L && germanBigOrders.Contains order.OrderId)
+            select order.CustomerId.Value
+        }
+    let result =
+        query {
+            for customer in dc.Main.Customers do
+            where (customer.CustomerId <> "" && customersOfThose.Contains customer.CustomerId)
+            select customer.CustomerId
+        } |> Seq.toArray |> Array.sort
+
+    let bigIds = query { for d in dc.Main.OrderDetails do select (d.OrderId, d.Quantity) } |> Seq.filter (fun (_, q) -> q > minQty) |> Seq.map fst |> Set.ofSeq
+    let expected =
+        query { for o in dc.Main.Orders do select (o.OrderId, o.ShipCountry, o.CustomerId) }
+        |> Seq.filter (fun (id, c, _) -> c = ValueSome country && bigIds.Contains id)
+        |> Seq.map (fun (_, _, cust) -> cust.Value) |> Seq.distinct |> Seq.toArray |> Array.sort
+
+    Assert.IsNotEmpty expected
+    Assert.AreEqual(expected, result)

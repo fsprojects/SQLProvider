@@ -3353,3 +3353,75 @@ let ``exists-subquery with inner join correlated to simple outer``() =
             select ord.OrderId
         } |> Seq.toList |> List.sort
     Assert.AreEqual(expected, actual)
+
+[<Test>]
+let ``groupBy with value-option columns in the key keeps their types``() =
+    let dc = sqlValueOption.GetDataContext()
+    let actual =
+        query {
+            for order in dc.Main.Orders do
+            join cust in dc.Main.Customers on (order.CustomerId.Value = cust.CustomerId)
+            where (cust.Country.Value = "Germany" || cust.Country.Value = "Venezuela")
+            groupBy (cust.CustomerId, cust.Region, cust.Fax, order.ShippedDate) into g
+            select (g.Key, g.Min(fun (o, _) -> o.OrderId))
+        } |> Seq.toArray |> Array.sort
+    let expected =
+        query {
+            for order in dc.Main.Orders do
+            join cust in dc.Main.Customers on (order.CustomerId.Value = cust.CustomerId)
+            select (cust.Country, cust.CustomerId, cust.Region, cust.Fax, order.ShippedDate, order.OrderId)
+        } |> Seq.toArray
+        |> Array.filter (fun (country, _, _, _, _, _) -> country = ValueSome "Germany" || country = ValueSome "Venezuela")
+        |> Array.groupBy (fun (_, id, region, fax, shipped, _) -> (id, region, fax, shipped))
+        |> Array.map (fun (key, rows) -> key, rows |> Array.map (fun (_, _, _, _, _, oid) -> oid) |> Array.min)
+        |> Array.sort
+    Assert.IsTrue(expected |> Array.exists (fun ((_, region, _, _), _) -> region.IsNone))
+    Assert.IsTrue(expected |> Array.exists (fun ((_, region, _, _), _) -> region.IsSome))
+    Assert.IsTrue(expected |> Array.exists (fun ((_, _, _, shipped), _) -> shipped.IsNone))
+    Assert.AreEqual(expected, actual)
+
+[<Test>]
+let ``groupBy with option columns in the key keeps their types``() =
+    let dc = sqlOption.GetDataContext()
+    let actual =
+        query {
+            for order in dc.Main.Orders do
+            join cust in dc.Main.Customers on (order.CustomerId.Value = cust.CustomerId)
+            where (cust.Country.Value = "Germany" || cust.Country.Value = "Venezuela")
+            groupBy (cust.CustomerId, cust.Region, order.ShippedDate) into g
+            select (g.Key, g.Count())
+        } |> Seq.toArray |> Array.sort
+    let expected =
+        query {
+            for order in dc.Main.Orders do
+            join cust in dc.Main.Customers on (order.CustomerId.Value = cust.CustomerId)
+            select (cust.Country, cust.CustomerId, cust.Region, order.ShippedDate)
+        } |> Seq.toArray
+        |> Array.filter (fun (country, _, _, _) -> country = Some "Germany" || country = Some "Venezuela")
+        |> Array.countBy (fun (_, id, region, shipped) -> (id, region, shipped))
+        |> Array.sort
+    Assert.IsTrue(expected |> Array.exists (fun ((_, _, shipped), _) -> shipped.IsNone))
+    Assert.AreEqual(expected, actual)
+
+[<Test>]
+let ``groupBy with a computed IsSome in the key``() =
+    let dc = sqlValueOption.GetDataContext()
+    let actual =
+        query {
+            for order in dc.Main.Orders do
+            join cust in dc.Main.Customers on (order.CustomerId.Value = cust.CustomerId)
+            where (cust.Country.Value = "Germany" || cust.Country.Value = "Venezuela")
+            groupBy (cust.CustomerId, order.ShipCountry, order.ShippedDate.IsSome) into g
+            select (g.Key, g.Count())
+        } |> Seq.toArray |> Array.sort
+    let expected =
+        query {
+            for order in dc.Main.Orders do
+            join cust in dc.Main.Customers on (order.CustomerId.Value = cust.CustomerId)
+            select (cust.Country, cust.CustomerId, order.ShipCountry, order.ShippedDate)
+        } |> Seq.toArray
+        |> Array.filter (fun (country, _, _, _) -> country = ValueSome "Germany" || country = ValueSome "Venezuela")
+        |> Array.countBy (fun (_, id, shipCountry, shipped) -> (id, shipCountry, shipped.IsSome))
+        |> Array.sort
+    Assert.IsTrue(expected |> Array.exists (fun ((_, _, shipped), _) -> not shipped))
+    Assert.AreEqual(expected, actual)

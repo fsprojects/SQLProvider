@@ -44,7 +44,34 @@ module internal QueryImplementation =
         abstract GetAsyncEnumerator : unit -> System.Threading.Tasks.Task<IEnumerator<'T>>
     type IAsyncEnumerable =
         abstract EvaluateQuery : unit -> System.Threading.Tasks.Task<unit>
-        
+
+    let private memberwiseClone = typeof<obj>.GetMethod("MemberwiseClone", BindingFlags.Instance ||| BindingFlags.NonPublic)
+
+    /// Copy of a command parameter under a new name. The source parameter is not modified.
+    let private copyParameterWithName (name:string) (p:IDbDataParameter) : IDbDataParameter =
+        let copy =
+            match p with
+            | :? ICloneable as c -> c.Clone() :?> IDbDataParameter
+            | _ ->
+                // Field copy, not property copy: getters such as Size report defaults for unset values,
+                // and setting them explicitly changes the binding (e.g. Size = 0 truncates a SqliteParameter value).
+                memberwiseClone.Invoke(p, [||]) :?> IDbDataParameter
+        copy.ParameterName <- name
+        copy
+
+    /// Renames the parameters of a sub-query so they cannot collide with the parameters of the enclosing query.
+    /// Parameter objects stored in the sub-query (including those of its own nested sub-queries) are shared by
+    /// every query that embeds it, so renamed copies are returned instead of mutating them.
+    let internal renameNestedParameters (nestedPrefix:string) (query:string) (parameters:IDbDataParameter seq) =
+        let renamed =
+            parameters
+            |> Seq.map(fun p -> copyParameterWithName (p.ParameterName.Replace("@param", nestedPrefix)) p)
+            |> Seq.toArray
+        let subquery =
+            let paramfixed = query.Replace("@param", nestedPrefix)
+            if paramfixed.EndsWith ";" then paramfixed.Substring(0, paramfixed.Length-1) else paramfixed
+        subquery, renamed
+
     /// Try to detect if IQueryable is a database query.
     /// It can be e.g. direct SQLProvider IWithSqlService (great)
     /// or annoyingly a source inside a wrapper like WhereSelectEnumerableIterator, where it needs to be updated
@@ -649,17 +676,8 @@ module internal QueryImplementation =
                         let ``nested param names`` = $"@param{abs(query.GetHashCode())}{nestCount}nested"
                         nestCount <- nestCount + 1
 
-                        let modified = 
-                            parameters
-                            |> Seq.filter(fun p -> not(p.ParameterName.StartsWith ``nested param names``))
-                            |> Seq.map(fun p ->
-                                p.ParameterName <- p.ParameterName.Replace("@param", ``nested param names``)
-                                p
-                            ) |> Seq.toArray
-                        let subquery = 
-                            let paramfixed = query.Replace("@param", ``nested param names``)
-                            if paramfixed.EndsWith ";" then paramfixed.Substring(0, paramfixed.Length-1) else paramfixed
-                        
+                        let subquery, modified = renameNestedParameters ``nested param names`` query parameters
+
                         Some(ti,key,op,Some (box (subquery, modified)))
                     | SqlExistsClause(meth,op,src,qual)
                     | SqlNotExistsClause(meth,op,src,qual) ->
@@ -731,17 +749,8 @@ module internal QueryImplementation =
                         let ``nested param names`` = $"@param{abs(query.GetHashCode())}{nestCount}nested"
                         nestCount <- nestCount + 1
 
-                        let modified = 
-                            parameters 
-                            |> Seq.filter(fun p -> not(p.ParameterName.StartsWith ``nested param names``))
-                            |> Seq.map(fun p ->
-                                p.ParameterName <- p.ParameterName.Replace("@param", ``nested param names``)
-                                p
-                            ) |> Seq.toArray
-                        let subquery = 
-                            let paramfixed = query.Replace("@param", ``nested param names``)
-                            if paramfixed.EndsWith ";" then paramfixed.Substring(0, paramfixed.Length-1) else paramfixed
-                        
+                        let subquery, modified = renameNestedParameters ``nested param names`` query parameters
+
                         Some("",KeyColumn(""),op,Some (box (subquery, modified)))
                     | SimpleCondition ((ti,key,op,c) as x) -> 
                         match c with
@@ -847,10 +856,25 @@ module internal QueryImplementation =
                         | "", _ -> ""
                         | _ -> resolveTuplePropertyName ti source.TupleIndex
 
-                let keycols = 
+                let keycols =
                     match exp with
                     | SqlColumnGet(sourceTi,sourceKey,_) -> [getAlias sourceTi, sourceKey]
-                    | TupleSqlColumnsGet itms -> itms |> List.map(fun (ti,key,typ) -> getAlias ti, key)
+                    | OptionalFSharpOptionValue(NewExpr(cons, args))
+                            when (cons.DeclaringType.Name.StartsWith("Tuple") || cons.DeclaringType.Name.StartsWith("AnonymousObject")) ->
+                        // Every tuple item becomes one key column, in order: the key tuple is rebuilt from them.
+                        let keyItem = function
+                            | SqlColumnGet(ti,key,_) -> Some (getAlias ti, key)
+                            | SimpleCondition (ti,key,op,None) ->
+                                let al = getAlias ti
+                                let cond = And ([al, key, op, None], None)
+                                Some (al, CanonicalOperation(CaseSqlPlain(cond, 1, 0), KeyColumn "Key"))
+                            | _ -> None
+                        let items = args |> List.map(fun a -> a, keyItem a)
+                        if items |> List.forall (snd >> Option.isNone) then []
+                        else
+                            items |> List.map(function
+                                | _, Some col -> col
+                                | item, None -> raise (NotSupportedException $"groupBy: the key item '{item}' is not supported. A group key item must be a column or a column test without a value such as x.IsSome or x.IsNone."))
                     | SimpleCondition ((ti,key,op,None) as x) -> // Because you can do in F# but not in SQL: GroupBy (x.IsSome)
                         let al = getAlias sourceTi
                         let cond = And ([ti, key, op,None], None)
@@ -1397,16 +1421,7 @@ module internal QueryImplementation =
 
                         let ``nested param names`` = $"@param{abs(query.GetHashCode())}nested"
 
-                        let modified = 
-                            parameters
-                            |> Seq.filter(fun p -> not(p.ParameterName.StartsWith ``nested param names``))
-                            |> Seq.map(fun p ->
-                                p.ParameterName <- p.ParameterName.Replace("@param", ``nested param names``)
-                                p
-                            ) |> Seq.toArray
-                        let subquery = 
-                            let paramfixed = query.Replace("@param", ``nested param names``)
-                            if paramfixed.EndsWith ";" then paramfixed.Substring(0, paramfixed.Length-1) else paramfixed
+                        let subquery, modified = renameNestedParameters ``nested param names`` query parameters
 
                         //let ty = typedefof<SqlQueryable<_>>.MakeGenericType(meth.GetGenericArguments().[0])
                         let utyp = 

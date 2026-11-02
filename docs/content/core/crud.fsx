@@ -34,10 +34,24 @@ let now = DateTime.Now
 
 (**
 Create() has various overloads to make inserting records simple.
+
+Prefer the typed \`\`Create(...)\`\`: its name lists the required columns (not nullable, not generated, sorted by
+name), so adding a required column to the table breaks the build where rows are created instead of failing at
+runtime. Set the optional columns afterwards. Call it with the backticked name, so two arguments of the same type
+can't swap places unnoticed when the column list changes.
+*)
+
+let emp = ctx.Main.Employees.``Create(FirstName, LastName)``("Don", "Syme")
+
+(**
+Optional columns are set on the returned row, e.g. `emp.Title <- "Founder"` (or `ValueSome "Founder"` with
+`UseOptionTypes = NullableColumnType.VALUE_OPTION`). A key the application generates, like a UUID, is set the same
+way: `row.Id <- Guid.CreateVersion7()`.
 *)
 
 (**
-Create a new row
+The untyped `Create()` with property sets is for when you build rows dynamically. It compiles even when a required
+column is left out:
 *)
 
 let row = orders.Create()
@@ -61,13 +75,18 @@ ctx.SubmitUpdates()
 (**
 After updating, your item (row) will have the Id property.
 
+To update a row without reading it first, create an entity with its key, set the columns, and mark only those
+columns as modified:
 
-
-You can also create with the longer \`\`Create(...)\`\`(parameters)-method like this:
+```fsharp
+let update = ctx.Main.Orders.Create()
+update.OrderId <- orderId
+update.ShipCity <- "Leeds"
+update._State <- Common.EntityState.Modified [ "ShipCity" ]
+ctx.SubmitUpdates()
+```
 
 *)
-
-let emp = ctx.Main.Employees.``Create(FirstName, LastName)``("Don", "Syme")
 
 (**
 

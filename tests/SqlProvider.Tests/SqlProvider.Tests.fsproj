@@ -37,6 +37,7 @@
     <!-- MSSQL tests need a live SQL Server at design time; only built for net48. -->
     <Compile Include="SqlServerTests.fs" Condition="'$(TargetFramework)' == 'net48'" />
     <Compile Include="MsDataSqliteTransactions.fs" />
+    <Compile Include="PostgreSqlSchemaTests.fs" />
     <Content Include="app.config" />
     <None Include="x86\SQLite.Interop.dll" Condition="'$(TargetFramework)' == 'net48'">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>

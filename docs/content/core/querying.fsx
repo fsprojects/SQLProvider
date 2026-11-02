@@ -54,10 +54,73 @@ let example =
         sortBy order.ShipPostalCode
         skip 3
         take 4
-        select order
+        select (order.OrderId, order.ShipPostalCode, order.Freight)
     }
 
-let test = example |> Seq.toArray |> Array.map(fun i -> i.ColumnValues |> Map.ofSeq)
+let test = example |> Seq.toArray
+
+//If you would need the full-width order as map, you could select it and then do |> Array.map(fun i -> i.ColumnValues |> Map.ofSeq)
+
+(**
+### Recommended query style
+
+The query is translated to SQL, so the database does the filtering, sorting, joining, grouping and counting. Write
+the business rule in the query, and keep what comes back small:
+
+- **Select what you use, typed.** Project to a tuple, an anonymous record `{| ... |}` or a domain record, not the
+  whole entity (`select order`). Use a tuple or an anonymous record when the result is used on the spot; when it
+  leaves the function (returned from an API, stored, shared) build your real domain type in the `select`. Whole
+  entities are for rows you are about to modify. Don't pass `ColumnValues` maps around as application data.
+- **Filter and sort in the query, not after it.** `where (x.Removed.IsNone)` and `sortBy x.Created` in the query
+  instead of `Array.filter` / `Array.sortBy` on the fetched rows. Counts, minimums, maximums and existence are
+  queries too: `Seq.lengthAsync`, `groupBy ... into g; select (g.Key, g.Max(...))`, or `Seq.tryHeadAsync` on a
+  query that selects one column.
+- **"IN" over a sub-query.** When the ids come from the database, don't fetch them first: leave the inner query
+  unexecuted (no `Seq.toArray`) and use it directly, so one SQL statement runs (see "Nested Select Where Queries" in
+  [composable queries](composable.html)). There are two ways to write the IN, and they give the same SQL:
+
+  - The purist way, F# only: the operators `|=|` (IN) and `|<>|` (NOT IN).
+  - The pragmatist way: LINQ's `.Contains` extension method (`open System.Linq`), and `not (xs.Contains x)` for NOT
+    IN. It is familiar to anyone who knows LINQ, and it runs in the [mock data context](unittest.html), so the query
+    can be unit-tested; the operators don't run there.
+
+*)
+
+let activeCustomers = query { for c in ctx.Main.Customers do where (c.Country = "UK"); select c.CustomerId }
+
+// The purist way, no LINQ reference
+let xs1 =
+    query { for o in ctx.Main.Orders do
+            where (o.CustomerId |=| activeCustomers)
+            select (o.OrderId, o.Freight) }
+
+// The pragmatist way, easeier to read, easier to unit-test
+open System.Linq
+let xs2 =
+    query { for o in ctx.Main.Orders do
+            where (activeCustomers.Contains o.CustomerId)
+            select (o.OrderId, o.Freight) }
+(**
+
+  F#'s own `Seq.contains` is not translated to SQL.
+- **One query for every case of a filter.** Compute flags outside the query and test them inside it, so the same
+  query can serve "all" and "one":
+
+*)
+// query parameters:
+let allCountries = false // or true
+let onlyCountry = "Finland" // or ""
+
+query { for c in ctx.Main.Customers do
+        where (allCountries || c.Country = onlyCountry)
+        select c.CustomerId }
+(**
+
+- **No N+1.** Don't run a query per row of another query. Join, or read the children of all the parents in one
+  query (`parentIds.Contains child.ParentId`, with `parentIds` a sub-query) and group them in memory.
+- **Pass the data context in.** Functions that take the context as a parameter can be tested with the mock context.
+
+*)
 
 let item =
     query {
@@ -416,8 +479,8 @@ let bergs = ctx.Main.Customers.Individuals.BERGS
 
 You can find some custom operators `using FSharp.Data.Sql`:
 
-* `|=|` (In set)
-* `|<>|` (Not in set)
+* `|=|` (In set: the purist way; LINQ's `xs.Contains x` is the pragmatist way, gives the same SQL and also runs in the mock context)
+* `|<>|` (Not in set; with LINQ, `not (xs.Contains x)`)
 * `=%` (Like)
 * `<>%` (Not like)
 * `!!` (Left join: the joined entity is populated with default values when there is no match)

@@ -170,8 +170,9 @@ query { for (i,n,e) in qry1 do
 ### Nested Select Where Queries
 
 You can create a query like `SELECT * FROM xs WHERE xs.x IN (SELECT y FROM ys))`
-with either LINQ Contains or custom operators: in `|=|` and not-in `|<>|`
-This is done by not saying `|> Seq.toArray` to the first query:
+in the purist way with the F# operators `x |=| qry` (NOT IN: `x |<>| qry`), or in the pragmatist way with LINQ's
+`.Contains x` (NOT IN: `not (ys.Contains x)`), which also runs in the mock context, so the query can be
+unit-tested. Both give the same SQL. The example takes the pragmatist way:
 
 *)
 

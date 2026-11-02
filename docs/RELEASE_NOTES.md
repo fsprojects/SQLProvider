@@ -1,3 +1,8 @@
+### 1.5.29 - 02.11.2026
+- Fix: parameters of a sub-query nested in another sub-query are bound (IN, EXISTS, UNION and the like)
+- Fix: groupBy keys with option or value-option columns, and with x.IsSome / x.IsNone in a tuple key
+- PostgreSQL: identity columns count as generated, so the typed ``Create(...)`` no longer takes them. Breaking for code that passed a value to a BY DEFAULT identity column: use Create() and set it, or Create(data). A saved ContextSchemaPath cache keeps the old signature until regenerated.
+
 ### 1.5.28 - 17.10.2026
 - Fix for IndexOutOfRangeException when invoking a stored procedure, #878
 - Code cleanups with fsharp-refactor tool

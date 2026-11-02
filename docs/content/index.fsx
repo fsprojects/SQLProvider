@@ -125,9 +125,10 @@ let mattisOrderDetails =
             // nullable columns can be represented as option types; the following generates IS NOT NULL
             where o.ShipCountry.IsSome
             // standard operators will work as expected; the following shows the like operator and IN operator
+            // ...or you can use "open System.Linq" and do .Contains if that feels more intuitive
             where (c.ContactName =% ("Matti%") && c.CompanyName |=| [|"Squirrelcomapny";"DaveCompant"|] )
             sortBy o.ShipName
-            // arbitrarily complex projections are supported
+            // select only what you use: arbitrarily complex projections are supported
             select (c.ContactName,o.ShipAddress,o.ShipCountry,prod.ProductName,prod.UnitPrice) }
     |> Seq.toArray
 

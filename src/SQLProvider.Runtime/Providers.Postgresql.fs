@@ -801,6 +801,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                             ,coalesce(pg_class.relkind = 'S', false)                       AS is_sequence
                             ,pg_attribute.atthasdef                                        AS has_default
                             ,coalesce(pg_attribute.attgenerated = 's', false)              AS is_generated
+                            ,coalesce(pg_attribute.attidentity <> '', false)               AS is_identity
                         FROM pg_attribute 
                         LEFT JOIN pg_index
                             ON pg_attribute.attrelid = pg_index.indrelid
@@ -872,7 +873,8 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                                           TypeMapping = m
                                           IsNullable = Sql.dbUnbox<bool> reader.["is_nullable"]
                                           IsPrimaryKey = isPk
-                                          IsAutonumber = isPk
+                                          // GENERATED { ALWAYS | BY DEFAULT } AS IDENTITY columns are assigned by the database
+                                          IsAutonumber = isPk || Sql.dbUnbox<bool> reader.["is_identity"]
                                           IsComputed = Sql.dbUnbox<bool> reader.["is_generated"]
                                           HasDefault = Sql.dbUnbox<bool> reader.["has_default"]
                                           TypeInfo = ValueSome fullTypeName

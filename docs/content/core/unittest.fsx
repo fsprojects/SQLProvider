@@ -151,6 +151,28 @@ There are some limitations with the SQLProvider mock a DB-context:
 - You can call database-table `.Create` methods to create new instances (it doesn't connect the database). You can call update entity columns `x.Col <- Some "hi"`, but it doesn't really do anything.
 - You cannot call stored procedures.
 - Names are database names, and they are case-sensitive. If you miss a table, in your mock, there will be a clear error. If you mistyped the anonymous record column name, you will probably just get a zero-result or ValueNone.Value-error or some other unwanted behaviour.
+- Every table the code under test reads must be in the map, with at least one row: the mock learns a table's columns from its rows. Give a table that should match nothing a row that belongs to something else.
+
+Test the paths through your parametrised queries this way: one mock, and a call per value of each flag
+(`all || x.Id = one`, `not openOnly || ...`), checking which rows come back.
+
+### Where the mock lives
+
+Keep the mock in the test project: the production code holds no mock database. Writes need nothing special, since
+each one makes a new context inside its own transaction. For reads, give the code the mock in one of two ways:
+
+- **Pass the context in.** Read functions take the read-only context as a parameter; production passes the shared
+  one and the test passes the mock.
+- **Swap the shared holder.** When read functions take the shared read-only context from a module-level holder (see
+  [CRUD](crud.html) on sharing it and rebuilding it after a connection failure), put an empty marker interface in
+  that module (`type ContextHolderMarker = interface end`). The test finds the module through
+  `typeof<ContextHolderMarker>.DeclaringType`, replaces the holder with a mock by reflection, and puts the original
+  back when it finishes.
+
+A test project that names the provided context type directly (`sql.readDataContext`) can get type mismatch errors
+such as FS0193, because a provided type named from another assembly is a different type. Name it through a type
+abbreviation in the assembly that declares the provider (`type ReadDataContext = sql.readDataContext`) and use that
+in the test.
 
 If you are running an off-line solution like SSDT or ContextSchemaPath, you should be able to run also these unit-tests with your CI.
 

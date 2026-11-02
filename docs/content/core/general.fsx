@@ -144,6 +144,10 @@ a relevant query using the entity's primary key.
 
 ## Basic Querying
 The SQL provider supports LINQ queries using F#'s *query expression* syntax.
+
+The examples here select whole entities to keep them short. In application code, select only the columns you use,
+into a tuple, an anonymous record or your domain type, and filter, sort and aggregate in the query: see
+[recommended query style](querying.html#Recommended-query-style).
 *)
 
 let customersQuery =
