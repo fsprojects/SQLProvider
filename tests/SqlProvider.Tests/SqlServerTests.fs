@@ -41,8 +41,10 @@ type Employee = {
 }
 
 //***************** API *****************//
+// SubmitUpdates on empty contexts sends no SQL
 [<TestCase(connStr2008R2)>]
 [<TestCase(connStr2017)>]
+[<SqlCheck.NoSql>]
 let ``test that existing overloads aren't broken`` (runtimeConnStr : string)=
   let customConnStr = runtimeConnStr
   let customResPath = resolutionFolder + "////" // semantically neutral change

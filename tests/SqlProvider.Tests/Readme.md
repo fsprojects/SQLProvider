@@ -2343,3 +2343,15 @@ WHERE (([cust].[CustomerID] IN (
 --   @param1893332644nested3449698180nested13871977310nested1751753630nested1 - "ANATR"; 
 ```
 
+
+## SQL checks in the tests
+
+`SqlCheck.fs` records the SQL each test sends. A test that sends none fails, so a query that by accident runs in memory instead of in the database shows. A test that sends no SQL on purpose (a mock context, a failure before execution) is marked `[<SqlCheck.NoSql>]`.
+
+`[<SqlCheck.ExpectSql(...)>]` lists what the SQL must contain. Each argument is one expectation, met when any command the test sent contains one of its `|`-separated alternatives, ignoring case and spacing, so it holds across databases:
+
+```fsharp
+[<Test; SqlCheck.ExpectSql("WHERE", "ORDER BY", "LIMIT 10|TOP 10|FETCH NEXT 10")>]
+```
+
+Write the expectations for the query operators a test uses: `where` (`WHERE`, or `HAVING` after a `groupBy`), `sortBy` (`ORDER BY`), `take n`, a literal `skip n` (`OFFSET n`), `groupBy` (`GROUP BY`, except for a constant key), `join`, `distinct`, `count` and the aggregates, `|=|` (`IN(`), and `Union`, `Intersect`, `Except`.

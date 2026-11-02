@@ -1016,12 +1016,24 @@ module CommonTasks =
         | false, _ -> ()
 
     /// The select-list entry of a group-key column. In a key of several columns, a computed one (a CASE for x.IsSome or
-    /// x.IsNone) is aliased key<position>: left unaliased, two of them come back under one result name (PostgreSQL and
-    /// SQL Server do not name them by their text), and the key tuple cannot be rebuilt. Every other key column keeps
-    /// `plain`, the provider's usual entry.
+    /// x.IsNone) is aliased sqlp_key<position>, with trailing underscores until it differs from the names of the key's
+    /// plain columns, ignoring case. Results are read by name: left unaliased, two computed keys come back under one
+    /// name (PostgreSQL and SQL Server do not name them by their text), and a name shared with a plain key column loses
+    /// one value, so the key tuple cannot be rebuilt. Every other key column keeps `plain`, the provider's usual entry.
     let groupKeyColumn (keys:(alias*SqlColumnType) list) (index:int) (column:SqlColumnType) (notation:string) (plain:string) =
         match column with
-        | CanonicalOperation _ when keys.Length > 1 -> sprintf "%s as key%i" notation index
+        | CanonicalOperation _ when keys.Length > 1 ->
+            let taken =
+                keys
+                |> List.choose (fun (_, key) ->
+                    match key with
+                    | KeyColumn name -> Some(name.ToUpperInvariant())
+                    | _ -> None)
+                |> Set.ofList
+            let alias =
+                Seq.initInfinite (fun extra -> sprintf "sqlp_key%i%s" index (String.replicate extra "_"))
+                |> Seq.find (fun name -> not (taken.Contains(name.ToUpperInvariant())))
+            sprintf "%s as %s" notation alias
         | _ -> plain
 
     let parseHaving fieldNotation (keys:(alias*SqlColumnType) list) (conditionList : Condition list) =

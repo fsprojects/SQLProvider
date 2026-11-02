@@ -33,7 +33,8 @@ let private execute (con:IDbConnection) (sql:string) =
     cmd.CommandText <- sql
     cmd.ExecuteNonQuery() |> ignore
 
-[<Test>]
+// It runs ADO.NET commands directly, which publish no SQL events
+[<Test; SqlCheck.NoSql>]
 let ``identity columns are autonumber and left out of the required columns``() =
     let cs = connectionString ()
     let provider = createProvider ()

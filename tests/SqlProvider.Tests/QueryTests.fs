@@ -3452,7 +3452,19 @@ let ``groupBy with two computed keys and no join gives each key its own result n
         Assert.AreEqual(expected, actual)
         // Unaliased, PostgreSQL and SQL Server return both CASE columns under one name
         let grouped = commands |> Seq.find (fun command -> command.Contains "GROUP BY")
-        StringAssert.Contains(" as key0", grouped)
-        StringAssert.Contains(" as key1", grouped)
+        StringAssert.Contains(" as sqlp_key0", grouped)
+        StringAssert.Contains(" as sqlp_key1", grouped)
     finally
         Common.QueryEvents.SqlQueryEvent.RemoveHandler capture
+
+[<Test; SqlCheck.NoSql>]
+let ``a computed group key's alias differs from the names of the key's plain columns``() =
+    let computed = CanonicalOperation(CanonicalOp.ToUpper, KeyColumn "City")
+    let alias (plainNames: string list) =
+        let keys = ("", computed) :: [ for name in plainNames -> "", KeyColumn name ]
+        Common.CommonTasks.groupKeyColumn keys 0 computed "UPPER(City)" "UPPER(City)"
+    Assert.AreEqual("UPPER(City) as sqlp_key0", alias [ "Country" ])
+    Assert.AreEqual("UPPER(City) as sqlp_key0_", alias [ "SQLP_KEY0" ])
+    Assert.AreEqual("UPPER(City) as sqlp_key0__", alias [ "sqlp_key0"; "sqlp_key0_" ])
+    // A single computed key keeps the provider's entry
+    Assert.AreEqual("UPPER(City)", Common.CommonTasks.groupKeyColumn [ "", computed ] 0 computed "UPPER(City)" "UPPER(City)")
