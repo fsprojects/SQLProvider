@@ -197,7 +197,7 @@ If you want to use the drivers in parallel, you need two resolution paths:
 *)
 
 type HRFast = SqlDataProvider<Common.DatabaseProviderTypes.MYSQL, connString, ResolutionPath = @"c:\mysqlConnectorPath", Owner = "HR">
-type HRProcs = SqlDataProvider<Common.DatabaseProviderTypes.MYSQL, connString, ResolutionPath = @"creferencesOwner = "HR">
+type HRProcs = SqlDataProvider<Common.DatabaseProviderTypes.MYSQL, connString, ResolutionPath = @"c:\mysqlDataPath", Owner = "HR">
 
 (**
 
@@ -206,7 +206,7 @@ type HRProcs = SqlDataProvider<Common.DatabaseProviderTypes.MYSQL, connString, R
 One complex query:
 
 ```
-MySql.Data.dll:     Real: 00:00:00.583, C0:00:00.484, GC gen0: 1, gen1: 0, gen2: 0
+MySql.Data.dll:     Real: 00:00:00.583, CPU: 00:00:00.484, GC gen0: 1, gen1: 0, gen2: 0
 MySqlConnector.dll: Real: 00:00:00.173, CPU: 00:00:00.093, GC gen0: 1, gen1: 0, gen2: 0
 ```
 

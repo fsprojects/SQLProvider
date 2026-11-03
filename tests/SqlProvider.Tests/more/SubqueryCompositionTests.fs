@@ -495,3 +495,98 @@ let ``a grouped query keeps its key in the select outside IN sub-queries``() =
 
     let sql, _ = FSharp.Data.Sql.Runtime.QueryInspection.toQueryString latestOrderIds
     StringAssert.Contains("[CustomerID]", sql.Substring(0, sql.IndexOf "FROM"))
+
+[<Test; SqlCheck.ExpectSql("GROUP BY", "UNION", "MAX(")>]
+let ``a union of grouped sub-queries gives one column to IN on both sides``() =
+    let latestByCustomer =
+        query {
+            for order in dc.Main.Orders do
+            groupBy order.CustomerId into g
+            select (g.Max(fun order -> order.OrderId))
+        }
+
+    let latestByEmployee =
+        query {
+            for order in dc.Main.Orders do
+            groupBy order.EmployeeId into g
+            select (g.Max(fun order -> order.OrderId))
+        }
+
+    let result =
+        query {
+            for order in dc.Main.Orders do
+            where (latestByCustomer.Union(latestByEmployee).Contains order.OrderId)
+            select order.OrderId
+        } |> Seq.toArray |> Array.sort
+
+    let latestBy key =
+        query { for o in dc.Main.Orders do select (o.CustomerId, o.EmployeeId, o.OrderId) }
+        |> Seq.groupBy key |> Seq.map (fun (_, rows) -> rows |> Seq.map (fun (_, _, id) -> id) |> Seq.max)
+
+    let expected =
+        Seq.append (latestBy (fun (customer, _, _) -> box customer)) (latestBy (fun (_, employee, _) -> box employee))
+        |> Seq.distinct |> Seq.toArray |> Array.sort
+
+    Assert.IsNotEmpty expected
+    Assert.AreEqual(expected, result)
+
+[<Test; SqlCheck.NoSql>]
+let ``an IN sub-query computing on an aggregate in .NET is refused``() =
+    let shifted =
+        query {
+            for order in dc.Main.Orders do
+            groupBy order.CustomerId into g
+            select (g.Max(fun order -> order.OrderId) + 1L)
+        }
+
+    let error =
+        Assert.Throws<Exception>(fun () ->
+            query {
+                for order in dc.Main.Orders do
+                where (shifted.Contains order.OrderId)
+                select order.OrderId
+            } |> Seq.toArray |> ignore)
+
+    StringAssert.StartsWith("IN / NOT IN needs a sub-query that selects one column", error.Message)
+
+let private doubled (id: int64) = id * 2L
+
+[<Test; SqlCheck.NoSql>]
+let ``an IN sub-query calling an F# function the database cannot run is refused``() =
+    let doubledIds =
+        query {
+            for order in dc.Main.Orders do
+            select (doubled order.OrderId)
+        }
+
+    let error =
+        Assert.Throws<Exception>(fun () ->
+            query {
+                for order in dc.Main.Orders do
+                where (not (doubledIds.Contains order.OrderId))
+                select order.OrderId
+            } |> Seq.toArray |> ignore)
+
+    StringAssert.StartsWith("IN / NOT IN needs a sub-query that selects one column", error.Message)
+
+[<Test; SqlCheck.ExpectSql("IN", "+ 1")>]
+let ``an IN sub-query with arithmetic the database computes still runs``() =
+    let nextIds =
+        query {
+            for order in dc.Main.Orders do
+            select (order.OrderId + 1L)
+        }
+
+    let result =
+        query {
+            for order in dc.Main.Orders do
+            where (nextIds.Contains order.OrderId)
+            select order.OrderId
+        } |> Seq.toArray |> Array.sort
+
+    let ids = query { for o in dc.Main.Orders do select o.OrderId } |> Seq.toArray
+    let next = ids |> Array.map (fun id -> id + 1L) |> Set.ofArray
+    let expected = ids |> Array.filter next.Contains |> Array.sort
+
+    Assert.IsNotEmpty expected
+    Assert.AreEqual(expected, result)

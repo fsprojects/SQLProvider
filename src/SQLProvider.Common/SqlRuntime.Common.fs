@@ -654,8 +654,9 @@ type SqlExp =
     | Distinct     of SqlExp
     /// alias and column name, bool indicates ascending sort
     | OrderBy      of alias * SqlColumnType * bool * SqlExp
-    /// union type and subquery
-    | Union        of UnionType * string * seq<IDbDataParameter> * SqlExp
+    /// union type and the subquery as SQL text with its parameters, rendered as the outer query is (true for a
+    /// sub-query of IN / NOT IN), so that both sides select the same columns
+    | Union        of UnionType * (bool -> string * seq<IDbDataParameter>) * SqlExp
     | Skip         of int * SqlExp
     | Take         of int * SqlExp
     | Count        of SqlExp
@@ -672,7 +673,7 @@ type SqlExp =
                 | OrderBy(_,_,_,rest)
                 | Skip(_,rest)
                 | Take(_,rest)
-                | Union(_,_,_,rest)
+                | Union(_,_,rest)
                 | Count(rest) 
                 | AggregateOp(_,_,rest) -> aux rest
             aux this
@@ -688,7 +689,7 @@ type SqlExp =
                 | OrderBy(_,_,_,rest)
                 | Skip(_,rest)
                 | Take(_,rest)
-                | Union(_,_,_,rest)
+                | Union(_,_,rest)
                 | Count(rest) 
                 | AggregateOp(_,_,rest) -> isGroupBy rest
             isGroupBy this
@@ -703,7 +704,7 @@ type SqlExp =
                 | Distinct rest
                 | Skip(_,rest)
                 | Take(_,rest)
-                | Union(_,_,_,rest)
+                | Union(_,_,rest)
                 | Count(rest) 
                 | AggregateOp(_,_,rest) -> isSortBy rest
             isSortBy this
@@ -736,7 +737,8 @@ type SqlQuery =
         static member Empty = { Filters = []; Links = []; Grouping = []; Aliases = Map.empty; Ordering = []; Count = false; AggregateOp = []; CrossJoins = []
                                 Projection = []; Distinct = false; UltimateChild = None; Skip = ValueNone; Take = ValueNone; Union = None; HavingFilters = [] }
 
-        static member ofSqlExp(exp,entityIndex: string ResizeArray) =
+        /// The query of `exp`; `membershipSubquery` is true for a sub-query of IN / NOT IN, see SqlExp.Union.
+        static member ofSqlExp(exp,entityIndex: string ResizeArray, membershipSubquery: bool) =
             let legaliseName (alias:alias) =
                 if alias.StartsWith "_" then alias.TrimStart [|'_'|] else alias
 
@@ -792,10 +794,12 @@ type SqlQuery =
                 | Count(rest) ->
                     if q.Count then failwith "count may only be specified once"
                     else convert { q with Count = true } rest
-                | Union(all,subquery, pars, rest) ->
+                | Union(all, render, rest) ->
                     if q.Union.IsSome then failwith "Union may only be specified once. However you can try: xs.Union(ys.Union(zs))"
                     elif q.Take.IsSome then failwith "Union and take-limit is not yet supported as SQL-syntax varies."
-                    else convert { q with Union = Some(all,subquery,pars) } rest
+                    else
+                        let subquery, pars = render membershipSubquery
+                        convert { q with Union = Some(all,subquery,pars) } rest
                 | AggregateOp(alias, operationWithKey, rest) ->
                     convert { q with AggregateOp = (alias, operationWithKey)::q.AggregateOp } rest
             let sq = convert SqlQuery.Empty exp

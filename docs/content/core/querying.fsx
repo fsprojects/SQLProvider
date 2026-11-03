@@ -103,6 +103,12 @@ let xs2 =
 (**
 
   F#'s own `Seq.contains` is not translated to SQL.
+
+  The sub-query selects one column that the database computes: a column, an aggregate of a groupBy
+  (`select (g.Max(fun o -> o.OrderId))`, without the key), or arithmetic the provider translates. A projection
+  computed in .NET, such as `g.Max(...) + 1L` or a call to your own F# function, fails with an error; select the
+  column itself, or read the values first with `Seq.toArray`. A union (`xs.Union(ys).Contains x`) follows the same
+  rule on both sides.
 - **One query for every case of a filter.** Compute flags outside the query and test them inside it, so the same
   query can serve "all" and "one":
 
@@ -385,7 +391,7 @@ Math.Min(x,y)   | SELECT(MIN) | LEAST     | LEAST   | LEAST | MIN        | iif(x
 Math.Pow(x,y)   | POWER(x,y) | POWER(x,y) | POWER(x,y) | POWER(x,y) |    | x^y    | POWER(x,y) |   |
 (+)             | +          | +         | +       | +     | +          | +       | +        |   |
 (-)             | -          | -         | -       | -     | -          | -       | -        |   |
-(*)             | *          | *         | *       | *     | *          | *       | *        |   |
+(&#42;)        | *          | *         | *       | *     | *          | *       | *        |   |
 (/)             | /          | /         | /       | /     | /          | /       | /        |   |
 (%)             | %          | %         | %       | %     | %          | %       | %        |   |
 
@@ -525,7 +531,7 @@ Notes and limitations:
 * `groupJoin ... into g` followed by `for x in g do` is supported and behaves as an inner join.
   Aggregating the group itself (e.g. `select (c, g.Count())`) is not supported - use `groupBy`
   for aggregates.
-* A `groupBy` after a `leftOuterJoin` follows SQL semantics: `COUNT(*)` counts the unmatched
+* A `groupBy` after a `leftOuterJoin` follows SQL semantics: <code>COUNT(&#42;)</code> counts the unmatched
   NULL row, so a customer with no orders gets count 1, not 0.
 * `DefaultIfEmpty(customDefaultValue)` is not supported; only the parameterless form is.
 * A filtered sub-query is not supported as a left-join destination (the filter would belong in

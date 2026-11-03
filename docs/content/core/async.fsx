@@ -57,7 +57,7 @@ open System.Threading.Tasks
 open FSharp.Data.Sql
 
 type MyWebServer() =
-    member __.``Execute Business Logics`` (id : Guid) : Task<_> =
+    member __.``Execute Business Logics`` (orderId : int64) : Task<_> =
         task {
             use transaction =
                 new System.Transactions.TransactionScope(
@@ -67,14 +67,14 @@ type MyWebServer() =
             let context = TypeProviderConnection.GetDataContext cstr
             let! fetched =
                 query {
-                    for  t2 in context.MyDataBase.MyTable2 do
-                    join t1 in context.MyDataBase.MyTable1 on (t2.ForeignId = t1.Id)
-                    where (t2.Id = id)
-                    select t1
+                    for order in context.Main.Orders do
+                    join customer in context.Main.Customers on (order.CustomerId.Value = customer.CustomerId)
+                    where (order.OrderId = orderId)
+                    select order
                 } |> Seq.executeQueryAsync
 
-            fetched |> Seq.iter (fun entity ->
-                entity.SetColumn("Updated", DateTime.UtcNow |> box)
+            fetched |> Seq.iter (fun order ->
+                order.ShippedDate <- Some DateTime.UtcNow
             )
             do! context.SubmitUpdatesAsync()
 

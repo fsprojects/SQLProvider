@@ -542,7 +542,7 @@ module DesignTimeUtils =
                 designTimeCommandsContainer.AddMember m
                 designTimeCommandsContainer, saveResponse, mOld, designTime, None
 
-        let rec createTypes (rootType:ProvidedTypeDefinition) (serviceType:ProvidedTypeDefinition) (readServiceType:ProvidedTypeDefinition) (config:TypeProviderConfig) (sqlRuntimeInfo:_) invalidate registerDispose args =
+        let rec createTypes (rootType:ProvidedTypeDefinition) (serviceType:ProvidedTypeDefinition) (readServiceType:ProvidedTypeDefinition) (config:TypeProviderConfig) (sqlRuntimeInfo:_) invalidate registerClose args =
             let struct(connectionString, conStringName,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner,caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, ssdtPath, rootTypeName) = args
             let resolutionPath =
                 if String.IsNullOrWhiteSpace resolutionPath
@@ -575,7 +575,7 @@ module DesignTimeUtils =
                                 match prov.GetSchemaCache().IsOffline with
                                 | false ->
                                     let con = prov.CreateConnection conString
-                                    registerDispose (con, dbVendor)
+                                    registerClose (con, dbVendor)
                                     try
                                         con.Open()
                                     with
@@ -1045,7 +1045,7 @@ module DesignTimeUtils =
                       <@@ ((%%a0 : obj) :?> ISqlDataContext).CreateConnection() @@>)  :> MemberInfo
 
                   if not isReadonly then
-                      let recreate = fun () -> createTypes rootType serviceType readServiceType config sqlRuntimeInfo invalidate registerDispose (connectionString, conStringName,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner,caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, ssdtPath, rootTypeName)
+                      let recreate = fun () -> createTypes rootType serviceType readServiceType config sqlRuntimeInfo invalidate registerClose (connectionString, conStringName,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner,caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, ssdtPath, rootTypeName)
                       let designTimeCommandsContainer, saveResponse, mOld, designTime, invalidateActionResponse =
                             createDesignTimeCommands prov contextSchemaPath recreate invalidate
 
@@ -1471,10 +1471,16 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
 
     let empty = fun (_:Expr list) -> <@@ () @@>
 
-    let registerDispose = fun (con, dbVendor) ->
+    // The provided types are kept in DesignTimeCache and shared by every provider instance with the same static
+    // parameters, and their delayed members use the connection. So an instance that goes away closes it, which
+    // releases the database (e.g. an SQLite file), and never disposes it: the providers reopen a closed connection.
+    let registerClose = fun (con, dbVendor) ->
         this.Disposing.Add(fun _ ->
-            if con <> Unchecked.defaultof<IDbConnection> && dbVendor <> DatabaseProviderTypes.MSACCESS
-            then con.Dispose())
+            if con <> Unchecked.defaultof<IDbConnection> && dbVendor <> DatabaseProviderTypes.MSACCESS then
+                try
+                    if con.State <> ConnectionState.Closed then con.Close()
+                with
+                | :? ObjectDisposedException -> ())
 
     let invalidate = fun _ ->
             this.Invalidate()
@@ -1546,7 +1552,7 @@ type public SqlTypeProvider(config: TypeProviderConfig) as this =
             let serviceType = ProvidedTypeDefinition( "dataContext", Some typeof<obj>, isErased=true)
             let readServiceType = ProvidedTypeDefinition( "readDataContext", Some typeof<obj>, isErased=true)
 
-            createTypes rootType serviceType readServiceType config sqlRuntimeInfo invalidate registerDispose args
+            createTypes rootType serviceType readServiceType config sqlRuntimeInfo invalidate registerClose args
             createConstructors config (rootType, serviceType, readServiceType, args)
             rootType
 

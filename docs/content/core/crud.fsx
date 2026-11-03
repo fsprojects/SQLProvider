@@ -143,15 +143,15 @@ ctx.SubmitUpdates()
 *)
 
 type Employee2 = {
-    Id:int
+    Id:int64
     FirstName:string
     LastName:string
 }
 
 let updateEmployee (employee: Employee2) =
     let foundEmployeeMaybe = query {
-        for p in ctx.Public.Employee2 do
-        where (p.Id = employee.Id)
+        for p in ctx.Main.Employees do
+        where (p.EmployeeId = employee.Id)
         select (Some p)
         exactlyOneOrDefault
     }
@@ -164,8 +164,8 @@ let updateEmployee (employee: Employee2) =
 
 let updateEmployee' (employee: Employee2) =
     query {
-        for p in ctx.Public.Employee2 do
-        where (p.Id = employee.Id)
+        for p in ctx.Main.Employees do
+        where (p.EmployeeId = employee.Id)
     }
     |> Seq.iter( fun e ->
         e.FirstName <- employee.FirstName
@@ -174,7 +174,7 @@ let updateEmployee' (employee: Employee2) =
     ctx.SubmitUpdates()
 
 let john = {
-  Id = 1
+  Id = 1L
   FirstName = "John"
   LastName = "Doe" }
 
@@ -188,7 +188,7 @@ output of .ColumnValues:
 
 employees
     |> Seq.map (fun x ->
-                employee.Create(x.ColumnValues)) // create twins
+                ctx.Main.Employees.Create(x.ColumnValues)) // create twins
     |>  Seq.toList
 
 /// Retrieve the FSharp.Data.Sql.Common.SqlEntity objects
@@ -284,14 +284,12 @@ You can leverage this feature by setting the `OnConflict` property on a row obje
 Sql Server has a similar feature in the form of the MERGE statement. This is not yet supported.
 *)
 
-let ctx = sql.GetDataContext()
+let jane = ctx.Main.Employees.Create()
+jane.EmployeeId <- 1L
+jane.FirstName <- "Jane"
+jane.LastName <- "Doe"
 
-let emp = ctx.Main.Employees.Create()
-emp.Id <- 1
-emp.FirstName <- "Jane"
-emp.LastName <- "Doe"
-
-emp.OnConflict <- FSharp.Data.Sql.Common.OnConflict.Update
+jane.OnConflict <- FSharp.Data.Sql.Common.OnConflict.Update
 
 ctx.SubmitUpdates()
 
@@ -321,7 +319,7 @@ There are 3 overrides of create.
 
 *)
 
-let emp = ctx.Main.Employees.``Create(FirstName, LastName)``("Don", "Syme")
+let don = ctx.Main.Employees.``Create(FirstName, LastName)``("Don", "Syme")
 
 (**
 

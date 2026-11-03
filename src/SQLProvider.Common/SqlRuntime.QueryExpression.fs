@@ -632,16 +632,28 @@ module internal QueryExpressionTransformer =
 
         newProjection, projectionMap, groupProjectionMap
 
-    /// As convertExpression; `selectGroupKeys` false leaves the group keys out of the select of a grouped query that
-    /// selects aggregates, for a sub-query of IN / NOT IN, which may return one column.
-    let convertExpressionWith (selectGroupKeys: bool) exp (entityIndex:string ResizeArray) con (provider:ISqlProvider) isDeleteScript useCanonicalsOnSelect =
+    /// A projection that reads one selected column as it is: a column, an aggregate or a group key, through casts and
+    /// an option's Value. Anything else is computed in .NET after the rows are read.
+    let rec private isColumnRead (e:Expression) =
+        match e with
+        | :? UnaryExpression as u when u.NodeType = ExpressionType.Convert || u.NodeType = ExpressionType.ConvertChecked || u.NodeType = ExpressionType.TypeAs ->
+            isColumnRead u.Operand
+        | :? MemberExpression as m when m.Member.Name = "Value" && not (isNull m.Expression) -> isColumnRead m.Expression
+        | :? MemberExpression as m when m.Member.Name = "Key" -> true
+        | :? MethodCallExpression as c -> c.Method.Name.StartsWith "GetColumn" || c.Method.Name.StartsWith "Aggregate"
+        | _ -> false
+
+    /// As convertExpression; `membershipSubquery` true is for a sub-query of IN / NOT IN, which may return one column
+    /// that the database computes: a grouped query that selects aggregates leaves its keys out of the select, a set
+    /// operation renders its operands the same way, and a projection computed in .NET is refused.
+    let convertExpressionWith (membershipSubquery: bool) exp (entityIndex:string ResizeArray) con (provider:ISqlProvider) isDeleteScript useCanonicalsOnSelect =
         // first convert the abstract query tree into a more useful format
         let legaliseName (alias:alias) =
                 if alias.StartsWith "_" then alias.TrimStart [|'_'|] else alias
 
         let entityIndex = ResizeArray<_>(entityIndex |> Seq.map legaliseName)
 
-        let sqlQuery = SqlQuery.ofSqlExp(exp,entityIndex)
+        let sqlQuery = SqlQuery.ofSqlExp(exp,entityIndex,membershipSubquery)
         let groupgin = ResizeArray<_>()
 
          // note : the baseAlias here will always be "" when no criteria has been applied, because the LINQ tree never needed to refer to it
@@ -681,7 +693,7 @@ module internal QueryExpressionTransformer =
                         | SelectMany(_,_,_,rest)
                         | FilterClause(_,rest) | HavingClause(_,rest) | Projection(_,rest)
                         | Distinct rest | OrderBy(_,_,_,rest) | Skip(_,rest) | Take(_,rest)
-                        | Union(_,_,_,rest) | Count rest | AggregateOp(_,_,rest) -> find rest
+                        | Union(_,_,rest) | Count rest | AggregateOp(_,_,rest) -> find rest
                     match find exp with
                     | Some p when obj.ReferenceEquals(p, projs.Head) -> Some p
                     | _ -> None
@@ -903,6 +915,8 @@ module internal QueryExpressionTransformer =
 
                 let generatedMegaLambda, finalParams = composeProjections projs (Unchecked.defaultof<LambdaExpression>) (Dictionary<string, ResizeArray<ProjectionParameter>>())
                 QueryEvents.PublishExpression generatedMegaLambda
+                if membershipSubquery && not (isNull generatedMegaLambda) && not (isColumnRead generatedMegaLambda.Body) then
+                    failwithf "IN / NOT IN needs a sub-query that selects one column as the database computes it, but this projection is computed in .NET after the rows are read: %O. Select the column or aggregate itself, or read the values first with Seq.toArray." generatedMegaLambda
                 (generatedMegaLambda.Compile(),finalParams)
 
         let sqlQuery = 
@@ -1130,8 +1144,8 @@ module internal QueryExpressionTransformer =
 
         // A grouping without aggregates selects its keys: they are its only columns
         let sqlQuery =
-            if selectGroupKeys then sqlQuery
-            else { sqlQuery with Grouping = sqlQuery.Grouping |> List.map (fun grp -> { grp with SelectKeys = grp.Aggregates.IsEmpty }) }
+            if membershipSubquery then { sqlQuery with Grouping = sqlQuery.Grouping |> List.map (fun grp -> { grp with SelectKeys = grp.Aggregates.IsEmpty }) }
+            else sqlQuery
 
         let (sql,parameters) = provider.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript,con)
 
@@ -1139,4 +1153,4 @@ module internal QueryExpressionTransformer =
 
     /// The query of an expression as the SQL text, its parameters, the projection and the base table.
     let convertExpression exp (entityIndex:string ResizeArray) con (provider:ISqlProvider) isDeleteScript useCanonicalsOnSelect =
-        convertExpressionWith true exp entityIndex con provider isDeleteScript useCanonicalsOnSelect
+        convertExpressionWith false exp entityIndex con provider isDeleteScript useCanonicalsOnSelect
