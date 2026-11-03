@@ -569,6 +569,115 @@ let ``an IN sub-query calling an F# function the database cannot run is refused`
 
     StringAssert.StartsWith("IN / NOT IN needs a sub-query that selects one column", error.Message)
 
+[<Test; SqlCheck.NoSql>]
+let ``an IN sub-query converting an aggregate to a narrower number in .NET is refused``() =
+    let roundedAverages =
+        query {
+            for detail in dc.Main.OrderDetails do
+            groupBy detail.ProductId into g
+            select (int64 (g.Average(fun detail -> detail.UnitPrice)))
+        }
+
+    let error =
+        Assert.Throws<Exception>(fun () ->
+            query {
+                for product in dc.Main.Products do
+                where (roundedAverages.Contains product.ProductId)
+                select product.ProductId
+            } |> Seq.toArray |> ignore)
+
+    StringAssert.StartsWith("IN / NOT IN needs a sub-query that selects one column", error.Message)
+
+let private GetColumnDoubled (id: int64) = id * 2L
+
+[<Test; SqlCheck.NoSql>]
+let ``an IN sub-query calling a function named like a column read is refused``() =
+    let doubledIds =
+        query {
+            for order in dc.Main.Orders do
+            select (GetColumnDoubled order.OrderId)
+        }
+
+    let error =
+        Assert.Throws<Exception>(fun () ->
+            query {
+                for order in dc.Main.Orders do
+                where (doubledIds.Contains order.OrderId)
+                select order.OrderId
+            } |> Seq.toArray |> ignore)
+
+    StringAssert.StartsWith("IN / NOT IN needs a sub-query that selects one column", error.Message)
+
+type private DoubledId(id: int64) =
+    member _.Key = id * 2L
+
+[<Test; SqlCheck.NoSql>]
+let ``an IN sub-query reading a Key that is not a group key is refused``() =
+    let doubledIds =
+        query {
+            for order in dc.Main.Orders do
+            select (DoubledId(order.OrderId).Key)
+        }
+
+    let error =
+        Assert.Throws<Exception>(fun () ->
+            query {
+                for order in dc.Main.Orders do
+                where (doubledIds.Contains order.OrderId)
+                select order.OrderId
+            } |> Seq.toArray |> ignore)
+
+    StringAssert.StartsWith("IN / NOT IN needs a sub-query that selects one column", error.Message)
+
+[<Test; SqlCheck.ExpectSql("GROUP BY", "IN")>]
+let ``an IN sub-query selecting a group key still runs``() =
+    let popular =
+        query {
+            for detail in dc.Main.OrderDetails do
+            groupBy detail.ProductId into g
+            where (g.Count() > 40)
+            select g.Key
+        }
+
+    let result =
+        query {
+            for product in dc.Main.Products do
+            where (popular.Contains product.ProductId)
+            select product.ProductId
+        } |> Seq.toArray |> Array.sort
+
+    let expected =
+        query { for d in dc.Main.OrderDetails do select d.ProductId }
+        |> Seq.countBy id |> Seq.filter (fun (_, n) -> n > 40) |> Seq.map fst |> Seq.toArray |> Array.sort
+
+    Assert.IsNotEmpty expected
+    Assert.AreEqual(expected, result)
+
+[<Test; SqlCheck.ExpectSql("GROUP BY", "HAVING", "MAX(", "IN")>]
+let ``a grouped IN sub-query with a having filter selects only its aggregate``() =
+    let latestOfPopular =
+        query {
+            for detail in dc.Main.OrderDetails do
+            groupBy detail.ProductId into g
+            where (g.Count() > 40)
+            select (g.Max(fun detail -> detail.OrderId))
+        }
+
+    let result =
+        query {
+            for order in dc.Main.Orders do
+            where (latestOfPopular.Contains order.OrderId)
+            select order.OrderId
+        } |> Seq.toArray |> Array.sort
+
+    let expected =
+        query { for d in dc.Main.OrderDetails do select (d.ProductId, d.OrderId) }
+        |> Seq.groupBy fst |> Seq.filter (fun (_, rows) -> Seq.length rows > 40)
+        |> Seq.map (fun (_, rows) -> rows |> Seq.map snd |> Seq.max) |> Seq.distinct |> Seq.toArray |> Array.sort
+
+    Assert.IsNotEmpty expected
+    Assert.AreEqual(expected, result)
+
 [<Test; SqlCheck.ExpectSql("IN", "+ 1")>]
 let ``an IN sub-query with arithmetic the database computes still runs``() =
     let nextIds =

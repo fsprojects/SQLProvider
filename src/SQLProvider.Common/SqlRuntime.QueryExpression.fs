@@ -632,15 +632,67 @@ module internal QueryExpressionTransformer =
 
         newProjection, projectionMap, groupProjectionMap
 
-    /// A projection that reads one selected column as it is: a column, an aggregate or a group key, through casts and
-    /// an option's Value. Anything else is computed in .NET after the rows are read.
+    /// Numeric conversions that keep every value of the source type.
+    let private wideningConversions =
+        let integralTo (from:Type) (targets:Type list) = targets |> List.map (fun t -> from, t)
+        [ yield! integralTo typeof<sbyte>  [typeof<int16>; typeof<int32>; typeof<int64>; typeof<single>; typeof<double>; typeof<decimal>]
+          yield! integralTo typeof<byte>   [typeof<int16>; typeof<uint16>; typeof<int32>; typeof<uint32>; typeof<int64>; typeof<uint64>; typeof<single>; typeof<double>; typeof<decimal>]
+          yield! integralTo typeof<int16>  [typeof<int32>; typeof<int64>; typeof<single>; typeof<double>; typeof<decimal>]
+          yield! integralTo typeof<uint16> [typeof<int32>; typeof<uint32>; typeof<int64>; typeof<uint64>; typeof<single>; typeof<double>; typeof<decimal>]
+          yield! integralTo typeof<int32>  [typeof<int64>; typeof<double>; typeof<decimal>]
+          yield! integralTo typeof<uint32> [typeof<int64>; typeof<uint64>; typeof<double>; typeof<decimal>]
+          yield! integralTo typeof<int64>  [typeof<decimal>]
+          yield! integralTo typeof<uint64> [typeof<decimal>]
+          typeof<single>, typeof<double> ]
+
+    /// A conversion that keeps the value: identity, Nullable wrapping, a reference cast, boxing or unboxing, an enum and
+    /// its underlying type, or a numeric widening. A user-defined conversion operator runs .NET code, so it doesn't.
+    let private isValuePreserving (u:UnaryExpression) =
+        let underlying (t:Type) = match Nullable.GetUnderlyingType t with null -> t | n -> n
+        let source, target = underlying u.Operand.Type, underlying u.Type
+        isNull u.Method
+        && (Type.(=)(source, target)
+            || not source.IsValueType || not target.IsValueType
+            || (source.IsEnum && Type.(=)(Enum.GetUnderlyingType source, target))
+            || (target.IsEnum && Type.(=)(Enum.GetUnderlyingType target, source))
+            || wideningConversions |> List.exists (fun (s, t) -> Type.(=)(s, source) && Type.(=)(t, target)))
+
+    /// The row a projection reads: its parameter, a tuple or anonymous-object item of it, or a joined table's row of
+    /// it, through casts.
+    let rec private isRowReference (e:Expression) =
+        match e with
+        | :? ParameterExpression -> true
+        | :? MethodCallExpression as c when Type.(=)(c.Method.DeclaringType, typeof<SqlEntity>) && (c.Method.Name = "GetSubTable" || c.Method.Name = "GetSubTableNullable") ->
+            not (isNull c.Object) && c.Arguments |> Seq.forall (fun a -> a :? ConstantExpression) && isRowReference c.Object
+        | :? UnaryExpression as u when (u.NodeType = ExpressionType.Convert || u.NodeType = ExpressionType.TypeAs) && isNull u.Method ->
+            isRowReference u.Operand
+        | :? MemberExpression as m when not (isNull m.Expression) ->
+            let owner = m.Member.DeclaringType
+            (Microsoft.FSharp.Reflection.FSharpType.IsTuple owner || owner.Name.StartsWith "AnonymousObject" || owner.Name.Contains "AnonymousType")
+            && isRowReference m.Expression
+        | _ -> false
+
+    /// A projection that reads one selected column as it is: a column, an aggregate or a group key, through
+    /// value-preserving casts and an option's Value. Anything else is computed in .NET after the rows are read.
     let rec private isColumnRead (e:Expression) =
         match e with
         | :? UnaryExpression as u when u.NodeType = ExpressionType.Convert || u.NodeType = ExpressionType.ConvertChecked || u.NodeType = ExpressionType.TypeAs ->
-            isColumnRead u.Operand
-        | :? MemberExpression as m when m.Member.Name = "Value" && not (isNull m.Expression) -> isColumnRead m.Expression
-        | :? MemberExpression as m when m.Member.Name = "Key" -> true
-        | :? MethodCallExpression as c -> c.Method.Name.StartsWith "GetColumn" || c.Method.Name.StartsWith "Aggregate"
+            isValuePreserving u && isColumnRead u.Operand
+        | :? MemberExpression as m when m.Member.Name = "Value" && not (isNull m.Expression) ->
+            (Utilities.isCOpt m.Member.DeclaringType || Utilities.isVOpt m.Member.DeclaringType || not (isNull (Nullable.GetUnderlyingType m.Expression.Type)))
+            && isColumnRead m.Expression
+        | :? MemberExpression as m when m.Member.Name = "Key" && not (isNull m.Expression) ->
+            let owner = m.Member.DeclaringType
+            (Utilities.isGrp owner || (owner.IsGenericType && Type.(=)(owner.GetGenericTypeDefinition(), typedefof<GroupResultItems<_,_>>)))
+            && isRowReference m.Expression
+        | :? MethodCallExpression as c when not (isNull c.Object) && c.Arguments |> Seq.forall (fun a -> a :? ConstantExpression) ->
+            let owner = c.Method.DeclaringType
+            if Type.(=)(owner, typeof<IColumnHolder>) then
+                (c.Method.Name = "GetColumn" || c.Method.Name = "GetColumnOption" || c.Method.Name = "GetColumnValueOption")
+                && isRowReference c.Object
+            else
+                owner.IsGenericType && Type.(=)(owner.GetGenericTypeDefinition(), typedefof<GroupResultItems<_,_>>)
+                && c.Method.Name.StartsWith "Aggregate" && isRowReference c.Object
         | _ -> false
 
     /// As convertExpression; `membershipSubquery` true is for a sub-query of IN / NOT IN, which may return one column
