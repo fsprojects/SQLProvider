@@ -102,7 +102,8 @@ If you want to use SQLProvider as code-generator and copy and paste the tables a
 
 *)
 
-sql.dataContext.DesignTimeCommands.TemplateAsRecord.``main.OrdersTemplate``
+// The template is a nested type: type its path and a dot in the editor
+// sql.dataContext.DesignTimeCommands.TemplateAsRecord.``main.OrdersTemplate``.
 
 // intellisense will generate you code that you can copy and paste as template to create your own type:
 // ``type MainOrders = { CustomerId : String voption; EmployeeId : Int64 voption; Freight : Decimal voption; OrderDate : DateTime voption; OrderId : Int64; RequiredDate : DateTime voption; ShipAddress : String voption; ShipCity : String voption; ShipCountry : String voption; ShipName : String voption; ShipPostalCode : String voption; ShipRegion : String voption; ShippedDate : DateTime voption }``

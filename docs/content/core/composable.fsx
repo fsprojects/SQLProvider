@@ -19,7 +19,7 @@ type sql  = SqlDataProvider<
 (*** hide ***)
 let ctx = sql.GetDataContext()
 (*** hide ***)
-let xs = [].AsQueryable()
+let xs = ([] : int list).AsQueryable()
 
 (**
 # Composable Queries
@@ -82,10 +82,10 @@ In other words, SQLProvider queries typically follow this pattern:
 
 *)
 
-let (qry:IQueryable<'T>) =
+let pattern (xs:IQueryable<'T>) : IQueryable<'T> =
     query {
         //for is like C# foreach
-        for x in (xs:IQueryable<'T>) do
+        for x in xs do
         select x
     }
 
@@ -125,7 +125,7 @@ let companyNameFilter inUse =
 
 Then, you can create the main query
 *)
-let query1 =
+let mainQuery =
     query {
         for customers  in ctx.Main.Customers do
         where (customers.ContactTitle = "USA")
@@ -136,7 +136,7 @@ let query1 =
 and now call you are able to call the second query like this
 *)
 
-let res = companyNameFilter true query1 |> Seq.toArray
+let res = companyNameFilter true mainQuery |> Seq.toArray
 
 (**
 ### Generate composable queries by using FSharp.Linq.ComposableQuery
@@ -150,18 +150,18 @@ Example for using FSharpComposableQuery
 *)
 
 let qry1 =
-    query { for u in dbContext.Users do
-            select (u.Id, u.Name, u.Email)
+    query { for c in ctx.Main.Customers do
+            select (c.CustomerId, c.CompanyName, c.City)
     }
 
 let qry2 =
-    query { for c in dbContext.Cars do
-            select (c.UserId, c.Brand, c.Year)
+    query { for o in ctx.Main.Orders do
+            select (o.CustomerId, o.OrderId, o.Freight)
     }
 
 query { for (i,n,e) in qry1 do
         join (u,b,y) in qry2 on (i = u)
-        where (y > 2015)
+        where (y > 100m)
         select (i,n,e,u,b,y)
     } |> Seq.toArray
 
@@ -180,29 +180,31 @@ open System.Linq
 
 let nestedQueryTest =
     let qry1 = query {
-        for emp in ctx.Hr.Employees do
+        for emp in ctx.Main.Employees do
         where (emp.FirstName.StartsWith("S"))
         select emp.FirstName
     }
     query {
-        for emp in ctx.Hr.Employees do
+        for emp in ctx.Main.Employees do
         where (qry1.Contains(emp.FirstName))
         select (emp.FirstName, emp.LastName)
     } |> Seq.toArray
 
 (**
 
-### Using non-strongly-typed __.GetColumn "name"
+### Using non-strongly-typed GetColumn "name"
 
-All the entities inherit from SqlEntity which has GetColumn-method.
-So you can use non-strongly-typed columns like this:
+All the entities are SqlEntity objects, which implement `IColumnHolder` with a GetColumn method.
+So you can use non-strongly-typed columns, by the database's column name, like this:
 
 *)
+open FSharp.Data.Sql.Common
+
 let qry =
     query {
         for x in query1 do
-        where ((x.GetColumn<string> "CustomerId") = "ALFKI")
-        select (x.GetColumn<string> "CustomerId")
+        where (((x :> IColumnHolder).GetColumn<string> "CustomerID") = "ALFKI")
+        select ((x :> IColumnHolder).GetColumn<string> "CustomerID")
     } |> Seq.head
 
 (**

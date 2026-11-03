@@ -671,7 +671,8 @@ module internal QueryImplementation =
                         let svc = (qry :?> IWithSqlService)
 
                         use con = svc.Provider.CreateConnection svc.DataContext.ConnectionString
-                        let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression svc.SqlExpression svc.TupleIndex con svc.Provider false true
+                        // IN / NOT IN takes one column, as the database computes it
+                        let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpressionWith true svc.SqlExpression svc.TupleIndex con svc.Provider false true
 
                         let ``nested param names`` = $"@param{abs(query.GetHashCode())}{nestCount}nested"
                         nestCount <- nestCount + 1
@@ -703,7 +704,7 @@ module internal QueryImplementation =
                                         | SelectMany(a,b,_,rest) -> a :: b :: collect rest
                                         | FilterClause(_,rest) | HavingClause(_,rest) | Projection(_,rest)
                                         | Distinct rest | OrderBy(_,_,_,rest) | Skip(_,rest) | Take(_,rest)
-                                        | Union(_,_,_,rest) | Count rest | AggregateOp(_,_,rest) -> collect rest
+                                        | Union(_,_,rest) | Count rest | AggregateOp(_,_,rest) -> collect rest
                                     // a blank inner base-table alias will later be named after the predicate's parameter
                                     innerParam.Name :: collect innersrc.SqlExpression |> List.filter ((<>) "")
                                 let checkCollision (alias:string) =
@@ -1416,12 +1417,20 @@ module internal QueryImplementation =
                     | MethodCall(None,(MethodWithName("Union") | MethodWithName("Concat") | MethodWithName("Intersect") | MethodWithName("Except") as meth), [SourceWithQueryData source; SeqValuesQueryable values]) when (values :? IWithSqlService) -> 
 
                         let subquery = values :?> IWithSqlService
-                        use con = subquery.Provider.CreateConnection source.DataContext.ConnectionString
-                        let (query,parameters,projector,baseTable) = QueryExpressionTransformer.convertExpression subquery.SqlExpression subquery.TupleIndex con subquery.Provider false (source.DataContext.SqlOperationsInSelect=SelectOperations.DatabaseSide)
+                        let dataContext = source.DataContext
 
-                        let ``nested param names`` = $"@param{abs(query.GetHashCode())}nested"
+                        // Rendered as the outer query is: a sub-query of IN / NOT IN computes its column in the database
+                        let renderAs membershipSubquery =
+                            use con = subquery.Provider.CreateConnection dataContext.ConnectionString
+                            let useCanonicals = membershipSubquery || dataContext.SqlOperationsInSelect = SelectOperations.DatabaseSide
+                            let (query,parameters,_,_) = QueryExpressionTransformer.convertExpressionWith membershipSubquery subquery.SqlExpression subquery.TupleIndex con subquery.Provider false useCanonicals
+                            let ``nested param names`` = $"@param{abs(query.GetHashCode())}nested"
+                            let rendered, modified = renameNestedParameters ``nested param names`` query parameters
+                            rendered, (modified :> seq<IDbDataParameter>)
 
-                        let subquery, modified = renameNestedParameters ``nested param names`` query parameters
+                        // The usual rendering is made here, so a sub-query that cannot be translated fails where it is composed
+                        let usual = renderAs false
+                        let render membershipSubquery = if membershipSubquery then renderAs true else usual
 
                         //let ty = typedefof<SqlQueryable<_>>.MakeGenericType(meth.GetGenericArguments().[0])
                         let utyp = 
@@ -1434,7 +1443,7 @@ module internal QueryImplementation =
 
 
                         let ty = typeof<SqlQueryable<'T>>
-                        Activator.CreateInstance(ty, [| source.DataContext |> box; source.Provider; Union(utyp,subquery,modified,source.SqlExpression); source.TupleIndex |]) :?> IQueryable<'T>
+                        Activator.CreateInstance(ty, [| source.DataContext |> box; source.Provider; Union(utyp,render,source.SqlExpression); source.TupleIndex |]) :?> IQueryable<'T>
 
                     | x -> failwith ("unrecognised method call " + x.ToString())
 

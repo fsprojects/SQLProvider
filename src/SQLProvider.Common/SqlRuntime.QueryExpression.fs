@@ -632,14 +632,80 @@ module internal QueryExpressionTransformer =
 
         newProjection, projectionMap, groupProjectionMap
 
-    let convertExpression exp (entityIndex:string ResizeArray) con (provider:ISqlProvider) isDeleteScript useCanonicalsOnSelect =
+    /// Numeric conversions that keep every value of the source type.
+    let private wideningConversions =
+        let integralTo (from:Type) (targets:Type list) = targets |> List.map (fun t -> from, t)
+        [ yield! integralTo typeof<sbyte>  [typeof<int16>; typeof<int32>; typeof<int64>; typeof<single>; typeof<double>; typeof<decimal>]
+          yield! integralTo typeof<byte>   [typeof<int16>; typeof<uint16>; typeof<int32>; typeof<uint32>; typeof<int64>; typeof<uint64>; typeof<single>; typeof<double>; typeof<decimal>]
+          yield! integralTo typeof<int16>  [typeof<int32>; typeof<int64>; typeof<single>; typeof<double>; typeof<decimal>]
+          yield! integralTo typeof<uint16> [typeof<int32>; typeof<uint32>; typeof<int64>; typeof<uint64>; typeof<single>; typeof<double>; typeof<decimal>]
+          yield! integralTo typeof<int32>  [typeof<int64>; typeof<double>; typeof<decimal>]
+          yield! integralTo typeof<uint32> [typeof<int64>; typeof<uint64>; typeof<double>; typeof<decimal>]
+          yield! integralTo typeof<int64>  [typeof<decimal>]
+          yield! integralTo typeof<uint64> [typeof<decimal>]
+          typeof<single>, typeof<double> ]
+
+    /// A conversion that keeps the value: identity, Nullable wrapping, a reference cast, boxing or unboxing, an enum and
+    /// its underlying type, or a numeric widening. A user-defined conversion operator runs .NET code, so it doesn't.
+    let private isValuePreserving (u:UnaryExpression) =
+        let underlying (t:Type) = match Nullable.GetUnderlyingType t with null -> t | n -> n
+        let source, target = underlying u.Operand.Type, underlying u.Type
+        isNull u.Method
+        && (Type.(=)(source, target)
+            || not source.IsValueType || not target.IsValueType
+            || (source.IsEnum && Type.(=)(Enum.GetUnderlyingType source, target))
+            || (target.IsEnum && Type.(=)(Enum.GetUnderlyingType target, source))
+            || wideningConversions |> List.exists (fun (s, t) -> Type.(=)(s, source) && Type.(=)(t, target)))
+
+    /// The row a projection reads: its parameter, a tuple or anonymous-object item of it, or a joined table's row of
+    /// it, through casts.
+    let rec private isRowReference (e:Expression) =
+        match e with
+        | :? ParameterExpression -> true
+        | :? MethodCallExpression as c when Type.(=)(c.Method.DeclaringType, typeof<SqlEntity>) && (c.Method.Name = "GetSubTable" || c.Method.Name = "GetSubTableNullable") ->
+            not (isNull c.Object) && c.Arguments |> Seq.forall (fun a -> a :? ConstantExpression) && isRowReference c.Object
+        | :? UnaryExpression as u when (u.NodeType = ExpressionType.Convert || u.NodeType = ExpressionType.TypeAs) && isNull u.Method ->
+            isRowReference u.Operand
+        | :? MemberExpression as m when not (isNull m.Expression) ->
+            let owner = m.Member.DeclaringType
+            (Microsoft.FSharp.Reflection.FSharpType.IsTuple owner || owner.Name.StartsWith "AnonymousObject" || owner.Name.Contains "AnonymousType")
+            && isRowReference m.Expression
+        | _ -> false
+
+    /// A projection that reads one selected column as it is: a column, an aggregate or a group key, through
+    /// value-preserving casts and an option's Value. Anything else is computed in .NET after the rows are read.
+    let rec private isColumnRead (e:Expression) =
+        match e with
+        | :? UnaryExpression as u when u.NodeType = ExpressionType.Convert || u.NodeType = ExpressionType.ConvertChecked || u.NodeType = ExpressionType.TypeAs ->
+            isValuePreserving u && isColumnRead u.Operand
+        | :? MemberExpression as m when m.Member.Name = "Value" && not (isNull m.Expression) ->
+            (Utilities.isCOpt m.Member.DeclaringType || Utilities.isVOpt m.Member.DeclaringType || not (isNull (Nullable.GetUnderlyingType m.Expression.Type)))
+            && isColumnRead m.Expression
+        | :? MemberExpression as m when m.Member.Name = "Key" && not (isNull m.Expression) ->
+            let owner = m.Member.DeclaringType
+            (Utilities.isGrp owner || (owner.IsGenericType && Type.(=)(owner.GetGenericTypeDefinition(), typedefof<GroupResultItems<_,_>>)))
+            && isRowReference m.Expression
+        | :? MethodCallExpression as c when not (isNull c.Object) && c.Arguments |> Seq.forall (fun a -> a :? ConstantExpression) ->
+            let owner = c.Method.DeclaringType
+            if Type.(=)(owner, typeof<IColumnHolder>) then
+                (c.Method.Name = "GetColumn" || c.Method.Name = "GetColumnOption" || c.Method.Name = "GetColumnValueOption")
+                && isRowReference c.Object
+            else
+                owner.IsGenericType && Type.(=)(owner.GetGenericTypeDefinition(), typedefof<GroupResultItems<_,_>>)
+                && c.Method.Name.StartsWith "Aggregate" && isRowReference c.Object
+        | _ -> false
+
+    /// As convertExpression; `membershipSubquery` true is for a sub-query of IN / NOT IN, which may return one column
+    /// that the database computes: a grouped query that selects aggregates leaves its keys out of the select, a set
+    /// operation renders its operands the same way, and a projection computed in .NET is refused.
+    let convertExpressionWith (membershipSubquery: bool) exp (entityIndex:string ResizeArray) con (provider:ISqlProvider) isDeleteScript useCanonicalsOnSelect =
         // first convert the abstract query tree into a more useful format
         let legaliseName (alias:alias) =
                 if alias.StartsWith "_" then alias.TrimStart [|'_'|] else alias
 
         let entityIndex = ResizeArray<_>(entityIndex |> Seq.map legaliseName)
 
-        let sqlQuery = SqlQuery.ofSqlExp(exp,entityIndex)
+        let sqlQuery = SqlQuery.ofSqlExp(exp,entityIndex,membershipSubquery)
         let groupgin = ResizeArray<_>()
 
          // note : the baseAlias here will always be "" when no criteria has been applied, because the LINQ tree never needed to refer to it
@@ -679,7 +745,7 @@ module internal QueryExpressionTransformer =
                         | SelectMany(_,_,_,rest)
                         | FilterClause(_,rest) | HavingClause(_,rest) | Projection(_,rest)
                         | Distinct rest | OrderBy(_,_,_,rest) | Skip(_,rest) | Take(_,rest)
-                        | Union(_,_,_,rest) | Count rest | AggregateOp(_,_,rest) -> find rest
+                        | Union(_,_,rest) | Count rest | AggregateOp(_,_,rest) -> find rest
                     match find exp with
                     | Some p when obj.ReferenceEquals(p, projs.Head) -> Some p
                     | _ -> None
@@ -832,7 +898,8 @@ module internal QueryExpressionTransformer =
                             | c -> c
                             
                         let gatheredAggregations = 
-                            sqlQuery.Grouping |> List.map(fun (group,x) ->
+                            sqlQuery.Grouping |> List.map(fun grp ->
+                                let group, x = grp.Keys, grp.Aggregates
                                 // GroupBy: collect aggreagte operations
                                 // Should gather the column names what we want to aggregate, not just operations.
                                 let aggregations:(alias * SqlColumnType) list =
@@ -900,6 +967,8 @@ module internal QueryExpressionTransformer =
 
                 let generatedMegaLambda, finalParams = composeProjections projs (Unchecked.defaultof<LambdaExpression>) (Dictionary<string, ResizeArray<ProjectionParameter>>())
                 QueryEvents.PublishExpression generatedMegaLambda
+                if membershipSubquery && not (isNull generatedMegaLambda) && not (isColumnRead generatedMegaLambda.Body) then
+                    failwithf "IN / NOT IN needs a sub-query that selects one column as the database computes it, but this projection is computed in .NET after the rows are read: %O. Select the column or aggregate itself, or read the values first with Seq.toArray." generatedMegaLambda
                 (generatedMegaLambda.Compile(),finalParams)
 
         let sqlQuery = 
@@ -909,7 +978,11 @@ module internal QueryExpressionTransformer =
                     match lst |> List.filter(fun (keys,agg) -> not agg.IsEmpty) with
                     | [] -> lst
                     | filtered -> filtered
-                { sqlQuery with Grouping = cleaned |> Seq.distinct |> Seq.toList }
+                { sqlQuery with
+                    Grouping =
+                        cleaned
+                        |> List.distinct
+                        |> List.map (fun (keys, aggs) -> { Keys = keys; Aggregates = aggs; SelectKeys = true }) }
             else sqlQuery
 
         // a special case here to handle queries that start from the relationship of an individual
@@ -1050,7 +1123,7 @@ module internal QueryExpressionTransformer =
                                                                 | x -> (x,resolveC b,c) 
                                                             | a,c,b -> resolve a, resolveC c,b) sqlQuery.Ordering 
                                        // Resolve other canonical function columns also:
-                                       Grouping = sqlQuery.Grouping |> List.map(fun (g,a) -> g|>List.map(fun (ga, gk) -> resolve ga, resolveC gk), a|>List.map(fun(ag,aa)->resolve ag,resolveC aa)) 
+                                       Grouping = sqlQuery.Grouping |> List.map(fun grp -> { grp with Keys = grp.Keys |> List.map(fun (ga, gk) -> resolve ga, resolveC gk); Aggregates = grp.Aggregates |> List.map(fun(ag,aa)->resolve ag,resolveC aa) })
                                        AggregateOp = sqlQuery.AggregateOp |> List.map(fun (a,c) -> (resolve a, resolveC c))
                        }
 
@@ -1121,6 +1194,15 @@ module internal QueryExpressionTransformer =
                                 let myLock = provider.GetLockObject()
                                 lock myLock (fun () -> provider.GetColumns (con,table) |> ignore ))
 
+        // A grouping without aggregates selects its keys: they are its only columns
+        let sqlQuery =
+            if membershipSubquery then { sqlQuery with Grouping = sqlQuery.Grouping |> List.map (fun grp -> { grp with SelectKeys = grp.Aggregates.IsEmpty }) }
+            else sqlQuery
+
         let (sql,parameters) = provider.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript,con)
 
         (sql,parameters,projectionDelegate,baseTable)
+
+    /// The query of an expression as the SQL text, its parameters, the projection and the base table.
+    let convertExpression exp (entityIndex:string ResizeArray) con (provider:ISqlProvider) isDeleteScript useCanonicalsOnSelect =
+        convertExpressionWith false exp entityIndex con provider isDeleteScript useCanonicalsOnSelect

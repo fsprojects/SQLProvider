@@ -48,7 +48,7 @@ let ctx = db.GetDataContext()
 
 You don't need DSN for all data sources, e.g. MS Access can be used directly
 through the database file with a connection string like:
-`@"Driver={Microsoft Access Driver (*.mdb, *.accdb)};Dbq=C:\Northwind.mdb"`
+<code>@"Driver={Microsoft Access Driver (&#42;.mdb, *.accdb)};Dbq=C:\Northwind.mdb"</code>
 
 
 ### Quote Character

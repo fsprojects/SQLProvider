@@ -1045,16 +1045,16 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
                     match sqlQuery.Grouping with
                     | [] -> Utilities.parseAggregates fieldNotation fieldNotationAlias sqlQuery.AggregateOp
                     | g  -> 
-                        let keyColumns = g |> List.collect fst
+                        let keyColumns = g |> List.collect (fun grp -> grp.Keys)
                         let keys = keyColumns |> List.mapi(fun i (a,c) ->
                             let fn = fieldNotation a c
                             if not (tmpGrpParams.ContainsKey (a,c)) then
                                 tmpGrpParams.Add((a,c), fn)
                             let plain = if sqlQuery.Aliases.Count < 2 then fn else $"%s{fn} as '%s{fn}'"
                             CommonTasks.groupKeyColumn keyColumns i c fn plain)
-                        let aggs = g |> List.collect snd
+                        let aggs = g |> List.collect (fun grp -> grp.Aggregates)
                         let res2 = Utilities.parseAggregates fieldNotation fieldNotationAlias aggs |> List.toSeq
-                        [String.Join(", ", keys) + (if List.isEmpty aggs || List.isEmpty keys then ""  else ", ") + String.Join(", ", res2)] 
+                        [CommonTasks.groupSelectColumns g keys res2] 
                 match extracolumns with
                 | [] -> selectcolumns
                 | h::t -> h
@@ -1128,13 +1128,13 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
 
             // GROUP BY
             if sqlQuery.Grouping.Length > 0 then
-                let groupkeys = sqlQuery.Grouping |> List.collect fst
+                let groupkeys = sqlQuery.Grouping |> List.collect (fun grp -> grp.Keys)
                 if groupkeys.Length > 0 then
                     ~~" GROUP BY "
                     groupByBuilder groupkeys
 
             if sqlQuery.HavingFilters.Length > 0 then
-                let keys = sqlQuery.Grouping |> List.collect fst
+                let keys = sqlQuery.Grouping |> List.collect (fun grp -> grp.Keys)
 
                 let f = [And([],Some (sqlQuery.HavingFilters |> CommonTasks.parseHaving fieldNotation keys))]
                 ~~" HAVING "
