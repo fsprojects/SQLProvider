@@ -345,7 +345,7 @@ blockquote {
 
 #content pre.fssnip code {
     font: 0.86rem 'Fira Code Fixed', monospace;
-    font-weight: 600;
+    font-weight: 500;
 }
 
 #content table.pre {
@@ -553,7 +553,7 @@ blockquote {
 }
 /* keywords */
 #content span.k {
-    color: #1f4ee9;
+    color: #4878f0;
 }
 /* comment */
 #content span.c {
@@ -597,7 +597,6 @@ div.fsdocs-tip {
     border-radius: 4px;
     font: 0.85rem 'Fira Code Fixed', monospace;
     padding: 6px 8px 6px 8px;
-    display: none;
     color: #d1d1d1;
     pointer-events: none;
 }
@@ -606,6 +605,31 @@ div.fsdocs-tip {
         color: #d1d1d1;
         font: 0.85rem 'Fira Code Fixed', monospace;
     }
+
+/* XML doc in a tool tip, rendered by fsdocs-xmldoc-tips.js */
+div.fsdocs-tip-doc {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid #5f7478;
+    white-space: normal;
+}
+
+div.fsdocs-tip-doc-summary {
+    color: #f0d98c;
+}
+
+div.fsdocs-tip-doc-remarks,
+div.fsdocs-tip-doc-param {
+    margin-top: 4px;
+}
+
+span.fsdocs-tip-doc-name {
+    color: #9cdcfe;
+}
+
+div.fsdocs-tip-doc code {
+    color: #ffffff;
+}
 
 #content code {
     color: #8c938c
