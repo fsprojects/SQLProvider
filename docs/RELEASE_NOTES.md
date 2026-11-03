@@ -1,4 +1,5 @@
-### 1.5.29 - 02.11.2026
+### 1.5.30 - 03.11.2026
+- Fix: schema types are declared only by dataContext, so readDataContext no longer re-parents them and builds don't fail at random with FS0193 "dataContext.mainSchema is not compatible with readDataContext.mainSchema"
 - Fix: parameters of a sub-query nested in another sub-query are bound (IN, EXISTS, UNION and the like)
 - Fix: groupBy keys with option or value-option columns, and with x.IsSome / x.IsNone in a tuple key
 - Fix: a grouped sub-query of IN / NOT IN that selects an aggregate selects it without the group keys, on both sides of a union too, #746

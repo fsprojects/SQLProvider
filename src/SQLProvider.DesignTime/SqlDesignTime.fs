@@ -1086,7 +1086,10 @@ module DesignTimeUtils =
 
                  ] @ [
                     for KeyValue(name,pt) in schemaTypes do
-                        yield pt :> MemberInfo
+                        // A nested type has one declaring type, and adding it to another re-parents it: only
+                        // dataContext declares the schema types, readDataContext's properties return the same ones.
+                        if not isReadonly then
+                            yield pt :> MemberInfo
                         yield ProvidedProperty(SchemaProjections.buildTableName(name),pt, getterCode = fun args ->
                             let a0 = args.[0]
                             <@@ ((%%a0 : obj) :?> ISqlDataContext) @@> ) :> MemberInfo

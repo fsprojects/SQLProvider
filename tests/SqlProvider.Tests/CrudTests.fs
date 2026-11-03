@@ -237,3 +237,13 @@ module UtilsTests =
             do! (processList :> Task)
             Assert.AreEqual(initList, processList.Result)
         } :> Task
+
+[<Test>]
+let ``read only and writable contexts share the schema types``() =
+    // Compiles only while dataContext alone declares the schema types: readDataContext declaring them too
+    // re-parents them, and dataContext.mainSchema no longer matches once readDataContext has been used.
+    let readSchema : sql.dataContext.mainSchema = sql.GetReadOnlyDataContext().Main
+    let writeSchema : sql.dataContext.mainSchema = sql.GetDataContext().Main
+    let readCustomers = query { for cust in readSchema.Customers do select cust.CustomerId } |> Seq.length
+    let writeCustomers = query { for cust in writeSchema.Customers do select cust.CustomerId } |> Seq.length
+    Assert.AreEqual(writeCustomers, readCustomers)
