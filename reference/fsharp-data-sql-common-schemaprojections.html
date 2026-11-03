@@ -79,7 +79,8 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/general.html">
-    general
+    SQL Provider Basics
+
   </a>
 </li>             
 <li class="nav-item ">
@@ -137,8 +138,7 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/outline.html">
-    SQL Type Provider
-
+    outline
   </a>
 </li>             
 <li class="nav-item ">
@@ -262,9 +262,11 @@
   </dl>
   <div class="fsdocs-xmldoc">
     <div>
-      <p class="fsdocs-summary">
-        
-      </p>
+      <div class="fsdocs-summary-contents">
+        <p class="fsdocs-summary">
+          
+        </p>
+      </div>
     </div>
   </div>
   <div>
@@ -279,6 +281,7 @@
           </td>
           <td class="fsdocs-member-list-header">
             Description
+            <fsdocs-details-toggle></fsdocs-details-toggle>
           </td>
         </tr>
       </thead>
@@ -286,7 +289,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '272', 272)" onmouseover="showTip(event, '272', 272)">
+              <code data-fsdocs-tip="273" data-fsdocs-tip-unique="273">
                 <p>
                   <a id="avoidNameClashBy">
                     <a href="#avoidNameClashBy">
@@ -295,7 +298,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="272">
+              <div popover="" class="fsdocs-tip" id="273">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>avoidNameClashBy&#32;<span>nameExists&#32;name</span></span></code>
@@ -334,18 +337,22 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Common.SchemaProjections.avoidNameClashBy`')">
-                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Add ' until the name is unique
+                    </p>
                   </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Common.SchemaProjections.avoidNameClashBy\'/>')">
-                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Utils.fs#L498-498" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Common.SchemaProjections.avoidNameClashBy\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Common.SchemaProjections.avoidNameClashBy`')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
                   </div>
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Utils.fs#L487-487" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Add ' until the name is unique
-                  </p>
                 </div>
               </summary>
               <dl class="fsdocs-params">
@@ -381,7 +388,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '273', 273)" onmouseover="showTip(event, '273', 273)">
+              <code data-fsdocs-tip="274" data-fsdocs-tip-unique="274">
                 <p>
                   <a id="buildFieldName">
                     <a href="#buildFieldName">
@@ -390,7 +397,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="273">
+              <div popover="" class="fsdocs-tip" id="274">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>buildFieldName&#32;<span>fieldName</span></span></code>
@@ -418,31 +425,38 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  fieldName
-                </span>
-                :
-                <code>string</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code>string</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Utils.fs#L515-515" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    fieldName
+                  </span>
+                  :
+                  <code>string</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>string</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '274', 274)" onmouseover="showTip(event, '274', 274)">
+              <code data-fsdocs-tip="275" data-fsdocs-tip-unique="275">
                 <p>
                   <a id="buildSprocName">
                     <a href="#buildSprocName">
@@ -451,7 +465,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="274">
+              <div popover="" class="fsdocs-tip" id="275">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>buildSprocName&#32;<span>sprocName</span></span></code>
@@ -479,31 +493,38 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  sprocName
-                </span>
-                :
-                <code>string</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code>string</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Utils.fs#L517-517" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    sprocName
+                  </span>
+                  :
+                  <code>string</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>string</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '275', 275)" onmouseover="showTip(event, '275', 275)">
+              <code data-fsdocs-tip="276" data-fsdocs-tip-unique="276">
                 <p>
                   <a id="buildTableName">
                     <a href="#buildTableName">
@@ -512,7 +533,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="275">
+              <div popover="" class="fsdocs-tip" id="276">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>buildTableName&#32;<span>tableName</span></span></code>
@@ -540,31 +561,38 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  tableName
-                </span>
-                :
-                <code>string</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code>string</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Utils.fs#L502-502" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    tableName
+                  </span>
+                  :
+                  <code>string</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>string</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '276', 276)" onmouseover="showTip(event, '276', 276)">
+              <code data-fsdocs-tip="277" data-fsdocs-tip-unique="277">
                 <p>
                   <a id="buildTableNameWhereFilter">
                     <a href="#buildTableNameWhereFilter">
@@ -573,7 +601,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="276">
+              <div popover="" class="fsdocs-tip" id="277">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>buildTableNameWhereFilter&#32;<span>columnName&#32;tableNames</span></span></code>
@@ -609,39 +637,46 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  columnName
-                </span>
-                :
-                <code>string</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  tableNames
-                </span>
-                :
-                <code>string</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code>string</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Utils.fs#L519-519" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    columnName
+                  </span>
+                  :
+                  <code>string</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    tableNames
+                  </span>
+                  :
+                  <code>string</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>string</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '277', 277)" onmouseover="showTip(event, '277', 277)">
+              <code data-fsdocs-tip="278" data-fsdocs-tip-unique="278">
                 <p>
                   <a id="niceCamelName">
                     <a href="#niceCamelName">
@@ -650,7 +685,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="277">
+              <div popover="" class="fsdocs-tip" id="278">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>niceCamelName&#32;<span>s</span></span></code>
@@ -681,18 +716,22 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Common.SchemaProjections.niceCamelName`')">
-                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Turns a given non-empty string into a nice 'camelCase' identifier
+                    </p>
                   </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Common.SchemaProjections.niceCamelName\'/>')">
-                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Utils.fs#L490-490" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Common.SchemaProjections.niceCamelName\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Common.SchemaProjections.niceCamelName`')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
                   </div>
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Utils.fs#L480-480" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Turns a given non-empty string into a nice 'camelCase' identifier
-                  </p>
                 </div>
               </summary>
               <dl class="fsdocs-params">
@@ -720,7 +759,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '278', 278)" onmouseover="showTip(event, '278', 278)">
+              <code data-fsdocs-tip="279" data-fsdocs-tip-unique="279">
                 <p>
                   <a id="nicePascalName">
                     <a href="#nicePascalName">
@@ -729,7 +768,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="278">
+              <div popover="" class="fsdocs-tip" id="279">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>nicePascalName&#32;<span>s</span></span></code>
@@ -760,18 +799,22 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Common.SchemaProjections.nicePascalName`')">
-                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Turns a given non-empty string into a nice 'PascalCase' identifier
+                    </p>
                   </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Common.SchemaProjections.nicePascalName\'/>')">
-                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Utils.fs#L443-443" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Common.SchemaProjections.nicePascalName\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Common.SchemaProjections.nicePascalName`')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
                   </div>
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Utils.fs#L433-433" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Turns a given non-empty string into a nice 'PascalCase' identifier
-                  </p>
                 </div>
               </summary>
               <dl class="fsdocs-params">

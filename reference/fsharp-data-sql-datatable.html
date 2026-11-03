@@ -79,7 +79,8 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/general.html">
-    general
+    SQL Provider Basics
+
   </a>
 </li>             
 <li class="nav-item ">
@@ -137,8 +138,7 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/outline.html">
-    SQL Type Provider
-
+    outline
   </a>
 </li>             
 <li class="nav-item ">
@@ -262,9 +262,11 @@
   </dl>
   <div class="fsdocs-xmldoc">
     <div>
-      <p class="fsdocs-summary">
-        
-      </p>
+      <div class="fsdocs-summary-contents">
+        <p class="fsdocs-summary">
+          
+        </p>
+      </div>
     </div>
   </div>
   <div>
@@ -279,6 +281,7 @@
           </td>
           <td class="fsdocs-member-list-header">
             Description
+            <fsdocs-details-toggle></fsdocs-details-toggle>
           </td>
         </tr>
       </thead>
@@ -286,7 +289,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '9', 9)" onmouseover="showTip(event, '9', 9)">
+              <code data-fsdocs-tip="9" data-fsdocs-tip-unique="9">
                 <p>
                   <a id="cache">
                     <a href="#cache">
@@ -295,7 +298,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="9">
+              <div popover="" class="fsdocs-tip" id="9">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>cache&#32;<span>cache&#32;f&#32;dt</span></span></code>
@@ -334,52 +337,62 @@
                     <code><span>'a&#32;list</span></code>
                   </span>
                   <br/>
+                  Type parameters: 
+                  &#39;a
+                  <br/>
                 </div>
               </div>
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  cache
-                </span>
-                :
-                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.idictionary-2">IDictionary</a>&lt;<span>string,&#32;'a</span>&gt;</span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  f
-                </span>
-                :
-                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.datarow">DataRow</a>&#32;->&#32;<span><span>(<span>string&#32;*&#32;'a</span>)</span>&#32;option</span></span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  dt
-                </span>
-                :
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><span>'a&#32;list</span></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/DataTable.fs#L25-25" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    cache
+                  </span>
+                  :
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.idictionary-2">IDictionary</a>&lt;<span>string,&#32;'a</span>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    f
+                  </span>
+                  :
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.datarow">DataRow</a>&#32;->&#32;<span><span>(<span>string&#32;*&#32;'a</span>)</span>&#32;option</span></span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    dt
+                  </span>
+                  :
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span>'a&#32;list</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '10', 10)" onmouseover="showTip(event, '10', 10)">
+              <code data-fsdocs-tip="10" data-fsdocs-tip-unique="10">
                 <p>
                   <a id="choose">
                     <a href="#choose">
@@ -388,7 +401,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="10">
+              <div popover="" class="fsdocs-tip" id="10">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>choose&#32;<span>f&#32;dt</span></span></code>
@@ -424,39 +437,46 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  f
-                </span>
-                :
-                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.datarow">DataRow</a>&#32;->&#32;<span><a href="https://learn.microsoft.com/dotnet/api/system.data.datarow">DataRow</a>&#32;option</span></span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  dt
-                </span>
-                :
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/DataTable.fs#L42-42" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    f
+                  </span>
+                  :
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.datarow">DataRow</a>&#32;->&#32;<span><a href="https://learn.microsoft.com/dotnet/api/system.data.datarow">DataRow</a>&#32;option</span></span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    dt
+                  </span>
+                  :
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '11', 11)" onmouseover="showTip(event, '11', 11)">
+              <code data-fsdocs-tip="11" data-fsdocs-tip-unique="11">
                 <p>
                   <a id="filter">
                     <a href="#filter">
@@ -465,7 +485,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="11">
+              <div popover="" class="fsdocs-tip" id="11">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>filter&#32;<span>f&#32;dt</span></span></code>
@@ -501,39 +521,46 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  f
-                </span>
-                :
-                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.datarow">DataRow</a>&#32;->&#32;bool</span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  dt
-                </span>
-                :
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/DataTable.fs#L51-51" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    f
+                  </span>
+                  :
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.datarow">DataRow</a>&#32;->&#32;bool</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    dt
+                  </span>
+                  :
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '12', 12)" onmouseover="showTip(event, '12', 12)">
+              <code data-fsdocs-tip="12" data-fsdocs-tip-unique="12">
                 <p>
                   <a id="groupBy">
                     <a href="#groupBy">
@@ -542,7 +569,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="12">
+              <div popover="" class="fsdocs-tip" id="12">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>groupBy&#32;<span>f&#32;dt</span></span></code>
@@ -573,44 +600,54 @@
                     <code><span><span>(<span>'a&#32;*&#32;<span>'b&#32;seq</span></span>)</span>&#32;seq</span></code>
                   </span>
                   <br/>
+                  Type parameters: 
+                  &#39;a, &#39;b (requires equality)
+                  <br/>
                 </div>
               </div>
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  f
-                </span>
-                :
-                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.datarow">DataRow</a>&#32;->&#32;<span>'a&#32;*&#32;'b</span></span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  dt
-                </span>
-                :
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><span><span>(<span>'a&#32;*&#32;<span>'b&#32;seq</span></span>)</span>&#32;seq</span></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/DataTable.fs#L20-20" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    f
+                  </span>
+                  :
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.datarow">DataRow</a>&#32;->&#32;<span>'a&#32;*&#32;'b</span></span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    dt
+                  </span>
+                  :
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><span>(<span>'a&#32;*&#32;<span>'b&#32;seq</span></span>)</span>&#32;seq</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '13', 13)" onmouseover="showTip(event, '13', 13)">
+              <code data-fsdocs-tip="13" data-fsdocs-tip-unique="13">
                 <p>
                   <a id="headers">
                     <a href="#headers">
@@ -619,7 +656,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="13">
+              <div popover="" class="fsdocs-tip" id="13">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>headers&#32;<span>dt</span></span></code>
@@ -647,31 +684,38 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  dt
-                </span>
-                :
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><span>string&#32;list</span></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/DataTable.fs#L58-58" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    dt
+                  </span>
+                  :
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span>string&#32;list</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '14', 14)" onmouseover="showTip(event, '14', 14)">
+              <code data-fsdocs-tip="14" data-fsdocs-tip-unique="14">
                 <p>
                   <a id="iter">
                     <a href="#iter">
@@ -680,7 +724,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="14">
+              <div popover="" class="fsdocs-tip" id="14">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>iter&#32;<span>f&#32;dt</span></span></code>
@@ -711,30 +755,37 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  f
-                </span>
-                :
-                <code><span><span>obj[]</span>&#32;->&#32;unit</span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  dt
-                </span>
-                :
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/DataTable.fs#L14-14" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    f
+                  </span>
+                  :
+                  <code><span><span>obj[]</span>&#32;->&#32;unit</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    dt
+                  </span>
+                  :
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '15', 15)" onmouseover="showTip(event, '15', 15)">
+              <code data-fsdocs-tip="15" data-fsdocs-tip-unique="15">
                 <p>
                   <a id="map">
                     <a href="#map">
@@ -743,7 +794,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="15">
+              <div popover="" class="fsdocs-tip" id="15">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>map&#32;<span>f&#32;dt</span></span></code>
@@ -774,44 +825,54 @@
                     <code><span>'a&#32;list</span></code>
                   </span>
                   <br/>
+                  Type parameters: 
+                  &#39;a
+                  <br/>
                 </div>
               </div>
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  f
-                </span>
-                :
-                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.datarow">DataRow</a>&#32;->&#32;'a</span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  dt
-                </span>
-                :
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><span>'a&#32;list</span></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/DataTable.fs#L8-8" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    f
+                  </span>
+                  :
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.datarow">DataRow</a>&#32;->&#32;'a</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    dt
+                  </span>
+                  :
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span>'a&#32;list</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '16', 16)" onmouseover="showTip(event, '16', 16)">
+              <code data-fsdocs-tip="16" data-fsdocs-tip-unique="16">
                 <p>
                   <a id="mapChoose">
                     <a href="#mapChoose">
@@ -820,7 +881,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="16">
+              <div popover="" class="fsdocs-tip" id="16">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>mapChoose&#32;<span>f&#32;dt</span></span></code>
@@ -851,44 +912,54 @@
                     <code><span>'a&#32;list</span></code>
                   </span>
                   <br/>
+                  Type parameters: 
+                  &#39;a
+                  <br/>
                 </div>
               </div>
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  f
-                </span>
-                :
-                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.datarow">DataRow</a>&#32;->&#32;<span>'a&#32;option</span></span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  dt
-                </span>
-                :
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><span>'a&#32;list</span></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/DataTable.fs#L32-32" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    f
+                  </span>
+                  :
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.datarow">DataRow</a>&#32;->&#32;<span>'a&#32;option</span></span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    dt
+                  </span>
+                  :
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span>'a&#32;list</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '17', 17)" onmouseover="showTip(event, '17', 17)">
+              <code data-fsdocs-tip="17" data-fsdocs-tip-unique="17">
                 <p>
                   <a id="printDataTable">
                     <a href="#printDataTable">
@@ -897,7 +968,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="17">
+              <div popover="" class="fsdocs-tip" id="17">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>printDataTable&#32;<span>dt</span></span></code>
@@ -920,22 +991,29 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  dt
-                </span>
-                :
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/DataTable.fs#L64-64" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    dt
+                  </span>
+                  :
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '18', 18)" onmouseover="showTip(event, '18', 18)">
+              <code data-fsdocs-tip="18" data-fsdocs-tip-unique="18">
                 <p>
                   <a id="toList">
                     <a href="#toList">
@@ -944,7 +1022,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="18">
+              <div popover="" class="fsdocs-tip" id="18">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>toList&#32;<span>dt</span></span></code>
@@ -972,25 +1050,32 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  dt
-                </span>
-                :
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.datarow">DataRow</a>&#32;list</span></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/DataTable.fs#L18-18" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    dt
+                  </span>
+                  :
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.data.datatable">DataTable</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.datarow">DataRow</a>&#32;list</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
       </tbody>

@@ -79,7 +79,8 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/general.html">
-    general
+    SQL Provider Basics
+
   </a>
 </li>             
 <li class="nav-item ">
@@ -137,8 +138,7 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/outline.html">
-    SQL Type Provider
-
+    outline
   </a>
 </li>             
 <li class="nav-item ">
@@ -262,9 +262,11 @@
   </dl>
   <div class="fsdocs-xmldoc">
     <div>
-      <p class="fsdocs-summary">
-        
-      </p>
+      <div class="fsdocs-summary-contents">
+        <p class="fsdocs-summary">
+          
+        </p>
+      </div>
     </div>
   </div>
   <div>
@@ -279,6 +281,7 @@
           </td>
           <td class="fsdocs-member-list-header">
             Description
+            <fsdocs-details-toggle></fsdocs-details-toggle>
           </td>
         </tr>
       </thead>
@@ -286,7 +289,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1', 1)" onmouseover="showTip(event, '1', 1)">
+              <code data-fsdocs-tip="1" data-fsdocs-tip-unique="1">
                 <p>
                   <a id="executeQueryAsync">
                     <a href="#executeQueryAsync">
@@ -295,7 +298,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1">
+              <div popover="" class="fsdocs-tip" id="1">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>executeQueryAsync&#32;<span>query</span></span></code>
@@ -318,6 +321,9 @@
                     <code><span><a href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;<span>'a&#32;array</span>&gt;</span></code>
                   </span>
                   <br/>
+                  Type parameters: 
+                  &#39;a
+                  <br/>
                 </div>
               </div>
             </div>
@@ -326,18 +332,22 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Array.executeQueryAsync``1```')">
-                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Execute SQLProvider query and release the OS thread while query is being executed.
+                    </p>
                   </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Array.executeQueryAsync``1\'/>')">
-                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Async.fs#L219-219" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Array.executeQueryAsync``1\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Array.executeQueryAsync``1```')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
                   </div>
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Async.fs#L215-215" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Execute SQLProvider query and release the OS thread while query is being executed.
-                  </p>
                 </div>
               </summary>
               <dl class="fsdocs-params">

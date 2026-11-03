@@ -79,7 +79,8 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/general.html">
-    general
+    SQL Provider Basics
+
   </a>
 </li>             
 <li class="nav-item ">
@@ -137,8 +138,7 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/outline.html">
-    SQL Type Provider
-
+    outline
   </a>
 </li>             
 <li class="nav-item ">
@@ -281,10 +281,12 @@
   </dl>
   <div class="fsdocs-xmldoc">
     <div>
-      <p class="fsdocs-summary">
-         Specifies how to handle conflicts when inserting records with duplicate primary keys.
+      <div class="fsdocs-summary-contents">
+        <p class="fsdocs-summary">
+           Specifies how to handle conflicts when inserting records with duplicate primary keys.
  Currently supported only on databases that have UPSERT capabilities.
-      </p>
+        </p>
+      </div>
     </div>
   </div>
   <div></div>
@@ -302,6 +304,7 @@
           </td>
           <td class="fsdocs-member-list-header">
             Description
+            <fsdocs-details-toggle></fsdocs-details-toggle>
           </td>
         </tr>
       </thead>
@@ -309,7 +312,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1836', 1836)" onmouseover="showTip(event, '1836', 1836)">
+              <code data-fsdocs-tip="1931" data-fsdocs-tip-unique="1931">
                 <p>
                   <a id="DoNothing">
                     <a href="#DoNothing">
@@ -318,7 +321,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1836">
+              <div popover="" class="fsdocs-tip" id="1931">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>DoNothing</span></code>
@@ -330,20 +333,24 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L211-211" class="fsdocs-source-link" title="Source on GitHub">
-                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-              </a>
-              <p class="fsdocs-summary">
-                 If the primary key already exists, leaves the existing row unchanged.
+              <div class="fsdocs-summary-contents">
+                <p class="fsdocs-summary">
+                   If the primary key already exists, leaves the existing row unchanged.
  Currently supported only on PostgreSQL 9.5+
-              </p>
+                </p>
+              </div>
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L212-212" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
             </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1837', 1837)" onmouseover="showTip(event, '1837', 1837)">
+              <code data-fsdocs-tip="1932" data-fsdocs-tip-unique="1932">
                 <p>
                   <a id="Throw">
                     <a href="#Throw">
@@ -352,7 +359,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1837">
+              <div popover="" class="fsdocs-tip" id="1932">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Throw</span></code>
@@ -364,19 +371,23 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L205-205" class="fsdocs-source-link" title="Source on GitHub">
-                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-              </a>
-              <p class="fsdocs-summary">
-                 Throws an exception if the primary key already exists (default behaviour).
-              </p>
+              <div class="fsdocs-summary-contents">
+                <p class="fsdocs-summary">
+                   Throws an exception if the primary key already exists (default behaviour).
+                </p>
+              </div>
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L206-206" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
             </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1838', 1838)" onmouseover="showTip(event, '1838', 1838)">
+              <code data-fsdocs-tip="1933" data-fsdocs-tip-unique="1933">
                 <p>
                   <a id="Update">
                     <a href="#Update">
@@ -385,7 +396,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1838">
+              <div popover="" class="fsdocs-tip" id="1933">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Update</span></code>
@@ -397,13 +408,17 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L208-208" class="fsdocs-source-link" title="Source on GitHub">
-                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-              </a>
-              <p class="fsdocs-summary">
-                 If the primary key already exists, updates the existing row's columns to match the new entity.
+              <div class="fsdocs-summary-contents">
+                <p class="fsdocs-summary">
+                   If the primary key already exists, updates the existing row's columns to match the new entity.
  Currently supported only on PostgreSQL 9.5+
-              </p>
+                </p>
+              </div>
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L209-209" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
             </div>
           </td>
         </tr>
@@ -425,6 +440,7 @@
           </td>
           <td class="fsdocs-member-list-header">
             Description
+            <fsdocs-details-toggle></fsdocs-details-toggle>
           </td>
         </tr>
       </thead>
@@ -432,7 +448,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1839', 1839)" onmouseover="showTip(event, '1839', 1839)">
+              <code data-fsdocs-tip="1934" data-fsdocs-tip-unique="1934">
                 <p>
                   <a id="IsDoNothing">
                     <a href="#IsDoNothing">
@@ -441,7 +457,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1839">
+              <div popover="" class="fsdocs-tip" id="1934">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.IsDoNothing</span></code>
@@ -457,21 +473,28 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code>bool</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L212-212" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>bool</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1840', 1840)" onmouseover="showTip(event, '1840', 1840)">
+              <code data-fsdocs-tip="1935" data-fsdocs-tip-unique="1935">
                 <p>
                   <a id="IsThrow">
                     <a href="#IsThrow">
@@ -480,7 +503,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1840">
+              <div popover="" class="fsdocs-tip" id="1935">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.IsThrow</span></code>
@@ -496,21 +519,28 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code>bool</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L206-206" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>bool</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1841', 1841)" onmouseover="showTip(event, '1841', 1841)">
+              <code data-fsdocs-tip="1936" data-fsdocs-tip-unique="1936">
                 <p>
                   <a id="IsUpdate">
                     <a href="#IsUpdate">
@@ -519,7 +549,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1841">
+              <div popover="" class="fsdocs-tip" id="1936">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.IsUpdate</span></code>
@@ -535,15 +565,22 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code>bool</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L209-209" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>bool</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
       </tbody>

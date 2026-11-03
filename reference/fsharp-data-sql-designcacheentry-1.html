@@ -79,7 +79,8 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/general.html">
-    general
+    SQL Provider Basics
+
   </a>
 </li>             
 <li class="nav-item ">
@@ -137,8 +138,7 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/outline.html">
-    SQL Type Provider
-
+    outline
   </a>
 </li>             
 <li class="nav-item ">
@@ -266,11 +266,20 @@
   </dl>
   <div class="fsdocs-xmldoc">
     <div>
-      <p class="fsdocs-summary">
-         One generation of provided types for one set of static parameters.
- Reference equality so that ConcurrentDictionary.TryUpdate swaps compare generations,
- not their (concurrently mutated) field values.
-      </p>
+      <div class="fsdocs-summary-contents">
+        <p class="fsdocs-summary">
+           One generation of provided types for one set of static parameters. Once built, a generation is
+ served unchanged for the lifetime of the entry. This is a correctness requirement, not a cache
+ policy: the compiler-facing (target-model) provided types are memoized by the TypeProvider SDK
+ keyed on the identity of these source types, so producing a second source root for the same
+ static parameters while any compilation may still re-request it makes the compiler see two
+ unrelated erased types (intermittent FS0193/FS0001 "type X is not compatible with type X").
+ The entry is therefore only ever dropped whole (idle expiration or explicit cache clear),
+ never rebuilt and swapped in place underneath a live compilation.
+ Reference equality so the identity-checked eviction matches the exact entry instance, not its
+ (concurrently mutated) field values.
+        </p>
+      </div>
     </div>
   </div>
   <div></div>
@@ -289,6 +298,7 @@
           </td>
           <td class="fsdocs-member-list-header">
             Description
+            <fsdocs-details-toggle></fsdocs-details-toggle>
           </td>
         </tr>
       </thead>
@@ -296,7 +306,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1657', 1657)" onmouseover="showTip(event, '1657', 1657)">
+              <code data-fsdocs-tip="1677" data-fsdocs-tip-unique="1677">
                 <p>
                   <a id="LastAccess">
                     <a href="#LastAccess">
@@ -305,7 +315,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1657">
+              <div popover="" class="fsdocs-tip" id="1677">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>LastAccess</code>
@@ -327,13 +337,17 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L1301-1301" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Last access in UTC ticks. Updated lock-free on every instantiation request;
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Last access in UTC ticks. Updated lock-free on every instantiation request;
  entries idle longer than the expiration are dropped to free memory.
-                  </p>
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L1311-1311" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                  </div>
                 </div>
               </summary>
               <dl class="fsdocs-returns">
@@ -351,62 +365,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1658', 1658)" onmouseover="showTip(event, '1658', 1658)">
-                <p>
-                  <a id="Refreshing">
-                    <a href="#Refreshing">
-                      <code>Refreshing</code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="1658">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code>Refreshing</code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Field type: 
-                    <code>int</code>
-                  </span>
-                  <br/>
-                  Modifiers: 
-                  mutable
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <details>
-              <summary>
-                <div class="fsdocs-summary">
-                  <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L1304-1304" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     1 while a background refresh build is in flight: at most one refresh per entry,
- no matter how many Visual Studio threads request the type concurrently.
-                  </p>
-                </div>
-              </summary>
-              <dl class="fsdocs-returns">
-                <dt>
-                  <span class="fsdocs-return-name">
-                    Field type: 
-                  </span>
-                  <code>int</code>
-                </dt>
-                <dd class="fsdocs-return-docs"></dd>
-              </dl>
-            </details>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '1659', 1659)" onmouseover="showTip(event, '1659', 1659)">
+              <code data-fsdocs-tip="1678" data-fsdocs-tip-unique="1678">
                 <p>
                   <a id="Root">
                     <a href="#Root">
@@ -415,7 +374,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1659">
+              <div popover="" class="fsdocs-tip" id="1678">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>Root</code>
@@ -423,7 +382,7 @@
                   <br/>
                   <span>
                     Field type: 
-                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.lazy-1">Lazy</a>&lt;<span><a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html">ProvidedTypeDefinition</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.timespan">TimeSpan</a></span>&gt;</span></code>
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.lazy-1">Lazy</a>&lt;<a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html">ProvidedTypeDefinition</a>&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -434,13 +393,16 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L1298-1298" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     The provided root type, when it was built, and how old the build may get before a
- background refresh is started (adapted to build duration on slow systems).
-                  </p>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       The provided root type, built lazily once per set of static parameters.
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L1308-1308" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                  </div>
                 </div>
               </summary>
               <dl class="fsdocs-returns">
@@ -448,7 +410,7 @@
                   <span class="fsdocs-return-name">
                     Field type: 
                   </span>
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.lazy-1">Lazy</a>&lt;<span><a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html">ProvidedTypeDefinition</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.datetime">DateTime</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.timespan">TimeSpan</a></span>&gt;</span></code>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.lazy-1">Lazy</a>&lt;<a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html">ProvidedTypeDefinition</a>&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>

@@ -79,7 +79,8 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/general.html">
-    general
+    SQL Provider Basics
+
   </a>
 </li>             
 <li class="nav-item ">
@@ -137,8 +138,7 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/outline.html">
-    SQL Type Provider
-
+    outline
   </a>
 </li>             
 <li class="nav-item ">
@@ -268,9 +268,11 @@
   </dl>
   <div class="fsdocs-xmldoc">
     <div>
-      <p class="fsdocs-summary">
-        
-      </p>
+      <div class="fsdocs-summary-contents">
+        <p class="fsdocs-summary">
+          
+        </p>
+      </div>
     </div>
   </div>
   <div>
@@ -285,6 +287,7 @@
           </td>
           <td class="fsdocs-member-list-header">
             Description
+            <fsdocs-details-toggle></fsdocs-details-toggle>
           </td>
         </tr>
       </thead>
@@ -292,7 +295,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '959', 959)" onmouseover="showTip(event, '959', 959)">
+              <code data-fsdocs-tip="961" data-fsdocs-tip-unique="961">
                 <p>
                   <a id="``compare equality with itself``">
                     <a href="#``compare equality with itself``">
@@ -301,7 +304,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="959">
+              <div popover="" class="fsdocs-tip" id="961">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>``compareequalitywithitself``&#32;<span>_arg1</span></span></code>
@@ -329,31 +332,38 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  _arg1
-                </span>
-                :
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L471-471" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    _arg1
+                  </span>
+                  :
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '960', 960)" onmouseover="showTip(event, '960', 960)">
+              <code data-fsdocs-tip="962" data-fsdocs-tip-unique="962">
                 <p>
                   <a id="``cut not used condition``">
                     <a href="#``cut not used condition``">
@@ -362,7 +372,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="960">
+              <div popover="" class="fsdocs-tip" id="962">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>``cutnotusedcondition``&#32;<span>e</span></span></code>
@@ -393,18 +403,22 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ExpressionOptimizer.Methods.cut not used condition`')">
-                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       if false then x else y -> y 
+                    </p>
                   </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.cut not used condition\'/>')">
-                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L167-167" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.cut not used condition\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ExpressionOptimizer.Methods.cut not used condition`')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
                   </div>
-                  <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L169-169" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     if false then x else y -> y 
-                  </p>
                 </div>
               </summary>
               <dl class="fsdocs-params">
@@ -432,7 +446,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '961', 961)" onmouseover="showTip(event, '961', 961)">
+              <code data-fsdocs-tip="963" data-fsdocs-tip-unique="963">
                 <p>
                   <a id="``evaluate basic constant math``">
                     <a href="#``evaluate basic constant math``">
@@ -441,7 +455,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="961">
+              <div popover="" class="fsdocs-tip" id="963">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>``evaluatebasicconstantmath``&#32;<span>e</span></span></code>
@@ -472,18 +486,20 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ExpressionOptimizer.Methods.evaluate basic constant math`')">
-                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
-                  </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.evaluate basic constant math\'/>')">
-                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
-                  </div>
-                  <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L838-838" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
                   <pre> Evaluate simple math between two constants.
   9  *  3     -->    27
  "G" + "G"    -->   "GG"</pre>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L915-915" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.evaluate basic constant math\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ExpressionOptimizer.Methods.evaluate basic constant math`')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
+                  </div>
                 </div>
               </summary>
               <dl class="fsdocs-params">
@@ -511,7 +527,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '962', 962)" onmouseover="showTip(event, '962', 962)">
+              <code data-fsdocs-tip="964" data-fsdocs-tip-unique="964">
                 <p>
                   <a id="``evaluate constants``">
                     <a href="#``evaluate constants``">
@@ -520,7 +536,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="962">
+              <div popover="" class="fsdocs-tip" id="964">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>``evaluateconstants``&#32;<span>e</span></span></code>
@@ -551,18 +567,22 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ExpressionOptimizer.Methods.evaluate constants`')">
-                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Evaluating constants to not mess with our expressions:
+                    </p>
                   </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.evaluate constants\'/>')">
-                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L863-863" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.evaluate constants\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ExpressionOptimizer.Methods.evaluate constants`')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
                   </div>
-                  <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L789-789" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Evaluating constants to not mess with our expressions:
-                  </p>
                 </div>
               </summary>
               <dl class="fsdocs-params">
@@ -590,7 +610,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '963', 963)" onmouseover="showTip(event, '963', 963)">
+              <code data-fsdocs-tip="965" data-fsdocs-tip-unique="965">
                 <p>
                   <a id="``not false is true``">
                     <a href="#``not false is true``">
@@ -599,7 +619,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="963">
+              <div popover="" class="fsdocs-tip" id="965">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>``notfalseistrue``&#32;<span>e</span></span></code>
@@ -630,18 +650,22 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ExpressionOptimizer.Methods.not false is true`')">
-                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       not(false) -> true 
+                    </p>
                   </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.not false is true\'/>')">
-                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L177-177" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.not false is true\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ExpressionOptimizer.Methods.not false is true`')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
                   </div>
-                  <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L179-179" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     not(false) -> true 
-                  </p>
                 </div>
               </summary>
               <dl class="fsdocs-params">
@@ -669,7 +693,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '964', 964)" onmouseover="showTip(event, '964', 964)">
+              <code data-fsdocs-tip="966" data-fsdocs-tip-unique="966">
                 <p>
                   <a id="``optimize comparison ranges``">
                     <a href="#``optimize comparison ranges``">
@@ -678,7 +702,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="964">
+              <div popover="" class="fsdocs-tip" id="966">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>``optimizecomparisonranges``&#32;<span>exp</span></span></code>
@@ -709,18 +733,22 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ExpressionOptimizer.Methods.optimize comparison ranges`')">
-                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Optimize range/interval comparisons with proper max/min logic
+                    </p>
                   </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.optimize comparison ranges\'/>')">
-                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L376-376" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.optimize comparison ranges\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ExpressionOptimizer.Methods.optimize comparison ranges`')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
                   </div>
-                  <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L356-356" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Optimize range/interval comparisons with proper max/min logic
-                  </p>
                 </div>
               </summary>
               <dl class="fsdocs-params">
@@ -748,7 +776,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '965', 965)" onmouseover="showTip(event, '965', 965)">
+              <code data-fsdocs-tip="967" data-fsdocs-tip-unique="967">
                 <p>
                   <a id="``optimize string operations``">
                     <a href="#``optimize string operations``">
@@ -757,7 +785,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="965">
+              <div popover="" class="fsdocs-tip" id="967">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>``optimizestringoperations``&#32;<span>_arg1</span></span></code>
@@ -788,18 +816,22 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ExpressionOptimizer.Methods.optimize string operations`')">
-                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       String comparisons to IsNullOrEmpty
+                    </p>
                   </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.optimize string operations\'/>')">
-                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L478-478" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.optimize string operations\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ExpressionOptimizer.Methods.optimize string operations`')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
                   </div>
-                  <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L453-453" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     String comparisons to IsNullOrEmpty
-                  </p>
                 </div>
               </summary>
               <dl class="fsdocs-params">
@@ -827,7 +859,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '966', 966)" onmouseover="showTip(event, '966', 966)">
+              <code data-fsdocs-tip="968" data-fsdocs-tip-unique="968">
                 <p>
                   <a id="``remove AnonymousType``">
                     <a href="#``remove AnonymousType``">
@@ -836,7 +868,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="966">
+              <div popover="" class="fsdocs-tip" id="968">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>``removeAnonymousType``&#32;<span>e</span></span></code>
@@ -867,19 +899,23 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ExpressionOptimizer.Methods.remove AnonymousType`')">
-                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
-                  </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.remove AnonymousType\'/>')">
-                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
-                  </div>
-                  <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L103-103" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Purpose of this is to replace non-used anonymous types:
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Purpose of this is to replace non-used anonymous types:
  new AnonymousObject(Item1 = x, Item2 = "").Item1    -->   x
-                  </p>
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L105-105" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.remove AnonymousType\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ExpressionOptimizer.Methods.remove AnonymousType`')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
+                  </div>
                 </div>
               </summary>
               <dl class="fsdocs-params">
@@ -907,7 +943,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '967', 967)" onmouseover="showTip(event, '967', 967)">
+              <code data-fsdocs-tip="969" data-fsdocs-tip-unique="969">
                 <p>
                   <a id="``remove duplicate condition``">
                     <a href="#``remove duplicate condition``">
@@ -916,7 +952,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="967">
+              <div popover="" class="fsdocs-tip" id="969">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>``removeduplicatecondition``&#32;<span>e</span></span></code>
@@ -944,31 +980,59 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  e
-                </span>
-                :
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       The later of two equal comparisons in one And'/Or' chain goes. Behind a
+ short-circuit link (AndAlso, OrElse, a conditional) the right side runs only
+ once the left side is true (false for Or'), so a comparison the left chain
+ already holds is true (false) there. The earlier one stays, so nothing that
+ was guarded by it runs ahead of it. Behind And/Or the right side runs
+ regardless, and taking a comparison out of it would unguard what followed
+ it there, so only a right side that is the comparison itself goes.
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L780-780" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.remove duplicate condition\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ExpressionOptimizer.Methods.remove duplicate condition`')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
+                  </div>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    e
+                  </span>
+                  :
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '968', 968)" onmouseover="showTip(event, '968', 968)">
+              <code data-fsdocs-tip="970" data-fsdocs-tip-unique="970">
                 <p>
                   <a id="``remove mutually exclusive condition``">
                     <a href="#``remove mutually exclusive condition``">
@@ -977,7 +1041,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="968">
+              <div popover="" class="fsdocs-tip" id="970">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>``removemutuallyexclusivecondition``&#32;<span>e</span></span></code>
@@ -1005,31 +1069,38 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  e
-                </span>
-                :
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L814-814" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    e
+                  </span>
+                  :
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '969', 969)" onmouseover="showTip(event, '969', 969)">
+              <code data-fsdocs-tip="971" data-fsdocs-tip-unique="971">
                 <p>
                   <a id="``replace constant comparison``">
                     <a href="#``replace constant comparison``">
@@ -1038,7 +1109,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="969">
+              <div popover="" class="fsdocs-tip" id="971">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>``replaceconstantcomparison``&#32;<span>e</span></span></code>
@@ -1069,18 +1140,20 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ExpressionOptimizer.Methods.replace constant comparison`')">
-                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
-                  </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.replace constant comparison\'/>')">
-                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
-                  </div>
-                  <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L72-72" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
                   <pre> The purpose of this is to optimize away already known constant=constant style expressions.
    7 > 8      -->   False
  "G" = "G"    -->   True</pre>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L74-74" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.replace constant comparison\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ExpressionOptimizer.Methods.replace constant comparison`')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
+                  </div>
                 </div>
               </summary>
               <dl class="fsdocs-params">
@@ -1108,7 +1181,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '970', 970)" onmouseover="showTip(event, '970', 970)">
+              <code data-fsdocs-tip="972" data-fsdocs-tip-unique="972">
                 <p>
                   <a id="``simplify arithmetic identities``">
                     <a href="#``simplify arithmetic identities``">
@@ -1117,7 +1190,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="970">
+              <div popover="" class="fsdocs-tip" id="972">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>``simplifyarithmeticidentities``&#32;<span>e</span></span></code>
@@ -1148,19 +1221,23 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ExpressionOptimizer.Methods.simplify arithmetic identities`')">
-                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
-                  </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.simplify arithmetic identities\'/>')">
-                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
-                  </div>
-                  <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L1153-1153" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Additional arithmetic identity optimizations
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Additional arithmetic identity optimizations
  x - 0 -> x, x - x -> 0, x % 1 -> 0
-                  </p>
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L1327-1327" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.simplify arithmetic identities\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ExpressionOptimizer.Methods.simplify arithmetic identities`')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
+                  </div>
                 </div>
               </summary>
               <dl class="fsdocs-params">
@@ -1188,7 +1265,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '971', 971)" onmouseover="showTip(event, '971', 971)">
+              <code data-fsdocs-tip="973" data-fsdocs-tip-unique="973">
                 <p>
                   <a id="``simplify conditionals``">
                     <a href="#``simplify conditionals``">
@@ -1197,7 +1274,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="971">
+              <div popover="" class="fsdocs-tip" id="973">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>``simplifyconditionals``&#32;<span>e</span></span></code>
@@ -1228,19 +1305,23 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ExpressionOptimizer.Methods.simplify conditionals`')">
-                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
-                  </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.simplify conditionals\'/>')">
-                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
-                  </div>
-                  <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L1136-1136" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Simplify conditional expressions 
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Simplify conditional expressions 
  x ? true : false -> x, x ? false : true -> !x, x ? y : y -> y
-                  </p>
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L1308-1308" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.simplify conditionals\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ExpressionOptimizer.Methods.simplify conditionals`')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
+                  </div>
                 </div>
               </summary>
               <dl class="fsdocs-params">
@@ -1268,7 +1349,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '972', 972)" onmouseover="showTip(event, '972', 972)">
+              <code data-fsdocs-tip="974" data-fsdocs-tip-unique="974">
                 <p>
                   <a id="``simplify string operations``">
                     <a href="#``simplify string operations``">
@@ -1277,7 +1358,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="972">
+              <div popover="" class="fsdocs-tip" id="974">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>``simplifystringoperations``&#32;<span>e</span></span></code>
@@ -1308,19 +1389,25 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ExpressionOptimizer.Methods.simplify string operations`')">
-                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
-                  </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.simplify string operations\'/>')">
-                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
-                  </div>
-                  <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L1125-1125" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     String concatenation with empty string optimization
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       String concatenation with empty string optimization
  "" + x -> x, x + "" -> x
-                  </p>
+ Only when x cannot be null: null + "" is "" (String.Concat), while x alone
+ stays null, so `(x + "").Length` would go from 0 to a NullReferenceException.
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L1297-1297" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.simplify string operations\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ExpressionOptimizer.Methods.simplify string operations`')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
+                  </div>
                 </div>
               </summary>
               <dl class="fsdocs-params">
@@ -1348,7 +1435,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '973', 973)" onmouseover="showTip(event, '973', 973)">
+              <code data-fsdocs-tip="975" data-fsdocs-tip-unique="975">
                 <p>
                   <a id="absorb">
                     <a href="#absorb">
@@ -1357,7 +1444,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="973">
+              <div popover="" class="fsdocs-tip" id="975">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>absorb&#32;<span>_arg1</span></span></code>
@@ -1385,31 +1472,38 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  _arg1
-                </span>
-                :
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L338-338" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    _arg1
+                  </span>
+                  :
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '974', 974)" onmouseover="showTip(event, '974', 974)">
+              <code data-fsdocs-tip="976" data-fsdocs-tip-unique="976">
                 <p>
                   <a id="annihilate">
                     <a href="#annihilate">
@@ -1418,7 +1512,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="974">
+              <div popover="" class="fsdocs-tip" id="976">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>annihilate&#32;<span>_arg1</span></span></code>
@@ -1446,31 +1540,38 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  _arg1
-                </span>
-                :
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L331-331" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    _arg1
+                  </span>
+                  :
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '975', 975)" onmouseover="showTip(event, '975', 975)">
+              <code data-fsdocs-tip="977" data-fsdocs-tip-unique="977">
                 <p>
                   <a id="associate">
                     <a href="#associate">
@@ -1479,7 +1580,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="975">
+              <div popover="" class="fsdocs-tip" id="977">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>associate&#32;<span>_arg1</span></span></code>
@@ -1510,18 +1611,22 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ExpressionOptimizer.Methods.associate`')">
-                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Not in use, would cause looping...
+                    </p>
                   </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.associate\'/>')">
-                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L278-278" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.associate\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ExpressionOptimizer.Methods.associate`')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
                   </div>
-                  <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L258-258" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Not in use, would cause looping...
-                  </p>
                 </div>
               </summary>
               <dl class="fsdocs-params">
@@ -1549,7 +1654,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '976', 976)" onmouseover="showTip(event, '976', 976)">
+              <code data-fsdocs-tip="978" data-fsdocs-tip-unique="978">
                 <p>
                   <a id="associate_complement">
                     <a href="#associate_complement">
@@ -1558,7 +1663,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="976">
+              <div popover="" class="fsdocs-tip" id="978">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>associate_complement&#32;<span>exp</span></span></code>
@@ -1586,31 +1691,38 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  exp
-                </span>
-                :
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L630-630" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    exp
+                  </span>
+                  :
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '977', 977)" onmouseover="showTip(event, '977', 977)">
+              <code data-fsdocs-tip="979" data-fsdocs-tip-unique="979">
                 <p>
                   <a id="balancetree">
                     <a href="#balancetree">
@@ -1619,7 +1731,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="977">
+              <div popover="" class="fsdocs-tip" id="979">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>balancetree&#32;<span>_arg1</span></span></code>
@@ -1650,19 +1762,23 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ExpressionOptimizer.Methods.balancetree`')">
-                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
-                  </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.balancetree\'/>')">
-                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
-                  </div>
-                  <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L671-671" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Balance tree that is too much weighted to other side.
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Balance tree that is too much weighted to other side.
  The real advantage is not-so-nested-stack
-                  </p>
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L696-696" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.balancetree\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ExpressionOptimizer.Methods.balancetree`')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
+                  </div>
                 </div>
               </summary>
               <dl class="fsdocs-params">
@@ -1690,7 +1806,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '978', 978)" onmouseover="showTip(event, '978', 978)">
+              <code data-fsdocs-tip="980" data-fsdocs-tip-unique="980">
                 <p>
                   <a id="commute">
                     <a href="#commute">
@@ -1699,7 +1815,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="978">
+              <div popover="" class="fsdocs-tip" id="980">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>commute&#32;<span>_arg1</span></span></code>
@@ -1727,31 +1843,38 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  _arg1
-                </span>
-                :
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L286-286" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    _arg1
+                  </span>
+                  :
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '979', 979)" onmouseover="showTip(event, '979', 979)">
+              <code data-fsdocs-tip="981" data-fsdocs-tip-unique="981">
                 <p>
                   <a id="commute2">
                     <a href="#commute2">
@@ -1760,7 +1883,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="979">
+              <div popover="" class="fsdocs-tip" id="981">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>commute2&#32;<span>_arg1</span></span></code>
@@ -1791,18 +1914,22 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ExpressionOptimizer.Methods.commute2`')">
-                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Not in use, would cause looping...
+                    </p>
                   </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.commute2\'/>')">
-                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L292-292" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.commute2\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ExpressionOptimizer.Methods.commute2`')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
                   </div>
-                  <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L272-272" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Not in use, would cause looping...
-                  </p>
                 </div>
               </summary>
               <dl class="fsdocs-params">
@@ -1830,7 +1957,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '980', 980)" onmouseover="showTip(event, '980', 980)">
+              <code data-fsdocs-tip="982" data-fsdocs-tip-unique="982">
                 <p>
                   <a id="commute_absorb">
                     <a href="#commute_absorb">
@@ -1839,7 +1966,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="980">
+              <div popover="" class="fsdocs-tip" id="982">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>commute_absorb&#32;<span>exp</span></span></code>
@@ -1867,31 +1994,38 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  exp
-                </span>
-                :
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L497-497" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    exp
+                  </span>
+                  :
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '981', 981)" onmouseover="showTip(event, '981', 981)">
+              <code data-fsdocs-tip="983" data-fsdocs-tip-unique="983">
                 <p>
                   <a id="complement">
                     <a href="#complement">
@@ -1900,7 +2034,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="981">
+              <div popover="" class="fsdocs-tip" id="983">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>complement&#32;<span>_arg1</span></span></code>
@@ -1928,31 +2062,38 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  _arg1
-                </span>
-                :
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L356-356" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    _arg1
+                  </span>
+                  :
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '982', 982)" onmouseover="showTip(event, '982', 982)">
+              <code data-fsdocs-tip="984" data-fsdocs-tip-unique="984">
                 <p>
                   <a id="deMorgan">
                     <a href="#deMorgan">
@@ -1961,7 +2102,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="982">
+              <div popover="" class="fsdocs-tip" id="984">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>deMorgan&#32;<span>_arg1</span></span></code>
@@ -1989,31 +2130,38 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  _arg1
-                </span>
-                :
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L687-687" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    _arg1
+                  </span>
+                  :
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '983', 983)" onmouseover="showTip(event, '983', 983)">
+              <code data-fsdocs-tip="985" data-fsdocs-tip-unique="985">
                 <p>
                   <a id="distribute">
                     <a href="#distribute">
@@ -2022,7 +2170,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="983">
+              <div popover="" class="fsdocs-tip" id="985">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>distribute&#32;<span>e</span></span></code>
@@ -2053,19 +2201,23 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ExpressionOptimizer.Methods.distribute`')">
-                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
-                  </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.distribute\'/>')">
-                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
-                  </div>
-                  <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L279-279" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Not in use, would cause looping...
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Not in use, would cause looping...
  This is opposite of gather
-                  </p>
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L299-299" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.distribute\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ExpressionOptimizer.Methods.distribute`')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
+                  </div>
                 </div>
               </summary>
               <dl class="fsdocs-params">
@@ -2093,7 +2245,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '984', 984)" onmouseover="showTip(event, '984', 984)">
+              <code data-fsdocs-tip="986" data-fsdocs-tip-unique="986">
                 <p>
                   <a id="distribute_complement">
                     <a href="#distribute_complement">
@@ -2102,7 +2254,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="984">
+              <div popover="" class="fsdocs-tip" id="986">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>distribute_complement&#32;<span>exp</span></span></code>
@@ -2130,31 +2282,38 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  exp
-                </span>
-                :
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L543-543" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    exp
+                  </span>
+                  :
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '985', 985)" onmouseover="showTip(event, '985', 985)">
+              <code data-fsdocs-tip="987" data-fsdocs-tip-unique="987">
                 <p>
                   <a id="doubleNegation">
                     <a href="#doubleNegation">
@@ -2163,7 +2322,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="985">
+              <div popover="" class="fsdocs-tip" id="987">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>doubleNegation&#32;<span>_arg1</span></span></code>
@@ -2191,31 +2350,38 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  _arg1
-                </span>
-                :
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L683-683" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    _arg1
+                  </span>
+                  :
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '986', 986)" onmouseover="showTip(event, '986', 986)">
+              <code data-fsdocs-tip="988" data-fsdocs-tip-unique="988">
                 <p>
                   <a id="factorComplement">
                     <a href="#factorComplement">
@@ -2224,7 +2390,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="986">
+              <div popover="" class="fsdocs-tip" id="988">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>factorComplement&#32;<span>_arg1</span></span></code>
@@ -2255,19 +2421,23 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ExpressionOptimizer.Methods.factorComplement`')">
-                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
-                  </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.factorComplement\'/>')">
-                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
-                  </div>
-                  <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L296-296" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Factorize complementary disjunctions: (X && P) || (!X && P) -> P
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Factorize complementary disjunctions: (X && P) || (!X && P) -> P
  This handles the pattern where all states of a variable are covered
-                  </p>
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L316-316" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.factorComplement\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:ExpressionOptimizer.Methods.factorComplement`')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
+                  </div>
                 </div>
               </summary>
               <dl class="fsdocs-params">
@@ -2295,7 +2465,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '987', 987)" onmouseover="showTip(event, '987', 987)">
+              <code data-fsdocs-tip="989" data-fsdocs-tip-unique="989">
                 <p>
                   <a id="gather">
                     <a href="#gather">
@@ -2304,7 +2474,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="987">
+              <div popover="" class="fsdocs-tip" id="989">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>gather&#32;<span>_arg1</span></span></code>
@@ -2332,31 +2502,38 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  _arg1
-                </span>
-                :
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L307-307" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    _arg1
+                  </span>
+                  :
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '988', 988)" onmouseover="showTip(event, '988', 988)">
+              <code data-fsdocs-tip="990" data-fsdocs-tip-unique="990">
                 <p>
                   <a id="idempotence">
                     <a href="#idempotence">
@@ -2365,7 +2542,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="988">
+              <div popover="" class="fsdocs-tip" id="990">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>idempotence&#32;<span>_arg1</span></span></code>
@@ -2393,31 +2570,38 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  _arg1
-                </span>
-                :
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L349-349" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    _arg1
+                  </span>
+                  :
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '989', 989)" onmouseover="showTip(event, '989', 989)">
+              <code data-fsdocs-tip="991" data-fsdocs-tip-unique="991">
                 <p>
                   <a id="identity">
                     <a href="#identity">
@@ -2426,7 +2610,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="989">
+              <div popover="" class="fsdocs-tip" id="991">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>identity&#32;<span>_arg1</span></span></code>
@@ -2454,25 +2638,32 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  _arg1
-                </span>
-                :
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L323-323" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    _arg1
+                  </span>
+                  :
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
       </tbody>

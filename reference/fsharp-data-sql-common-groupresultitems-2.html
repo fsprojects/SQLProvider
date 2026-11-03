@@ -79,7 +79,8 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/general.html">
-    general
+    SQL Provider Basics
+
   </a>
 </li>             
 <li class="nav-item ">
@@ -137,8 +138,7 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/outline.html">
-    SQL Type Provider
-
+    outline
   </a>
 </li>             
 <li class="nav-item ">
@@ -279,19 +279,21 @@
       , 
       <code><span><a href="https://learn.microsoft.com/dotnet/api/system.linq.igrouping-2">IGrouping</a>&lt;<span>'key,&#32;'SqlEntity</span>&gt;</span></code>
       , 
-      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;'SqlEntity&gt;</span></code>
+      <code><span>'SqlEntity&#32;seq</span></code>
       , 
       <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.ienumerable">IEnumerable</a></code>
     </dt>
   </dl>
   <div class="fsdocs-xmldoc">
     <div>
-      <p class="fsdocs-summary">
-         GroupResultItems is an item to create key-igrouping-structure.
+      <div class="fsdocs-summary-contents">
+        <p class="fsdocs-summary">
+           GroupResultItems is an item to create key-igrouping-structure.
  From the select group-by projection, aggregate operations like Enumerable.Count() 
  is replaced to GroupResultItems.AggregateCount call and this is used to fetch the 
  SQL result instead of actually counting anything
-      </p>
+        </p>
+      </div>
     </div>
   </div>
   <div></div>
@@ -312,6 +314,7 @@
           </td>
           <td class="fsdocs-member-list-header">
             Description
+            <fsdocs-details-toggle></fsdocs-details-toggle>
           </td>
         </tr>
       </thead>
@@ -319,7 +322,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1740', 1740)" onmouseover="showTip(event, '1740', 1740)">
+              <code data-fsdocs-tip="1832" data-fsdocs-tip-unique="1832">
                 <p>
                   <a id="``.ctor``">
                     <a href="#``.ctor``">
@@ -328,7 +331,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1740">
+              <div popover="" class="fsdocs-tip" id="1832">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>GroupResultItems<span><span>(<span>arg1,&#32;keyval,&#32;distinctItem</span>)</span></span></span></code>
@@ -372,47 +375,54 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  arg0
-                </span>
-                :
-                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.string">String</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.string">String</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.string">String</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.string">String</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.string">String</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.string">String</a></span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  keyval
-                </span>
-                :
-                <code>'key</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  distinctItem
-                </span>
-                :
-                <code>'SqlEntity</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-groupresultitems-2.html">GroupResultItems</a>&lt;<span>'key,&#32;'SqlEntity</span>&gt;</span></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L913-913" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    arg0
+                  </span>
+                  :
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.string">String</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.string">String</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.string">String</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.string">String</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.string">String</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.string">String</a></span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    keyval
+                  </span>
+                  :
+                  <code>'key</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    distinctItem
+                  </span>
+                  :
+                  <code>'SqlEntity</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-groupresultitems-2.html">GroupResultItems</a>&lt;<span>'key,&#32;'SqlEntity</span>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1741', 1741)" onmouseover="showTip(event, '1741', 1741)">
+              <code data-fsdocs-tip="1833" data-fsdocs-tip-unique="1833">
                 <p>
                   <a id="``.ctor``">
                     <a href="#``.ctor``">
@@ -421,7 +431,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1741">
+              <div popover="" class="fsdocs-tip" id="1833">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>GroupResultItems<span><span>(<span>arg1,&#32;keyval,&#32;distinctItem</span>)</span></span></span></code>
@@ -465,47 +475,54 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  arg0
-                </span>
-                :
-                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.string">String</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.string">String</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.string">String</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.string">String</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.string">String</a></span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  keyval
-                </span>
-                :
-                <code>'key</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  distinctItem
-                </span>
-                :
-                <code>'SqlEntity</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-groupresultitems-2.html">GroupResultItems</a>&lt;<span>'key,&#32;'SqlEntity</span>&gt;</span></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L912-912" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    arg0
+                  </span>
+                  :
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.string">String</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.string">String</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.string">String</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.string">String</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.string">String</a></span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    keyval
+                  </span>
+                  :
+                  <code>'key</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    distinctItem
+                  </span>
+                  :
+                  <code>'SqlEntity</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-groupresultitems-2.html">GroupResultItems</a>&lt;<span>'key,&#32;'SqlEntity</span>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1742', 1742)" onmouseover="showTip(event, '1742', 1742)">
+              <code data-fsdocs-tip="1834" data-fsdocs-tip-unique="1834">
                 <p>
                   <a id="``.ctor``">
                     <a href="#``.ctor``">
@@ -514,7 +531,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1742">
+              <div popover="" class="fsdocs-tip" id="1834">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>GroupResultItems<span><span>(<span>arg1,&#32;keyval,&#32;distinctItem</span>)</span></span></span></code>
@@ -558,47 +575,54 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  arg0
-                </span>
-                :
-                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.string">String</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.string">String</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.string">String</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.string">String</a></span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  keyval
-                </span>
-                :
-                <code>'key</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  distinctItem
-                </span>
-                :
-                <code>'SqlEntity</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-groupresultitems-2.html">GroupResultItems</a>&lt;<span>'key,&#32;'SqlEntity</span>&gt;</span></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L911-911" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    arg0
+                  </span>
+                  :
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.string">String</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.string">String</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.string">String</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.string">String</a></span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    keyval
+                  </span>
+                  :
+                  <code>'key</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    distinctItem
+                  </span>
+                  :
+                  <code>'SqlEntity</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-groupresultitems-2.html">GroupResultItems</a>&lt;<span>'key,&#32;'SqlEntity</span>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1743', 1743)" onmouseover="showTip(event, '1743', 1743)">
+              <code data-fsdocs-tip="1835" data-fsdocs-tip-unique="1835">
                 <p>
                   <a id="``.ctor``">
                     <a href="#``.ctor``">
@@ -607,7 +631,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1743">
+              <div popover="" class="fsdocs-tip" id="1835">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>GroupResultItems<span><span>(<span>arg1,&#32;keyval,&#32;distinctItem</span>)</span></span></span></code>
@@ -651,47 +675,54 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  arg0
-                </span>
-                :
-                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.string">String</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.string">String</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.string">String</a></span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  keyval
-                </span>
-                :
-                <code>'key</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  distinctItem
-                </span>
-                :
-                <code>'SqlEntity</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-groupresultitems-2.html">GroupResultItems</a>&lt;<span>'key,&#32;'SqlEntity</span>&gt;</span></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L910-910" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    arg0
+                  </span>
+                  :
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.string">String</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.string">String</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.string">String</a></span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    keyval
+                  </span>
+                  :
+                  <code>'key</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    distinctItem
+                  </span>
+                  :
+                  <code>'SqlEntity</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-groupresultitems-2.html">GroupResultItems</a>&lt;<span>'key,&#32;'SqlEntity</span>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1744', 1744)" onmouseover="showTip(event, '1744', 1744)">
+              <code data-fsdocs-tip="1836" data-fsdocs-tip-unique="1836">
                 <p>
                   <a id="``.ctor``">
                     <a href="#``.ctor``">
@@ -700,7 +731,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1744">
+              <div popover="" class="fsdocs-tip" id="1836">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>GroupResultItems<span><span>(<span>arg1,&#32;keyval,&#32;distinctItem</span>)</span></span></span></code>
@@ -744,47 +775,54 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  arg0
-                </span>
-                :
-                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.string">String</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.string">String</a></span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  keyval
-                </span>
-                :
-                <code>'key</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  distinctItem
-                </span>
-                :
-                <code>'SqlEntity</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-groupresultitems-2.html">GroupResultItems</a>&lt;<span>'key,&#32;'SqlEntity</span>&gt;</span></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L909-909" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    arg0
+                  </span>
+                  :
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.string">String</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.string">String</a></span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    keyval
+                  </span>
+                  :
+                  <code>'key</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    distinctItem
+                  </span>
+                  :
+                  <code>'SqlEntity</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-groupresultitems-2.html">GroupResultItems</a>&lt;<span>'key,&#32;'SqlEntity</span>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1745', 1745)" onmouseover="showTip(event, '1745', 1745)">
+              <code data-fsdocs-tip="1837" data-fsdocs-tip-unique="1837">
                 <p>
                   <a id="``.ctor``">
                     <a href="#``.ctor``">
@@ -793,7 +831,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1745">
+              <div popover="" class="fsdocs-tip" id="1837">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>GroupResultItems<span><span>(<span>keyname,&#32;keyval,&#32;distinctItem</span>)</span></span></span></code>
@@ -837,47 +875,54 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  keyname
-                </span>
-                :
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.string">String</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  keyval
-                </span>
-                :
-                <code>'key</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  distinctItem
-                </span>
-                :
-                <code>'SqlEntity</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-groupresultitems-2.html">GroupResultItems</a>&lt;<span>'key,&#32;'SqlEntity</span>&gt;</span></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L908-908" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    keyname
+                  </span>
+                  :
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.string">String</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    keyval
+                  </span>
+                  :
+                  <code>'key</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    distinctItem
+                  </span>
+                  :
+                  <code>'SqlEntity</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-groupresultitems-2.html">GroupResultItems</a>&lt;<span>'key,&#32;'SqlEntity</span>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1746', 1746)" onmouseover="showTip(event, '1746', 1746)">
+              <code data-fsdocs-tip="1838" data-fsdocs-tip-unique="1838">
                 <p>
                   <a id="``.ctor``">
                     <a href="#``.ctor``">
@@ -886,7 +931,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1746">
+              <div popover="" class="fsdocs-tip" id="1838">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>GroupResultItems<span><span>(<span>keyname,&#32;keyval,&#32;distinctItem</span>)</span></span></span></code>
@@ -930,41 +975,48 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  keyname
-                </span>
-                :
-                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.string">String</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.string">String</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.string">String</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.string">String</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.string">String</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.string">String</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.string">String</a></span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  keyval
-                </span>
-                :
-                <code>'key</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  distinctItem
-                </span>
-                :
-                <code>'SqlEntity</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-groupresultitems-2.html">GroupResultItems</a>&lt;<span>'key,&#32;'SqlEntity</span>&gt;</span></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L906-906" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    keyname
+                  </span>
+                  :
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.string">String</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.string">String</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.string">String</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.string">String</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.string">String</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.string">String</a>&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.string">String</a></span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    keyval
+                  </span>
+                  :
+                  <code>'key</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    distinctItem
+                  </span>
+                  :
+                  <code>'SqlEntity</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-groupresultitems-2.html">GroupResultItems</a>&lt;<span>'key,&#32;'SqlEntity</span>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
       </tbody>
@@ -982,6 +1034,7 @@
           </td>
           <td class="fsdocs-member-list-header">
             Description
+            <fsdocs-details-toggle></fsdocs-details-toggle>
           </td>
         </tr>
       </thead>
@@ -989,7 +1042,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1747', 1747)" onmouseover="showTip(event, '1747', 1747)">
+              <code data-fsdocs-tip="1839" data-fsdocs-tip-unique="1839">
                 <p>
                   <a id="AggregateAverage">
                     <a href="#AggregateAverage">
@@ -998,7 +1051,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1747">
+              <div popover="" class="fsdocs-tip" id="1839">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.AggregateAverage</span></code>
@@ -1026,31 +1079,38 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  columnName
-                </span>
-                :
-                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpoption-1">Option</a>&lt;string&gt;</span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code>'T</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L997-997" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    columnName
+                  </span>
+                  :
+                  <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpoption-1">Option</a>&lt;string&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>'T</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1748', 1748)" onmouseover="showTip(event, '1748', 1748)">
+              <code data-fsdocs-tip="1840" data-fsdocs-tip-unique="1840">
                 <p>
                   <a id="AggregateAvg">
                     <a href="#AggregateAvg">
@@ -1059,7 +1119,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1748">
+              <div popover="" class="fsdocs-tip" id="1840">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.AggregateAvg</span></code>
@@ -1087,31 +1147,38 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  columnName
-                </span>
-                :
-                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpoption-1">Option</a>&lt;string&gt;</span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code>'T</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L998-998" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    columnName
+                  </span>
+                  :
+                  <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpoption-1">Option</a>&lt;string&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>'T</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1749', 1749)" onmouseover="showTip(event, '1749', 1749)">
+              <code data-fsdocs-tip="1841" data-fsdocs-tip-unique="1841">
                 <p>
                   <a id="AggregateCount">
                     <a href="#AggregateCount">
@@ -1120,7 +1187,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1749">
+              <div popover="" class="fsdocs-tip" id="1841">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.AggregateCount</span></code>
@@ -1148,31 +1215,38 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  columnName
-                </span>
-                :
-                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpoption-1">Option</a>&lt;string&gt;</span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code>'T</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L992-992" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    columnName
+                  </span>
+                  :
+                  <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpoption-1">Option</a>&lt;string&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>'T</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1750', 1750)" onmouseover="showTip(event, '1750', 1750)">
+              <code data-fsdocs-tip="1842" data-fsdocs-tip-unique="1842">
                 <p>
                   <a id="AggregateCountDistinct">
                     <a href="#AggregateCountDistinct">
@@ -1181,7 +1255,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1750">
+              <div popover="" class="fsdocs-tip" id="1842">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.AggregateCountDistinct</span></code>
@@ -1209,31 +1283,38 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  columnName
-                </span>
-                :
-                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpoption-1">Option</a>&lt;string&gt;</span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code>'T</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L993-993" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    columnName
+                  </span>
+                  :
+                  <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpoption-1">Option</a>&lt;string&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>'T</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1751', 1751)" onmouseover="showTip(event, '1751', 1751)">
+              <code data-fsdocs-tip="1843" data-fsdocs-tip-unique="1843">
                 <p>
                   <a id="AggregateMax">
                     <a href="#AggregateMax">
@@ -1242,7 +1323,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1751">
+              <div popover="" class="fsdocs-tip" id="1843">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.AggregateMax</span></code>
@@ -1270,31 +1351,38 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  columnName
-                </span>
-                :
-                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpoption-1">Option</a>&lt;string&gt;</span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code>'T</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L1000-1000" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    columnName
+                  </span>
+                  :
+                  <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpoption-1">Option</a>&lt;string&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>'T</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1752', 1752)" onmouseover="showTip(event, '1752', 1752)">
+              <code data-fsdocs-tip="1844" data-fsdocs-tip-unique="1844">
                 <p>
                   <a id="AggregateMin">
                     <a href="#AggregateMin">
@@ -1303,7 +1391,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1752">
+              <div popover="" class="fsdocs-tip" id="1844">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.AggregateMin</span></code>
@@ -1331,31 +1419,38 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  columnName
-                </span>
-                :
-                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpoption-1">Option</a>&lt;string&gt;</span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code>'T</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L999-999" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    columnName
+                  </span>
+                  :
+                  <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpoption-1">Option</a>&lt;string&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>'T</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1753', 1753)" onmouseover="showTip(event, '1753', 1753)">
+              <code data-fsdocs-tip="1845" data-fsdocs-tip-unique="1845">
                 <p>
                   <a id="AggregateStDev">
                     <a href="#AggregateStDev">
@@ -1364,7 +1459,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1753">
+              <div popover="" class="fsdocs-tip" id="1845">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.AggregateStDev</span></code>
@@ -1392,31 +1487,38 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  columnName
-                </span>
-                :
-                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpoption-1">Option</a>&lt;string&gt;</span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code>'T</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L1002-1002" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    columnName
+                  </span>
+                  :
+                  <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpoption-1">Option</a>&lt;string&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>'T</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1754', 1754)" onmouseover="showTip(event, '1754', 1754)">
+              <code data-fsdocs-tip="1846" data-fsdocs-tip-unique="1846">
                 <p>
                   <a id="AggregateStandardDeviation">
                     <a href="#AggregateStandardDeviation">
@@ -1425,7 +1527,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1754">
+              <div popover="" class="fsdocs-tip" id="1846">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.AggregateStandardDeviation</span></code>
@@ -1453,31 +1555,38 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  columnName
-                </span>
-                :
-                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpoption-1">Option</a>&lt;string&gt;</span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code>'T</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L1001-1001" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    columnName
+                  </span>
+                  :
+                  <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpoption-1">Option</a>&lt;string&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>'T</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1755', 1755)" onmouseover="showTip(event, '1755', 1755)">
+              <code data-fsdocs-tip="1847" data-fsdocs-tip-unique="1847">
                 <p>
                   <a id="AggregateStdDev">
                     <a href="#AggregateStdDev">
@@ -1486,7 +1595,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1755">
+              <div popover="" class="fsdocs-tip" id="1847">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.AggregateStdDev</span></code>
@@ -1514,31 +1623,38 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  columnName
-                </span>
-                :
-                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpoption-1">Option</a>&lt;string&gt;</span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code>'T</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L1003-1003" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    columnName
+                  </span>
+                  :
+                  <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpoption-1">Option</a>&lt;string&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>'T</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1756', 1756)" onmouseover="showTip(event, '1756', 1756)">
+              <code data-fsdocs-tip="1848" data-fsdocs-tip-unique="1848">
                 <p>
                   <a id="AggregateSum">
                     <a href="#AggregateSum">
@@ -1547,7 +1663,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1756">
+              <div popover="" class="fsdocs-tip" id="1848">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.AggregateSum</span></code>
@@ -1575,31 +1691,38 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  columnName
-                </span>
-                :
-                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpoption-1">Option</a>&lt;string&gt;</span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code>'T</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L994-994" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    columnName
+                  </span>
+                  :
+                  <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpoption-1">Option</a>&lt;string&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>'T</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1757', 1757)" onmouseover="showTip(event, '1757', 1757)">
+              <code data-fsdocs-tip="1849" data-fsdocs-tip-unique="1849">
                 <p>
                   <a id="AggregateVariance">
                     <a href="#AggregateVariance">
@@ -1608,7 +1731,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1757">
+              <div popover="" class="fsdocs-tip" id="1849">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.AggregateVariance</span></code>
@@ -1636,31 +1759,38 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  columnName
-                </span>
-                :
-                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpoption-1">Option</a>&lt;string&gt;</span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code>'T</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L1004-1004" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    columnName
+                  </span>
+                  :
+                  <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpoption-1">Option</a>&lt;string&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>'T</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1758', 1758)" onmouseover="showTip(event, '1758', 1758)">
+              <code data-fsdocs-tip="1850" data-fsdocs-tip-unique="1850">
                 <p>
                   <a id="Values">
                     <a href="#Values">
@@ -1669,7 +1799,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1758">
+              <div popover="" class="fsdocs-tip" id="1850">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.Values</span></code>
@@ -1685,15 +1815,22 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><span>'SqlEntity[]</span></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L989-989" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span>'SqlEntity[]</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
       </tbody>
@@ -1711,6 +1848,7 @@
           </td>
           <td class="fsdocs-member-list-header">
             Description
+            <fsdocs-details-toggle></fsdocs-details-toggle>
           </td>
         </tr>
       </thead>
@@ -1718,7 +1856,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1759', 1759)" onmouseover="showTip(event, '1759', 1759)">
+              <code data-fsdocs-tip="1851" data-fsdocs-tip-unique="1851">
                 <p>
                   <a id="op_Implicit">
                     <a href="#op_Implicit">
@@ -1727,7 +1865,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1759">
+              <div popover="" class="fsdocs-tip" id="1851">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>GroupResultItems.op_Implicit&#32;<span>x</span></span></code>
@@ -1755,31 +1893,38 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  x
-                </span>
-                :
-                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-linq-runtimehelpers-grouping-2">Grouping</a>&lt;<span>'key,&#32;'SqlEntity</span>&gt;</span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-groupresultitems-2.html">GroupResultItems</a>&lt;<span>'key,&#32;'SqlEntity</span>&gt;</span></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L1007-1007" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    x
+                  </span>
+                  :
+                  <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-linq-runtimehelpers-grouping-2">Grouping</a>&lt;<span>'key,&#32;'SqlEntity</span>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-groupresultitems-2.html">GroupResultItems</a>&lt;<span>'key,&#32;'SqlEntity</span>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1760', 1760)" onmouseover="showTip(event, '1760', 1760)">
+              <code data-fsdocs-tip="1852" data-fsdocs-tip-unique="1852">
                 <p>
                   <a id="op_Implicit">
                     <a href="#op_Implicit">
@@ -1788,7 +1933,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1760">
+              <div popover="" class="fsdocs-tip" id="1852">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>GroupResultItems.op_Implicit&#32;<span>x</span></span></code>
@@ -1816,25 +1961,32 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  x
-                </span>
-                :
-                <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-groupresultitems-2.html">GroupResultItems</a>&lt;<span>'key,&#32;'SqlEntity</span>&gt;</span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-linq-runtimehelpers-grouping-2">Grouping</a>&lt;<span>'key,&#32;'SqlEntity</span>&gt;</span></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L1005-1005" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    x
+                  </span>
+                  :
+                  <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-groupresultitems-2.html">GroupResultItems</a>&lt;<span>'key,&#32;'SqlEntity</span>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-linq-runtimehelpers-grouping-2">Grouping</a>&lt;<span>'key,&#32;'SqlEntity</span>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
       </tbody>

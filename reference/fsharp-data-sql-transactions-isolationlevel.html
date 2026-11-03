@@ -79,7 +79,8 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/general.html">
-    general
+    SQL Provider Basics
+
   </a>
 </li>             
 <li class="nav-item ">
@@ -137,8 +138,7 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/outline.html">
-    SQL Type Provider
-
+    outline
   </a>
 </li>             
 <li class="nav-item ">
@@ -282,12 +282,14 @@
   </dl>
   <div class="fsdocs-xmldoc">
     <div>
-      <p class="fsdocs-summary">
-         Transaction isolation level for database operations.
+      <div class="fsdocs-summary-contents">
+        <p class="fsdocs-summary">
+           Transaction isolation level for database operations.
  Corresponds to the System.Transactions.IsolationLevel but provides SQL provider specific functionality.
  Only applied when SubmitUpdates creates its own (standalone) write transaction; if you wrap your
  own ambient System.Transactions scope, that scope's isolation level is used instead.
-      </p>
+        </p>
+      </div>
     </div>
   </div>
   <div></div>
@@ -306,6 +308,7 @@
           </td>
           <td class="fsdocs-member-list-header">
             Description
+            <fsdocs-details-toggle></fsdocs-details-toggle>
           </td>
         </tr>
       </thead>
@@ -313,7 +316,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '2114', 2114)" onmouseover="showTip(event, '2114', 2114)">
+              <code data-fsdocs-tip="2339" data-fsdocs-tip-unique="2339">
                 <p>
                   <a id="Chaos">
                     <a href="#Chaos">
@@ -322,7 +325,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="2114">
+              <div popover="" class="fsdocs-tip" id="2339">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>Chaos</code>
@@ -344,12 +347,16 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Transactions.fs#L49-49" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Allows any level of isolation, including overlapping changes (SQL Server specific)
-                  </p>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Allows any level of isolation, including overlapping changes (SQL Server specific)
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Transactions.fs#L49-49" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                  </div>
                 </div>
               </summary>
               <dl class="fsdocs-returns">
@@ -367,7 +374,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '2115', 2115)" onmouseover="showTip(event, '2115', 2115)">
+              <code data-fsdocs-tip="2340" data-fsdocs-tip-unique="2340">
                 <p>
                   <a id="DontCreateTransaction">
                     <a href="#DontCreateTransaction">
@@ -376,7 +383,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="2115">
+              <div popover="" class="fsdocs-tip" id="2340">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>DontCreateTransaction</code>
@@ -398,12 +405,16 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Transactions.fs#L53-53" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Special value to indicate that no transaction should be created
-                  </p>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Special value to indicate that no transaction should be created
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Transactions.fs#L53-53" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                  </div>
                 </div>
               </summary>
               <dl class="fsdocs-returns">
@@ -421,7 +432,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '2116', 2116)" onmouseover="showTip(event, '2116', 2116)">
+              <code data-fsdocs-tip="2341" data-fsdocs-tip-unique="2341">
                 <p>
                   <a id="ReadCommitted">
                     <a href="#ReadCommitted">
@@ -430,7 +441,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="2116">
+              <div popover="" class="fsdocs-tip" id="2341">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>ReadCommitted</code>
@@ -452,14 +463,18 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Transactions.fs#L43-43" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Prevents dirty reads but allows non-repeatable reads and phantom reads.
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Prevents dirty reads but allows non-repeatable reads and phantom reads.
  (This describes the default isolation of most DB *engines* - it is NOT SQLProvider's default;
  TransactionOptions.Default is Serializable, inherited from System.Transactions.)
-                  </p>
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Transactions.fs#L43-43" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                  </div>
                 </div>
               </summary>
               <dl class="fsdocs-returns">
@@ -477,7 +492,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '2117', 2117)" onmouseover="showTip(event, '2117', 2117)">
+              <code data-fsdocs-tip="2342" data-fsdocs-tip-unique="2342">
                 <p>
                   <a id="ReadUncommitted">
                     <a href="#ReadUncommitted">
@@ -486,7 +501,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="2117">
+              <div popover="" class="fsdocs-tip" id="2342">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>ReadUncommitted</code>
@@ -508,12 +523,16 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Transactions.fs#L45-45" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Allows dirty reads, non-repeatable reads, and phantom reads (fastest but least safe)
-                  </p>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Allows dirty reads, non-repeatable reads, and phantom reads (fastest but least safe)
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Transactions.fs#L45-45" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                  </div>
                 </div>
               </summary>
               <dl class="fsdocs-returns">
@@ -531,7 +550,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '2118', 2118)" onmouseover="showTip(event, '2118', 2118)">
+              <code data-fsdocs-tip="2343" data-fsdocs-tip-unique="2343">
                 <p>
                   <a id="RepeatableRead">
                     <a href="#RepeatableRead">
@@ -540,7 +559,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="2118">
+              <div popover="" class="fsdocs-tip" id="2343">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>RepeatableRead</code>
@@ -562,12 +581,16 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Transactions.fs#L39-39" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Prevents dirty reads and non-repeatable reads, but phantom reads can occur
-                  </p>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Prevents dirty reads and non-repeatable reads, but phantom reads can occur
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Transactions.fs#L39-39" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                  </div>
                 </div>
               </summary>
               <dl class="fsdocs-returns">
@@ -585,7 +608,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '2119', 2119)" onmouseover="showTip(event, '2119', 2119)">
+              <code data-fsdocs-tip="2344" data-fsdocs-tip-unique="2344">
                 <p>
                   <a id="Serializable">
                     <a href="#Serializable">
@@ -594,7 +617,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="2119">
+              <div popover="" class="fsdocs-tip" id="2344">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>Serializable</code>
@@ -616,12 +639,16 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Transactions.fs#L37-37" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Highest isolation level - transactions are completely isolated from each other
-                  </p>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Highest isolation level - transactions are completely isolated from each other
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Transactions.fs#L37-37" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                  </div>
                 </div>
               </summary>
               <dl class="fsdocs-returns">
@@ -639,7 +666,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '2120', 2120)" onmouseover="showTip(event, '2120', 2120)">
+              <code data-fsdocs-tip="2345" data-fsdocs-tip-unique="2345">
                 <p>
                   <a id="Snapshot">
                     <a href="#Snapshot">
@@ -648,7 +675,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="2120">
+              <div popover="" class="fsdocs-tip" id="2345">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>Snapshot</code>
@@ -670,12 +697,16 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Transactions.fs#L47-47" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     SQL Server specific - provides statement-level read consistency using versioning
-                  </p>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       SQL Server specific - provides statement-level read consistency using versioning
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Transactions.fs#L47-47" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                  </div>
                 </div>
               </summary>
               <dl class="fsdocs-returns">
@@ -693,7 +724,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '2121', 2121)" onmouseover="showTip(event, '2121', 2121)">
+              <code data-fsdocs-tip="2346" data-fsdocs-tip-unique="2346">
                 <p>
                   <a id="Unspecified">
                     <a href="#Unspecified">
@@ -702,7 +733,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="2121">
+              <div popover="" class="fsdocs-tip" id="2346">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>Unspecified</code>
@@ -724,12 +755,16 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Transactions.fs#L51-51" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Use the default isolation level of the database
-                  </p>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Use the default isolation level of the database
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Transactions.fs#L51-51" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                  </div>
                 </div>
               </summary>
               <dl class="fsdocs-returns">

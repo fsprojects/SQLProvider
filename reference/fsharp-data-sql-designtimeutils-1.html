@@ -79,7 +79,8 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/general.html">
-    general
+    SQL Provider Basics
+
   </a>
 </li>             
 <li class="nav-item ">
@@ -137,8 +138,7 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/outline.html">
-    SQL Type Provider
-
+    outline
   </a>
 </li>             
 <li class="nav-item ">
@@ -262,9 +262,11 @@
   </dl>
   <div class="fsdocs-xmldoc">
     <div>
-      <p class="fsdocs-summary">
-        
-      </p>
+      <div class="fsdocs-summary-contents">
+        <p class="fsdocs-summary">
+          
+        </p>
+      </div>
     </div>
   </div>
   <div>
@@ -279,6 +281,7 @@
           </td>
           <td class="fsdocs-member-list-header">
             Description
+            <fsdocs-details-toggle></fsdocs-details-toggle>
           </td>
         </tr>
       </thead>
@@ -286,7 +289,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '91', 91)" onmouseover="showTip(event, '91', 91)">
+              <code data-fsdocs-tip="91" data-fsdocs-tip-unique="91">
                 <p>
                   <a id="FSHARP_DATA_SQL">
                     <a href="#FSHARP_DATA_SQL">
@@ -295,7 +298,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="91">
+              <div popover="" class="fsdocs-tip" id="91">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>FSHARP_DATA_SQL&#32;<span></span></span></code>
@@ -311,21 +314,28 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code>string</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L108-108" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>string</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '92', 92)" onmouseover="showTip(event, '92', 92)">
+              <code data-fsdocs-tip="92" data-fsdocs-tip-unique="92">
                 <p>
                   <a id="createColumnProperty">
                     <a href="#createColumnProperty">
@@ -334,7 +344,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="92">
+              <div popover="" class="fsdocs-tip" id="92">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>createColumnProperty&#32;<span>con&#32;prov&#32;useOptionTypes&#32;key&#32;c</span></span></code>
@@ -394,63 +404,70 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  con
-                </span>
-                :
-                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a>&#32;option</span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  prov
-                </span>
-                :
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html">ISqlProvider</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  useOptionTypes
-                </span>
-                :
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-nullablecolumntype.html">NullableColumnType</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  key
-                </span>
-                :
-                <code>string</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  c
-                </span>
-                :
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-column.html">Column</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedproperty-1.html">ProvidedProperty</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L255-255" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    con
+                  </span>
+                  :
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a>&#32;option</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    prov
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html">ISqlProvider</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    useOptionTypes
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-nullablecolumntype.html">NullableColumnType</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    key
+                  </span>
+                  :
+                  <code>string</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    c
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-column.html">Column</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedproperty-1.html">ProvidedProperty</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '93', 93)" onmouseover="showTip(event, '93', 93)">
+              <code data-fsdocs-tip="93" data-fsdocs-tip-unique="93">
                 <p>
                   <a id="createConstructors">
                     <a href="#createConstructors">
@@ -459,7 +476,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="93">
+              <div popover="" class="fsdocs-tip" id="93">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>createConstructors&#32;<span>config&#32;<span>(<span>rootType,&#32;serviceType,&#32;readServiceType,&#32;args</span>)</span></span></span></code>
@@ -509,59 +526,69 @@
                     <br/>
                   </ul>
                   <br/>
+                  Type parameters: 
+                  &#39;a, &#39;b, &#39;c, &#39;d
+                  <br/>
                 </div>
               </div>
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  config
-                </span>
-                :
-                <code><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-compilerservices-typeproviderconfig">TypeProviderConfig</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  rootType
-                </span>
-                :
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html">ProvidedTypeDefinition</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  serviceType
-                </span>
-                :
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  readServiceType
-                </span>
-                :
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  args
-                </span>
-                :
-                <code><span>string&#32;*&#32;string&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html">DatabaseProviderTypes</a>&#32;*&#32;'a&#32;*&#32;'b&#32;*&#32;'c&#32;*&#32;string&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-casesensitivitychange.html">CaseSensitivityChange</a>&#32;*&#32;string&#32;*&#32;'d&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-odbcquotecharacter.html">OdbcQuoteCharacter</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlitelibrary.html">SQLiteLibrary</a>&#32;*&#32;string&#32;*&#32;string</span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L1115-1115" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    config
+                  </span>
+                  :
+                  <code><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-compilerservices-typeproviderconfig">TypeProviderConfig</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    rootType
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html">ProvidedTypeDefinition</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    serviceType
+                  </span>
+                  :
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    readServiceType
+                  </span>
+                  :
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    args
+                  </span>
+                  :
+                  <code><span>string&#32;*&#32;string&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html">DatabaseProviderTypes</a>&#32;*&#32;'a&#32;*&#32;'b&#32;*&#32;'c&#32;*&#32;string&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-casesensitivitychange.html">CaseSensitivityChange</a>&#32;*&#32;string&#32;*&#32;'d&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-odbcquotecharacter.html">OdbcQuoteCharacter</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlitelibrary.html">SQLiteLibrary</a>&#32;*&#32;string&#32;*&#32;string</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '94', 94)" onmouseover="showTip(event, '94', 94)">
+              <code data-fsdocs-tip="94" data-fsdocs-tip-unique="94">
                 <p>
                   <a id="createDesignTimeCommands">
                     <a href="#createDesignTimeCommands">
@@ -570,7 +597,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="94">
+              <div popover="" class="fsdocs-tip" id="94">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>createDesignTimeCommands&#32;<span>prov&#32;contextSchemaPath&#32;recreate&#32;invalidate</span></span></code>
@@ -617,60 +644,70 @@
                     <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html">ProvidedTypeDefinition</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html">ProvidedTypeDefinition</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedmethod-1.html">ProvidedMethod</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedproperty-1.html">ProvidedProperty</a>&#32;*&#32;<span><a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html">ProvidedTypeDefinition</a>&#32;option</span></span></code>
                   </span>
                   <br/>
+                  Type parameters: 
+                  &#39;a
+                  <br/>
                 </div>
               </div>
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  prov
-                </span>
-                :
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html">ISqlProvider</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  contextSchemaPath
-                </span>
-                :
-                <code>string</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  recreate
-                </span>
-                :
-                <code><span>unit&#32;->&#32;'a</span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  invalidate
-                </span>
-                :
-                <code><span>unit&#32;->&#32;<a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-unit">Unit</a></span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html">ProvidedTypeDefinition</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html">ProvidedTypeDefinition</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedmethod-1.html">ProvidedMethod</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedproperty-1.html">ProvidedProperty</a>&#32;*&#32;<span><a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html">ProvidedTypeDefinition</a>&#32;option</span></span></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L472-472" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    prov
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html">ISqlProvider</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    contextSchemaPath
+                  </span>
+                  :
+                  <code>string</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    recreate
+                  </span>
+                  :
+                  <code><span>unit&#32;->&#32;'a</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    invalidate
+                  </span>
+                  :
+                  <code><span>unit&#32;->&#32;<a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-unit">Unit</a></span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html">ProvidedTypeDefinition</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html">ProvidedTypeDefinition</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedmethod-1.html">ProvidedMethod</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedproperty-1.html">ProvidedProperty</a>&#32;*&#32;<span><a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html">ProvidedTypeDefinition</a>&#32;option</span></span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '95', 95)" onmouseover="showTip(event, '95', 95)">
+              <code data-fsdocs-tip="95" data-fsdocs-tip-unique="95">
                 <p>
                   <a id="createIndividualsType">
                     <a href="#createIndividualsType">
@@ -679,7 +716,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="95">
+              <div popover="" class="fsdocs-tip" id="95">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>createIndividualsType&#32;<span>con&#32;prov&#32;table&#32;designTimeDc&#32;dbVendor&#32;individualsAmount&#32;tableTypeDef</span></span></code>
@@ -750,96 +787,106 @@
                     <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html">ProvidedTypeDefinition</a>&#32;seq</span></code>
                   </span>
                   <br/>
+                  Type parameters: 
+                  &#39;a (requires :&gt; FSharp.Data.Sql.Common.ISqlDataContext)
+                  <br/>
                 </div>
               </div>
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  con
-                </span>
-                :
-                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a>&#32;option</span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  prov
-                </span>
-                :
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html">ISqlProvider</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  table
-                </span>
-                :
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-table.html">Table</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  designTimeDc
-                </span>
-                :
-                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.lazy-1">Lazy</a>&lt;'a&gt;</span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  dbVendor
-                </span>
-                :
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html">DatabaseProviderTypes</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  individualsAmount
-                </span>
-                :
-                <code>int</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  tableTypeDef
-                </span>
-                :
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html">ProvidedTypeDefinition</a>&#32;seq</span></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L142-142" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    con
+                  </span>
+                  :
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a>&#32;option</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    prov
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html">ISqlProvider</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    table
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-table.html">Table</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    designTimeDc
+                  </span>
+                  :
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.lazy-1">Lazy</a>&lt;'a&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    dbVendor
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html">DatabaseProviderTypes</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    individualsAmount
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    tableTypeDef
+                  </span>
+                  :
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html">ProvidedTypeDefinition</a>&#32;seq</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '96', 96)" onmouseover="showTip(event, '96', 96)">
+              <code data-fsdocs-tip="96" data-fsdocs-tip-unique="96">
                 <p>
                   <a id="createTypes">
                     <a href="#createTypes">
-                      <code><span>createTypes&#32;<span>rootType&#32;serviceType&#32;readServiceType&#32;config&#32;sqlRuntimeInfo&#32;invalidate&#32;registerDispose&#32;args</span></span></code>
+                      <code><span>createTypes&#32;<span>rootType&#32;serviceType&#32;readServiceType&#32;config&#32;sqlRuntimeInfo&#32;invalidate&#32;registerClose&#32;args</span></span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="96">
+              <div popover="" class="fsdocs-tip" id="96">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>createTypes&#32;<span>rootType&#32;serviceType&#32;readServiceType&#32;config&#32;sqlRuntimeInfo&#32;invalidate&#32;registerDispose&#32;args</span></span></code>
+                  <code><span>createTypes&#32;<span>rootType&#32;serviceType&#32;readServiceType&#32;config&#32;sqlRuntimeInfo&#32;invalidate&#32;registerClose&#32;args</span></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -894,7 +941,7 @@
                     <br/>
                     <span>
                       <b>
-                        registerDispose
+                        registerClose
                       </b>
                       :
                       <code><span><span><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html">DatabaseProviderTypes</a></span>&#32;->&#32;unit</span></code>
@@ -910,83 +957,93 @@
                     <br/>
                   </ul>
                   <br/>
+                  Type parameters: 
+                  &#39;a
+                  <br/>
                 </div>
               </div>
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  rootType
-                </span>
-                :
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html">ProvidedTypeDefinition</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  serviceType
-                </span>
-                :
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html">ProvidedTypeDefinition</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  readServiceType
-                </span>
-                :
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html">ProvidedTypeDefinition</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  config
-                </span>
-                :
-                <code><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-compilerservices-typeproviderconfig">TypeProviderConfig</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  sqlRuntimeInfo
-                </span>
-                :
-                <code>'a</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  invalidate
-                </span>
-                :
-                <code><span>unit&#32;->&#32;unit</span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  registerDispose
-                </span>
-                :
-                <code><span><span><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html">DatabaseProviderTypes</a></span>&#32;->&#32;unit</span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  args
-                </span>
-                :
-                <code><span>string&#32;*&#32;string&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html">DatabaseProviderTypes</a>&#32;*&#32;string&#32;*&#32;int&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-nullablecolumntype.html">NullableColumnType</a>&#32;*&#32;string&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-casesensitivitychange.html">CaseSensitivityChange</a>&#32;*&#32;string&#32;*&#32;string&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-odbcquotecharacter.html">OdbcQuoteCharacter</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlitelibrary.html">SQLiteLibrary</a>&#32;*&#32;string&#32;*&#32;string</span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L545-545" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    rootType
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html">ProvidedTypeDefinition</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    serviceType
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html">ProvidedTypeDefinition</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    readServiceType
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html">ProvidedTypeDefinition</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    config
+                  </span>
+                  :
+                  <code><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-compilerservices-typeproviderconfig">TypeProviderConfig</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    sqlRuntimeInfo
+                  </span>
+                  :
+                  <code>'a</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    invalidate
+                  </span>
+                  :
+                  <code><span>unit&#32;->&#32;unit</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    registerClose
+                  </span>
+                  :
+                  <code><span><span><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html">DatabaseProviderTypes</a></span>&#32;->&#32;unit</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    args
+                  </span>
+                  :
+                  <code><span>string&#32;*&#32;string&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html">DatabaseProviderTypes</a>&#32;*&#32;string&#32;*&#32;int&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-nullablecolumntype.html">NullableColumnType</a>&#32;*&#32;string&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-casesensitivitychange.html">CaseSensitivityChange</a>&#32;*&#32;string&#32;*&#32;string&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-odbcquotecharacter.html">OdbcQuoteCharacter</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlitelibrary.html">SQLiteLibrary</a>&#32;*&#32;string&#32;*&#32;string</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '97', 97)" onmouseover="showTip(event, '97', 97)">
+              <code data-fsdocs-tip="97" data-fsdocs-tip-unique="97">
                 <p>
                   <a id="design1">
                     <a href="#design1">
@@ -995,7 +1052,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="97">
+              <div popover="" class="fsdocs-tip" id="97">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>design1&#32;<span></span></span></code>
@@ -1011,21 +1068,28 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code>string</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L104-104" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>string</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '98', 98)" onmouseover="showTip(event, '98', 98)">
+              <code data-fsdocs-tip="98" data-fsdocs-tip-unique="98">
                 <p>
                   <a id="design2">
                     <a href="#design2">
@@ -1034,7 +1098,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="98">
+              <div popover="" class="fsdocs-tip" id="98">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>design2&#32;<span></span></span></code>
@@ -1050,21 +1114,28 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code>string</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L106-106" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>string</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '99', 99)" onmouseover="showTip(event, '99', 99)">
+              <code data-fsdocs-tip="99" data-fsdocs-tip-unique="99">
                 <p>
                   <a id="empty">
                     <a href="#empty">
@@ -1073,7 +1144,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="99">
+              <div popover="" class="fsdocs-tip" id="99">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>empty&#32;<span>arg1</span></span></code>
@@ -1101,31 +1172,38 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  arg0
-                </span>
-                :
-                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-quotations-fsharpexpr">Expr</a>&#32;list</span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-quotations-fsharpexpr">Expr</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L121-121" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    arg0
+                  </span>
+                  :
+                  <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-quotations-fsharpexpr">Expr</a>&#32;list</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-quotations-fsharpexpr">Expr</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '100', 100)" onmouseover="showTip(event, '100', 100)">
+              <code data-fsdocs-tip="100" data-fsdocs-tip-unique="100">
                 <p>
                   <a id="generateSprocMethod">
                     <a href="#generateSprocMethod">
@@ -1134,7 +1212,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="100">
+              <div popover="" class="fsdocs-tip" id="100">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>generateSprocMethod&#32;<span>container&#32;con&#32;prov&#32;sproc</span></span></code>
@@ -1186,55 +1264,62 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  container
-                </span>
-                :
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html">ProvidedTypeDefinition</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  con
-                </span>
-                :
-                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a>&#32;option</span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  prov
-                </span>
-                :
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html">ISqlProvider</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  sproc
-                </span>
-                :
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-compiletimesprocdefinition.html">CompileTimeSprocDefinition</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedproperty-1.html">ProvidedProperty</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L310-310" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    container
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html">ProvidedTypeDefinition</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    con
+                  </span>
+                  :
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a>&#32;option</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    prov
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html">ISqlProvider</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    sproc
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-compiletimesprocdefinition.html">CompileTimeSprocDefinition</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedproperty-1.html">ProvidedProperty</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '101', 101)" onmouseover="showTip(event, '101', 101)">
+              <code data-fsdocs-tip="101" data-fsdocs-tip-unique="101">
                 <p>
                   <a id="generateTypeTree">
                     <a href="#generateTypeTree">
@@ -1243,7 +1328,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="101">
+              <div popover="" class="fsdocs-tip" id="101">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>generateTypeTree&#32;<span>con&#32;prov&#32;createdTypes&#32;sprocs</span></span></code>
@@ -1295,55 +1380,62 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  con
-                </span>
-                :
-                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a>&#32;option</span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  prov
-                </span>
-                :
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html">ISqlProvider</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  createdTypes
-                </span>
-                :
-                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span><span>string&#32;list</span>,&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html">ProvidedTypeDefinition</a></span>&gt;</span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  sprocs
-                </span>
-                :
-                <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-sproc.html">Sproc</a>&#32;list</span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html">ProvidedTypeDefinition</a>&#32;seq</span></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L464-464" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    con
+                  </span>
+                  :
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a>&#32;option</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    prov
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html">ISqlProvider</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    createdTypes
+                  </span>
+                  :
+                  <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span><span>string&#32;list</span>,&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html">ProvidedTypeDefinition</a></span>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    sprocs
+                  </span>
+                  :
+                  <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-sproc.html">Sproc</a>&#32;list</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html">ProvidedTypeDefinition</a>&#32;seq</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '102', 102)" onmouseover="showTip(event, '102', 102)">
+              <code data-fsdocs-tip="102" data-fsdocs-tip-unique="102">
                 <p>
                   <a id="getSprocReturnColumns">
                     <a href="#getSprocReturnColumns">
@@ -1352,7 +1444,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="102">
+              <div popover="" class="fsdocs-tip" id="102">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>getSprocReturnColumns&#32;<span>con&#32;prov&#32;sprocname&#32;sprocDefinition&#32;param</span></span></code>
@@ -1412,63 +1504,70 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  con
-                </span>
-                :
-                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a>&#32;option</span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  prov
-                </span>
-                :
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html">ISqlProvider</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  sprocname
-                </span>
-                :
-                <code>string</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  sprocDefinition
-                </span>
-                :
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-compiletimesprocdefinition.html">CompileTimeSprocDefinition</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  param
-                </span>
-                :
-                <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-queryparameter.html">QueryParameter</a>&#32;list</span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-queryparameter.html">QueryParameter</a>&#32;list</span></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L123-123" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    con
+                  </span>
+                  :
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a>&#32;option</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    prov
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html">ISqlProvider</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    sprocname
+                  </span>
+                  :
+                  <code>string</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    sprocDefinition
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-compiletimesprocdefinition.html">CompileTimeSprocDefinition</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    param
+                  </span>
+                  :
+                  <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-queryparameter.html">QueryParameter</a>&#32;list</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-queryparameter.html">QueryParameter</a>&#32;list</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '103', 103)" onmouseover="showTip(event, '103', 103)">
+              <code data-fsdocs-tip="103" data-fsdocs-tip-unique="103">
                 <p>
                   <a id="mySaveLock">
                     <a href="#mySaveLock">
@@ -1477,7 +1576,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="103">
+              <div popover="" class="fsdocs-tip" id="103">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>mySaveLock&#32;<span></span></span></code>
@@ -1493,21 +1592,28 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.object">Object</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L118-118" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.object">Object</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '104', 104)" onmouseover="showTip(event, '104', 104)">
+              <code data-fsdocs-tip="104" data-fsdocs-tip-unique="104">
                 <p>
                   <a id="runtime1">
                     <a href="#runtime1">
@@ -1516,7 +1622,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="104">
+              <div popover="" class="fsdocs-tip" id="104">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>runtime1&#32;<span></span></span></code>
@@ -1532,21 +1638,28 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code>string</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L105-105" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>string</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '105', 105)" onmouseover="showTip(event, '105', 105)">
+              <code data-fsdocs-tip="105" data-fsdocs-tip-unique="105">
                 <p>
                   <a id="runtime2">
                     <a href="#runtime2">
@@ -1555,7 +1668,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="105">
+              <div popover="" class="fsdocs-tip" id="105">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>runtime2&#32;<span></span></span></code>
@@ -1571,21 +1684,28 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code>string</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L107-107" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>string</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '106', 106)" onmouseover="showTip(event, '106', 106)">
+              <code data-fsdocs-tip="106" data-fsdocs-tip-unique="106">
                 <p>
                   <a id="saveInProcess">
                     <a href="#saveInProcess">
@@ -1594,7 +1714,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="106">
+              <div popover="" class="fsdocs-tip" id="106">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>saveInProcess&#32;<span></span></span></code>
@@ -1610,21 +1730,28 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code>bool</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L119-119" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>bool</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '107', 107)" onmouseover="showTip(event, '107', 107)">
+              <code data-fsdocs-tip="107" data-fsdocs-tip-unique="107">
                 <p>
                   <a id="transactionOptions">
                     <a href="#transactionOptions">
@@ -1633,7 +1760,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="107">
+              <div popover="" class="fsdocs-tip" id="107">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>transactionOptions&#32;<span></span></span></code>
@@ -1649,21 +1776,28 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-transactions-transactionoptions.html">TransactionOptions</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L140-140" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-transactions-transactionoptions.html">TransactionOptions</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '108', 108)" onmouseover="showTip(event, '108', 108)">
+              <code data-fsdocs-tip="108" data-fsdocs-tip-unique="108">
                 <p>
                   <a id="walkSproc">
                     <a href="#walkSproc">
@@ -1672,7 +1806,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="108">
+              <div popover="" class="fsdocs-tip" id="108">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>walkSproc&#32;<span>con&#32;prov&#32;path&#32;parent&#32;createdTypes&#32;sproc</span></span></code>
@@ -1740,65 +1874,72 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  con
-                </span>
-                :
-                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a>&#32;option</span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  prov
-                </span>
-                :
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html">ISqlProvider</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  path
-                </span>
-                :
-                <code><span>string&#32;list</span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  parent
-                </span>
-                :
-                <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html">ProvidedTypeDefinition</a>&#32;option</span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  createdTypes
-                </span>
-                :
-                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span><span>string&#32;list</span>,&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html">ProvidedTypeDefinition</a></span>&gt;</span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  sproc
-                </span>
-                :
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-sproc.html">Sproc</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span><span>string&#32;list</span>,&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html">ProvidedTypeDefinition</a></span>&gt;</span></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L413-413" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    con
+                  </span>
+                  :
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a>&#32;option</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    prov
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html">ISqlProvider</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    path
+                  </span>
+                  :
+                  <code><span>string&#32;list</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    parent
+                  </span>
+                  :
+                  <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html">ProvidedTypeDefinition</a>&#32;option</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    createdTypes
+                  </span>
+                  :
+                  <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span><span>string&#32;list</span>,&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html">ProvidedTypeDefinition</a></span>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    sproc
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-sproc.html">Sproc</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span><span>string&#32;list</span>,&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html">ProvidedTypeDefinition</a></span>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
       </tbody>

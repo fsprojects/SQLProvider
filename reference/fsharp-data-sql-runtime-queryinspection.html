@@ -79,7 +79,8 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/general.html">
-    general
+    SQL Provider Basics
+
   </a>
 </li>             
 <li class="nav-item ">
@@ -137,8 +138,7 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/outline.html">
-    SQL Type Provider
-
+    outline
   </a>
 </li>             
 <li class="nav-item ">
@@ -262,9 +262,11 @@
   </dl>
   <div class="fsdocs-xmldoc">
     <div>
-      <p class="fsdocs-summary">
-         Query debugging and inspection utilities
-      </p>
+      <div class="fsdocs-summary-contents">
+        <p class="fsdocs-summary">
+           Query debugging and inspection utilities
+        </p>
+      </div>
     </div>
   </div>
   <div>
@@ -295,18 +297,22 @@
           </td>
           <td class="fsdocs-entity-xmldoc">
             <div>
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:T:FSharp.Data.Sql.Runtime.QueryInspection.IQueryableExtensions`')">
-                <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+              <div class="fsdocs-summary-contents">
+                <p class="fsdocs-summary">
+                   Extension methods for IQueryable to provide EF Core-like query inspection capabilities
+                </p>
               </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:FSharp.Data.Sql.Runtime.QueryInspection.IQueryableExtensions\'/>')">
-                <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Linq.fs#L1699-1699" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+                <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:FSharp.Data.Sql.Runtime.QueryInspection.IQueryableExtensions\'/>')">
+                  <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                </div>
+                <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:T:FSharp.Data.Sql.Runtime.QueryInspection.IQueryableExtensions`')">
+                  <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                </div>
               </div>
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Linq.fs#L1653-1653" class="fsdocs-source-link" title="Source on GitHub">
-                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-              </a>
-              <p class="fsdocs-summary">
-                 Extension methods for IQueryable to provide EF Core-like query inspection capabilities
-              </p>
             </div>
           </td>
         </tr>
@@ -325,6 +331,7 @@
           </td>
           <td class="fsdocs-member-list-header">
             Description
+            <fsdocs-details-toggle></fsdocs-details-toggle>
           </td>
         </tr>
       </thead>
@@ -332,7 +339,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '653', 653)" onmouseover="showTip(event, '653', 653)">
+              <code data-fsdocs-tip="654" data-fsdocs-tip-unique="654">
                 <p>
                   <a id="toQueryString">
                     <a href="#toQueryString">
@@ -341,7 +348,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="653">
+              <div popover="" class="fsdocs-tip" id="654">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>toQueryString&#32;<span>query</span></span></code>
@@ -364,6 +371,9 @@
                     <code><span>string&#32;*&#32;<span><span>(<span>string&#32;*&#32;obj</span>)</span>&#32;array</span></span></code>
                   </span>
                   <br/>
+                  Type parameters: 
+                  &#39;T
+                  <br/>
                 </div>
               </div>
             </div>
@@ -372,22 +382,26 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Runtime.QueryInspection.toQueryString``1```')">
-                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
-                  </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Runtime.QueryInspection.toQueryString``1\'/>')">
-                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
-                  </div>
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Linq.fs#L1631-1631" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Generates the SQL query string and parameters without executing the query.
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Generates the SQL query string and parameters without executing the query.
  Note: This function creates a database connection to access schema metadata for SQL generation,
  but does not execute any queries against the database.
  This is useful for debugging, logging, or when you need to execute the query through ADO.NET directly.
  Returns a tuple of (SQL query string, array of parameter name-value pairs).
-                  </p>
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Linq.fs#L1677-1677" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Runtime.QueryInspection.toQueryString``1\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Runtime.QueryInspection.toQueryString``1```')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
+                  </div>
                 </div>
               </summary>
               <dl class="fsdocs-params">

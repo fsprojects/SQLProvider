@@ -79,7 +79,8 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/general.html">
-    general
+    SQL Provider Basics
+
   </a>
 </li>             
 <li class="nav-item ">
@@ -137,8 +138,7 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/outline.html">
-    SQL Type Provider
-
+    outline
   </a>
 </li>             
 <li class="nav-item ">
@@ -278,10 +278,12 @@
   </dl>
   <div class="fsdocs-xmldoc">
     <div>
-      <p class="fsdocs-summary">
-         Represents the name of a stored procedure, including schema and package information.
+      <div class="fsdocs-summary-contents">
+        <p class="fsdocs-summary">
+           Represents the name of a stored procedure, including schema and package information.
  Handles different database naming conventions (e.g., Oracle packages, SQL Server schemas).
-      </p>
+        </p>
+      </div>
     </div>
   </div>
   <div></div>
@@ -300,6 +302,7 @@
           </td>
           <td class="fsdocs-member-list-header">
             Description
+            <fsdocs-details-toggle></fsdocs-details-toggle>
           </td>
         </tr>
       </thead>
@@ -307,7 +310,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '2033', 2033)" onmouseover="showTip(event, '2033', 2033)">
+              <code data-fsdocs-tip="2258" data-fsdocs-tip-unique="2258">
                 <p>
                   <a id="Owner">
                     <a href="#Owner">
@@ -316,7 +319,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="2033">
+              <div popover="" class="fsdocs-tip" id="2258">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>Owner</code>
@@ -335,12 +338,16 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlSchema.fs#L116-116" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     The schema or owner name
-                  </p>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       The schema or owner name
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlSchema.fs#L124-124" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                  </div>
                 </div>
               </summary>
               <dl class="fsdocs-returns">
@@ -358,7 +365,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '2034', 2034)" onmouseover="showTip(event, '2034', 2034)">
+              <code data-fsdocs-tip="2259" data-fsdocs-tip-unique="2259">
                 <p>
                   <a id="PackageName">
                     <a href="#PackageName">
@@ -367,7 +374,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="2034">
+              <div popover="" class="fsdocs-tip" id="2259">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>PackageName</code>
@@ -386,12 +393,16 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlSchema.fs#L118-118" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     The package name (primarily for Oracle)
-                  </p>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       The package name (primarily for Oracle)
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlSchema.fs#L126-126" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                  </div>
                 </div>
               </summary>
               <dl class="fsdocs-returns">
@@ -409,7 +420,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '2035', 2035)" onmouseover="showTip(event, '2035', 2035)">
+              <code data-fsdocs-tip="2260" data-fsdocs-tip-unique="2260">
                 <p>
                   <a id="ProcName">
                     <a href="#ProcName">
@@ -418,7 +429,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="2035">
+              <div popover="" class="fsdocs-tip" id="2260">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>ProcName</code>
@@ -434,15 +445,22 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code>string</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlSchema.fs#L122-122" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Field type: 
+                  </span>
+                  <code>string</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
       </tbody>
@@ -462,6 +480,7 @@
           </td>
           <td class="fsdocs-member-list-header">
             Description
+            <fsdocs-details-toggle></fsdocs-details-toggle>
           </td>
         </tr>
       </thead>
@@ -469,7 +488,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '2036', 2036)" onmouseover="showTip(event, '2036', 2036)">
+              <code data-fsdocs-tip="2261" data-fsdocs-tip-unique="2261">
                 <p>
                   <a id="DbName">
                     <a href="#DbName">
@@ -478,7 +497,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="2036">
+              <div popover="" class="fsdocs-tip" id="2261">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.DbName</span></code>
@@ -494,21 +513,28 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code>string</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlSchema.fs#L131-131" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>string</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '2037', 2037)" onmouseover="showTip(event, '2037', 2037)">
+              <code data-fsdocs-tip="2262" data-fsdocs-tip-unique="2262">
                 <p>
                   <a id="FriendlyName">
                     <a href="#FriendlyName">
@@ -517,7 +543,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="2037">
+              <div popover="" class="fsdocs-tip" id="2262">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.FriendlyName</span></code>
@@ -533,21 +559,28 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code>string</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlSchema.fs#L132-132" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>string</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '2038', 2038)" onmouseover="showTip(event, '2038', 2038)">
+              <code data-fsdocs-tip="2263" data-fsdocs-tip-unique="2263">
                 <p>
                   <a id="FullName">
                     <a href="#FullName">
@@ -556,7 +589,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="2038">
+              <div popover="" class="fsdocs-tip" id="2263">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.FullName</span></code>
@@ -572,21 +605,28 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code>string</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlSchema.fs#L133-133" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>string</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '2039', 2039)" onmouseover="showTip(event, '2039', 2039)">
+              <code data-fsdocs-tip="2264" data-fsdocs-tip-unique="2264">
                 <p>
                   <a id="ToList">
                     <a href="#ToList">
@@ -595,7 +635,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="2039">
+              <div popover="" class="fsdocs-tip" id="2264">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.ToList</span></code>
@@ -611,15 +651,22 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><span>string&#32;list</span></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlSchema.fs#L128-128" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span>string&#32;list</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
       </tbody>

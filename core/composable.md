@@ -1,0 +1,209 @@
+# Composable Queries
+
+## Definition of Composable Queries
+
+Composable methods are those you can chain to build the desired functionality out of smaller parts.
+By passing functions as parameters, you can generate higher-order query operations.
+Therefore, a composable query means you can do logics to compose just one database-SQL-query from multiple queryables.
+By using composable queries you can shorten the Database transactions and keep the connection open a minimum of time.
+
+One common anti-pattern is a trial to solve all the problems in the world by a single code.
+So when you use this kind of feature to achieve "common logics", keep the software's maintainability in mind.
+One solution is to add a database view and query that from SQLProvider.
+
+## Generate composable queries by using Linq IQueryable
+
+With composable queries, you can combine two queries in multiple ways, and one query can be used as the building block for the other query.
+To see how this works, let's look at a simple query:
+
+```fsharp
+let query1 =
+    query {
+      for customers  in ctx.Main.Customers do
+      where (customers.ContactTitle = "USA")
+      select customers}
+```
+
+The variable that is returned from the query is sometimes called a computation. If you write to evaluate
+(e.g. a foreach loop or `|> Seq.toList`) and display the address field from the customers returned by this
+computation, you see the following output:
+
+```fsharp
+GREAL|Great Lakes Food Market|Howard Snyder|Marketing Manager|2732 Baker Blvd.|Eugene|OR|97403|USA|(503) 555-7555|
+HUNGC|Hungry Coyote Import Store|Yoshi Latimer|Sales Representative|City Center Plaza 516 Main St.|Elgin|OR|97827|USA|(503) 555-6874|(503) 555-2376
+...
+TRAIH|Trail's Head Gourmet Provisioners|Helvetius Nagy|Sales Associate|722 DaVinci Blvd.|Kirkland|WA|98034|USA|(206) 555-8257|(206) 555-2174
+WHITC|White Clover Markets|Karl Jablonski|Owner|305 - 14th Ave. S. Suite 3B|Seattle|WA|98128|USA|(206) 555-4112|(206) 555-4115
+
+```
+
+You can now write a second query against the result of this query:
+
+```fsharp
+let query2 =
+    query {
+      for customers in query1 do
+      where (customers.CompanyName = "The Big Cheese")
+      select customers}
+    |> Seq.toArray
+```
+
+Notice that the last word in the first line of this query is the computation returned from the previous query.
+This second query produces the following output:
+
+```fsharp
+THEBI|The Big Cheese|Liz Nixon|Marketing Manager|89 Jefferson Way Suite 2|Portland|OR|97201|USA|(503) 555-3612|
+
+```
+
+SQLProvider to Objects queries are composable because they operate on and usually return variables of type `IQueryable<T>`.
+In other words, SQLProvider queries typically follow this pattern:
+
+```fsharp
+let pattern (xs:IQueryable<'T>) : IQueryable<'T> =
+    query {
+        //for is like C# foreach
+        for x in xs do
+        select x
+    }
+
+//
+```
+
+This is a simple mechanism to understand, but it yields powerful results.
+It allows you to take complex problems, break them into manageable pieces, and solve them with code that is easy to understand and easy to maintain.
+
+### Generate composable queries by using .NET LINQ functions with IQueryable.
+
+The difference between IEnumerable and IQueryable is basically that IEnumerable is executed in the IL while IQueryable can be translated as an expression tree to some other context (like a database query).
+They are both lazy by nature, meaning they aren't evaluated until you enumerate the results.
+
+Here is an example:
+
+First, you have to add .NET LINQ:
+
+```fsharp
+open System.Linq
+```
+
+Then, you can define a composable query outside the main query
+
+```fsharp
+type CustomersEntity = sql.dataContext.``main.CustomersEntity``
+
+let companyNameFilter inUse =
+
+    let myFilter2 : IQueryable<CustomersEntity> -> IQueryable<CustomersEntity> = fun x -> x.Where(fun i -> i.CustomerId = "ALFKI")
+
+    let queryable:(IQueryable<CustomersEntity> -> IQueryable<CustomersEntity>) =
+        if inUse then (fun iq -> iq.Where(fun (c:CustomersEntity) -> c.CompanyName = "The Big Cheese")) else myFilter2
+    queryable
+```
+
+(Let's assume that your inUse parameter is some complex data:
+E.g. Your sub-queries would come from other functions. Basic booleans you can just include to your where-clause)
+
+Then, you can create the main query
+
+```fsharp
+let mainQuery =
+    query {
+        for customers  in ctx.Main.Customers do
+        where (customers.ContactTitle = "USA")
+        select customers}
+```
+
+and now call you are able to call the second query like this
+
+```fsharp
+let res = companyNameFilter true mainQuery |> Seq.toArray
+```
+
+### Generate composable queries by using FSharp.Linq.ComposableQuery
+
+The SQLProvider also supports composable queries by integrating the following library FSharpLinqComposableQuery.
+You can read more about that library here: [FSharp.Linq.ComposableQuery](http://fsprojects.github.io/FSharp.Linq.ComposableQuery)
+
+Because it is implemented in the SQLProvider, you don't need to add FSharpComposableQuery in your script.
+
+Example for using FSharpComposableQuery
+
+```fsharp
+let qry1 =
+    query { for c in ctx.Main.Customers do
+            select (c.CustomerId, c.CompanyName, c.City)
+    }
+
+let qry2 =
+    query { for o in ctx.Main.Orders do
+            select (o.CustomerId, o.OrderId, o.Freight)
+    }
+
+query { for (i,n,e) in qry1 do
+        join (u,b,y) in qry2 on (i = u)
+        where (y > 100m)
+        select (i,n,e,u,b,y)
+    } |> Seq.toArray
+```
+
+### Nested Select Where Queries
+
+You can create a query like `SELECT * FROM xs WHERE xs.x IN (SELECT y FROM ys))`
+in the purist way with the F# operators `x |=| qry` (NOT IN: `x |<>| qry`), or in the pragmatist way with LINQ's
+`.Contains x` (NOT IN: `not (ys.Contains x)`), which also runs in the mock context, so the query can be
+unit-tested. Both give the same SQL. The example takes the pragmatist way:
+
+```fsharp
+open System.Linq
+
+let nestedQueryTest =
+    let qry1 = query {
+        for emp in ctx.Main.Employees do
+        where (emp.FirstName.StartsWith("S"))
+        select emp.FirstName
+    }
+    query {
+        for emp in ctx.Main.Employees do
+        where (qry1.Contains(emp.FirstName))
+        select (emp.FirstName, emp.LastName)
+    } |> Seq.toArray
+```
+
+### Using non-strongly-typed GetColumn "name"
+
+All the entities are SqlEntity objects, which implement `IColumnHolder` with a GetColumn method.
+So you can use non-strongly-typed columns, by the database's column name, like this:
+
+```fsharp
+open FSharp.Data.Sql.Common
+
+let qry =
+    query {
+        for x in query1 do
+        where (((x :> IColumnHolder).GetColumn<string> "CustomerID") = "ALFKI")
+        select ((x :> IColumnHolder).GetColumn<string> "CustomerID")
+    } |> Seq.head
+```
+
+However, this is not recommended as one of the SQLProvider's key benefits is strong typing.
+
+## Generate composable queries from quotations
+
+You can also construct composable queries using the F# quotation mechanism. For
+example, if you need to select a filter function at runtime, you could write the
+filters as quotations, and then include them in a query like this:
+
+```fsharp
+let johnFilter = <@ fun (employee : sql.dataContext.``main.EmployeesEntity``) -> employee.FirstName = "John" @>
+let pamFilter = <@ fun (employee : sql.dataContext.``main.EmployeesEntity``) -> employee.FirstName = "Pam" @>
+
+let runtimeSelectedFilter = if 1 = 1 then johnFilter else pamFilter
+let employees =
+    query {
+        for emp in ctx.Main.Employees do
+        where ((%runtimeSelectedFilter) emp)
+        select emp
+    } |> Seq.toArray
+```
+
+Quotations are AST representations that the Linq-to-SQL translator can use.

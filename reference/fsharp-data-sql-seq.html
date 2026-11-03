@@ -79,7 +79,8 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/general.html">
-    general
+    SQL Provider Basics
+
   </a>
 </li>             
 <li class="nav-item ">
@@ -137,8 +138,7 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/outline.html">
-    SQL Type Provider
-
+    outline
   </a>
 </li>             
 <li class="nav-item ">
@@ -262,9 +262,11 @@
   </dl>
   <div class="fsdocs-xmldoc">
     <div>
-      <p class="fsdocs-summary">
-        
-      </p>
+      <div class="fsdocs-summary-contents">
+        <p class="fsdocs-summary">
+          
+        </p>
+      </div>
     </div>
   </div>
   <div>
@@ -279,6 +281,7 @@
           </td>
           <td class="fsdocs-member-list-header">
             Description
+            <fsdocs-details-toggle></fsdocs-details-toggle>
           </td>
         </tr>
       </thead>
@@ -286,7 +289,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '36', 36)" onmouseover="showTip(event, '36', 36)">
+              <code data-fsdocs-tip="36" data-fsdocs-tip-unique="36">
                 <p>
                   <a id="``delete all items from single table``">
                     <a href="#``delete all items from single table``">
@@ -295,7 +298,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="36">
+              <div popover="" class="fsdocs-tip" id="36">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>``deleteallitemsfromsingletable``&#32;<span>_arg1</span></span></code>
@@ -318,6 +321,9 @@
                     <code><span><a href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;int&gt;</span></code>
                   </span>
                   <br/>
+                  Type parameters: 
+                  &#39;T
+                  <br/>
                 </div>
               </div>
             </div>
@@ -326,18 +332,22 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Seq.delete all items from single table``1```')">
-                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       WARNING! Execute SQLProvider DELETE FROM query to remove elements from the database.
+                    </p>
                   </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Seq.delete all items from single table``1\'/>')">
-                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Async.fs#L199-199" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Seq.delete all items from single table``1\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Seq.delete all items from single table``1```')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
                   </div>
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Async.fs#L196-196" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     WARNING! Execute SQLProvider DELETE FROM query to remove elements from the database.
-                  </p>
                 </div>
               </summary>
               <dl class="fsdocs-params">
@@ -365,7 +375,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '37', 37)" onmouseover="showTip(event, '37', 37)">
+              <code data-fsdocs-tip="37" data-fsdocs-tip-unique="37">
                 <p>
                   <a id="averageAsync">
                     <a href="#averageAsync">
@@ -374,7 +384,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="37">
+              <div popover="" class="fsdocs-tip" id="37">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>averageAsync&#32;<span></span></span></code>
@@ -385,6 +395,9 @@
                     <code><span><span><a href="https://learn.microsoft.com/dotnet/api/system.linq.iqueryable-1">IQueryable</a>&lt;'T&gt;</span>&#32;->&#32;<span><a href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;'T&gt;</span></span></code>
                   </span>
                   <br/>
+                  Type parameters: 
+                  &#39;T (requires comparison)
+                  <br/>
                 </div>
               </div>
             </div>
@@ -393,18 +406,22 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Seq.averageAsync``1```')">
-                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Execute SQLProvider query to get the avg of elements, and release the OS thread while query is being executed.
+                    </p>
                   </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Seq.averageAsync``1\'/>')">
-                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Async.fs#L193-193" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Seq.averageAsync``1\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Seq.averageAsync``1```')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
                   </div>
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Async.fs#L190-190" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Execute SQLProvider query to get the avg of elements, and release the OS thread while query is being executed.
-                  </p>
                 </div>
               </summary>
               <dl class="fsdocs-returns">
@@ -422,7 +439,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '38', 38)" onmouseover="showTip(event, '38', 38)">
+              <code data-fsdocs-tip="38" data-fsdocs-tip-unique="38">
                 <p>
                   <a id="exactlyOneAsync">
                     <a href="#exactlyOneAsync">
@@ -431,7 +448,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="38">
+              <div popover="" class="fsdocs-tip" id="38">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>exactlyOneAsync&#32;<span></span></span></code>
@@ -442,6 +459,9 @@
                     <code><span><span><a href="https://learn.microsoft.com/dotnet/api/system.linq.iqueryable-1">IQueryable</a>&lt;'T&gt;</span>&#32;->&#32;<span><a href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;'T&gt;</span></span></code>
                   </span>
                   <br/>
+                  Type parameters: 
+                  &#39;T
+                  <br/>
                 </div>
               </div>
             </div>
@@ -450,20 +470,24 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Seq.exactlyOneAsync``1```')">
-                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
-                  </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Seq.exactlyOneAsync``1\'/>')">
-                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
-                  </div>
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Async.fs#L208-208" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Execute SQLProvider query to get the only element of the sequence.
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Execute SQLProvider query to get the only element of the sequence.
  Throws `ArgumentNullException` if the seq is empty.
  Throws `ArgumentException` if the seq contains more than one element.
-                  </p>
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Async.fs#L212-212" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Seq.exactlyOneAsync``1\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Seq.exactlyOneAsync``1```')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
+                  </div>
                 </div>
               </summary>
               <dl class="fsdocs-returns">
@@ -481,7 +505,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '39', 39)" onmouseover="showTip(event, '39', 39)">
+              <code data-fsdocs-tip="39" data-fsdocs-tip-unique="39">
                 <p>
                   <a id="executeQueryAsync">
                     <a href="#executeQueryAsync">
@@ -490,7 +514,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="39">
+              <div popover="" class="fsdocs-tip" id="39">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>executeQueryAsync&#32;<span></span></span></code>
@@ -501,6 +525,9 @@
                     <code><span><span><a href="https://learn.microsoft.com/dotnet/api/system.linq.iqueryable-1">IQueryable</a>&lt;'a&gt;</span>&#32;->&#32;<span><a href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;<span>'a&#32;seq</span>&gt;</span></span></code>
                   </span>
                   <br/>
+                  Type parameters: 
+                  &#39;a
+                  <br/>
                 </div>
               </div>
             </div>
@@ -509,18 +536,22 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Seq.executeQueryAsync``1```')">
-                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Execute SQLProvider query and release the OS thread while query is being executed.
+                    </p>
                   </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Seq.executeQueryAsync``1\'/>')">
-                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Async.fs#L177-177" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Seq.executeQueryAsync``1\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Seq.executeQueryAsync``1```')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
                   </div>
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Async.fs#L174-174" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Execute SQLProvider query and release the OS thread while query is being executed.
-                  </p>
                 </div>
               </summary>
               <dl class="fsdocs-returns">
@@ -538,7 +569,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '40', 40)" onmouseover="showTip(event, '40', 40)">
+              <code data-fsdocs-tip="40" data-fsdocs-tip-unique="40">
                 <p>
                   <a id="headAsync">
                     <a href="#headAsync">
@@ -547,7 +578,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="40">
+              <div popover="" class="fsdocs-tip" id="40">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>headAsync&#32;<span></span></span></code>
@@ -558,6 +589,9 @@
                     <code><span><span><a href="https://learn.microsoft.com/dotnet/api/system.linq.iqueryable-1">IQueryable</a>&lt;'a&gt;</span>&#32;->&#32;<span><a href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;'a&gt;</span></span></code>
                   </span>
                   <br/>
+                  Type parameters: 
+                  &#39;a
+                  <br/>
                 </div>
               </div>
             </div>
@@ -566,19 +600,23 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Seq.headAsync``1```')">
-                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
-                  </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Seq.headAsync``1\'/>')">
-                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
-                  </div>
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Async.fs#L179-179" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Execute SQLProvider query to take one result and release the OS thread while query is being executed.
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Execute SQLProvider query to take one result and release the OS thread while query is being executed.
  Like normal head: Throws exception if no elements exists. See also tryHeadAsync.
-                  </p>
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Async.fs#L182-182" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Seq.headAsync``1\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Seq.headAsync``1```')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
+                  </div>
                 </div>
               </summary>
               <dl class="fsdocs-returns">
@@ -596,7 +634,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '41', 41)" onmouseover="showTip(event, '41', 41)">
+              <code data-fsdocs-tip="41" data-fsdocs-tip-unique="41">
                 <p>
                   <a id="lengthAsync">
                     <a href="#lengthAsync">
@@ -605,7 +643,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="41">
+              <div popover="" class="fsdocs-tip" id="41">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>lengthAsync&#32;<span></span></span></code>
@@ -616,6 +654,9 @@
                     <code><span><span><a href="https://learn.microsoft.com/dotnet/api/system.linq.iqueryable-1">IQueryable</a>&lt;'a&gt;</span>&#32;->&#32;<span><a href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;int&gt;</span></span></code>
                   </span>
                   <br/>
+                  Type parameters: 
+                  &#39;a
+                  <br/>
                 </div>
               </div>
             </div>
@@ -624,18 +665,22 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Seq.lengthAsync``1```')">
-                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Execute SQLProvider query to count the elements, and release the OS thread while query is being executed.
+                    </p>
                   </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Seq.lengthAsync``1\'/>')">
-                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Async.fs#L179-179" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Seq.lengthAsync``1\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Seq.lengthAsync``1```')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
                   </div>
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Async.fs#L176-176" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Execute SQLProvider query to count the elements, and release the OS thread while query is being executed.
-                  </p>
                 </div>
               </summary>
               <dl class="fsdocs-returns">
@@ -653,7 +698,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '42', 42)" onmouseover="showTip(event, '42', 42)">
+              <code data-fsdocs-tip="42" data-fsdocs-tip-unique="42">
                 <p>
                   <a id="maxAsync">
                     <a href="#maxAsync">
@@ -662,7 +707,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="42">
+              <div popover="" class="fsdocs-tip" id="42">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>maxAsync&#32;<span></span></span></code>
@@ -673,6 +718,9 @@
                     <code><span><span><a href="https://learn.microsoft.com/dotnet/api/system.linq.iqueryable-1">IQueryable</a>&lt;'T&gt;</span>&#32;->&#32;<span><a href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;'T&gt;</span></span></code>
                   </span>
                   <br/>
+                  Type parameters: 
+                  &#39;T (requires comparison)
+                  <br/>
                 </div>
               </div>
             </div>
@@ -681,18 +729,22 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Seq.maxAsync``1```')">
-                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Execute SQLProvider query to get the max of elements, and release the OS thread while query is being executed.
+                    </p>
                   </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Seq.maxAsync``1\'/>')">
-                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Async.fs#L189-189" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Seq.maxAsync``1\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Seq.maxAsync``1```')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
                   </div>
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Async.fs#L186-186" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Execute SQLProvider query to get the max of elements, and release the OS thread while query is being executed.
-                  </p>
                 </div>
               </summary>
               <dl class="fsdocs-returns">
@@ -710,7 +762,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '43', 43)" onmouseover="showTip(event, '43', 43)">
+              <code data-fsdocs-tip="43" data-fsdocs-tip-unique="43">
                 <p>
                   <a id="minAsync">
                     <a href="#minAsync">
@@ -719,7 +771,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="43">
+              <div popover="" class="fsdocs-tip" id="43">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>minAsync&#32;<span></span></span></code>
@@ -730,6 +782,9 @@
                     <code><span><span><a href="https://learn.microsoft.com/dotnet/api/system.linq.iqueryable-1">IQueryable</a>&lt;'T&gt;</span>&#32;->&#32;<span><a href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;'T&gt;</span></span></code>
                   </span>
                   <br/>
+                  Type parameters: 
+                  &#39;T (requires comparison)
+                  <br/>
                 </div>
               </div>
             </div>
@@ -738,18 +793,22 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Seq.minAsync``1```')">
-                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Execute SQLProvider query to get the min of elements, and release the OS thread while query is being executed.
+                    </p>
                   </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Seq.minAsync``1\'/>')">
-                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Async.fs#L191-191" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Seq.minAsync``1\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Seq.minAsync``1```')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
                   </div>
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Async.fs#L188-188" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Execute SQLProvider query to get the min of elements, and release the OS thread while query is being executed.
-                  </p>
                 </div>
               </summary>
               <dl class="fsdocs-returns">
@@ -767,7 +826,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '44', 44)" onmouseover="showTip(event, '44', 44)">
+              <code data-fsdocs-tip="44" data-fsdocs-tip-unique="44">
                 <p>
                   <a id="stdDevAsync">
                     <a href="#stdDevAsync">
@@ -776,7 +835,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="44">
+              <div popover="" class="fsdocs-tip" id="44">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>stdDevAsync&#32;<span></span></span></code>
@@ -787,6 +846,9 @@
                     <code><span><span><a href="https://learn.microsoft.com/dotnet/api/system.linq.iqueryable-1">IQueryable</a>&lt;'T&gt;</span>&#32;->&#32;<span><a href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;'T&gt;</span></span></code>
                   </span>
                   <br/>
+                  Type parameters: 
+                  &#39;T (requires comparison)
+                  <br/>
                 </div>
               </div>
             </div>
@@ -795,18 +857,22 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Seq.stdDevAsync``1```')">
-                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Execute SQLProvider query to get the standard deviation of elements, and release the OS thread while query is being executed.
+                    </p>
                   </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Seq.stdDevAsync``1\'/>')">
-                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Async.fs#L195-195" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Seq.stdDevAsync``1\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Seq.stdDevAsync``1```')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
                   </div>
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Async.fs#L192-192" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Execute SQLProvider query to get the standard deviation of elements, and release the OS thread while query is being executed.
-                  </p>
                 </div>
               </summary>
               <dl class="fsdocs-returns">
@@ -824,7 +890,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '45', 45)" onmouseover="showTip(event, '45', 45)">
+              <code data-fsdocs-tip="45" data-fsdocs-tip-unique="45">
                 <p>
                   <a id="sumAsync">
                     <a href="#sumAsync">
@@ -833,7 +899,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="45">
+              <div popover="" class="fsdocs-tip" id="45">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>sumAsync&#32;<span></span></span></code>
@@ -844,6 +910,9 @@
                     <code><span><span><a href="https://learn.microsoft.com/dotnet/api/system.linq.iqueryable-1">IQueryable</a>&lt;'T&gt;</span>&#32;->&#32;<span><a href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;'T&gt;</span></span></code>
                   </span>
                   <br/>
+                  Type parameters: 
+                  &#39;T (requires comparison)
+                  <br/>
                 </div>
               </div>
             </div>
@@ -852,18 +921,22 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Seq.sumAsync``1```')">
-                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Execute SQLProvider query to get the sum of elements, and release the OS thread while query is being executed.
+                    </p>
                   </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Seq.sumAsync``1\'/>')">
-                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Async.fs#L187-187" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Seq.sumAsync``1\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Seq.sumAsync``1```')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
                   </div>
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Async.fs#L184-184" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Execute SQLProvider query to get the sum of elements, and release the OS thread while query is being executed.
-                  </p>
                 </div>
               </summary>
               <dl class="fsdocs-returns">
@@ -881,7 +954,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '46', 46)" onmouseover="showTip(event, '46', 46)">
+              <code data-fsdocs-tip="46" data-fsdocs-tip-unique="46">
                 <p>
                   <a id="tryExactlyOneAsync">
                     <a href="#tryExactlyOneAsync">
@@ -890,7 +963,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="46">
+              <div popover="" class="fsdocs-tip" id="46">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>tryExactlyOneAsync&#32;<span></span></span></code>
@@ -901,6 +974,9 @@
                     <code><span><span><a href="https://learn.microsoft.com/dotnet/api/system.linq.iqueryable-1">IQueryable</a>&lt;'T&gt;</span>&#32;->&#32;<span><a href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;<span>'T&#32;option</span>&gt;</span></span></code>
                   </span>
                   <br/>
+                  Type parameters: 
+                  &#39;T
+                  <br/>
                 </div>
               </div>
             </div>
@@ -909,19 +985,23 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Seq.tryExactlyOneAsync``1```')">
-                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
-                  </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Seq.tryExactlyOneAsync``1\'/>')">
-                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
-                  </div>
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Async.fs#L211-211" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Execute SQLProvider query to get the only element of the sequence.
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Execute SQLProvider query to get the only element of the sequence.
  Returns `None` if there are zero or more than one element in the seq.
-                  </p>
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Async.fs#L215-215" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Seq.tryExactlyOneAsync``1\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Seq.tryExactlyOneAsync``1```')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
+                  </div>
                 </div>
               </summary>
               <dl class="fsdocs-returns">
@@ -939,7 +1019,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '47', 47)" onmouseover="showTip(event, '47', 47)">
+              <code data-fsdocs-tip="47" data-fsdocs-tip-unique="47">
                 <p>
                   <a id="tryHeadAsync">
                     <a href="#tryHeadAsync">
@@ -948,7 +1028,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="47">
+              <div popover="" class="fsdocs-tip" id="47">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>tryHeadAsync&#32;<span></span></span></code>
@@ -959,6 +1039,9 @@
                     <code><span><span><a href="https://learn.microsoft.com/dotnet/api/system.linq.iqueryable-1">IQueryable</a>&lt;'a&gt;</span>&#32;->&#32;<span><a href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;<span>'a&#32;option</span>&gt;</span></span></code>
                   </span>
                   <br/>
+                  Type parameters: 
+                  &#39;a
+                  <br/>
                 </div>
               </div>
             </div>
@@ -967,19 +1050,23 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Seq.tryHeadAsync``1```')">
-                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
-                  </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Seq.tryHeadAsync``1\'/>')">
-                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
-                  </div>
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Async.fs#L182-182" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Execute SQLProvider query to take one result and release the OS thread while query is being executed.
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Execute SQLProvider query to take one result and release the OS thread while query is being executed.
  Returns None if no elements exists.
-                  </p>
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Async.fs#L185-185" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Seq.tryHeadAsync``1\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Seq.tryHeadAsync``1```')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
+                  </div>
                 </div>
               </summary>
               <dl class="fsdocs-returns">
@@ -997,7 +1084,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '48', 48)" onmouseover="showTip(event, '48', 48)">
+              <code data-fsdocs-tip="48" data-fsdocs-tip-unique="48">
                 <p>
                   <a id="varianceAsync">
                     <a href="#varianceAsync">
@@ -1006,7 +1093,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="48">
+              <div popover="" class="fsdocs-tip" id="48">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>varianceAsync&#32;<span></span></span></code>
@@ -1017,6 +1104,9 @@
                     <code><span><span><a href="https://learn.microsoft.com/dotnet/api/system.linq.iqueryable-1">IQueryable</a>&lt;'T&gt;</span>&#32;->&#32;<span><a href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;'T&gt;</span></span></code>
                   </span>
                   <br/>
+                  Type parameters: 
+                  &#39;T (requires comparison)
+                  <br/>
                 </div>
               </div>
             </div>
@@ -1025,18 +1115,22 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Seq.varianceAsync``1```')">
-                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Execute SQLProvider query to get the variance of elements, and release the OS thread while query is being executed.
+                    </p>
                   </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Seq.varianceAsync``1\'/>')">
-                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Async.fs#L197-197" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Seq.varianceAsync``1\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Seq.varianceAsync``1```')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
                   </div>
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Async.fs#L194-194" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Execute SQLProvider query to get the variance of elements, and release the OS thread while query is being executed.
-                  </p>
                 </div>
               </summary>
               <dl class="fsdocs-returns">

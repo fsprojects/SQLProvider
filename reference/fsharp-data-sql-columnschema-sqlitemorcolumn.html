@@ -79,7 +79,8 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/general.html">
-    general
+    SQL Provider Basics
+
   </a>
 </li>             
 <li class="nav-item ">
@@ -137,8 +138,7 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/outline.html">
-    SQL Type Provider
-
+    outline
   </a>
 </li>             
 <li class="nav-item ">
@@ -278,9 +278,11 @@
   </dl>
   <div class="fsdocs-xmldoc">
     <div>
-      <p class="fsdocs-summary">
-         Represents either a database column or a constant value in SQL expressions.
-      </p>
+      <div class="fsdocs-summary-contents">
+        <p class="fsdocs-summary">
+           Represents either a database column or a constant value in SQL expressions.
+        </p>
+      </div>
     </div>
   </div>
   <div></div>
@@ -298,6 +300,7 @@
           </td>
           <td class="fsdocs-member-list-header">
             Description
+            <fsdocs-details-toggle></fsdocs-details-toggle>
           </td>
         </tr>
       </thead>
@@ -305,26 +308,26 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1589', 1589)" onmouseover="showTip(event, '1589', 1589)">
+              <code data-fsdocs-tip="1591" data-fsdocs-tip-unique="1591">
                 <p>
                   <a id="SqlCol">
                     <a href="#SqlCol">
-                      <code><span>SqlCol(<span>string,&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlcolumntype.html">SqlColumnType</a></span>)</span></code>
+                      <code><span>SqlCol(<span>alias,&#32;column</span>)</span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1589">
+              <div popover="" class="fsdocs-tip" id="1591">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>SqlCol(<span>string,&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlcolumntype.html">SqlColumnType</a></span>)</span></code>
+                  <code><span>SqlCol(<span>alias,&#32;column</span>)</span></code>
                   <br/>
                   <br/>
                   Parameters: 
                   <ul>
                     <span>
                       <b>
-                        Item1
+                        alias
                       </b>
                       :
                       <code>string</code>
@@ -332,7 +335,7 @@
                     <br/>
                     <span>
                       <b>
-                        Item2
+                        column
                       </b>
                       :
                       <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlcolumntype.html">SqlColumnType</a></code>
@@ -348,18 +351,22 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Operators.fs#L243-243" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     A database column with table alias and column type
-                  </p>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       A database column with table alias and column type
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Operators.fs#L243-243" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                  </div>
                 </div>
               </summary>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
                   <span class="fsdocs-param-name">
-                    Item1
+                    alias
                   </span>
                   :
                   <code>string</code>
@@ -367,7 +374,7 @@
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
                   <span class="fsdocs-param-name">
-                    Item2
+                    column
                   </span>
                   :
                   <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlcolumntype.html">SqlColumnType</a></code>
@@ -380,7 +387,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1590', 1590)" onmouseover="showTip(event, '1590', 1590)">
+              <code data-fsdocs-tip="1592" data-fsdocs-tip-unique="1592">
                 <p>
                   <a id="SqlConstant">
                     <a href="#SqlConstant">
@@ -389,7 +396,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1590">
+              <div popover="" class="fsdocs-tip" id="1592">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>SqlConstant&#32;obj</span></code>
@@ -415,12 +422,16 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Operators.fs#L245-245" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     A constant value to be used in SQL expressions
-                  </p>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       A constant value to be used in SQL expressions
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Operators.fs#L245-245" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                  </div>
                 </div>
               </summary>
               <dl class="fsdocs-params">
@@ -454,6 +465,7 @@
           </td>
           <td class="fsdocs-member-list-header">
             Description
+            <fsdocs-details-toggle></fsdocs-details-toggle>
           </td>
         </tr>
       </thead>
@@ -461,7 +473,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1591', 1591)" onmouseover="showTip(event, '1591', 1591)">
+              <code data-fsdocs-tip="1593" data-fsdocs-tip-unique="1593">
                 <p>
                   <a id="IsSqlCol">
                     <a href="#IsSqlCol">
@@ -470,7 +482,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1591">
+              <div popover="" class="fsdocs-tip" id="1593">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.IsSqlCol</span></code>
@@ -486,21 +498,28 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code>bool</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Operators.fs#L243-243" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>bool</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1592', 1592)" onmouseover="showTip(event, '1592', 1592)">
+              <code data-fsdocs-tip="1594" data-fsdocs-tip-unique="1594">
                 <p>
                   <a id="IsSqlConstant">
                     <a href="#IsSqlConstant">
@@ -509,7 +528,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1592">
+              <div popover="" class="fsdocs-tip" id="1594">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.IsSqlConstant</span></code>
@@ -525,15 +544,22 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code>bool</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Operators.fs#L245-245" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>bool</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
       </tbody>

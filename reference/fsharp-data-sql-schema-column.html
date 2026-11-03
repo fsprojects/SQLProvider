@@ -79,7 +79,8 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/general.html">
-    general
+    SQL Provider Basics
+
   </a>
 </li>             
 <li class="nav-item ">
@@ -137,8 +138,7 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/outline.html">
-    SQL Type Provider
-
+    outline
   </a>
 </li>             
 <li class="nav-item ">
@@ -281,10 +281,12 @@
   </dl>
   <div class="fsdocs-xmldoc">
     <div>
-      <p class="fsdocs-summary">
-         Represents a database table column with its metadata and characteristics.
+      <div class="fsdocs-summary-contents">
+        <p class="fsdocs-summary">
+           Represents a database table column with its metadata and characteristics.
  Contains all information needed to generate typed properties and handle data conversion.
-      </p>
+        </p>
+      </div>
     </div>
   </div>
   <div></div>
@@ -303,6 +305,7 @@
           </td>
           <td class="fsdocs-member-list-header">
             Description
+            <fsdocs-details-toggle></fsdocs-details-toggle>
           </td>
         </tr>
       </thead>
@@ -310,7 +313,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1997', 1997)" onmouseover="showTip(event, '1997', 1997)">
+              <code data-fsdocs-tip="2222" data-fsdocs-tip-unique="2222">
                 <p>
                   <a id="HasDefault">
                     <a href="#HasDefault">
@@ -319,7 +322,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1997">
+              <div popover="" class="fsdocs-tip" id="2222">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>HasDefault</code>
@@ -338,12 +341,16 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlSchema.fs#L76-76" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     True if this column has a default value defined
-                  </p>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       True if this column has a default value defined
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlSchema.fs#L84-84" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                  </div>
                 </div>
               </summary>
               <dl class="fsdocs-returns">
@@ -361,7 +368,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1998', 1998)" onmouseover="showTip(event, '1998', 1998)">
+              <code data-fsdocs-tip="2223" data-fsdocs-tip-unique="2223">
                 <p>
                   <a id="IsAutonumber">
                     <a href="#IsAutonumber">
@@ -370,7 +377,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1998">
+              <div popover="" class="fsdocs-tip" id="2223">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>IsAutonumber</code>
@@ -389,12 +396,16 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlSchema.fs#L74-74" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     True if this column has an auto-increment/identity specification
-                  </p>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       True if this column has an auto-increment/identity specification
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlSchema.fs#L82-82" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                  </div>
                 </div>
               </summary>
               <dl class="fsdocs-returns">
@@ -412,7 +423,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1999', 1999)" onmouseover="showTip(event, '1999', 1999)">
+              <code data-fsdocs-tip="2224" data-fsdocs-tip-unique="2224">
                 <p>
                   <a id="IsComputed">
                     <a href="#IsComputed">
@@ -421,7 +432,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1999">
+              <div popover="" class="fsdocs-tip" id="2224">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>IsComputed</code>
@@ -440,12 +451,16 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlSchema.fs#L78-78" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     True if this column is computed/calculated by the database
-                  </p>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       True if this column is computed/calculated by the database
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlSchema.fs#L86-86" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                  </div>
                 </div>
               </summary>
               <dl class="fsdocs-returns">
@@ -463,7 +478,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '2000', 2000)" onmouseover="showTip(event, '2000', 2000)">
+              <code data-fsdocs-tip="2225" data-fsdocs-tip-unique="2225">
                 <p>
                   <a id="IsNullable">
                     <a href="#IsNullable">
@@ -472,7 +487,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="2000">
+              <div popover="" class="fsdocs-tip" id="2225">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>IsNullable</code>
@@ -491,12 +506,16 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlSchema.fs#L72-72" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     True if this column can contain NULL values
-                  </p>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       True if this column can contain NULL values
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlSchema.fs#L80-80" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                  </div>
                 </div>
               </summary>
               <dl class="fsdocs-returns">
@@ -514,7 +533,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '2001', 2001)" onmouseover="showTip(event, '2001', 2001)">
+              <code data-fsdocs-tip="2226" data-fsdocs-tip-unique="2226">
                 <p>
                   <a id="IsPrimaryKey">
                     <a href="#IsPrimaryKey">
@@ -523,7 +542,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="2001">
+              <div popover="" class="fsdocs-tip" id="2226">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>IsPrimaryKey</code>
@@ -542,12 +561,16 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlSchema.fs#L70-70" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     True if this column is part of the table's primary key
-                  </p>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       True if this column is part of the table's primary key
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlSchema.fs#L78-78" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                  </div>
                 </div>
               </summary>
               <dl class="fsdocs-returns">
@@ -565,7 +588,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '2002', 2002)" onmouseover="showTip(event, '2002', 2002)">
+              <code data-fsdocs-tip="2227" data-fsdocs-tip-unique="2227">
                 <p>
                   <a id="Name">
                     <a href="#Name">
@@ -574,7 +597,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="2002">
+              <div popover="" class="fsdocs-tip" id="2227">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>Name</code>
@@ -590,21 +613,28 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code>string</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlSchema.fs#L74-74" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Field type: 
+                  </span>
+                  <code>string</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '2003', 2003)" onmouseover="showTip(event, '2003', 2003)">
+              <code data-fsdocs-tip="2228" data-fsdocs-tip-unique="2228">
                 <p>
                   <a id="TypeInfo">
                     <a href="#TypeInfo">
@@ -613,7 +643,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="2003">
+              <div popover="" class="fsdocs-tip" id="2228">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>TypeInfo</code>
@@ -632,12 +662,16 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlSchema.fs#L80-80" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Additional type information specific to the database provider
-                  </p>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Additional type information specific to the database provider
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlSchema.fs#L88-88" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                  </div>
                 </div>
               </summary>
               <dl class="fsdocs-returns">
@@ -655,7 +689,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '2004', 2004)" onmouseover="showTip(event, '2004', 2004)">
+              <code data-fsdocs-tip="2229" data-fsdocs-tip-unique="2229">
                 <p>
                   <a id="TypeMapping">
                     <a href="#TypeMapping">
@@ -664,7 +698,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="2004">
+              <div popover="" class="fsdocs-tip" id="2229">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>TypeMapping</code>
@@ -683,12 +717,16 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlSchema.fs#L68-68" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Type mapping information for converting between .NET and database types
-                  </p>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Type mapping information for converting between .NET and database types
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlSchema.fs#L76-76" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                  </div>
                 </div>
               </summary>
               <dl class="fsdocs-returns">
@@ -721,6 +759,7 @@
           </td>
           <td class="fsdocs-member-list-header">
             Description
+            <fsdocs-details-toggle></fsdocs-details-toggle>
           </td>
         </tr>
       </thead>
@@ -728,7 +767,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '2005', 2005)" onmouseover="showTip(event, '2005', 2005)">
+              <code data-fsdocs-tip="2230" data-fsdocs-tip-unique="2230">
                 <p>
                   <a id="FromQueryParameter">
                     <a href="#FromQueryParameter">
@@ -737,7 +776,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="2005">
+              <div popover="" class="fsdocs-tip" id="2230">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Column.FromQueryParameter<span><span>(<span>q</span>)</span></span></span></code>
@@ -765,25 +804,32 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  q
-                </span>
-                :
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-queryparameter.html">QueryParameter</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-column.html">Column</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlSchema.fs#L90-90" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    q
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-queryparameter.html">QueryParameter</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-column.html">Column</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
       </tbody>

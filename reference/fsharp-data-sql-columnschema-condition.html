@@ -79,7 +79,8 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/general.html">
-    general
+    SQL Provider Basics
+
   </a>
 </li>             
 <li class="nav-item ">
@@ -137,8 +138,7 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/outline.html">
-    SQL Type Provider
-
+    outline
   </a>
 </li>             
 <li class="nav-item ">
@@ -278,10 +278,12 @@
   </dl>
   <div class="fsdocs-xmldoc">
     <div>
-      <p class="fsdocs-summary">
-         Represents WHERE clause conditions for SQL queries.
+      <div class="fsdocs-summary-contents">
+        <p class="fsdocs-summary">
+           Represents WHERE clause conditions for SQL queries.
  Supports complex boolean expressions with AND/OR operators and nested conditions.
-      </p>
+        </p>
+      </div>
     </div>
   </div>
   <div></div>
@@ -299,6 +301,7 @@
           </td>
           <td class="fsdocs-member-list-header">
             Description
+            <fsdocs-details-toggle></fsdocs-details-toggle>
           </td>
         </tr>
       </thead>
@@ -306,7 +309,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1569', 1569)" onmouseover="showTip(event, '1569', 1569)">
+              <code data-fsdocs-tip="1571" data-fsdocs-tip-unique="1571">
                 <p>
                   <a id="And">
                     <a href="#And">
@@ -315,7 +318,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1569">
+              <div popover="" class="fsdocs-tip" id="1571">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>And(<span><span><span>(<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-alias.html">alias</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlcolumntype.html">SqlColumnType</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html">ConditionOperator</a>&#32;*&#32;<span>obj&#32;option</span></span>)</span>&#32;list</span>,&#32;<span><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-condition.html">Condition</a>&#32;list</span>&#32;option</span></span>)</span></code>
@@ -349,12 +352,16 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Operators.fs#L112-112" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     AND condition with a list of terms and optional nested conditions
-                  </p>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       AND condition with a list of terms and optional nested conditions
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Operators.fs#L112-112" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                  </div>
                 </div>
               </summary>
               <dl class="fsdocs-params">
@@ -381,7 +388,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1570', 1570)" onmouseover="showTip(event, '1570', 1570)">
+              <code data-fsdocs-tip="1572" data-fsdocs-tip-unique="1572">
                 <p>
                   <a id="ConstantFalse">
                     <a href="#ConstantFalse">
@@ -390,7 +397,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1570">
+              <div popover="" class="fsdocs-tip" id="1572">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>ConstantFalse</span></code>
@@ -402,19 +409,23 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Operators.fs#L118-118" class="fsdocs-source-link" title="Source on GitHub">
-                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-              </a>
-              <p class="fsdocs-summary">
-                 Always evaluates to false
-              </p>
+              <div class="fsdocs-summary-contents">
+                <p class="fsdocs-summary">
+                   Always evaluates to false
+                </p>
+              </div>
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Operators.fs#L118-118" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
             </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1571', 1571)" onmouseover="showTip(event, '1571', 1571)">
+              <code data-fsdocs-tip="1573" data-fsdocs-tip-unique="1573">
                 <p>
                   <a id="ConstantTrue">
                     <a href="#ConstantTrue">
@@ -423,7 +434,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1571">
+              <div popover="" class="fsdocs-tip" id="1573">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>ConstantTrue</span></code>
@@ -435,19 +446,23 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Operators.fs#L116-116" class="fsdocs-source-link" title="Source on GitHub">
-                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-              </a>
-              <p class="fsdocs-summary">
-                 Always evaluates to true
-              </p>
+              <div class="fsdocs-summary-contents">
+                <p class="fsdocs-summary">
+                   Always evaluates to true
+                </p>
+              </div>
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Operators.fs#L116-116" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
             </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1572', 1572)" onmouseover="showTip(event, '1572', 1572)">
+              <code data-fsdocs-tip="1574" data-fsdocs-tip-unique="1574">
                 <p>
                   <a id="NotSupported">
                     <a href="#NotSupported">
@@ -456,7 +471,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1572">
+              <div popover="" class="fsdocs-tip" id="1574">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>NotSupported&#32;<a href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></span></code>
@@ -482,12 +497,16 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Operators.fs#L120-120" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Expression that cannot be translated to SQL
-                  </p>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Expression that cannot be translated to SQL
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Operators.fs#L120-120" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                  </div>
                 </div>
               </summary>
               <dl class="fsdocs-params">
@@ -506,7 +525,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1573', 1573)" onmouseover="showTip(event, '1573', 1573)">
+              <code data-fsdocs-tip="1575" data-fsdocs-tip-unique="1575">
                 <p>
                   <a id="Or">
                     <a href="#Or">
@@ -515,7 +534,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1573">
+              <div popover="" class="fsdocs-tip" id="1575">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Or(<span><span><span>(<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-alias.html">alias</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlcolumntype.html">SqlColumnType</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html">ConditionOperator</a>&#32;*&#32;<span>obj&#32;option</span></span>)</span>&#32;list</span>,&#32;<span><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-condition.html">Condition</a>&#32;list</span>&#32;option</span></span>)</span></code>
@@ -549,12 +568,16 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Operators.fs#L114-114" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     OR condition with a list of terms and optional nested conditions
-                  </p>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       OR condition with a list of terms and optional nested conditions
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Operators.fs#L114-114" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                  </div>
                 </div>
               </summary>
               <dl class="fsdocs-params">
@@ -596,6 +619,7 @@
           </td>
           <td class="fsdocs-member-list-header">
             Description
+            <fsdocs-details-toggle></fsdocs-details-toggle>
           </td>
         </tr>
       </thead>
@@ -603,7 +627,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1574', 1574)" onmouseover="showTip(event, '1574', 1574)">
+              <code data-fsdocs-tip="1576" data-fsdocs-tip-unique="1576">
                 <p>
                   <a id="IsAnd">
                     <a href="#IsAnd">
@@ -612,7 +636,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1574">
+              <div popover="" class="fsdocs-tip" id="1576">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.IsAnd</span></code>
@@ -628,21 +652,28 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code>bool</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Operators.fs#L112-112" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>bool</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1575', 1575)" onmouseover="showTip(event, '1575', 1575)">
+              <code data-fsdocs-tip="1577" data-fsdocs-tip-unique="1577">
                 <p>
                   <a id="IsConstantFalse">
                     <a href="#IsConstantFalse">
@@ -651,7 +682,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1575">
+              <div popover="" class="fsdocs-tip" id="1577">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.IsConstantFalse</span></code>
@@ -667,21 +698,28 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code>bool</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Operators.fs#L118-118" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>bool</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1576', 1576)" onmouseover="showTip(event, '1576', 1576)">
+              <code data-fsdocs-tip="1578" data-fsdocs-tip-unique="1578">
                 <p>
                   <a id="IsConstantTrue">
                     <a href="#IsConstantTrue">
@@ -690,7 +728,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1576">
+              <div popover="" class="fsdocs-tip" id="1578">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.IsConstantTrue</span></code>
@@ -706,21 +744,28 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code>bool</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Operators.fs#L116-116" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>bool</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1577', 1577)" onmouseover="showTip(event, '1577', 1577)">
+              <code data-fsdocs-tip="1579" data-fsdocs-tip-unique="1579">
                 <p>
                   <a id="IsNotSupported">
                     <a href="#IsNotSupported">
@@ -729,7 +774,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1577">
+              <div popover="" class="fsdocs-tip" id="1579">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.IsNotSupported</span></code>
@@ -745,21 +790,28 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code>bool</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Operators.fs#L120-120" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>bool</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1578', 1578)" onmouseover="showTip(event, '1578', 1578)">
+              <code data-fsdocs-tip="1580" data-fsdocs-tip-unique="1580">
                 <p>
                   <a id="IsOr">
                     <a href="#IsOr">
@@ -768,7 +820,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1578">
+              <div popover="" class="fsdocs-tip" id="1580">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.IsOr</span></code>
@@ -784,15 +836,22 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code>bool</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Operators.fs#L114-114" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>bool</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
       </tbody>

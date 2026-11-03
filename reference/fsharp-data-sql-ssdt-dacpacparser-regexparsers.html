@@ -79,7 +79,8 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/general.html">
-    general
+    SQL Provider Basics
+
   </a>
 </li>             
 <li class="nav-item ">
@@ -137,8 +138,7 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/outline.html">
-    SQL Type Provider
-
+    outline
   </a>
 </li>             
 <li class="nav-item ">
@@ -268,9 +268,11 @@
   </dl>
   <div class="fsdocs-xmldoc">
     <div>
-      <p class="fsdocs-summary">
-        
-      </p>
+      <div class="fsdocs-summary-contents">
+        <p class="fsdocs-summary">
+          
+        </p>
+      </div>
     </div>
   </div>
   <div>
@@ -285,6 +287,7 @@
           </td>
           <td class="fsdocs-member-list-header">
             Description
+            <fsdocs-details-toggle></fsdocs-details-toggle>
           </td>
         </tr>
       </thead>
@@ -292,7 +295,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '686', 686)" onmouseover="showTip(event, '686', 686)">
+              <code data-fsdocs-tip="688" data-fsdocs-tip-unique="688">
                 <p>
                   <a id="colPattern">
                     <a href="#colPattern">
@@ -301,7 +304,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="686">
+              <div popover="" class="fsdocs-tip" id="688">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>colPattern&#32;<span></span></span></code>
@@ -317,21 +320,28 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.text.regularexpressions.regex">Regex</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Ssdt.DacpacParser.fs#L147-147" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.text.regularexpressions.regex">Regex</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '687', 687)" onmouseover="showTip(event, '687', 687)">
+              <code data-fsdocs-tip="689" data-fsdocs-tip-unique="689">
                 <p>
                   <a id="parseTableColumnAnnotation">
                     <a href="#parseTableColumnAnnotation">
@@ -340,7 +350,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="687">
+              <div popover="" class="fsdocs-tip" id="689">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>parseTableColumnAnnotation&#32;<span>colName&#32;colExpression</span></span></code>
@@ -379,18 +389,22 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Ssdt.DacpacParser.RegexParsers.parseTableColumnAnnotation`')">
-                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Tries to find an in-line commented type annotation in a computed table column.
+                    </p>
                   </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Ssdt.DacpacParser.RegexParsers.parseTableColumnAnnotation\'/>')">
-                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Ssdt.DacpacParser.fs#L164-164" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Ssdt.DacpacParser.RegexParsers.parseTableColumnAnnotation\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Ssdt.DacpacParser.RegexParsers.parseTableColumnAnnotation`')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
                   </div>
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Ssdt.DacpacParser.fs#L164-164" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Tries to find an in-line commented type annotation in a computed table column.
-                  </p>
                 </div>
               </summary>
               <dl class="fsdocs-params">
@@ -426,7 +440,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '688', 688)" onmouseover="showTip(event, '688', 688)">
+              <code data-fsdocs-tip="690" data-fsdocs-tip-unique="690">
                 <p>
                   <a id="parseViewAnnotations">
                     <a href="#parseViewAnnotations">
@@ -435,7 +449,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="688">
+              <div popover="" class="fsdocs-tip" id="690">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>parseViewAnnotations&#32;<span>sql</span></span></code>
@@ -466,18 +480,22 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Ssdt.DacpacParser.RegexParsers.parseViewAnnotations`')">
-                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Tries to find in-line commented type annotations in a view declaration.
+                    </p>
                   </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Ssdt.DacpacParser.RegexParsers.parseViewAnnotations\'/>')">
-                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Ssdt.DacpacParser.fs#L173-173" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Ssdt.DacpacParser.RegexParsers.parseViewAnnotations\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Ssdt.DacpacParser.RegexParsers.parseViewAnnotations`')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
                   </div>
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Ssdt.DacpacParser.fs#L173-173" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Tries to find in-line commented type annotations in a view declaration.
-                  </p>
                 </div>
               </summary>
               <dl class="fsdocs-params">
@@ -505,7 +523,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '689', 689)" onmouseover="showTip(event, '689', 689)">
+              <code data-fsdocs-tip="691" data-fsdocs-tip-unique="691">
                 <p>
                   <a id="splitFullName">
                     <a href="#splitFullName">
@@ -514,7 +532,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="689">
+              <div popover="" class="fsdocs-tip" id="691">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>splitFullName&#32;<span>fn</span></span></code>
@@ -545,19 +563,23 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Ssdt.DacpacParser.RegexParsers.splitFullName`')">
-                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
-                  </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Ssdt.DacpacParser.RegexParsers.splitFullName\'/>')">
-                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
-                  </div>
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Ssdt.DacpacParser.fs#L153-153" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Splits a fully qualified name into parts. 
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Splits a fully qualified name into parts. 
  Name can start with a letter, _, @ or #. Names in square brackets can contain any char except for square brackets.
-                  </p>
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Ssdt.DacpacParser.fs#L153-153" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Ssdt.DacpacParser.RegexParsers.splitFullName\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Ssdt.DacpacParser.RegexParsers.splitFullName`')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
+                  </div>
                 </div>
               </summary>
               <dl class="fsdocs-params">
@@ -585,7 +607,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '690', 690)" onmouseover="showTip(event, '690', 690)">
+              <code data-fsdocs-tip="692" data-fsdocs-tip-unique="692">
                 <p>
                   <a id="tablePattern">
                     <a href="#tablePattern">
@@ -594,7 +616,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="690">
+              <div popover="" class="fsdocs-tip" id="692">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>tablePattern&#32;<span></span></span></code>
@@ -610,21 +632,28 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.text.regularexpressions.regex">Regex</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Ssdt.DacpacParser.fs#L146-146" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.text.regularexpressions.regex">Regex</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '691', 691)" onmouseover="showTip(event, '691', 691)">
+              <code data-fsdocs-tip="693" data-fsdocs-tip-unique="693">
                 <p>
                   <a id="viewPattern">
                     <a href="#viewPattern">
@@ -633,7 +662,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="691">
+              <div popover="" class="fsdocs-tip" id="693">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>viewPattern&#32;<span></span></span></code>
@@ -649,15 +678,22 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.text.regularexpressions.regex">Regex</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/Ssdt.DacpacParser.fs#L148-148" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.text.regularexpressions.regex">Regex</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
       </tbody>

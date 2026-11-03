@@ -79,7 +79,8 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/general.html">
-    general
+    SQL Provider Basics
+
   </a>
 </li>             
 <li class="nav-item ">
@@ -137,8 +138,7 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/outline.html">
-    SQL Type Provider
-
+    outline
   </a>
 </li>             
 <li class="nav-item ">
@@ -278,10 +278,12 @@
   </dl>
   <div class="fsdocs-xmldoc">
     <div>
-      <p class="fsdocs-summary">
-         Contains information about a SQL command being executed, including the command text,
+      <div class="fsdocs-summary-contents">
+        <p class="fsdocs-summary">
+           Contains information about a SQL command being executed, including the command text,
  parameters, and connection information for debugging and monitoring purposes.
-      </p>
+        </p>
+      </div>
     </div>
   </div>
   <div></div>
@@ -300,6 +302,7 @@
           </td>
           <td class="fsdocs-member-list-header">
             Description
+            <fsdocs-details-toggle></fsdocs-details-toggle>
           </td>
         </tr>
       </thead>
@@ -307,7 +310,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1706', 1706)" onmouseover="showTip(event, '1706', 1706)">
+              <code data-fsdocs-tip="1798" data-fsdocs-tip-unique="1798">
                 <p>
                   <a id="Command">
                     <a href="#Command">
@@ -316,7 +319,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1706">
+              <div popover="" class="fsdocs-tip" id="1798">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>Command</code>
@@ -335,12 +338,16 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L107-107" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     The text of the SQL command being executed.
-                  </p>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       The text of the SQL command being executed.
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L108-108" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                  </div>
                 </div>
               </summary>
               <dl class="fsdocs-returns">
@@ -358,7 +365,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1707', 1707)" onmouseover="showTip(event, '1707', 1707)">
+              <code data-fsdocs-tip="1799" data-fsdocs-tip-unique="1799">
                 <p>
                   <a id="ConnectionStringHash">
                     <a href="#ConnectionStringHash">
@@ -367,7 +374,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1707">
+              <div popover="" class="fsdocs-tip" id="1799">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>ConnectionStringHash</code>
@@ -386,13 +393,17 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L114-114" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     The SHA256 hash of the UTF8-encoded connection string used to perform this command.
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       The SHA256 hash of the UTF8-encoded connection string used to perform this command.
  Use this to determine on which database connection the command is going to be executed.
-                  </p>
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L115-115" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                  </div>
                 </div>
               </summary>
               <dl class="fsdocs-returns">
@@ -410,7 +421,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1708', 1708)" onmouseover="showTip(event, '1708', 1708)">
+              <code data-fsdocs-tip="1800" data-fsdocs-tip-unique="1800">
                 <p>
                   <a id="Parameters">
                     <a href="#Parameters">
@@ -419,7 +430,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1708">
+              <div popover="" class="fsdocs-tip" id="1800">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>Parameters</code>
@@ -438,12 +449,16 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L110-110" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     The parameters (if any) passed to the SQL command being executed.
-                  </p>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       The parameters (if any) passed to the SQL command being executed.
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L111-111" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                  </div>
                 </div>
               </summary>
               <dl class="fsdocs-returns">
@@ -475,6 +490,7 @@
           </td>
           <td class="fsdocs-member-list-header">
             Description
+            <fsdocs-details-toggle></fsdocs-details-toggle>
           </td>
         </tr>
       </thead>
@@ -482,7 +498,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1709', 1709)" onmouseover="showTip(event, '1709', 1709)">
+              <code data-fsdocs-tip="1801" data-fsdocs-tip-unique="1801">
                 <p>
                   <a id="ToRawSql">
                     <a href="#ToRawSql">
@@ -491,7 +507,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1709">
+              <div popover="" class="fsdocs-tip" id="1801">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.ToRawSql</span></code>
@@ -510,18 +526,22 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Common.QueryEvents.SqlEventData.ToRawSql`')">
-                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Use this to execute similar queries to test the result of the executed query.
+                    </p>
                   </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Common.QueryEvents.SqlEventData.ToRawSql\'/>')">
-                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L126-126" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Common.QueryEvents.SqlEventData.ToRawSql\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Common.QueryEvents.SqlEventData.ToRawSql`')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
                   </div>
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L125-125" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Use this to execute similar queries to test the result of the executed query.
-                  </p>
                 </div>
               </summary>
               <dl class="fsdocs-returns">
@@ -539,7 +559,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1710', 1710)" onmouseover="showTip(event, '1710', 1710)">
+              <code data-fsdocs-tip="1802" data-fsdocs-tip-unique="1802">
                 <p>
                   <a id="ToRawSqlWithParamInfo">
                     <a href="#ToRawSqlWithParamInfo">
@@ -548,7 +568,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1710">
+              <div popover="" class="fsdocs-tip" id="1802">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.ToRawSqlWithParamInfo</span></code>
@@ -567,18 +587,22 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Common.QueryEvents.SqlEventData.ToRawSqlWithParamInfo`')">
-                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       SQLProvider does parametrized SQL. This method opens parameters for easier query debugging.
+                    </p>
                   </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Common.QueryEvents.SqlEventData.ToRawSqlWithParamInfo\'/>')">
-                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L139-139" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Common.QueryEvents.SqlEventData.ToRawSqlWithParamInfo\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Common.QueryEvents.SqlEventData.ToRawSqlWithParamInfo`')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
                   </div>
-                  <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L138-138" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     SQLProvider does parametrized SQL. This method opens parameters for easier query debugging.
-                  </p>
                 </div>
               </summary>
               <dl class="fsdocs-returns">

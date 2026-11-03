@@ -79,7 +79,8 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/general.html">
-    general
+    SQL Provider Basics
+
   </a>
 </li>             
 <li class="nav-item ">
@@ -137,8 +138,7 @@
 </li>             
 <li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/outline.html">
-    SQL Type Provider
-
+    outline
   </a>
 </li>             
 <li class="nav-item ">
@@ -262,9 +262,11 @@
   </dl>
   <div class="fsdocs-xmldoc">
     <div>
-      <p class="fsdocs-summary">
-        
-      </p>
+      <div class="fsdocs-summary-contents">
+        <p class="fsdocs-summary">
+          
+        </p>
+      </div>
     </div>
   </div>
   <div>
@@ -279,6 +281,7 @@
           </td>
           <td class="fsdocs-member-list-header">
             Description
+            <fsdocs-details-toggle></fsdocs-details-toggle>
           </td>
         </tr>
       </thead>
@@ -286,7 +289,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '430', 430)" onmouseover="showTip(event, '430', 430)">
+              <code data-fsdocs-tip="431" data-fsdocs-tip-unique="431">
                 <p>
                   <a id="DACPAC_SEARCH_PATH_ENV_VAR_NAME">
                     <a href="#DACPAC_SEARCH_PATH_ENV_VAR_NAME">
@@ -295,7 +298,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="430">
+              <div popover="" class="fsdocs-tip" id="431">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>DACPAC_SEARCH_PATH_ENV_VAR_NAME&#32;<span></span></span></code>
@@ -311,21 +314,28 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code>string</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.Runtime/Providers.MsSqlServer.Ssdt.fs#L24-24" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>string</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '431', 431)" onmouseover="showTip(event, '431', 431)">
+              <code data-fsdocs-tip="432" data-fsdocs-tip-unique="432">
                 <p>
                   <a id="convertExecutable">
                     <a href="#convertExecutable">
@@ -334,7 +344,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="431">
+              <div popover="" class="fsdocs-tip" id="432">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>convertExecutable&#32;<span>udts&#32;type'&#32;elems</span></span></code>
@@ -381,47 +391,54 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  udts
-                </span>
-                :
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt-dacpacparser-ssdtuserdefineddatatype.html">SsdtUserDefinedDataType</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  type'
-                </span>
-                :
-                <code>string</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  elems
-                </span>
-                :
-                <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt-dacpacparser-ssdtstoredproc.html">SsdtStoredProc</a>&#32;array</span></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-sproc.html">Sproc</a>&#32;array</span></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.Runtime/Providers.MsSqlServer.Ssdt.fs#L208-208" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    udts
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt-dacpacparser-ssdtuserdefineddatatype.html">SsdtUserDefinedDataType</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    type'
+                  </span>
+                  :
+                  <code>string</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    elems
+                  </span>
+                  :
+                  <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt-dacpacparser-ssdtstoredproc.html">SsdtStoredProc</a>&#32;array</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-sproc.html">Sproc</a>&#32;array</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '432', 432)" onmouseover="showTip(event, '432', 432)">
+              <code data-fsdocs-tip="433" data-fsdocs-tip-unique="433">
                 <p>
                   <a id="findDacPacFile">
                     <a href="#findDacPacFile">
@@ -430,7 +447,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="432">
+              <div popover="" class="fsdocs-tip" id="433">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>findDacPacFile&#32;<span>dacPacPath</span></span></code>
@@ -461,18 +478,22 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Providers.MSSqlServerSsdt.findDacPacFile`')">
-                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Tries to find .dacpac file using the given path at design time or by searching the runtime assembly path.
+                    </p>
                   </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Providers.MSSqlServerSsdt.findDacPacFile\'/>')">
-                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.Runtime/Providers.MsSqlServer.Ssdt.fs#L27-27" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Providers.MSSqlServerSsdt.findDacPacFile\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Providers.MSSqlServerSsdt.findDacPacFile`')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
                   </div>
-                  <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.Runtime/Providers.MsSqlServer.Ssdt.fs#L27-27" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Tries to find .dacpac file using the given path at design time or by searching the runtime assembly path.
-                  </p>
                 </div>
               </summary>
               <dl class="fsdocs-params">
@@ -500,7 +521,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '433', 433)" onmouseover="showTip(event, '433', 433)">
+              <code data-fsdocs-tip="434" data-fsdocs-tip-unique="434">
                 <p>
                   <a id="getSsdtSchema">
                     <a href="#getSsdtSchema">
@@ -509,7 +530,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="433">
+              <div popover="" class="fsdocs-tip" id="434">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>getSsdtSchema&#32;<span>path</span></span></code>
@@ -537,31 +558,38 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  path
-                </span>
-                :
-                <code>string</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><span>Lazy&lt;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt-dacpacparser-ssdtschema.html">SsdtSchema</a>&gt;</span></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.Runtime/Providers.MsSqlServer.Ssdt.fs#L195-195" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    path
+                  </span>
+                  :
+                  <code>string</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span>Lazy&lt;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt-dacpacparser-ssdtschema.html">SsdtSchema</a>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '434', 434)" onmouseover="showTip(event, '434', 434)">
+              <code data-fsdocs-tip="435" data-fsdocs-tip-unique="435">
                 <p>
                   <a id="parseDacpac">
                     <a href="#parseDacpac">
@@ -570,7 +598,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="434">
+              <div popover="" class="fsdocs-tip" id="435">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>parseDacpac&#32;<span></span></span></code>
@@ -589,18 +617,22 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:FSharp.Data.Sql.Providers.MSSqlServerSsdt.parseDacpac`')">
-                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Tries to parse a schema model from the given .dacpac file path.
+                    </p>
                   </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:FSharp.Data.Sql.Providers.MSSqlServerSsdt.parseDacpac\'/>')">
-                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.Runtime/Providers.MsSqlServer.Ssdt.fs#L114-114" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:FSharp.Data.Sql.Providers.MSSqlServerSsdt.parseDacpac\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:FSharp.Data.Sql.Providers.MSSqlServerSsdt.parseDacpac`')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
                   </div>
-                  <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.Runtime/Providers.MsSqlServer.Ssdt.fs#L114-114" class="fsdocs-source-link" title="Source on GitHub">
-                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                  </a>
-                  <p class="fsdocs-summary">
-                     Tries to parse a schema model from the given .dacpac file path.
-                  </p>
                 </div>
               </summary>
               <dl class="fsdocs-returns">
@@ -618,7 +650,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '435', 435)" onmouseover="showTip(event, '435', 435)">
+              <code data-fsdocs-tip="436" data-fsdocs-tip-unique="436">
                 <p>
                   <a id="sprocReturnCache">
                     <a href="#sprocReturnCache">
@@ -627,7 +659,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="435">
+              <div popover="" class="fsdocs-tip" id="436">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>sprocReturnCache&#32;<span></span></span></code>
@@ -643,21 +675,28 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.concurrent.concurrentdictionary-2">ConcurrentDictionary</a>&lt;<span>string,&#32;<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-queryparameter.html">QueryParameter</a>[]</span></span>&gt;</span></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.Runtime/Providers.MsSqlServer.Ssdt.fs#L193-193" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.concurrent.concurrentdictionary-2">ConcurrentDictionary</a>&lt;<span>string,&#32;<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-queryparameter.html">QueryParameter</a>[]</span></span>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '436', 436)" onmouseover="showTip(event, '436', 436)">
+              <code data-fsdocs-tip="437" data-fsdocs-tip-unique="437">
                 <p>
                   <a id="sprocReturnParam">
                     <a href="#sprocReturnParam">
@@ -666,7 +705,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="436">
+              <div popover="" class="fsdocs-tip" id="437">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>sprocReturnParam&#32;<span>i</span></span></code>
@@ -694,31 +733,38 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  i
-                </span>
-                :
-                <code>int</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-queryparameter.html">QueryParameter</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.Runtime/Providers.MsSqlServer.Ssdt.fs#L197-197" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    i
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-queryparameter.html">QueryParameter</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '437', 437)" onmouseover="showTip(event, '437', 437)">
+              <code data-fsdocs-tip="438" data-fsdocs-tip-unique="438">
                 <p>
                   <a id="ssdtCache">
                     <a href="#ssdtCache">
@@ -727,7 +773,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="437">
+              <div popover="" class="fsdocs-tip" id="438">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>ssdtCache&#32;<span></span></span></code>
@@ -743,21 +789,28 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.concurrent.concurrentdictionary-2">ConcurrentDictionary</a>&lt;<span>string,&#32;<span><a href="https://learn.microsoft.com/dotnet/api/system.lazy-1">Lazy</a>&lt;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt-dacpacparser-ssdtschema.html">SsdtSchema</a>&gt;</span></span>&gt;</span></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.Runtime/Providers.MsSqlServer.Ssdt.fs#L192-192" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.concurrent.concurrentdictionary-2">ConcurrentDictionary</a>&lt;<span>string,&#32;<span><a href="https://learn.microsoft.com/dotnet/api/system.lazy-1">Lazy</a>&lt;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt-dacpacparser-ssdtschema.html">SsdtSchema</a>&gt;</span></span>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '438', 438)" onmouseover="showTip(event, '438', 438)">
+              <code data-fsdocs-tip="439" data-fsdocs-tip-unique="439">
                 <p>
                   <a id="ssdtColumnToColumn">
                     <a href="#ssdtColumnToColumn">
@@ -766,7 +819,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="438">
+              <div popover="" class="fsdocs-tip" id="439">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>ssdtColumnToColumn&#32;<span>uddts&#32;tbl&#32;col</span></span></code>
@@ -810,47 +863,54 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  uddts
-                </span>
-                :
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt-dacpacparser-ssdtuserdefineddatatype.html">SsdtUserDefinedDataType</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  tbl
-                </span>
-                :
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt-dacpacparser-ssdttable.html">SsdtTable</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  col
-                </span>
-                :
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt-dacpacparser-ssdtcolumn.html">SsdtColumn</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-column.html">Column</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.Runtime/Providers.MsSqlServer.Ssdt.fs#L178-178" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    uddts
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt-dacpacparser-ssdtuserdefineddatatype.html">SsdtUserDefinedDataType</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    tbl
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt-dacpacparser-ssdttable.html">SsdtTable</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    col
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt-dacpacparser-ssdtcolumn.html">SsdtColumn</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-column.html">Column</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '439', 439)" onmouseover="showTip(event, '439', 439)">
+              <code data-fsdocs-tip="440" data-fsdocs-tip-unique="440">
                 <p>
                   <a id="ssdtTableToTable">
                     <a href="#ssdtTableToTable">
@@ -859,7 +919,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="439">
+              <div popover="" class="fsdocs-tip" id="440">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>ssdtTableToTable&#32;<span>tbl</span></span></code>
@@ -887,31 +947,38 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  tbl
-                </span>
-                :
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt-dacpacparser-ssdttable.html">SsdtTable</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-table.html">Table</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.Runtime/Providers.MsSqlServer.Ssdt.fs#L175-175" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    tbl
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt-dacpacparser-ssdttable.html">SsdtTable</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-table.html">Table</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '440', 440)" onmouseover="showTip(event, '440', 440)">
+              <code data-fsdocs-tip="441" data-fsdocs-tip-unique="441">
                 <p>
                   <a id="tryFindMapping">
                     <a href="#tryFindMapping">
@@ -920,7 +987,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="440">
+              <div popover="" class="fsdocs-tip" id="441">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>tryFindMapping&#32;<span>dataType</span></span></code>
@@ -948,31 +1015,38 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  dataType
-                </span>
-                :
-                <code>string</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-typemapping.html">TypeMapping</a>&#32;option</span></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.Runtime/Providers.MsSqlServer.Ssdt.fs#L162-162" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    dataType
+                  </span>
+                  :
+                  <code>string</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-typemapping.html">TypeMapping</a>&#32;option</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '441', 441)" onmouseover="showTip(event, '441', 441)">
+              <code data-fsdocs-tip="442" data-fsdocs-tip-unique="442">
                 <p>
                   <a id="tryFindMappingOrVariant">
                     <a href="#tryFindMappingOrVariant">
@@ -981,7 +1055,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="441">
+              <div popover="" class="fsdocs-tip" id="442">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>tryFindMappingOrVariant&#32;<span>uddts&#32;dataType</span></span></code>
@@ -1017,39 +1091,46 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  uddts
-                </span>
-                :
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt-dacpacparser-ssdtuserdefineddatatype.html">SsdtUserDefinedDataType</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  dataType
-                </span>
-                :
-                <code>string</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-typemapping.html">TypeMapping</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.Runtime/Providers.MsSqlServer.Ssdt.fs#L166-166" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    uddts
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-ssdt-dacpacparser-ssdtuserdefineddatatype.html">SsdtUserDefinedDataType</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    dataType
+                  </span>
+                  :
+                  <code>string</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-typemapping.html">TypeMapping</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '442', 442)" onmouseover="showTip(event, '442', 442)">
+              <code data-fsdocs-tip="443" data-fsdocs-tip-unique="443">
                 <p>
                   <a id="typeMappingsByName">
                     <a href="#typeMappingsByName">
@@ -1058,7 +1139,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="442">
+              <div popover="" class="fsdocs-tip" id="443">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>typeMappingsByName&#32;<span></span></span></code>
@@ -1074,15 +1155,22 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span>string,&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-typemapping.html">TypeMapping</a></span>&gt;</span></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.Runtime/Providers.MsSqlServer.Ssdt.fs#L116-116" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span>string,&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-typemapping.html">TypeMapping</a></span>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
           </td>
         </tr>
       </tbody>

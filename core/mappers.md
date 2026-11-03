@@ -1,0 +1,97 @@
+## Adding a Mapper using dataContext to use generated types from the DB
+
+Typically, F# is about writing business logic and not about OR-mapping. Consider using your database types as is. And select only the columns you need, not full entities. But sometimes you want to
+map objects to different ones, for example to interact with other languages like C# domain.
+
+First, add a Domain Model
+
+```fsharp
+open System
+
+type Employee = {
+    EmployeeId : int64
+    FirstName : string
+    LastName : string
+    HireDate : DateTime
+}
+```
+
+Then you can create the mapper using dataContext to use the generated types from the DB
+
+```fsharp
+let mapEmployee (dbRecord:sql.dataContext.``main.EmployeesEntity``) : Employee =
+    { EmployeeId = dbRecord.EmployeeId
+      FirstName = dbRecord.FirstName
+      LastName = dbRecord.LastName
+      HireDate = dbRecord.HireDate }
+```
+
+This could be useful if you e.g. want to use SQLProvider objects in some reflection based code-generator (because the normal objects are erased).
+
+### MapTo
+
+SqlProvider also has a `.MapTo<'T>` convenience method:
+
+```fsharp
+let ctx = sql.GetDataContext()
+
+let orders = ctx.Main.Orders
+let employees = ctx.Main.Employees
+
+type Employee2 = {
+    FirstName:string
+    LastName:string
+    }
+
+let qry = query { for row in employees do
+                  select row} |> Seq.map (fun x -> x.MapTo<Employee2>())
+```
+
+The target type can be a record (as in the example) or a class type with properties named as the source columns and with a parameterless setter.
+
+Target will support mapping database nullable fields to Option and ValueOption types automatically.
+
+The target field name can also be different than the column name; in this case, it must be decorated with the MappedColumnAttribute custom attribute:
+
+```fsharp
+open FSharp.Data.Sql.Common
+
+type Employee3 = {
+    [<MappedColumn("FirstName")>] GivenName:string
+    [<MappedColumn("LastName")>] FamilyName:string
+    }
+
+let qry2 =
+          query {
+                for row in employees do
+                select row} |> Seq.map (fun x -> x.MapTo<Employee3>())
+```
+
+### TemplateAsRecord
+
+If you want to use SQLProvider as code-generator and copy and paste the tables as separate classes (not recommended!), you can use `TemplateAsRecord` under your database table type which is located under dataContext types:
+
+```fsharp
+// The template is a nested type: type its path and a dot in the editor
+// sql.dataContext.DesignTimeCommands.TemplateAsRecord.``main.OrdersTemplate``.
+
+// intellisense will generate you code that you can copy and paste as template to create your own type:
+// ``type MainOrders = { CustomerId : String voption; EmployeeId : Int64 voption; Freight : Decimal voption; OrderDate : DateTime voption; OrderId : Int64; RequiredDate : DateTime voption; ShipAddress : String voption; ShipCity : String voption; ShipCountry : String voption; ShipName : String voption; ShipPostalCode : String voption; ShipRegion : String voption; ShippedDate : DateTime voption }``
+```
+
+The main reason to do this would be to create some reflection schema or MapTo object templates without manual typing.
+
+### ColumnValues
+
+Or alternatively, the ColumnValues from SQLEntity can be used to create a map, with the
+column as a key:
+
+```fsharp
+let rows =
+        query {
+            for row in employees do
+            select row} |> Seq.toArray
+
+let employees2map = rows |> Seq.map(fun i -> i.ColumnValues |> Map.ofSeq)
+let firstNames = employees2map |> Seq.map (fun x -> x.["FirstName"])
+```
