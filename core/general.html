@@ -670,8 +670,8 @@ type CaseSensitivityChange =
 val connectionString2: string = &quot;(insert runtime connection here)&quot;</div>
 <div popover class="fsdocs-tip" id="fs19">val ctx2: SqlDataProvider&lt;...&gt;.dataContext</div>
 <div popover class="fsdocs-tip" id="fs20">val customers: SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity array</div>
-<div popover class="fsdocs-tip" id="fs21">property SqlDataProvider&lt;...&gt;.dataContext.Main: SqlDataProvider&lt;...&gt;.readDataContext.mainSchema with get</div>
-<div popover class="fsdocs-tip" id="fs22">property SqlDataProvider&lt;...&gt;.readDataContext.mainSchema.Customers: SqlDataProvider&lt;...&gt;.readDataContext.mainSchema.main.Customers with get<br /><em>&lt;summary&gt;  The table Customers belonging to schema main&lt;/summary&gt;</em></div>
+<div popover class="fsdocs-tip" id="fs21">property SqlDataProvider&lt;...&gt;.dataContext.Main: SqlDataProvider&lt;...&gt;.dataContext.mainSchema with get</div>
+<div popover class="fsdocs-tip" id="fs22">property SqlDataProvider&lt;...&gt;.dataContext.mainSchema.Customers: SqlDataProvider&lt;...&gt;.dataContext.mainSchema.main.Customers with get<br /><em>&lt;summary&gt;  The table Customers belonging to schema main&lt;/summary&gt;</em></div>
 <div popover class="fsdocs-tip" id="fs23">Multiple items<br />module Seq
 
 from FSharp.Data.Sql<br /><br />--------------------<br />module Seq
@@ -704,13 +704,13 @@ Calls Linq.QueryBuilder.Where</div>
 <div popover class="fsdocs-tip" id="fs42">custom operation: join var in collection on (outerKey = innerKey). Note that parentheses are required after &#39;on&#39;
 
 Calls Linq.QueryBuilder.Join</div>
-<div popover class="fsdocs-tip" id="fs43">property SqlDataProvider&lt;...&gt;.readDataContext.mainSchema.Orders: SqlDataProvider&lt;...&gt;.readDataContext.mainSchema.main.Orders with get<br /><em>&lt;summary&gt;  The table Orders belonging to schema main&lt;/summary&gt;</em></div>
+<div popover class="fsdocs-tip" id="fs43">property SqlDataProvider&lt;...&gt;.dataContext.mainSchema.Orders: SqlDataProvider&lt;...&gt;.dataContext.mainSchema.main.Orders with get<br /><em>&lt;summary&gt;  The table Orders belonging to schema main&lt;/summary&gt;</em></div>
 <div popover class="fsdocs-tip" id="fs44">property SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity.CustomerId: string with get, set<br /><em>&lt;summary&gt;CustomerID:   nchar(5)&lt;/summary&gt;</em></div>
 <div popover class="fsdocs-tip" id="fs45">val ordersQuery: (string * System.DateTime * string) array</div>
 <div popover class="fsdocs-tip" id="fs46">property SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity.OrderDate: System.DateTime with get, set<br /><em>&lt;summary&gt;OrderDate:   datetime&lt;/summary&gt;</em></div>
 <div popover class="fsdocs-tip" id="fs47">property SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity.ShipAddress: string with get, set<br /><em>&lt;summary&gt;ShipAddress:   nvarchar(60)&lt;/summary&gt;</em></div>
 <div popover class="fsdocs-tip" id="fs48">val BERGS: SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity</div>
-<div popover class="fsdocs-tip" id="fs49">property SqlDataProvider&lt;...&gt;.readDataContext.mainSchema.main.Customers.Individuals: SqlDataProvider&lt;...&gt;.dataContext.main.Customers.Individuals with get<br /><em>&lt;summary&gt;Get individual items from the table. Requires single primary key.&lt;/summary&gt;</em></div>
+<div popover class="fsdocs-tip" id="fs49">property SqlDataProvider&lt;...&gt;.dataContext.mainSchema.main.Customers.Individuals: SqlDataProvider&lt;...&gt;.dataContext.main.Customers.Individuals with get<br /><em>&lt;summary&gt;Get individual items from the table. Requires single primary key.&lt;/summary&gt;</em></div>
 <div popover class="fsdocs-tip" id="fs50">property SqlDataProvider&lt;...&gt;.dataContext.main.Customers.Individuals.BERGS: SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity with get</div>
 <div popover class="fsdocs-tip" id="fs51">val christina: SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity</div>
 <div popover class="fsdocs-tip" id="fs52">val using: resource: &#39;T -&gt; action: (&#39;T -&gt; &#39;U) -&gt; &#39;U (requires &#39;T :&gt; System.IDisposable)</div>
