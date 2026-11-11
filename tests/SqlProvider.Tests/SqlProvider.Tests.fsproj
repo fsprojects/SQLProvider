@@ -8,6 +8,8 @@
     <TargetFrameworks>net48;net10.0</TargetFrameworks>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <AssemblyName>SqlProvider.Tests</AssemblyName>
+    <!-- Both frameworks write to the same db/northwindEF.db: test them one after the other -->
+    <TestTfmsInParallel>false</TestTfmsInParallel>
   </PropertyGroup>
   <PropertyGroup Condition="'$(TargetFramework)' == 'net48'">
 	<TargetFSharpCoreVersion>8.0.0.0</TargetFSharpCoreVersion>
