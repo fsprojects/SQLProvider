@@ -1,4 +1,4 @@
-### 1.5.31 - unreleased
+### 1.5.31 - 13.11.2026
 - Seq.lockForUpdate locks the rows a query reads until the transaction ends: FOR UPDATE on PostgreSQL (FOR UPDATE OF the other tables beside a left join), MySQL and Oracle (Oracle not with skip or a sorted take), FOR UPDATE WITH LOCK on Firebird (no joins), UPDLOCK and ROWLOCK on SQL Server; SQLite, MS Access, DuckDB and ODBC refuse it, and so does a locked query inside another query or a delete. New page: Locking rows
 - Seq/Array/List.lockForUpdateAsync, Seq.lockForUpdateHeadAsync and Seq.lockForUpdateTryHeadAsync run a query with its rows locked
 - OnConflict.DoNothingOn names the conflict's columns; OnConflict.UpdateOn names them and sets each listed column to the inserted value or a constant, keeping the others; PostgreSQL, SQLite 3.24+ and DuckDB; names are checked against the table's columns
