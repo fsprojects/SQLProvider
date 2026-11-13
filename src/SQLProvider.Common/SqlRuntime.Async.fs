@@ -195,6 +195,54 @@ module Seq =
     let stdDevAsync<'T when 'T : comparison> : IQueryable<'T> -> Task<'T>  = getAggAsync "StdDev"
     /// Execute SQLProvider query to get the variance of elements, and release the OS thread while query is being executed.
     let varianceAsync<'T when 'T : comparison> : IQueryable<'T> -> Task<'T>  = getAggAsync "Variance"
+    /// <summary>Marks a query to lock the rows it reads until the transaction ends, against lost updates: another
+    /// transaction that locks, changes or deletes one of them waits until this one commits or rolls back.</summary>
+    /// <param name="query">A SQLProvider query of a table's rows, joined ones too; not distinct, grouped, counted,
+    /// aggregated or a union, and not a part of another query (a sub-query, a join's table) or a delete.</param>
+    /// <returns>The query, locking its rows when any executor runs it. A queryable that isn't a database query, such as a
+    /// mock context's, comes back as it is; a SQLProvider query behind an in-memory step (<c>Seq.map</c>, then
+    /// <c>AsQueryable</c>) is refused, as its rows couldn't be locked.</returns>
+    /// <remarks>Run it inside a transaction: a <c>TransactionScope</c>, with <c>TransactionScopeAsyncFlowOption.Enabled</c>
+    /// in async code. Outside one the lock ends with the query. PostgreSQL, MySQL and Oracle write <c>FOR UPDATE</c>
+    /// (PostgreSQL not the rows of a left-outer-joined table; Oracle not with skip, nor with take or head after a
+    /// sort), Firebird <c>FOR UPDATE WITH LOCK</c> (one table, no joins), SQL Server the <c>UPDLOCK</c> and <c>ROWLOCK</c>
+    /// table hints; SQLite, MS Access, DuckDB and ODBC have no row locks and refuse it. See "Locking rows" in the
+    /// documentation.</remarks>
+    /// <example><code>
+    /// use scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled)
+    /// let! order = query { for o in ctx.Main.Orders do where (o.OrderId = id); select o } |> Seq.lockForUpdateHeadAsync
+    /// order.Freight &lt;- order.Freight + 1m
+    /// do! ctx.SubmitUpdatesAsync()
+    /// scope.Complete()
+    /// </code></example>
+    let lockForUpdate<'T> (query: IQueryable<'T>) : IQueryable<'T> =
+        match query with
+        | :? IWithSqlService as source ->
+            Activator.CreateInstance(
+                query.GetType(),
+                [| box source.DataContext; box source.Provider; box (ForUpdate source.SqlExpression); box source.TupleIndex |]
+            ) :?> IQueryable<'T>
+        | _ ->
+            match findSqlService query with
+            | Some _, _ -> failwith "Seq.lockForUpdate takes the SQLProvider query itself: lock it before Seq.map or another in-memory step."
+            | None, _ -> query
+    /// <summary>Runs a query with its rows locked until the transaction ends (see <c>lockForUpdate</c>), releasing the OS
+    /// thread while the database works.</summary>
+    /// <param name="query">The query, as <c>lockForUpdate</c> takes it.</param>
+    /// <returns>The rows read, each locked.</returns>
+    let lockForUpdateAsync<'T> (query: IQueryable<'T>) = executeAsync (lockForUpdate query)
+    /// <summary>Reads the query's first row, locked until the transaction ends (see <c>lockForUpdate</c>), releasing the OS
+    /// thread while the database works.</summary>
+    /// <param name="query">The query, as <c>lockForUpdate</c> takes it.</param>
+    /// <returns>The row, locked. Fails when the query reads no rows; see <c>lockForUpdateTryHeadAsync</c>.</returns>
+    /// <remarks>Oracle refuses it after a sort.</remarks>
+    let lockForUpdateHeadAsync<'T> (query: IQueryable<'T>) = getHeadAsync (lockForUpdate query)
+    /// <summary>Reads the query's first row, if any, locked until the transaction ends (see <c>lockForUpdate</c>),
+    /// releasing the OS thread while the database works.</summary>
+    /// <param name="query">The query, as <c>lockForUpdate</c> takes it.</param>
+    /// <returns>The row, locked, or <c>None</c> when the query reads no rows.</returns>
+    /// <remarks>Oracle refuses it after a sort.</remarks>
+    let lockForUpdateTryHeadAsync<'T> (query: IQueryable<'T>) = getTryHeadAsync (lockForUpdate query)
     /// WARNING! Execute SQLProvider DELETE FROM query to remove elements from the database.
     let ``delete all items from single table``<'T> : IQueryable<'T> -> Task<int> = function
         | :? IWithSqlService as source ->
@@ -217,6 +265,11 @@ module Seq =
 module Array =
     /// Execute SQLProvider query and release the OS thread while query is being executed.
     let executeQueryAsync query = task { let! x = executeAsync query in return x |> Seq.toArray }
+    /// <summary>Runs a query with its rows locked until the transaction ends (see <c>Seq.lockForUpdate</c>), releasing the
+    /// OS thread while the database works.</summary>
+    /// <param name="query">The query, as <c>Seq.lockForUpdate</c> takes it.</param>
+    /// <returns>The rows read, each locked.</returns>
+    let lockForUpdateAsync query = task { let! x = executeAsync (Seq.lockForUpdate query) in return x |> Seq.toArray }
 
 module List =
     /// Helper function to run async computation non-parallel style for list of objects.
@@ -224,3 +277,8 @@ module List =
     let evaluateOneByOne = Sql.evaluateOneByOne
     /// Execute SQLProvider query and release the OS thread while query is being executed.
     let executeQueryAsync query = task { let! x = executeAsync query in return x |> Seq.toList }
+    /// <summary>Runs a query with its rows locked until the transaction ends (see <c>Seq.lockForUpdate</c>), releasing the
+    /// OS thread while the database works.</summary>
+    /// <param name="query">The query, as <c>Seq.lockForUpdate</c> takes it.</param>
+    /// <returns>The rows read, each locked.</returns>
+    let lockForUpdateAsync query = task { let! x = executeAsync (Seq.lockForUpdate query) in return x |> Seq.toList }

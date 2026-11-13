@@ -486,6 +486,7 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
                 (table.Name.Replace("[","\"").Replace("]","\"").Replace("``","\""))
 
     let createInsertCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) =
+        CommonTasks.refuseConflictColumns "Firebird has no ON CONFLICT" entity
         let (~~) (t:string) = sb.Append t |> ignore
 
         let cmd = (this :> ISqlProvider).CreateCommand(con,"")
@@ -756,6 +757,9 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
         member __.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM %s WHERE %s.%s = @id" (getTableNameForQuery table) (getTableNameForQuery table) column
 
         member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns, isDeleteScript, con) =
+            // WITH LOCK takes the rows of a single table
+            if sqlQuery.ForUpdate && not (sqlQuery.Links.IsEmpty && sqlQuery.CrossJoins.IsEmpty) then
+                failwith "Firebird locks the rows of one table only (FOR UPDATE WITH LOCK): Seq.lockForUpdate needs the query without joins."
             let parameters = ResizeArray<_>()
 
             // make this nicer later.. just try and get the damn thing to work properly (well, at all) for now :D
@@ -1128,11 +1132,14 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
                 ~~ $" EXCEPT %s{suquery} "
             | None -> ()
 
+            // FOR UPDATE alone only names the cursor's rows; WITH LOCK locks them
+            let lockRows = if sqlQuery.ForUpdate then " FOR UPDATE WITH LOCK" else ""
+
             match sqlQuery.Take, sqlQuery.Skip with
-            | ValueSome take, ValueSome skip ->  ~~(sprintf " ROWS %i TO %i;" (skip+1) (skip+take))
-            | ValueSome take, ValueNone ->  ~~ $" ROWS %i{take};"
-            | ValueNone, ValueSome skip -> ~~(sprintf " ROWS %i TO %i;" (skip+1) UInt64.MaxValue)
-            | ValueNone, ValueNone -> ()
+            | ValueSome take, ValueSome skip ->  ~~(sprintf " ROWS %i TO %i%s;" (skip+1) (skip+take) lockRows)
+            | ValueSome take, ValueNone ->  ~~ $" ROWS %i{take}%s{lockRows};"
+            | ValueNone, ValueSome skip -> ~~(sprintf " ROWS %i TO %i%s;" (skip+1) UInt64.MaxValue lockRows)
+            | ValueNone, ValueNone -> ~~ lockRows
 
             let sql = sb.ToString()
             (sql,parameters)

@@ -62,3 +62,169 @@ let ``identity columns are autonumber and left out of the required columns``() =
         Assert.AreEqual(["member_sub"], required)
     finally
         execute con $"DROP SCHEMA IF EXISTS {schema} CASCADE"
+
+// A function call joins an open TransactionScope: the connection enlisted in it, so the call begins no transaction of
+// its own (Npgsql refuses a second one), and the scope decides whether the call's work stays.
+[<Test; SqlCheck.NoSql>]
+let ``a function called inside a TransactionScope runs in that transaction``() =
+    let cs = connectionString ()
+    let provider = createProvider ()
+    let schema = "sqlprovider_sproc_" + Guid.NewGuid().ToString("N").Substring(0, 8)
+    use setup = provider.CreateConnection cs
+    setup.Open()
+    provider.CreateTypeMappings setup
+    let marks () =
+        if setup.State <> ConnectionState.Open then setup.Open()
+        use count = setup.CreateCommand()
+        count.CommandText <- $"SELECT count(*) FROM {schema}.mark"
+        count.ExecuteScalar() |> Convert.ToInt64
+    try
+        execute setup $"CREATE SCHEMA {schema}"
+        execute setup $"CREATE TABLE {schema}.mark (id int)"
+        execute setup $"CREATE FUNCTION {schema}.add_mark() RETURNS void LANGUAGE sql AS $$ INSERT INTO {schema}.mark VALUES (1) $$"
+        let call complete =
+            use scope = new Transactions.TransactionScope(Transactions.TransactionScopeAsyncFlowOption.Enabled)
+            use con = provider.CreateConnection cs
+            con.Open()
+            use com = provider.CreateCommand(con, $"SELECT {schema}.add_mark()")
+            provider.ExecuteSprocCommand(com, [||], [||], [||]) |> ignore
+            if complete then scope.Complete()
+        call false
+        Assert.AreEqual(0L, marks (), "rolled back with the scope")
+        call true
+        Assert.AreEqual(1L, marks (), "committed with the scope")
+        // Async too
+        (task {
+            use scope = new Transactions.TransactionScope(Transactions.TransactionScopeAsyncFlowOption.Enabled)
+            use con = provider.CreateConnection cs :?> Data.Common.DbConnection
+            do! con.OpenAsync()
+            use com = provider.CreateCommand(con, $"SELECT {schema}.add_mark()") :?> Data.Common.DbCommand
+            let! _ = provider.ExecuteSprocCommandAsync(com, [||], [||], [||])
+            scope.Complete()
+        }).Wait()
+        Assert.AreEqual(2L, marks (), "the async call committed with the scope")
+
+        // A refcursor lives only inside a transaction. A connection that isn't enlisted in the scope (Enlist=false) isn't
+        // in the scope's, so the call begins its own; an enlisted one reads the cursor in the scope's.
+        execute setup $"CREATE FUNCTION {schema}.marks() RETURNS refcursor LANGUAGE plpgsql AS $$ DECLARE c refcursor; BEGIN OPEN c FOR SELECT id FROM {schema}.mark; RETURN c; END $$"
+        let cursor =
+            QueryParameter.Create(
+                "ReturnValue", 0,
+                TypeMapping.Create(clrType = typeof<SqlEntity[]>.ToString(), dbType = DbType.Object, providerTypeName = "refcursor", providerType = 23),
+                ParameterDirection.ReturnValue)
+        let readMarks (connection: string) =
+            use scope = new Transactions.TransactionScope(Transactions.TransactionScopeAsyncFlowOption.Enabled)
+            use con = provider.CreateConnection connection
+            con.Open()
+            use com = provider.CreateCommand(con, $"SELECT {schema}.marks()")
+            match provider.ExecuteSprocCommand(com, [||], [| cursor |], [||]) with
+            | SingleResultSet(_, rows) -> Seq.length rows
+            | other -> failwithf "Expected the cursor's rows, got %A" other
+        Assert.AreEqual(2, readMarks (cs + ";Enlist=false"), "outside the scope's transaction")
+        Assert.AreEqual(2, readMarks cs, "inside the scope's transaction")
+    finally
+        execute setup $"DROP SCHEMA IF EXISTS {schema} CASCADE"
+
+// Seq.lockForUpdate's FOR UPDATE: the query's rows stay locked until the transaction ends, so another transaction can't lock them.
+[<Test; SqlCheck.NoSql>]
+let ``FOR UPDATE locks the rows a query reads until the transaction ends``() =
+    let cs = connectionString ()
+    let provider = createProvider ()
+    let schema = "sqlprovider_lock_" + Guid.NewGuid().ToString("N").Substring(0, 8)
+    use setup = provider.CreateConnection cs
+    setup.Open()
+    provider.CreateTypeMappings setup
+    try
+        execute setup $"CREATE SCHEMA {schema}"
+        execute setup $"CREATE TABLE {schema}.mark (id int PRIMARY KEY)"
+        execute setup $"INSERT INTO {schema}.mark VALUES (1)"
+        let table = { Schema = schema; Name = "mark"; Type = "" }
+        let query = { SqlQuery.Empty with UltimateChild = Some("m", table); ForUpdate = true }
+        let text (q: SqlQuery) = fst (provider.GenerateQueryText(q, "m", table, Collections.Generic.Dictionary(), false, setup))
+        StringAssert.EndsWith(" FOR UPDATE", (text query).TrimEnd())
+        StringAssert.EndsWith(" LIMIT 1 FOR UPDATE;", (text { query with Take = ValueSome 1 }).TrimEnd())
+
+        // The nullable side of an outer join can't be locked, so with one the other tables are named
+        execute setup $"CREATE TABLE {schema}.child (id int PRIMARY KEY, mark_id int)"
+        let child = { Schema = schema; Name = "child"; Type = "" }
+        let joined (outer: bool) =
+            let link =
+                { PrimaryTable = table
+                  PrimaryKey = [ KeyColumn "id" ]
+                  ForeignTable = child
+                  ForeignKey = [ KeyColumn "mark_id" ]
+                  OuterJoin = outer
+                  IsNullableOuter = outer
+                  RelDirection = RelationshipDirection.Children }
+            text { query with Aliases = Map.ofList [ "c", child ]; Links = [ "m", link, "c" ] }
+        StringAssert.EndsWith(" FOR UPDATE", (joined false).TrimEnd())
+        StringAssert.EndsWith(" FOR UPDATE OF \"m\"", (joined true).TrimEnd())
+        for sql in [ joined false; joined true ] do
+            if setup.State <> ConnectionState.Open then setup.Open()
+            use run = setup.CreateCommand()
+            run.CommandText <- sql
+            run.ExecuteScalar() |> ignore
+        do
+            use scope = new Transactions.TransactionScope(Transactions.TransactionScopeAsyncFlowOption.Enabled)
+            use con = provider.CreateConnection cs
+            con.Open()
+            use locking = con.CreateCommand()
+            locking.CommandText <- text query
+            locking.ExecuteScalar() |> ignore
+            // Another transaction waits for the lock, here at most a tenth of a second
+            use other = provider.CreateConnection(cs + ";Enlist=false")
+            other.Open()
+            use waiting = other.CreateCommand()
+            waiting.CommandText <- $"SET lock_timeout = '100ms'; SELECT id FROM {schema}.mark FOR UPDATE"
+            let error = Assert.Catch(fun () -> waiting.ExecuteScalar() |> ignore)
+            StringAssert.Contains("55P03", error.ToString())
+    finally
+        execute setup $"DROP SCHEMA IF EXISTS {schema} CASCADE"
+
+[<Test; SqlCheck.NoSql>]
+let ``FOR UPDATE refuses a query whose rows aren't a table's``() =
+    let table = { Schema = "public"; Name = "mark"; Type = "" }
+    let error =
+        Assert.Throws<exn>(fun () ->
+            SqlQuery.ofSqlExp(ForUpdate(Distinct(BaseTable("m", table))), Collections.Generic.List(), false) |> ignore)
+    StringAssert.Contains("can't be distinct", error.Message)
+
+// OnConflict.DoNothingOn and UpdateOn name the conflict's columns; a name the table hasn't is refused before any SQL.
+[<Test; SqlCheck.NoSql>]
+let ``a conflict on named columns does nothing or updates only the named columns``() =
+    let cs = connectionString ()
+    let provider = createProvider ()
+    let schema = "sqlprovider_upsert_" + Guid.NewGuid().ToString("N").Substring(0, 8)
+    use con = provider.CreateConnection cs
+    con.Open()
+    provider.CreateTypeMappings con
+    let read () =
+        if con.State <> ConnectionState.Open then con.Open()
+        use cmd = con.CreateCommand()
+        cmd.CommandText <- $"SELECT id || ' ' || name || ' ' || note FROM {schema}.mark ORDER BY id"
+        use reader = cmd.ExecuteReader()
+        [ while reader.Read() do reader.GetString 0 ]
+    try
+        execute con $"CREATE SCHEMA {schema}"
+        execute con $"CREATE TABLE {schema}.mark (id int PRIMARY KEY, code text NOT NULL, name text NOT NULL, note text NOT NULL, UNIQUE (code))"
+        execute con $"INSERT INTO {schema}.mark VALUES (1, 'a', 'first', 'kept')"
+        let table = { Schema = schema; Name = "mark"; Type = "BASE TABLE" }
+        let columns = provider.GetColumns(con, table)
+        let insert (conflict: OnConflict) =
+            let row = SqlEntity(Unchecked.defaultof<_>, Table.CreateFullName(schema, "mark"), columns, columns.Count)
+            row.SetData [ "id", box 2; "code", box "a"; "name", box "second"; "note", box "changed" ]
+            row._State <- Created
+            row.OnConflict <- conflict
+            let pending = Collections.Concurrent.ConcurrentDictionary<SqlEntity, DateTime>()
+            pending.TryAdd(row, DateTime.UtcNow) |> ignore
+            provider.ProcessUpdates(con, pending, Transactions.TransactionOptions.Default, None)
+        insert (DoNothingOn [ "code" ])
+        Assert.AreEqual([ "1 first kept" ], read ())
+        insert (UpdateOn([ "CODE" ], [ Inserted "name" ]))
+        Assert.AreEqual([ "1 second kept" ], read ())
+        insert (UpdateOn([ "code" ], [ Constant("note", box "constant") ]))
+        Assert.AreEqual([ "1 second constant" ], read ())
+        let error = Assert.Throws<exn>(fun () -> insert (DoNothingOn [ "code) DO NOTHING; DROP TABLE mark; --" ]))
+        StringAssert.Contains("isn't a column of", error.Message)
+    finally
+        execute con $"DROP SCHEMA IF EXISTS {schema} CASCADE"

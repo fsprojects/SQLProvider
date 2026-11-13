@@ -35,6 +35,7 @@
     <Compile Include="more\ValueOptionTests.fs" />
     <Compile Include="QueryTests.fs" />
     <Compile Include="CrudTests.fs" />
+    <Compile Include="LockingTests.fs" />
     <Compile Include="SprocParameterTests.fs" />
 	<!--<Compile Include="PostgreSQLTests.fs" />-->
     <!-- MSSQL tests need a live SQL Server at design time; only built for net48. -->

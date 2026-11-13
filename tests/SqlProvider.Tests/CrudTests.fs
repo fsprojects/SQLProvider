@@ -211,6 +211,204 @@ let ``Conflict resolution is correctly applied``() =
     |> (fun c -> c.Delete())
     dc.SubmitUpdates()
 
+[<Test; SqlCheck.ExpectSql("ON CONFLICT (\"CustomerID\") DO NOTHING", "ON CONFLICT (\"CustomerID\") DO UPDATE SET \"Address\" = excluded.\"Address\", \"City\" = @param")>]
+let ``Conflict resolution on named columns changes only the named columns``() =
+    let dc = sql.GetDataContext()
+    let ent = createCustomer dc
+    dc.SubmitUpdates()
+
+    let current () =
+        query { for cust in dc.Main.Customers do
+                where (cust.CustomerId = ent.CustomerId)
+                select (cust.Address, cust.City, cust.ContactName) }
+        |> Seq.head
+
+    try
+        let before = current ()
+
+        // DoNothingOn the key leaves the row as it is
+        let same = createCustomer dc
+        same.Address <- "Somewhere else"
+        same.OnConflict <- Common.OnConflict.DoNothingOn [ "CustomerID" ]
+        dc.SubmitUpdates()
+        Assert.AreEqual(before, current ())
+
+        // UpdateOn sets the inserted value or a constant, and the columns not named keep their old values; names match the
+        // table's ignoring case
+        let changed = createCustomer dc
+        changed.Address <- "FsProjects 4.0"
+        changed.City <- "Elsewhere"
+        changed.ContactName <- "Someone else"
+        changed.OnConflict <- Common.OnConflict.UpdateOn([ "customerid" ], [ Common.Inserted "Address"; Common.Constant("City", box "Constant city") ])
+        dc.SubmitUpdates()
+        let _, _, contact = before
+        Assert.AreEqual(("FsProjects 4.0", "Constant city", contact), current ())
+
+        // A null constant clears the column
+        let cleared = createCustomer dc
+        cleared.OnConflict <- Common.OnConflict.UpdateOn([ "CustomerID" ], [ Common.Constant("City", null) ])
+        dc.SubmitUpdates()
+        let _, city, _ = current ()
+        Assert.IsTrue(String.IsNullOrEmpty city)
+
+        // A column named twice is refused
+        let twice = createCustomer dc
+        twice.OnConflict <- Common.OnConflict.UpdateOn([ "CustomerID" ], [ Common.Inserted "City"; Common.Constant("city", box "x") ])
+        let repeated = Assert.Throws<exn>(fun () -> dc.SubmitUpdates())
+        StringAssert.Contains("more than once", repeated.Message)
+        dc.ClearUpdates() |> ignore
+
+        // A name that isn't one of the table's columns never reaches the SQL
+        let wrong = createCustomer dc
+        wrong.OnConflict <- Common.OnConflict.DoNothingOn [ "Address) DO NOTHING; DROP TABLE Customers; --" ]
+        let error = Assert.Throws<exn>(fun () -> dc.SubmitUpdates())
+        StringAssert.Contains("isn't a column of", error.Message)
+        dc.ClearUpdates() |> ignore
+    finally
+        // Rows a failed step left pending would be submitted with the cleanup
+        dc.ClearUpdates() |> ignore
+        query { for cust in dc.Main.Customers do
+                    where (cust.CustomerId = ent.CustomerId)
+                    select cust }
+        |> Seq.head
+        |> (fun c -> c.Delete())
+        dc.SubmitUpdates()
+
+[<Test; SqlCheck.ExpectSql("ON CONFLICT (\"CustomerID\") DO NOTHING", "ON CONFLICT (\"CustomerID\") DO UPDATE SET \"Address\" = excluded.\"Address\", \"City\" = @param")>]
+let ``Typed conflict handling names the columns through the row's properties``() =
+    let dc = sql.GetDataContext()
+    let ent = createCustomer dc
+    dc.SubmitUpdates()
+
+    let current () =
+        query { for cust in dc.Main.Customers do
+                where (cust.CustomerId = ent.CustomerId)
+                select (cust.Address, cust.City, cust.ContactName) }
+        |> Seq.head
+
+    try
+        let _, _, contact = current ()
+
+        let same = createCustomer dc
+        same.Address <- "Somewhere else"
+        same.OnConflictDoNothing(fun c -> c.CustomerId)
+        Assert.AreEqual(Common.OnConflict.DoNothingOn [ "CustomerID" ], same.OnConflict)
+        dc.SubmitUpdates()
+        Assert.AreEqual(("FsPRojects", "Fsharp", contact), current ())
+
+        // The inserted value, a captured value; the contact isn't set, so it keeps its old value
+        let city = "Constant city"
+        let changed = createCustomer dc
+        changed.Address <- "FsProjects 5.0"
+        changed.ContactName <- "Someone else"
+        changed.OnConflictUpdate((fun c -> c.CustomerId), fun existing inserted ->
+            existing.Address <- inserted.Address
+            existing.City <- city)
+        Assert.AreEqual(
+            Common.OnConflict.UpdateOn([ "CustomerID" ], [ Common.Inserted "Address"; Common.Constant("City", box city) ]),
+            changed.OnConflict)
+        dc.SubmitUpdates()
+        Assert.AreEqual(("FsProjects 5.0", city, contact), current ())
+
+        // What SQL can't take from the rows is refused when it's set, before any SQL
+        let refused = createCustomer dc
+        let fromRows = Assert.Throws<exn>(fun () -> refused.OnConflictUpdate((fun c -> c.CustomerId), fun existing _ -> existing.Address <- existing.Address + "!"))
+        StringAssert.Contains("computed from the rows", fromRows.Message)
+        let otherColumn = Assert.Throws<exn>(fun () -> refused.OnConflictUpdate((fun c -> c.CustomerId), fun existing inserted -> existing.Address <- inserted.City))
+        StringAssert.Contains("of itself only", otherColumn.Message)
+        let nothing = Assert.Throws<exn>(fun () -> refused.OnConflictUpdate((fun c -> c.CustomerId), fun _ _ -> ()))
+        StringAssert.Contains("at least one property", nothing.Message)
+        let twice =
+            Assert.Throws<exn>(fun () ->
+                refused.OnConflictUpdate((fun c -> c.CustomerId), fun existing inserted ->
+                    existing.City <- inserted.City
+                    existing.City <- "x"))
+        StringAssert.Contains("more than once", twice.Message)
+        dc.ClearUpdates() |> ignore
+    finally
+        // Rows a failed step left pending would be submitted with the cleanup
+        dc.ClearUpdates() |> ignore
+        query { for cust in dc.Main.Customers do
+                    where (cust.CustomerId = ent.CustomerId)
+                    select cust }
+        |> Seq.head
+        |> (fun c -> c.Delete())
+        dc.SubmitUpdates()
+
+// After a conflict SQLite's last_insert_rowid() is still the key of the row inserted before. A row left as it was reads
+// no key, and a row updated in place reads the existing row's.
+[<Test; SqlCheck.ExpectSql("SELECT last_insert_rowid() WHERE changes() > 0", "SELECT \"CategoryID\" FROM main.Categories WHERE \"CategoryName\" = @param0")>]
+let ``A conflict on named columns gives the row no other row's key``() =
+    // A copy of the database, where category names are unique
+    let original = __SOURCE_DIRECTORY__ + "/db/northwindEF.db"
+    let copy = Path.Combine(Path.GetTempPath(), "sqlprovider_" + Guid.NewGuid().ToString("N") + ".db")
+    File.Copy(original, copy)
+    try
+        let dc = sql.GetDataContext(connectionString.Replace(original, copy))
+        do
+            use con = dc.CreateConnection()
+            con.Open()
+            use index = con.CreateCommand()
+            index.CommandText <- "CREATE UNIQUE INDEX ux_categories_name ON Categories (CategoryName)"
+            index.ExecuteNonQuery() |> ignore
+
+        let category (name: string) (description: string) =
+            let row = dc.Main.Categories.Create()
+            row.CategoryName <- name
+            row.Description <- description
+            row
+
+        let description (name: string) =
+            query { for c in dc.Main.Categories do
+                    where (c.CategoryName = name)
+                    select c.Description }
+            |> Seq.exactlyOne
+
+        let first = category "sqlp first" "one"
+        dc.SubmitUpdates()
+        let second = category "sqlp second" "two"
+        dc.SubmitUpdates()
+        Assert.Greater(second.CategoryId, first.CategoryId)
+
+        // Updated in place: the existing row's key, not the key of the row inserted last
+        let updated = category "sqlp first" "three"
+        updated.OnConflictUpdate((fun c -> c.CategoryName), fun existing inserted -> existing.Description <- inserted.Description)
+        dc.SubmitUpdates()
+        Assert.AreEqual(first.CategoryId, updated.CategoryId)
+        Assert.AreEqual("three", description "sqlp first")
+
+        // Left as it was: no key
+        let ignored = category "sqlp first" "four"
+        ignored.OnConflictDoNothing(fun c -> c.CategoryName)
+        dc.SubmitUpdates()
+        Assert.AreEqual(0L, ignored.CategoryId)
+        Assert.AreEqual("three", description "sqlp first")
+
+        // Without a conflict both read the new row's key
+        let third = category "sqlp third" "five"
+        third.OnConflictUpdate((fun c -> c.CategoryName), fun existing inserted -> existing.Description <- inserted.Description)
+        dc.SubmitUpdates()
+        Assert.Greater(third.CategoryId, second.CategoryId)
+        let fourth = category "sqlp fourth" "six"
+        fourth.OnConflictDoNothing(fun c -> c.CategoryName)
+        dc.SubmitUpdates()
+        Assert.Greater(fourth.CategoryId, third.CategoryId)
+    finally
+        // A pooled connection may still hold the file
+        try File.Delete copy with _ -> ()
+
+[<Test; SqlCheck.NoSql>]
+let ``SQLite refuses to lock rows for update``() =
+    let dc = sql.GetDataContext()
+    let customers = query { for cust in dc.Main.Customers do select cust.CustomerId }
+    let error = Assert.Throws<exn>(fun () -> customers |> Seq.lockForUpdate |> Seq.toList |> ignore)
+    StringAssert.Contains("SQLite has no row locks", error.Message)
+    // The executors lock too
+    let viaArray = Assert.Catch(fun () -> (Array.lockForUpdateAsync customers).Wait())
+    StringAssert.Contains("SQLite has no row locks", viaArray.ToString())
+    let viaHead = Assert.Catch(fun () -> (Seq.lockForUpdateTryHeadAsync customers).Wait())
+    StringAssert.Contains("SQLite has no row locks", viaHead.ToString())
+
 module UtilsTests =
 
     [<Test; SqlCheck.NoSql>]

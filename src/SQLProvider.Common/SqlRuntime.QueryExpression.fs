@@ -744,7 +744,7 @@ module internal QueryExpressionTransformer =
                         | BaseTable _ -> None
                         | SelectMany(_,_,_,rest)
                         | FilterClause(_,rest) | HavingClause(_,rest) | Projection(_,rest)
-                        | Distinct rest | OrderBy(_,_,_,rest) | Skip(_,rest) | Take(_,rest)
+                        | Distinct rest | ForUpdate rest | OrderBy(_,_,_,rest) | Skip(_,rest) | Take(_,rest)
                         | Union(_,_,rest) | Count rest | AggregateOp(_,_,rest) -> find rest
                     match find exp with
                     | Some p when obj.ReferenceEquals(p, projs.Head) -> Some p

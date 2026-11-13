@@ -605,6 +605,7 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
         | _ -> false
 
     let createInsertCommand (provider:ISqlProvider) (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) =
+        CommonTasks.refuseConflictColumns "Oracle has no ON CONFLICT" entity
         let (~~) (t:string) = sb.Append t |> ignore
 
         let columnNames, values =
@@ -797,6 +798,9 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
         member __.GetIndividualQueryText(table,column) = Oracle.getIndivdualQueryText table column
 
         member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript, con) =
+            // Oracle locks no rows behind OFFSET or FETCH, nor those of a sorted query cut by ROWNUM (ORA-02014)
+            if sqlQuery.ForUpdate && (sqlQuery.Skip.IsSome || (sqlQuery.Take.IsSome && not sqlQuery.Ordering.IsEmpty)) then
+                failwith "Oracle can't lock the rows of a query with skip, or with take (or head) after a sort: Seq.lockForUpdate needs the query without them."
             let parameters = ResizeArray<_>()
 
             // NOTE: really need to assign the parameters their correct db types
@@ -1156,9 +1160,11 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
                 ~~ $" OFFSET %i{skip} ROWS"
                 (sb.ToString(), parameters)
             | ValueNone, ValueSome v ->
-                let sql = sprintf "select * from (%s) where ROWNUM <= %i" (sb.ToString()) v
+                let lockRows = if sqlQuery.ForUpdate then " FOR UPDATE" else ""
+                let sql = sprintf "select * from (%s) where ROWNUM <= %i%s" (sb.ToString()) v lockRows
                 (sql, parameters)
             | ValueNone, ValueNone ->
+                if sqlQuery.ForUpdate then ~~ " FOR UPDATE"
                 let sql = sb.ToString()
                 (sql,parameters)
 

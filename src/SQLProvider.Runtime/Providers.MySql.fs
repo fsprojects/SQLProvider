@@ -431,6 +431,7 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
         quotedFullName.Replace("\"","`").Replace("[","`").Replace("]","`").Replace("``","`")
 
     let createInsertCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) =
+        CommonTasks.refuseConflictColumns "MySQL's ON DUPLICATE KEY applies to any unique key and names no columns" entity
         let (~~) (t:string) = sb.Append t |> ignore
 
         let cmd = (this :> ISqlProvider).CreateCommand(con,"")
@@ -462,6 +463,8 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
         | DoNothing ->
           ~~(sprintf " ON DUPLICATE KEY UPDATE %s"
                 (String.concat "," (columnNamesWithValues |> Array.map(fun (c,_) -> $"`%s{c}`=`%s{c}`"))))
+        | DoNothingOn _
+        | UpdateOn _ -> ()
 
         ~~"; SELECT LAST_INSERT_ID();"
 
@@ -1107,11 +1110,13 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
                 ~~ $" EXCEPT %s{suquery} "
             | None -> ()
 
+            let lockRows = if sqlQuery.ForUpdate then " FOR UPDATE" else ""
+
             match sqlQuery.Take, sqlQuery.Skip with
-            | ValueSome take, ValueSome skip ->  ~~ $" LIMIT %i{take} OFFSET %i{skip};"
-            | ValueSome take, ValueNone ->  ~~ $" LIMIT %i{take};"
-            | ValueNone, ValueSome skip -> ~~ $" LIMIT %i{UInt64.MaxValue} OFFSET %i{skip};"
-            | ValueNone, ValueNone -> ()
+            | ValueSome take, ValueSome skip ->  ~~ $" LIMIT %i{take} OFFSET %i{skip}%s{lockRows};"
+            | ValueSome take, ValueNone ->  ~~ $" LIMIT %i{take}%s{lockRows};"
+            | ValueNone, ValueSome skip -> ~~ $" LIMIT %i{UInt64.MaxValue} OFFSET %i{skip}%s{lockRows};"
+            | ValueNone, ValueNone -> ~~ lockRows
 
             let sql = sb.ToString()
             (sql,parameters)

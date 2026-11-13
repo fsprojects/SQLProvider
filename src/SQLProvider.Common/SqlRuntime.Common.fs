@@ -198,18 +198,48 @@ type EntityState =
     /// Entity has been deleted from the database
     | Deleted
 
-/// Specifies how to handle conflicts when inserting records with duplicate primary keys.
-/// Currently supported only on databases that have UPSERT capabilities.
+/// <summary>What one column of the existing row becomes in <c>OnConflict.UpdateOn</c>.</summary>
+/// <remarks>A column not named keeps its old value.</remarks>
+type ConflictUpdate =
+    /// <summary>The inserted row's value: <c>column = EXCLUDED.column</c>.</summary>
+    /// <param name="column">The column's name, as the table has it (matched ignoring case).</param>
+    | Inserted of column: string
+    /// <summary>A constant, sent as a parameter: <c>column = @value</c>.</summary>
+    /// <param name="column">The column's name, as the table has it (matched ignoring case).</param>
+    /// <param name="value">The value, of the column's type.</param>
+    | Constant of column: string * value: obj
+
+/// <summary>What an insert does when the row would break a primary key or a unique constraint or index.</summary>
+/// <remarks>Set on each row before <c>SubmitUpdates</c>; rows of one submit may differ. Databases without an upsert
+/// (SQL Server, Oracle, Firebird, ODBC, MS Access) ignore <c>Update</c> and <c>DoNothing</c> and refuse
+/// <c>DoNothingOn</c> and <c>UpdateOn</c>. A row inserted without its key reads the key the database gave it; after a
+/// conflict it reads the existing row's key when that row was updated, and none when it was left as it was.</remarks>
 [<Struct>]
 type OnConflict = 
-    /// Throws an exception if the primary key already exists (default behaviour).
+    /// <summary>The insert fails with the database's error (the default).</summary>
     | Throw
-    /// If the primary key already exists, updates the existing row's columns to match the new entity.
-    /// Currently supported only on PostgreSQL 9.5+
+    /// <summary>The existing row gets every column the new row sets.</summary>
+    /// <remarks>PostgreSQL: <c>ON CONFLICT (primary key) DO UPDATE</c>; DuckDB the same; MySQL:
+    /// <c>ON DUPLICATE KEY UPDATE</c>; SQLite: <c>INSERT OR REPLACE</c>, which deletes the existing row and inserts the new
+    /// one, so columns not set get their defaults and delete triggers and cascades run.</remarks>
     | Update
-    /// If the primary key already exists, leaves the existing row unchanged.
-    /// Currently supported only on PostgreSQL 9.5+
+    /// <summary>The existing row stays as it is, whichever unique constraint the new row breaks.</summary>
+    /// <remarks>PostgreSQL and DuckDB: <c>ON CONFLICT DO NOTHING</c>; MySQL: <c>ON DUPLICATE KEY UPDATE</c> of nothing;
+    /// SQLite: <c>INSERT OR IGNORE</c>.</remarks>
     | DoNothing
+    /// <summary>The existing row stays as it is when the new row breaks the unique constraint or index on exactly these
+    /// columns: <c>ON CONFLICT (columns) DO NOTHING</c>.</summary>
+    /// <param name="conflictColumns">The constraint's or index's columns, as the table has them (matched ignoring case);
+    /// a partial index can't be named, so use <c>DoNothing</c> for one. A column named twice is refused.</param>
+    /// <remarks>PostgreSQL, SQLite 3.24+ and DuckDB; MySQL refuses it.</remarks>
+    | DoNothingOn of conflictColumns: string list
+    /// <summary>The existing row changes when the new row breaks the unique constraint or index on exactly
+    /// <c>onColumns</c>: <c>ON CONFLICT (onColumns) DO UPDATE SET a = EXCLUDED.a, b = @value</c>.</summary>
+    /// <param name="onColumns">The constraint's or index's columns, as the table has them (matched ignoring case).</param>
+    /// <param name="updates">What each named column becomes: the inserted value or a constant (null clears the column).
+    /// The columns not named keep their old values; a column named twice is refused.</param>
+    /// <remarks>PostgreSQL, SQLite 3.24+ and DuckDB; MySQL refuses it.</remarks>
+    | UpdateOn of onColumns: string list * updates: ConflictUpdate list
 
 /// Attribute for mapping entity properties to database columns with different names.
 /// Use this when your database column name differs from your preferred F# property name.
@@ -652,6 +682,8 @@ type SqlExp =
     | Projection   of Expression * SqlExp
     /// distinct indicator
     | Distinct     of SqlExp
+    /// lock the rows read until the transaction ends (Seq.lockForUpdate)
+    | ForUpdate    of SqlExp
     /// alias and column name, bool indicates ascending sort
     | OrderBy      of alias * SqlColumnType * bool * SqlExp
     /// union type and the subquery as SQL text with its parameters, rendered as the outer query is (true for a
@@ -670,6 +702,7 @@ type SqlExp =
                 | HavingClause(_,rest)
                 | Projection(_,rest)
                 | Distinct rest
+                | ForUpdate rest
                 | OrderBy(_,_,_,rest)
                 | Skip(_,rest)
                 | Take(_,rest)
@@ -686,6 +719,7 @@ type SqlExp =
                 | HavingClause(_,rest)
                 | Projection(_,rest)
                 | Distinct rest
+                | ForUpdate rest
                 | OrderBy(_,_,_,rest)
                 | Skip(_,rest)
                 | Take(_,rest)
@@ -702,12 +736,30 @@ type SqlExp =
                 | HavingClause(_,rest)
                 | Projection(_,rest)
                 | Distinct rest
+                | ForUpdate rest
                 | Skip(_,rest)
                 | Take(_,rest)
                 | Union(_,_,rest)
                 | Count(rest) 
                 | AggregateOp(_,_,rest) -> isSortBy rest
             isSortBy this
+        /// The query locks the rows it reads (Seq.lockForUpdate).
+        member this.locksRows() =
+            let rec isLocked = function
+                | ForUpdate _ -> true
+                | BaseTable _ -> false
+                | SelectMany(_,_,_,rest)
+                | FilterClause(_,rest)
+                | HavingClause(_,rest)
+                | Projection(_,rest)
+                | Distinct rest
+                | OrderBy(_,_,_,rest)
+                | Skip(_,rest)
+                | Take(_,rest)
+                | Union(_,_,rest)
+                | Count(rest)
+                | AggregateOp(_,_,rest) -> isLocked rest
+            isLocked this
 
 /// One groupBy of a query: its key columns and the aggregates over each group.
 type GroupingColumns =
@@ -732,10 +784,13 @@ type SqlQuery =
       Take          : int voption
       Union         : (UnionType*string*seq<IDbDataParameter>) option
       Count         : bool
-      AggregateOp   : (alias * SqlColumnType) list }
+      AggregateOp   : (alias * SqlColumnType) list
+      /// Lock the rows read until the transaction ends: SQL FOR UPDATE, or the database's own way.
+      ForUpdate     : bool }
     with
         static member Empty = { Filters = []; Links = []; Grouping = []; Aliases = Map.empty; Ordering = []; Count = false; AggregateOp = []; CrossJoins = []
-                                Projection = []; Distinct = false; UltimateChild = None; Skip = ValueNone; Take = ValueNone; Union = None; HavingFilters = [] }
+                                Projection = []; Distinct = false; UltimateChild = None; Skip = ValueNone; Take = ValueNone; Union = None; HavingFilters = []
+                                ForUpdate = false }
 
         /// The query of `exp`; `membershipSubquery` is true for a sub-query of IN / NOT IN, see SqlExp.Union.
         static member ofSqlExp(exp,entityIndex: string ResizeArray, membershipSubquery: bool) =
@@ -779,6 +834,7 @@ type SqlQuery =
                 | Distinct(rest) ->
                     if q.Distinct then failwith "distinct is applied to the entire query and can only be supplied once"
                     else convert { q with Distinct = true } rest
+                | ForUpdate(rest) -> convert { q with ForUpdate = true } rest
                 | OrderBy(alias,key,desc,rest) ->
                     convert { q with Ordering = (legaliseName alias,key,desc)::q.Ordering } rest
                 | Skip(amount, rest) ->
@@ -803,6 +859,11 @@ type SqlQuery =
                 | AggregateOp(alias, operationWithKey, rest) ->
                     convert { q with AggregateOp = (alias, operationWithKey)::q.AggregateOp } rest
             let sq = convert SqlQuery.Empty exp
+
+            // A locked row is one row of a table: the database refuses to lock what a query makes of several
+            if sq.ForUpdate && (sq.Distinct || sq.Count || not sq.Grouping.IsEmpty || not sq.AggregateOp.IsEmpty || sq.Union.IsSome) then
+                failwith "Seq.lockForUpdate locks the rows a query reads, so the query can't be distinct, grouped, counted, aggregated or a union."
+
             sq
 
 type ISqlProvider =
@@ -1011,6 +1072,55 @@ type GroupResultItems<'key, 'SqlEntity>(keyname:String*String*String*String*Stri
         GroupResultItems<'key, 'SqlEntity>("", v, i)
 
 module CommonTasks =
+
+    /// The columns OnConflict.DoNothingOn and UpdateOn name, as the table spells them. Each must be one of the table's
+    /// columns, matched ignoring case, so no other text reaches the SQL. A column named twice is refused.
+    let conflictColumns (table: Table) (columns: ColumnLookup) (names: string list) =
+        if names.IsEmpty then failwithf "OnConflict on %s needs at least one column." table.FullName
+
+        let found =
+            [
+                for name in names ->
+                    match columns |> Map.tryFindKey (fun key _ -> String.Equals(key, name, StringComparison.OrdinalIgnoreCase)) with
+                    | Some key -> key
+                    | None -> failwithf "OnConflict names %s, which isn't a column of %s." name table.FullName
+            ]
+
+        match found |> List.countBy id |> List.tryFind (fun (_, times) -> times > 1) with
+        | Some(column, _) -> failwithf "OnConflict names %s of %s more than once." column table.FullName
+        | None -> found
+
+    /// The SET list of OnConflict.UpdateOn: each named column to the inserted row's value (`excluded column`) or to a
+    /// constant, which `parameter` adds to the command and names. The names are checked as conflictColumns does.
+    let conflictUpdates
+        (table: Table)
+        (columns: ColumnLookup)
+        (quote: string -> string)
+        (excluded: string -> string)
+        (parameter: Column -> obj -> string)
+        (updates: ConflictUpdate list)
+        =
+        if updates.IsEmpty then failwithf "OnConflict.UpdateOn on %s needs at least one column to update." table.FullName
+
+        let named =
+            conflictColumns table columns [ for update in updates -> match update with Inserted c | Constant(c, _) -> c ]
+
+        List.zip named updates
+        |> List.map (fun (column, update) ->
+            match update with
+            | Inserted _ -> $"%s{quote column} = %s{excluded column}"
+            // A null constant is the database's NULL: drivers refuse a parameter without a value
+            | Constant(_, value) -> $"%s{quote column} = %s{parameter columns.[column] (if isNull value then box DBNull.Value else value)}")
+        |> String.concat ", "
+
+    /// Refuses OnConflict.DoNothingOn and UpdateOn where the database can't do them, saying why.
+    let refuseConflictColumns (why: string) (entity: SqlEntity) =
+        match entity.OnConflict with
+        | DoNothingOn _
+        | UpdateOn _ -> failwithf "%s, so OnConflict.DoNothingOn and UpdateOn can't be used with it." why
+        | Throw
+        | Update
+        | DoNothing -> ()
 
     let ``ensure columns have been loaded`` (provider:ISqlProvider) (con:IDbConnection) (entities:ConcurrentDictionary<SqlEntity, DateTime>) =
         entities |> Seq.map(fun e -> (e.Key :> IColumnHolder).Table)

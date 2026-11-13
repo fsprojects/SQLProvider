@@ -294,6 +294,54 @@ jane.OnConflict <- FSharp.Data.Sql.Common.OnConflict.Update
 ctx.SubmitUpdates()
 
 (**
+To name the columns whose unique constraint or index decides the conflict, and to say what each column of the
+existing row becomes, use the row's typed methods. The lambdas are the row's own properties, so the compiler checks the
+names and the types:
+
+ * `row.OnConflictDoNothing(fun r -> r.Code)` leaves the existing row: `ON CONFLICT ("code") DO NOTHING`.
+ * `row.OnConflictUpdate((fun r -> r.Code), fun existing inserted -> ...)` changes the existing row as the second lambda
+   says: `existing.Name <- inserted.Name` takes the inserted value, `existing.Note <- "merged"` (or a captured value)
+   sets a constant, sent as a parameter, and every property the lambda doesn't set keeps its old value.
+
+Several columns are a tuple: `fun r -> (r.Code, r.Region)`. A value computed from the rows, such as
+`existing.Count <- existing.Count + 1`, can't be said this way and is refused when the method is called.
+
+*)
+
+let upserted = ctx.Main.Employees.Create()
+upserted.EmployeeId <- 1L
+upserted.FirstName <- "John"
+upserted.LastName <- "Doe"
+upserted.Title <- "Developer"
+
+// When employee 1 exists: FirstName takes the inserted value, Title a constant; LastName and the rest stay as they are
+upserted.OnConflictUpdate((fun e -> e.EmployeeId), fun existing inserted ->
+    existing.FirstName <- inserted.FirstName
+    existing.Title <- "Sales Representative")
+
+ctx.SubmitUpdates()
+
+(**
+The methods set `OnConflict` to `DoNothingOn` or `UpdateOn`, which take the columns as strings; use those directly when the
+columns are known only at run time:
+
+ * `DoNothingOn [ "code" ]`
+ * `UpdateOn([ "code" ], [ Inserted "name"; Constant("note", box "merged") ])`
+
+The names are matched to the table's columns, ignoring case; a name the table hasn't is refused, so nothing else reaches
+the SQL. PostgreSQL, SQLite 3.24+ and DuckDB support both. MySQL refuses them, as its `ON DUPLICATE KEY` applies to any
+unique key, and so do the databases without ON CONFLICT. A partial unique index (one with a WHERE) can't be named this way;
+`DoNothing` covers it, as it covers every unique constraint.
+
+A row inserted without its key reads the key the database gave it. After a conflict the row object reads the existing
+row's key when that row was updated (`UpdateOn`), and no key when it was left as it was (`DoNothing`, `DoNothingOn`):
+query the existing row when you need it.
+
+SQLite's `Update` is `INSERT OR REPLACE`: it deletes the conflicting row and inserts the new one, so columns not set get
+their defaults, and delete triggers and cascades run. `UpdateOn` updates the row in place.
+*)
+
+(**
 
 ### Delete-query for multiple items
 

@@ -3468,3 +3468,25 @@ let ``a computed group key's alias differs from the names of the key's plain col
     Assert.AreEqual("UPPER(City) as sqlp_key0__", alias [ "sqlp_key0"; "sqlp_key0_" ])
     // A single computed key keeps the provider's entry
     Assert.AreEqual("UPPER(City)", Common.CommonTasks.groupKeyColumn [ "", computed ] 0 computed "UPPER(City)" "UPPER(City)")
+
+// The typed conflict methods read the setters of option and value-option columns too, unwrapping a constant
+[<Test; SqlCheck.NoSql>]
+let ``typed conflict handling reads option and value-option columns``() =
+    let dc = sqlOption.GetDataContext()
+    let row = dc.Main.Customers.Create()
+    row.OnConflictUpdate((fun c -> c.CustomerId), fun existing inserted ->
+        existing.Region <- inserted.Region
+        existing.Fax <- Some "fax"
+        existing.Phone <- None)
+    Assert.AreEqual(
+        Common.OnConflict.UpdateOn([ "CustomerID" ], [ Common.Inserted "Region"; Common.Constant("Fax", box "fax"); Common.Constant("Phone", null) ]),
+        row.OnConflict)
+    dc.ClearUpdates() |> ignore
+
+    let dv = sqlValueOption.GetDataContext()
+    let row2 = dv.Main.Customers.Create()
+    row2.OnConflictUpdate((fun c -> (c.CustomerId, c.CompanyName)), fun existing _ -> existing.Fax <- ValueSome "fax")
+    Assert.AreEqual(
+        Common.OnConflict.UpdateOn([ "CustomerID"; "CompanyName" ], [ Common.Constant("Fax", box "fax") ]),
+        row2.OnConflict)
+    dv.ClearUpdates() |> ignore

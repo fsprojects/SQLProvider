@@ -51,6 +51,7 @@
     <Compile Include="SqlRuntime.QueryExpression.fs" />
     <Compile Include="SqlRuntime.Linq.fs" />
     <Compile Include="SqlRuntime.Async.fs" />
+    <Compile Include="SqlRuntime.Conflicts.fs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net461" Version="1.0.3" Condition=" '$(TargetFramework)' == 'net461'">

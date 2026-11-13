@@ -9,6 +9,7 @@ A general .NET/Mono SQL database type provider. Current features:
 * Automatic constraint navigation
 * [Individuals](core/individuals.html)
 * Transactional [CRUD](core/crud.html) operations with identity support
+* [Locking rows for update](core/locking.html), against lost updates
 * [Stored Procedures](core/programmability.html)
 * [Functions](core/programmability.html)
 * Packages (Oracle)

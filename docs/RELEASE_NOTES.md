@@ -1,3 +1,13 @@
+### 1.5.31 - unreleased
+- Seq.lockForUpdate locks the rows a query reads until the transaction ends: FOR UPDATE on PostgreSQL (FOR UPDATE OF the other tables beside a left join), MySQL and Oracle (Oracle not with skip or a sorted take), FOR UPDATE WITH LOCK on Firebird (no joins), UPDLOCK and ROWLOCK on SQL Server; SQLite, MS Access, DuckDB and ODBC refuse it, and so does a locked query inside another query or a delete. New page: Locking rows
+- Seq/Array/List.lockForUpdateAsync, Seq.lockForUpdateHeadAsync and Seq.lockForUpdateTryHeadAsync run a query with its rows locked
+- OnConflict.DoNothingOn names the conflict's columns; OnConflict.UpdateOn names them and sets each listed column to the inserted value or a constant, keeping the others; PostgreSQL, SQLite 3.24+ and DuckDB; names are checked against the table's columns
+- row.OnConflictDoNothing(fun r -> r.Code) and row.OnConflictUpdate((fun r -> r.Code), fun existing inserted -> existing.Name <- inserted.Name) say the same with the row's typed properties
+- Fix: DuckDB's OnConflict wrote MySQL's ON DUPLICATE KEY UPDATE, which DuckDB rejects; it writes ON CONFLICT
+- Fix: DuckDB found no table's primary key (it looked for MySQL's constraint name), so updates, deletes and OnConflict.Update failed and an insert didn't read its key
+- Fix: SQLite gave a row whose insert a conflict ignored (OnConflict.DoNothing) the key of the row inserted before; it reads no key
+- PostgreSQL: a function or procedure called inside a TransactionScope runs in that transaction instead of failing with "A transaction is already in progress"
+
 ### 1.5.30 - 03.11.2026
 - Fix: schema types are declared only by dataContext, so readDataContext no longer re-parents them and builds don't fail at random with FS0193 "dataContext.mainSchema is not compatible with readDataContext.mainSchema"
 - Fix: parameters of a sub-query nested in another sub-query are bound (IN, EXISTS, UNION and the like)

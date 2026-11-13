@@ -128,6 +128,11 @@ module internal QueryImplementation =
             | _ -> None, None
         | _ -> None, None
 
+    /// A lock clause ends a whole statement: the database takes none inside another query.
+    let refuseLockedSubquery (subquery: IWithSqlService) =
+        if subquery.SqlExpression.locksRows() then
+            failwith "A query locked with Seq.lockForUpdate can't be a sub-query (IN, EXISTS or one side of a union): lock the outer query instead."
+
     let (|SourceWithQueryData|_|) = function Constant ((:? IWithSqlService as org), _)    -> Some org | _ -> None
     [<return: Struct>]
     let (|RelDirection|_|)        = function Constant ((:? RelationshipDirection as s),_) -> ValueSome s   | _ -> ValueNone
@@ -446,6 +451,7 @@ module internal QueryImplementation =
                | BaseTable (_,table) -> BaseTable (table.Name,table)
                | FilterClause(a,rest) -> FilterClause(a,modifyAlias' rest)
                | AggregateOp(a,c,rest) -> AggregateOp(a,c,modifyAlias' rest)
+               | ForUpdate _ -> failwith "A delete can't take a query locked with Seq.lockForUpdate: the delete locks the rows it removes."
                | _ -> failwithf "Unsupported delete-clause. Only simple single-table deletion where-clauses supported. You had parameters: %O" sqlx
            modifyAlias' sqlxp
        task {
@@ -669,6 +675,7 @@ module internal QueryImplementation =
                     | SqlSpecialNegativeOpArrQueryable(ti,op,key,qry) ->
 
                         let svc = (qry :?> IWithSqlService)
+                        refuseLockedSubquery svc
 
                         use con = svc.Provider.CreateConnection svc.DataContext.ConnectionString
                         // IN / NOT IN takes one column, as the database computes it
@@ -689,6 +696,7 @@ module internal QueryImplementation =
                         | _ -> ()
 
                         let innersrc = (src :?> IWithSqlService)
+                        refuseLockedSubquery innersrc
 
                         // References to the outer query inside the predicate are positional (ItemN) against the
                         // OUTER tuple index. Resolve them to named aliases here: the inner query would otherwise
@@ -703,7 +711,7 @@ module internal QueryImplementation =
                                         | BaseTable(a,_) -> [a]
                                         | SelectMany(a,b,_,rest) -> a :: b :: collect rest
                                         | FilterClause(_,rest) | HavingClause(_,rest) | Projection(_,rest)
-                                        | Distinct rest | OrderBy(_,_,_,rest) | Skip(_,rest) | Take(_,rest)
+                                        | Distinct rest | ForUpdate rest | OrderBy(_,_,_,rest) | Skip(_,rest) | Take(_,rest)
                                         | Union(_,_,rest) | Count rest | AggregateOp(_,_,rest) -> collect rest
                                     // a blank inner base-table alias will later be named after the predicate's parameter
                                     innerParam.Name :: collect innersrc.SqlExpression |> List.filter ((<>) "")
@@ -1158,6 +1166,7 @@ module internal QueryImplementation =
                     | Projection(MethodCall(None, MethodWithName("Select"), [_; OptionalQuote (Lambda([ParamName p1], ParamName p2))]), rest) when p1 = p2 ->
                         decompose rest filters
                     | FilterClause(c, rest) -> decompose rest (c :: filters)
+                    | ForUpdate _ -> failwith "Seq.lockForUpdate locks a whole query: lock the query the join is part of, not the table joined into it."
                     | _ -> None
                 decompose dest.SqlExpression []
 
@@ -1417,6 +1426,7 @@ module internal QueryImplementation =
                     | MethodCall(None,(MethodWithName("Union") | MethodWithName("Concat") | MethodWithName("Intersect") | MethodWithName("Except") as meth), [SourceWithQueryData source; SeqValuesQueryable values]) when (values :? IWithSqlService) -> 
 
                         let subquery = values :?> IWithSqlService
+                        refuseLockedSubquery subquery
                         let dataContext = source.DataContext
 
                         // Rendered as the outer query is: a sub-query of IN / NOT IN computes its column in the database

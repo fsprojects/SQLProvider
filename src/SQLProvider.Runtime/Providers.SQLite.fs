@@ -273,16 +273,70 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
 
         let conflictClause =
           match entity.OnConflict with
-          | Throw -> ""
+          | Throw
+          | DoNothingOn _
+          | UpdateOn _ -> ""
           | Update -> " OR REPLACE "
           | DoNothing -> " OR IGNORE "
 
+        // The upsert clause: SQLite 3.24 and newer
+        let upsert =
+          let table = (entity :> IColumnHolder).Table
+          let quoted (columns: string list) = String.concat "," (columns |> List.map (sprintf "\"%s\""))
+          match entity.OnConflict with
+          | DoNothingOn names ->
+              let target = CommonTasks.conflictColumns table schemaCache.Columns.[table.FullName] names
+              $" ON CONFLICT (%s{quoted target}) DO NOTHING"
+          | UpdateOn(onColumns, updates) ->
+              let columns = schemaCache.Columns.[table.FullName]
+              let target = CommonTasks.conflictColumns table columns onColumns
+
+              let parameter (_: Column) (value: obj) =
+                  let i = values.Length + cmd.Parameters.Count
+                  let p = createParam $"@param%i{i}" i value
+                  cmd.Parameters.Add p |> ignore
+                  p.ParameterName
+
+              let sets = CommonTasks.conflictUpdates table columns (sprintf "\"%s\"") (sprintf "excluded.\"%s\"") parameter updates
+              $" ON CONFLICT (%s{quoted target}) DO UPDATE SET %s{sets}"
+          | Throw
+          | Update
+          | DoNothing -> ""
+
+        // The row's key. After a conflict last_insert_rowid() is still the key of the row inserted before, so a row
+        // left as it was reads no key. A row that may have been updated in place is read back by the conflict's columns,
+        // which one row has. A null among them can't conflict, so that row was inserted.
+        let insertedKey =
+          let table = (entity :> IColumnHolder).Table
+          match entity.OnConflict with
+          | Throw
+          | Update -> "; SELECT last_insert_rowid();"
+          | DoNothing
+          | DoNothingOn _ -> "; SELECT last_insert_rowid() WHERE changes() > 0;"
+          | UpdateOn(onColumns, _) ->
+              let inserted (column: string) =
+                  Array.zip columnNames values
+                  |> Array.tryFind (fun (name, p) ->
+                      String.Equals(name, column, StringComparison.OrdinalIgnoreCase) && not (isNull p.Value || Convert.IsDBNull p.Value))
+                  |> Option.map (fun (_, p) -> $"\"%s{column}\" = %s{p.ParameterName}")
+
+              let conditions =
+                  CommonTasks.conflictColumns table schemaCache.Columns.[table.FullName] onColumns |> List.map inserted
+
+              match schemaCache.PrimaryKeys.TryGetValue table.FullName with
+              | true, [ key ] when conditions |> List.forall Option.isSome ->
+                  let rowOfConflict = conditions |> List.choose id |> String.concat " AND "
+                  $"; SELECT \"%s{key}\" FROM %s{table.FullName} WHERE %s{rowOfConflict};"
+              | _ -> "; SELECT last_insert_rowid();"
+
         sb.Clear() |> ignore
-        ~~(sprintf "INSERT %s INTO %s (%s) VALUES (%s); SELECT last_insert_rowid();"
+        ~~(sprintf "INSERT %s INTO %s (%s) VALUES (%s)%s%s"
             conflictClause
             (entity :> IColumnHolder).Table.FullName
             (String.Join(",",columnNames))
-            (String.Join(",",values |> Array.map(fun p -> p.ParameterName))))
+            (String.Join(",",values |> Array.map(fun p -> p.ParameterName)))
+            upsert
+            insertedKey)
 
         values |> Array.iter (cmd.Parameters.Add >> ignore)
         cmd.CommandText <- sb.ToString()
@@ -661,6 +715,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
         member __.GetSchemaCache() = schemaCache
 
         member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript, con) =
+            if sqlQuery.ForUpdate then failwith "SQLite has no row locks, so Seq.lockForUpdate can't be used with it."
             let parameters = ResizeArray<_>()
             // NOTE: really need to assign the parameters their correct db types
             let param = ref 0

@@ -719,13 +719,16 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                 | h::t -> h
 
             // next up is the FROM statement which includes joins ..
+            // SQL Server locks rows by table hints: UPDLOCK holds them until the transaction ends, ROWLOCK keeps it to the rows
+            let lockHint = if sqlQuery.ForUpdate then "WITH (UPDLOCK, ROWLOCK) " else ""
+
             let fromBuilder() =
                 sqlQuery.Links
                 |> List.iter(fun (fromAlias, data, destAlias)  ->
                     let joinType = if data.OuterJoin then "LEFT OUTER JOIN " else "INNER JOIN "
                     let destTable = getTable destAlias
-                    ~~  (sprintf "%s [%s].[%s] as [%s] on "
-                            joinType destTable.Schema destTable.Name destAlias)
+                    ~~  (sprintf "%s [%s].[%s] as [%s] %son "
+                            joinType destTable.Schema destTable.Name destAlias lockHint)
                     ~~  (String.concat " AND " ((List.zip data.ForeignKey data.PrimaryKey) |> List.map(fun (foreignKey,primaryKey) ->
                         sprintf "%s = %s"
                             (fieldNotation (if data.RelDirection = RelationshipDirection.Parents then fromAlias else destAlias) foreignKey)
@@ -777,8 +780,8 @@ type internal MSSqlServerProviderSsdt(tableNames: string, ssdtPath: string) =
                 | _ -> ()
                 // FROM
                 let bal = if baseAlias = "" then baseTable.Name else baseAlias
-                ~~ $"FROM [%s{baseTable.Schema}].[%s{baseTable.Name}] as [%s{bal}] "
-                sqlQuery.CrossJoins |> Seq.iter(fun (a,t) -> ~~ $", [%s{t.Schema}].[%s{t.Name}] as [%s{a}] ")
+                ~~ $"FROM [%s{baseTable.Schema}].[%s{baseTable.Name}] as [%s{bal}] %s{lockHint}"
+                sqlQuery.CrossJoins |> Seq.iter(fun (a,t) -> ~~ $", [%s{t.Schema}].[%s{t.Name}] as [%s{a}] %s{lockHint}")
             fromBuilder()
             // WHERE
             if sqlQuery.Filters.Length > 0 then

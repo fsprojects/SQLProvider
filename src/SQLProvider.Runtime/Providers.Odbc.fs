@@ -87,6 +87,7 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
         findDbType <- dbMappings.TryFind
 
     let createInsertCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) =
+        CommonTasks.refuseConflictColumns "An ODBC source has no ON CONFLICT" entity
         let (~~) (t:string) = sb.Append t |> ignore
         let cmd = new OdbcCommand(Connection = (con :?> OdbcConnection))
         let columnNames, values =
@@ -357,6 +358,7 @@ type internal OdbcProvider(contextSchemaPath, quotechar : OdbcQuoteCharacter) =
                         cOpen table.Name cClose cOpen table.Name separator column cClose
 
         member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript, con) =
+            if sqlQuery.ForUpdate then failwith "An ODBC source has no row locks, so Seq.lockForUpdate can't be used with it."
             let separator = ($"%c{cClose}.%c{cOpen}").Trim()
 
             let parameters = ResizeArray<_>()

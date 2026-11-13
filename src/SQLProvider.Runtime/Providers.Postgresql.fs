@@ -359,12 +359,24 @@ module PostgreSQL =
 
         allParams, outps
 
+    /// A transaction for the call (a refcursor lives only inside one), unless the connection is already in one: enlisted
+    /// in an ambient System.Transactions scope, it runs in the scope's, and Npgsql refuses a second. Null then. A
+    /// connection opened with Enlist=false isn't in the scope's transaction and gets its own.
+    let private beginCallTransaction (connection: IDbConnection) : IDbTransaction =
+        if isNull System.Transactions.Transaction.Current then
+            connection.BeginTransaction()
+        else
+            try
+                connection.BeginTransaction()
+            with :? InvalidOperationException ->
+                null
+
     let executeSprocCommand (com:IDbCommand) (inputParams:QueryParameter[]) (retCols:QueryParameter[]) (values:obj[]) =
 
         let allParams, outps = executeSprocCommandCommon inputParams retCols values
         allParams |> Array.iter (fun (_,p) -> com.Parameters.Add(p) |> ignore)
 
-        let tran = com.Connection.BeginTransaction()
+        let tran = beginCallTransaction com.Connection
         let entities =
             try
                 match retCols with
@@ -407,7 +419,7 @@ module PostgreSQL =
                         )
                     Set(returnValues)
             finally
-                tran.Commit()
+                if not (isNull tran) then tran.Commit()
         entities
 
     let executeSprocCommandAsync (com:DbCommand) (inputParams:QueryParameter[]) (retCols:QueryParameter[]) (values:obj[]) =
@@ -415,7 +427,7 @@ module PostgreSQL =
         task {
             allParams |> Array.iter (fun (_,p) -> com.Parameters.Add(p) |> ignore)
 
-            let tran = com.Connection.BeginTransaction()
+            let tran = beginCallTransaction com.Connection
                 //try
             let entities = 
                 match retCols with
@@ -484,7 +496,7 @@ module PostgreSQL =
             // For some reasont there was commit also on failure?
             // Should it be on Async.Catch ok result only?
             let! res = entities
-            tran.Commit()
+            if not (isNull tran) then tran.Commit()
             return res
         }
 
@@ -611,6 +623,25 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                 (String.concat "," (columnNamesWithValues |> List.map(fun (c,p) -> $"\"%s{c}\" = %s{p.ParameterName}" ) )))
         | DoNothing ->
           ~~(sprintf " ON CONFLICT DO NOTHING ")
+        | DoNothingOn names ->
+          let table = (entity :> IColumnHolder).Table
+          let target = CommonTasks.conflictColumns table schemaCache.Columns.[table.FullName] names
+          ~~(sprintf " ON CONFLICT (%s) DO NOTHING " (String.concat "," (target |> List.map (sprintf "\"%s\""))))
+        | UpdateOn(onColumns, updates) ->
+          let table = (entity :> IColumnHolder).Table
+          let columns = schemaCache.Columns.[table.FullName]
+          let target = CommonTasks.conflictColumns table columns onColumns
+          let constants = ResizeArray<IDbDataParameter>()
+
+          let parameter (column: Column) (value: obj) =
+              let i = values.Length + constants.Count
+              let p = PostgreSQL.createCommandParameter (QueryParameter.Create($"@param%i{i}", i, column.TypeMapping)) value
+              constants.Add p
+              p.ParameterName
+
+          let sets = CommonTasks.conflictUpdates table columns (sprintf "\"%s\"") (sprintf "EXCLUDED.\"%s\"") parameter updates
+          ~~(sprintf " ON CONFLICT (%s) DO UPDATE SET %s " (String.concat "," (target |> List.map (sprintf "\"%s\""))) sets)
+          constants |> Seq.iter (cmd.Parameters.Add >> ignore)
 
         match haspk, pk with
         | true, [itm] -> ~~ $" RETURNING \"%s{itm}\";"
@@ -1319,11 +1350,27 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                 ~~ $" EXCEPT %s{suquery} "
             | None -> ()
 
+            // FOR UPDATE can't lock the nullable side of an outer join: with one in the query, the other tables are named
+            let lockRows =
+                if not sqlQuery.ForUpdate then
+                    ""
+                elif sqlQuery.Links |> List.exists (fun (_, link, _) -> link.OuterJoin) then
+                    let lockable =
+                        [ yield (if baseAlias = "" then baseTable.Name else baseAlias)
+                          for (alias, _) in sqlQuery.CrossJoins -> alias
+                          for (_, link, alias) in sqlQuery.Links do
+                              if not link.OuterJoin then
+                                  yield alias ]
+
+                    " FOR UPDATE OF " + String.concat ", " (lockable |> List.map (sprintf "\"%s\""))
+                else
+                    " FOR UPDATE"
+
             match sqlQuery.Take, sqlQuery.Skip with
-            | ValueSome take, ValueSome skip ->  ~~ $" LIMIT %i{take} OFFSET %i{skip};"
-            | ValueSome take, ValueNone ->  ~~ $" LIMIT %i{take};"
-            | ValueNone, ValueSome skip -> ~~ $" LIMIT ALL OFFSET %i{skip};"
-            | ValueNone, ValueNone -> ()
+            | ValueSome take, ValueSome skip ->  ~~ $" LIMIT %i{take} OFFSET %i{skip}%s{lockRows};"
+            | ValueSome take, ValueNone ->  ~~ $" LIMIT %i{take}%s{lockRows};"
+            | ValueNone, ValueSome skip -> ~~ $" LIMIT ALL OFFSET %i{skip}%s{lockRows};"
+            | ValueNone, ValueNone -> ~~ lockRows
 
             let sql = sb.ToString()
             (sql,parameters)

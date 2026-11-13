@@ -77,6 +77,7 @@ type internal MSAccessProvider(contextSchemaPath) =
         findDbTypeByEnum <- enumMappings.TryFind
 
     let createInsertCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) =
+        CommonTasks.refuseConflictColumns "MS Access has no ON CONFLICT" entity
         let (~~) (t:string) = sb.Append t |> ignore
 
         let cmd = new OleDbCommand(Connection = (con :?> OleDbConnection))
@@ -307,6 +308,7 @@ type internal MSAccessProvider(contextSchemaPath) =
         member __.GetIndividualQueryText(table,column) = $"SELECT * FROM [%s{table.Name}] WHERE [%s{column}] = @id"
 
         member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript, con) =
+            if sqlQuery.ForUpdate then failwith "MS Access has no row locks, so Seq.lockForUpdate can't be used with it."
             let parameters = ResizeArray<_>()
             // make this nicer later.. just try and get the damn thing to work properly (well, at all) for now :D
             // NOTE: really need to assign the parameters their correct SQL types

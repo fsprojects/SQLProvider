@@ -406,23 +406,55 @@ type internal DuckDbProvider(resolutionPath, contextSchemaPath, owner:string, re
             ("\"" + (String.Join("\", \"",columnNames)) + "\"")
             (String.Join(",",values |> Array.map(fun p -> "$" + p.ParameterName))))
 
+        let table = (entity :> IColumnHolder).Table
+        // The schema cache is keyed by the quoted table name, not Table.FullName
+        let tableKey = table |> quotedTableName
+        let quoted (columns: string list) = String.concat "," (columns |> List.map (sprintf "\"%s\""))
+        let updateSet (columns: string list) =
+            columns |> List.map (fun c -> $"\"%s{c}\" = EXCLUDED.\"%s{c}\"") |> String.concat ","
+
         match entity.OnConflict with
         | Throw -> ()
         | Update ->
-          ~~(sprintf " ON DUPLICATE KEY UPDATE %s"
-                ((String.concat "," (columnNamesWithValues |> Array.map(fun (c,p) -> $"\"%s{c}\"=$%s{p.ParameterName}")))))
+          match schemaCache.PrimaryKeys.TryGetValue tableKey with
+          | true, pk when pk.Length > 0 ->
+              ~~ $" ON CONFLICT (%s{quoted pk}) DO UPDATE SET %s{updateSet (columnNamesWithValues |> Array.map fst |> List.ofArray)}"
+          | _ -> failwithf "OnConflict.Update needs the primary key of %s, which has none." table.FullName
         | DoNothing ->
-          ~~(sprintf " ON DUPLICATE KEY UPDATE %s"
-                ((String.concat "," (columnNamesWithValues |> Array.map(fun (c,_) -> $"\"%s{c}\"=\"%s{c}\"")))))
+          ~~ " ON CONFLICT DO NOTHING"
+        | DoNothingOn names ->
+          let target = CommonTasks.conflictColumns table schemaCache.Columns.[tableKey] names
+          ~~ $" ON CONFLICT (%s{quoted target}) DO NOTHING"
+        | UpdateOn(onColumns, updates) ->
+          let columns = schemaCache.Columns.[tableKey]
+          let target = CommonTasks.conflictColumns table columns onColumns
 
-        match schemaCache.PrimaryKeys.TryGetValue (entity :> IColumnHolder).Table.FullName with
-        | true, pk when pk.Length > 0 -> ~~ (" RETURNING (" + ((String.concat "," pk)) + ")")
-        | true, _
-        | false, _ -> ()
+          let parameter (_: Column) (value: obj) =
+              let i = columnNamesWithValues.Length + cmd.Parameters.Count
+              let p = (this :> ISqlProvider).CreateCommandParameter((DuckDb.createParam $"param%i{i}" i value), value)
+              cmd.Parameters.Add p |> ignore
+              "$" + p.ParameterName
+
+          let sets = CommonTasks.conflictUpdates table columns (sprintf "\"%s\"") (sprintf "EXCLUDED.\"%s\"") parameter updates
+          ~~ $" ON CONFLICT (%s{quoted target}) DO UPDATE SET %s{sets}"
+
+        // The row's key; none comes back when a conflict leaves the existing row as it is
+        match schemaCache.PrimaryKeys.TryGetValue tableKey with
+        | true, [ key ] -> ~~ $" RETURNING \"%s{key}\""
+        | _ -> ()
 
         values |> Array.iter (cmd.Parameters.Add >> ignore)
         cmd.CommandText <- sb.ToString()
         cmd
+
+    /// Like CommonTasks.checkKey, but the DuckDB schema cache is keyed by the quoted table name (not Table.FullName).
+    let checkInsertedKey (id: obj) (e: SqlEntity) =
+        match schemaCache.PrimaryKeys.TryGetValue ((e :> IColumnHolder).Table |> quotedTableName) with
+        | true, ([ _ ] as pkKey) ->
+            match (e :> IColumnHolder).GetPkColumnOption<obj> pkKey with
+            | [] -> (e :> IColumnHolder).SetPkColumnSilent(pkKey, id)
+            | _ -> ()
+        | _ -> ()
 
     let createUpdateCommand (con:IDbConnection) (sb:Text.StringBuilder) (entity:SqlEntity) (changedColumns: string list) =
         let (~~) (t:string) = sb.Append t |> ignore
@@ -581,12 +613,18 @@ type internal DuckDbProvider(resolutionPath, contextSchemaPath, owner:string, re
                                                     ,CASE WHEN ku.COLUMN_NAME IS NOT NULL THEN 'PRIMARY KEY' ELSE '' END AS KeyType, c.DATA_TYPE, identity_generation,
                                                      COLUMN_DEFAULT, length(c.generation_expression) > 0
                                   FROM INFORMATION_SCHEMA.COLUMNS c
-                                  left JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS ku
+                                  left JOIN (SELECT k.TABLE_CATALOG, k.TABLE_SCHEMA, k.TABLE_NAME, k.COLUMN_NAME
+                                             FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE k
+                                             JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS t
+                                               ON t.CONSTRAINT_NAME = k.CONSTRAINT_NAME
+                                                  AND t.TABLE_CATALOG = k.TABLE_CATALOG
+                                                  AND t.TABLE_SCHEMA = k.TABLE_SCHEMA
+                                                  AND t.TABLE_NAME = k.TABLE_NAME
+                                             WHERE t.CONSTRAINT_TYPE = 'PRIMARY KEY') AS ku
                                    on (c.TABLE_CATALOG = ku.TABLE_CATALOG OR ku.TABLE_CATALOG IS NULL)
                                         AND c.TABLE_SCHEMA = ku.TABLE_SCHEMA
                                         AND c.TABLE_NAME = ku.TABLE_NAME
                                         AND c.COLUMN_NAME = ku.COLUMN_NAME
-                                        and ku.CONSTRAINT_NAME='PRIMARY'
                                   WHERE c.TABLE_SCHEMA = $schema AND c.TABLE_NAME = $table"
                 use com = (this:>ISqlProvider).CreateCommand(con,baseQuery)
                 com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("schema", 0), table.Schema)) |> ignore
@@ -671,6 +709,7 @@ type internal DuckDbProvider(resolutionPath, contextSchemaPath, owner:string, re
         member __.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM \"%s\" WHERE \"%s\".\"%s\" = $id" (table |> quotedTableName) (table |> quotedTableName) column
 
         member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript, con) =
+            if sqlQuery.ForUpdate then failwith "DuckDB has no row locks, so Seq.lockForUpdate can't be used with it."
             let parameters = ResizeArray<_>()
             // make this nicer later.. just try and get the damn thing to work properly (well, at all) for now :D
             // NOTE: really need to assign the parameters their correct sql types
@@ -1067,7 +1106,7 @@ type internal DuckDbProvider(resolutionPath, contextSchemaPath, owner:string, re
                         Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                         match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
                         let pid = cmd.ExecuteScalar()
-                        CommonTasks.checkKey schemaCache.PrimaryKeys pid e
+                        checkInsertedKey pid e
                         e._State <- Unchanged
                     | Modified fields ->
                         use cmd = createUpdateCommand con sb e fields
@@ -1116,7 +1155,7 @@ type internal DuckDbProvider(resolutionPath, contextSchemaPath, owner:string, re
                                 Common.QueryEvents.PublishSqlQueryICol con.ConnectionString cmd.CommandText cmd.Parameters
                                 match timeout with | Some v -> cmd.CommandTimeout <- v | None -> ()
                                 let! pid = cmd.ExecuteScalarAsync()
-                                CommonTasks.checkKey schemaCache.PrimaryKeys pid e
+                                checkInsertedKey pid e
                                 e._State <- Unchanged
                             }
                         | Modified fields ->
