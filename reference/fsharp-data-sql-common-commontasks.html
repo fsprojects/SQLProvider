@@ -90,6 +90,12 @@
   </a>
 </li>             
 <li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/locking.html">
+    Locking rows for update
+
+  </a>
+</li>             
+<li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/mappers.html">
     mappers
   </a>
@@ -213,6 +219,7 @@
         <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/querying.html" class="nav-link">Querying</a></li>
         <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/constraints-relationships.html" class="nav-link">Constraints & Relationships</a></li>
         <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/crud.html" class="nav-link">CRUD</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/locking.html" class="nav-link">Locking rows</a></li>
         <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/programmability.html" class="nav-link">Programmability</a></li>
         <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/individuals.html" class="nav-link">Individuals</a></li>
         <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/composable.html" class="nav-link">Composable Query</a></li>
@@ -289,7 +296,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="251" data-fsdocs-tip-unique="251">
+              <code data-fsdocs-tip="257" data-fsdocs-tip-unique="257">
                 <p>
                   <a id="``ensure columns have been loaded``">
                     <a href="#``ensure columns have been loaded``">
@@ -298,7 +305,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="251">
+              <div popover="" class="fsdocs-tip" id="257">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>``ensurecolumnshavebeenloaded``&#32;<span>provider&#32;con&#32;entities</span></span></code>
@@ -339,7 +346,7 @@
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-member-xmldoc-column">
               <div class="icon-button-row">
-                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L1015-1015" class="fsdocs-source-link" title="Source on GitHub">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L1125-1125" class="fsdocs-source-link" title="Source on GitHub">
                   <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                 </a>
               </div>
@@ -375,7 +382,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="252" data-fsdocs-tip-unique="252">
+              <code data-fsdocs-tip="258" data-fsdocs-tip-unique="258">
                 <p>
                   <a id="checkKey">
                     <a href="#checkKey">
@@ -384,7 +391,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="252">
+              <div popover="" class="fsdocs-tip" id="258">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>checkKey&#32;<span>pkLookup&#32;id&#32;e</span></span></code>
@@ -428,7 +435,7 @@
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-member-xmldoc-column">
               <div class="icon-button-row">
-                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L1020-1020" class="fsdocs-source-link" title="Source on GitHub">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L1130-1130" class="fsdocs-source-link" title="Source on GitHub">
                   <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                 </a>
               </div>
@@ -464,7 +471,287 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="253" data-fsdocs-tip-unique="253">
+              <code data-fsdocs-tip="259" data-fsdocs-tip-unique="259">
+                <p>
+                  <a id="conflictColumns">
+                    <a href="#conflictColumns">
+                      <code><span>conflictColumns&#32;<span>table&#32;columns&#32;names</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="259">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>conflictColumns&#32;<span>table&#32;columns&#32;names</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        table
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-table.html">Table</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        columns
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-columnlookup.html">ColumnLookup</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        names
+                      </b>
+                      :
+                      <code><span>string&#32;list</span></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span>string&#32;list</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       The columns OnConflict.DoNothingOn and UpdateOn name, as the table spells them. Each must be one of the table's
+ columns, matched ignoring case, so no other text reaches the SQL. A column named twice is refused.
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L1078-1078" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Common.CommonTasks.conflictColumns\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Common.CommonTasks.conflictColumns`')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
+                  </div>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    table
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-table.html">Table</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    columns
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-columnlookup.html">ColumnLookup</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    names
+                  </span>
+                  :
+                  <code><span>string&#32;list</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span>string&#32;list</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="260" data-fsdocs-tip-unique="260">
+                <p>
+                  <a id="conflictUpdates">
+                    <a href="#conflictUpdates">
+                      <code><span>conflictUpdates&#32;<span>table&#32;columns&#32;quote&#32;excluded&#32;parameter&#32;updates</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="260">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>conflictUpdates&#32;<span>table&#32;columns&#32;quote&#32;excluded&#32;parameter&#32;updates</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        table
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-table.html">Table</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        columns
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-columnlookup.html">ColumnLookup</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        quote
+                      </b>
+                      :
+                      <code><span>string&#32;->&#32;string</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        excluded
+                      </b>
+                      :
+                      <code><span>string&#32;->&#32;string</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        parameter
+                      </b>
+                      :
+                      <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-column.html">Column</a>&#32;->&#32;obj&#32;->&#32;string</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        updates
+                      </b>
+                      :
+                      <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-conflictupdate.html">ConflictUpdate</a>&#32;list</span></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>string</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       The SET list of OnConflict.UpdateOn: each named column to the inserted row's value (`excluded column`) or to a
+ constant, which `parameter` adds to the command and names. The names are checked as conflictColumns does.
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L1095-1095" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Common.CommonTasks.conflictUpdates\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Common.CommonTasks.conflictUpdates`')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
+                  </div>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    table
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-table.html">Table</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    columns
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-columnlookup.html">ColumnLookup</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    quote
+                  </span>
+                  :
+                  <code><span>string&#32;->&#32;string</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    excluded
+                  </span>
+                  :
+                  <code><span>string&#32;->&#32;string</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    parameter
+                  </span>
+                  :
+                  <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-column.html">Column</a>&#32;->&#32;obj&#32;->&#32;string</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    updates
+                  </span>
+                  :
+                  <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-conflictupdate.html">ConflictUpdate</a>&#32;list</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>string</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="261" data-fsdocs-tip-unique="261">
                 <p>
                   <a id="groupKeyColumn">
                     <a href="#groupKeyColumn">
@@ -473,7 +760,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="253">
+              <div popover="" class="fsdocs-tip" id="261">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>groupKeyColumn&#32;<span>keys&#32;index&#32;column&#32;notation&#32;plain</span></span></code>
@@ -546,7 +833,7 @@
                     </p>
                   </div>
                   <div class="icon-button-row">
-                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L1035-1035" class="fsdocs-source-link" title="Source on GitHub">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L1145-1145" class="fsdocs-source-link" title="Source on GitHub">
                       <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                     </a>
                     <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Common.CommonTasks.groupKeyColumn\'/>')">
@@ -615,7 +902,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="254" data-fsdocs-tip-unique="254">
+              <code data-fsdocs-tip="262" data-fsdocs-tip-unique="262">
                 <p>
                   <a id="groupSelectColumns">
                     <a href="#groupSelectColumns">
@@ -624,7 +911,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="254">
+              <div popover="" class="fsdocs-tip" id="262">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>groupSelectColumns&#32;<span>grouping&#32;keys&#32;aggregates</span></span></code>
@@ -678,7 +965,7 @@
                     </p>
                   </div>
                   <div class="icon-button-row">
-                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L1053-1053" class="fsdocs-source-link" title="Source on GitHub">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L1163-1163" class="fsdocs-source-link" title="Source on GitHub">
                       <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                     </a>
                     <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Common.CommonTasks.groupSelectColumns\'/>')">
@@ -731,7 +1018,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="255" data-fsdocs-tip-unique="255">
+              <code data-fsdocs-tip="263" data-fsdocs-tip-unique="263">
                 <p>
                   <a id="initCallSproc">
                     <a href="#initCallSproc">
@@ -740,7 +1027,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="255">
+              <div popover="" class="fsdocs-tip" id="263">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>initCallSproc&#32;<span>dc&#32;def&#32;values&#32;con&#32;com&#32;hasStoredProcedures</span></span></code>
@@ -813,7 +1100,7 @@
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-member-xmldoc-column">
               <div class="icon-button-row">
-                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L1101-1101" class="fsdocs-source-link" title="Source on GitHub">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L1211-1211" class="fsdocs-source-link" title="Source on GitHub">
                   <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                 </a>
               </div>
@@ -882,7 +1169,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="256" data-fsdocs-tip-unique="256">
+              <code data-fsdocs-tip="264" data-fsdocs-tip-unique="264">
                 <p>
                   <a id="parseHaving">
                     <a href="#parseHaving">
@@ -891,7 +1178,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="256">
+              <div popover="" class="fsdocs-tip" id="264">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>parseHaving&#32;<span>fieldNotation&#32;keys&#32;conditionList</span></span></code>
@@ -940,7 +1227,7 @@
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-member-xmldoc-column">
               <div class="icon-button-row">
-                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L1058-1058" class="fsdocs-source-link" title="Source on GitHub">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L1168-1168" class="fsdocs-source-link" title="Source on GitHub">
                   <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                 </a>
               </div>
@@ -985,7 +1272,92 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="257" data-fsdocs-tip-unique="257">
+              <code data-fsdocs-tip="265" data-fsdocs-tip-unique="265">
+                <p>
+                  <a id="refuseConflictColumns">
+                    <a href="#refuseConflictColumns">
+                      <code><span>refuseConflictColumns&#32;<span>why&#32;entity</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="265">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>refuseConflictColumns&#32;<span>why&#32;entity</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        why
+                      </b>
+                      :
+                      <code>string</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        entity
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlentity.html">SqlEntity</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Refuses OnConflict.DoNothingOn and UpdateOn where the database can't do them, saying why.
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L1117-1117" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Common.CommonTasks.refuseConflictColumns\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Common.CommonTasks.refuseConflictColumns`')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
+                  </div>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    why
+                  </span>
+                  :
+                  <code>string</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    entity
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlentity.html">SqlEntity</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="266" data-fsdocs-tip-unique="266">
                 <p>
                   <a id="searchDataTypeFromCache">
                     <a href="#searchDataTypeFromCache">
@@ -994,7 +1366,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="257">
+              <div popover="" class="fsdocs-tip" id="266">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>searchDataTypeFromCache&#32;<span>provider&#32;con&#32;sqlQuery&#32;baseAlias&#32;baseTable&#32;alias&#32;col</span></span></code>
@@ -1080,7 +1452,7 @@
                     </p>
                   </div>
                   <div class="icon-button-row">
-                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L1085-1085" class="fsdocs-source-link" title="Source on GitHub">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L1195-1195" class="fsdocs-source-link" title="Source on GitHub">
                       <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                     </a>
                     <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Common.CommonTasks.searchDataTypeFromCache\'/>')">
@@ -1165,7 +1537,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="258" data-fsdocs-tip-unique="258">
+              <code data-fsdocs-tip="267" data-fsdocs-tip-unique="267">
                 <p>
                   <a id="sortEntities">
                     <a href="#sortEntities">
@@ -1174,7 +1546,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="258">
+              <div popover="" class="fsdocs-tip" id="267">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>sortEntities&#32;<span>entities</span></span></code>
@@ -1214,7 +1586,7 @@
                     </p>
                   </div>
                   <div class="icon-button-row">
-                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L1081-1081" class="fsdocs-source-link" title="Source on GitHub">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L1191-1191" class="fsdocs-source-link" title="Source on GitHub">
                       <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                     </a>
                     <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Common.CommonTasks.sortEntities\'/>')">

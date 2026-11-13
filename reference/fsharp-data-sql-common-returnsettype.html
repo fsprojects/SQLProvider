@@ -90,6 +90,12 @@
   </a>
 </li>             
 <li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/locking.html">
+    Locking rows for update
+
+  </a>
+</li>             
+<li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/mappers.html">
     mappers
   </a>
@@ -213,6 +219,7 @@
         <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/querying.html" class="nav-link">Querying</a></li>
         <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/constraints-relationships.html" class="nav-link">Constraints & Relationships</a></li>
         <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/crud.html" class="nav-link">CRUD</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/locking.html" class="nav-link">Locking rows</a></li>
         <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/programmability.html" class="nav-link">Programmability</a></li>
         <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/individuals.html" class="nav-link">Individuals</a></li>
         <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/composable.html" class="nav-link">Composable Query</a></li>
@@ -302,7 +309,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="1939" data-fsdocs-tip-unique="1939">
+              <code data-fsdocs-tip="1958" data-fsdocs-tip-unique="1958">
                 <p>
                   <a id="ResultSet">
                     <a href="#ResultSet">
@@ -311,7 +318,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="1939">
+              <div popover="" class="fsdocs-tip" id="1958">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>ResultSet(<span>string,&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-resultset.html">ResultSet</a></span>)</span></code>
@@ -351,7 +358,7 @@
                     </p>
                   </div>
                   <div class="icon-button-row">
-                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L230-230" class="fsdocs-source-link" title="Source on GitHub">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L260-260" class="fsdocs-source-link" title="Source on GitHub">
                       <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                     </a>
                   </div>
@@ -381,7 +388,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="1940" data-fsdocs-tip-unique="1940">
+              <code data-fsdocs-tip="1959" data-fsdocs-tip-unique="1959">
                 <p>
                   <a id="ScalarResultSet">
                     <a href="#ScalarResultSet">
@@ -390,7 +397,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="1940">
+              <div popover="" class="fsdocs-tip" id="1959">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>ScalarResultSet(<span>string,&#32;obj</span>)</span></code>
@@ -430,7 +437,7 @@
                     </p>
                   </div>
                   <div class="icon-button-row">
-                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L228-228" class="fsdocs-source-link" title="Source on GitHub">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L258-258" class="fsdocs-source-link" title="Source on GitHub">
                       <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                     </a>
                   </div>
@@ -483,7 +490,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="1941" data-fsdocs-tip-unique="1941">
+              <code data-fsdocs-tip="1960" data-fsdocs-tip-unique="1960">
                 <p>
                   <a id="IsResultSet">
                     <a href="#IsResultSet">
@@ -492,7 +499,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="1941">
+              <div popover="" class="fsdocs-tip" id="1960">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.IsResultSet</span></code>
@@ -510,7 +517,7 @@
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-member-xmldoc-column">
               <div class="icon-button-row">
-                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L230-230" class="fsdocs-source-link" title="Source on GitHub">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L260-260" class="fsdocs-source-link" title="Source on GitHub">
                   <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                 </a>
               </div>
@@ -529,7 +536,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="1942" data-fsdocs-tip-unique="1942">
+              <code data-fsdocs-tip="1961" data-fsdocs-tip-unique="1961">
                 <p>
                   <a id="IsScalarResultSet">
                     <a href="#IsScalarResultSet">
@@ -538,7 +545,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="1942">
+              <div popover="" class="fsdocs-tip" id="1961">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.IsScalarResultSet</span></code>
@@ -556,7 +563,7 @@
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-member-xmldoc-column">
               <div class="icon-button-row">
-                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L228-228" class="fsdocs-source-link" title="Source on GitHub">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L258-258" class="fsdocs-source-link" title="Source on GitHub">
                   <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                 </a>
               </div>

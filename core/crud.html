@@ -93,6 +93,12 @@
   </a>
 </li>             
 <li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/locking.html">
+    Locking rows for update
+
+  </a>
+</li>             
+<li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/mappers.html">
     mappers
   </a>
@@ -216,6 +222,7 @@
         <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/querying.html" class="nav-link">Querying</a></li>
         <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/constraints-relationships.html" class="nav-link">Constraints & Relationships</a></li>
         <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/crud.html" class="nav-link">CRUD</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/locking.html" class="nav-link">Locking rows</a></li>
         <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/programmability.html" class="nav-link">Programmability</a></li>
         <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/individuals.html" class="nav-link">Individuals</a></li>
         <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/composable.html" class="nav-link">Composable Query</a></li>
@@ -466,12 +473,53 @@ connection.</p>
 
 <span data-fsdocs-tip="fs17" data-fsdocs-tip-unique="255" class="id">ctx</span><span class="pn">.</span><span data-fsdocs-tip="fs49" data-fsdocs-tip-unique="256" class="id">SubmitUpdates</span><span class="pn">(</span><span class="pn">)</span>
 </code></pre>
+<p>To name the columns whose unique constraint or index decides the conflict, and to say what each column of the
+existing row becomes, use the row's typed methods. The lambdas are the row's own properties, so the compiler checks the
+names and the types:</p>
+<ul>
+<li><code>row.OnConflictDoNothing(fun r -&gt; r.Code)</code> leaves the existing row: <code>ON CONFLICT ("code") DO NOTHING</code>.</li>
+<li>
+<code>row.OnConflictUpdate((fun r -&gt; r.Code), fun existing inserted -&gt; ...)</code> changes the existing row as the second lambda
+says: <code>existing.Name &lt;- inserted.Name</code> takes the inserted value, <code>existing.Note &lt;- "merged"</code> (or a captured value)
+sets a constant, sent as a parameter, and every property the lambda doesn't set keeps its old value.
+</li>
+</ul>
+<p>Several columns are a tuple: <code>fun r -&gt; (r.Code, r.Region)</code>. A value computed from the rows, such as
+<code>existing.Count &lt;- existing.Count + 1</code>, can't be said this way and is refused when the method is called.</p>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span data-fsdocs-tip="fs109" data-fsdocs-tip-unique="257" class="id">upserted</span> <span class="o">=</span> <span data-fsdocs-tip="fs17" data-fsdocs-tip-unique="258" class="id">ctx</span><span class="pn">.</span><span data-fsdocs-tip="fs20" data-fsdocs-tip-unique="259" class="prop">Main</span><span class="pn">.</span><span data-fsdocs-tip="fs23" data-fsdocs-tip-unique="260" class="prop">Employees</span><span class="pn">.</span><span data-fsdocs-tip="fs59" data-fsdocs-tip-unique="261" class="id">Create</span><span class="pn">(</span><span class="pn">)</span>
+<span data-fsdocs-tip="fs109" data-fsdocs-tip-unique="262" class="id">upserted</span><span class="pn">.</span><span data-fsdocs-tip="fs38" data-fsdocs-tip-unique="263" class="id">EmployeeId</span> <span class="k">&lt;-</span> <span class="n">1L</span>
+<span data-fsdocs-tip="fs109" data-fsdocs-tip-unique="264" class="id">upserted</span><span class="pn">.</span><span data-fsdocs-tip="fs60" data-fsdocs-tip-unique="265" class="id">FirstName</span> <span class="k">&lt;-</span> <span class="s">&quot;John&quot;</span>
+<span data-fsdocs-tip="fs109" data-fsdocs-tip-unique="266" class="id">upserted</span><span class="pn">.</span><span data-fsdocs-tip="fs62" data-fsdocs-tip-unique="267" class="id">LastName</span> <span class="k">&lt;-</span> <span class="s">&quot;Doe&quot;</span>
+<span data-fsdocs-tip="fs109" data-fsdocs-tip-unique="268" class="id">upserted</span><span class="pn">.</span><span data-fsdocs-tip="fs110" data-fsdocs-tip-unique="269" class="id">Title</span> <span class="k">&lt;-</span> <span class="s">&quot;Developer&quot;</span>
+
+<span class="c">// When employee 1 exists: FirstName takes the inserted value, Title a constant; LastName and the rest stay as they are</span>
+<span data-fsdocs-tip="fs109" data-fsdocs-tip-unique="270" class="id">upserted</span><span class="pn">.</span><span data-fsdocs-tip="fs111" data-fsdocs-tip-unique="271" class="id">OnConflictUpdate</span><span class="pn">(</span><span class="pn">(</span><span class="k">fun</span> <span data-fsdocs-tip="fs83" data-fsdocs-tip-unique="272" class="fn">e</span> <span class="k">-&gt;</span> <span data-fsdocs-tip="fs83" data-fsdocs-tip-unique="273" class="fn">e</span><span class="pn">.</span><span data-fsdocs-tip="fs38" data-fsdocs-tip-unique="274" class="id">EmployeeId</span><span class="pn">)</span><span class="pn">,</span> <span class="k">fun</span> <span data-fsdocs-tip="fs112" data-fsdocs-tip-unique="275" class="fn">existing</span> <span data-fsdocs-tip="fs113" data-fsdocs-tip-unique="276" class="fn">inserted</span> <span class="k">-&gt;</span>
+    <span data-fsdocs-tip="fs112" data-fsdocs-tip-unique="277" class="fn">existing</span><span class="pn">.</span><span data-fsdocs-tip="fs60" data-fsdocs-tip-unique="278" class="id">FirstName</span> <span class="k">&lt;-</span> <span data-fsdocs-tip="fs113" data-fsdocs-tip-unique="279" class="fn">inserted</span><span class="pn">.</span><span data-fsdocs-tip="fs60" data-fsdocs-tip-unique="280" class="id">FirstName</span>
+    <span data-fsdocs-tip="fs112" data-fsdocs-tip-unique="281" class="fn">existing</span><span class="pn">.</span><span data-fsdocs-tip="fs110" data-fsdocs-tip-unique="282" class="id">Title</span> <span class="k">&lt;-</span> <span class="s">&quot;Sales Representative&quot;</span><span class="pn">)</span>
+
+<span data-fsdocs-tip="fs17" data-fsdocs-tip-unique="283" class="id">ctx</span><span class="pn">.</span><span data-fsdocs-tip="fs49" data-fsdocs-tip-unique="284" class="id">SubmitUpdates</span><span class="pn">(</span><span class="pn">)</span>
+</code></pre>
+<p>The methods set <code>OnConflict</code> to <code>DoNothingOn</code> or <code>UpdateOn</code>, which take the columns as strings; use those directly when the
+columns are known only at run time:</p>
+<ul>
+<li><code>DoNothingOn [ "code" ]</code></li>
+<li><code>UpdateOn([ "code" ], [ Inserted "name"; Constant("note", box "merged") ])</code></li>
+</ul>
+<p>The names are matched to the table's columns, ignoring case; a name the table hasn't is refused, so nothing else reaches
+the SQL. PostgreSQL, SQLite 3.24+ and DuckDB support both. MySQL refuses them, as its <code>ON DUPLICATE KEY</code> applies to any
+unique key, and so do the databases without ON CONFLICT. A partial unique index (one with a WHERE) can't be named this way;
+<code>DoNothing</code> covers it, as it covers every unique constraint.</p>
+<p>A row inserted without its key reads the key the database gave it. After a conflict the row object reads the existing
+row's key when that row was updated (<code>UpdateOn</code>), and no key when it was left as it was (<code>DoNothing</code>, <code>DoNothingOn</code>):
+query the existing row when you need it.</p>
+<p>SQLite's <code>Update</code> is <code>INSERT OR REPLACE</code>: it deletes the conflicting row and inserts the new one, so columns not set get
+their defaults, and delete triggers and cascades run. <code>UpdateOn</code> updates the row in place.</p>
 <h3><a name="Delete-query-for-multiple-items" class="anchor" href="#Delete-query-for-multiple-items">Delete-query for multiple items</a></h3>
 <p>To delete many items from a database table, <code>DELETE FROM [dbo].[EMPLOYEES] WHERE (...)</code>, there is a way, although we don't recommend deleting items from a database. Instead, you should consider a deletion-flag column. You should also back up your database before trying this. Note that changes are immediately saved to the database even if you don't call <code>ctx.SubmitUpdates()</code>.</p>
 <h3><a name="Selecting-which-Create-to-use" class="anchor" href="#Selecting-which-Create-to-use">Selecting which Create() to use</a></h3>
 <p>There are 3 overrides of create.</p>
 <p><strong>The ideal one to use is the long one ``Create(...)``(...):</strong></p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span data-fsdocs-tip="fs114" data-fsdocs-tip-unique="271" class="id">don</span> <span class="o">=</span> <span data-fsdocs-tip="fs17" data-fsdocs-tip-unique="272" class="id">ctx</span><span class="pn">.</span><span data-fsdocs-tip="fs20" data-fsdocs-tip-unique="273" class="prop">Main</span><span class="pn">.</span><span data-fsdocs-tip="fs23" data-fsdocs-tip-unique="274" class="prop">Employees</span><span class="pn">.</span><span class="id">``Create(FirstName, LastName)``</span><span class="pn">(</span><span class="s">&quot;Don&quot;</span><span class="pn">,</span> <span class="s">&quot;Syme&quot;</span><span class="pn">)</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span data-fsdocs-tip="fs119" data-fsdocs-tip-unique="299" class="id">don</span> <span class="o">=</span> <span data-fsdocs-tip="fs17" data-fsdocs-tip-unique="300" class="id">ctx</span><span class="pn">.</span><span data-fsdocs-tip="fs20" data-fsdocs-tip-unique="301" class="prop">Main</span><span class="pn">.</span><span data-fsdocs-tip="fs23" data-fsdocs-tip-unique="302" class="prop">Employees</span><span class="pn">.</span><span class="id">``Create(FirstName, LastName)``</span><span class="pn">(</span><span class="s">&quot;Don&quot;</span><span class="pn">,</span> <span class="s">&quot;Syme&quot;</span><span class="pn">)</span>
 </code></pre>
 <p>This is because it will fail if your database structure changes.
 So, when your table gets new columns, the code will fail at compile time.
@@ -484,48 +532,48 @@ Try to avoid these conditions:</p>
 <li>You want to use F# like a dynamic language.</li>
 </ul>
 <p>In the last case you'll be maintaining code like this:</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">[&lt;</span><span data-fsdocs-tip="fs1" data-fsdocs-tip-unique="275" class="rt">Literal</span><span class="pn">&gt;]</span>
-<span class="k">let</span> <span data-fsdocs-tip="fs115" data-fsdocs-tip-unique="276" class="prop">employeeId</span> <span class="o">=</span> <span class="n">123</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">[&lt;</span><span data-fsdocs-tip="fs1" data-fsdocs-tip-unique="303" class="rt">Literal</span><span class="pn">&gt;]</span>
+<span class="k">let</span> <span data-fsdocs-tip="fs120" data-fsdocs-tip-unique="304" class="prop">employeeId</span> <span class="o">=</span> <span class="n">123</span>
 <span class="c">// Got some untyped array of data from the client</span>
-<span class="k">let</span> <span data-fsdocs-tip="fs116" data-fsdocs-tip-unique="277" class="fn">createSomeItem</span> <span class="pn">(</span><span data-fsdocs-tip="fs117" data-fsdocs-tip-unique="278" class="fn">data</span><span class="pn">:</span> <span data-fsdocs-tip="fs118" data-fsdocs-tip-unique="279" class="if">seq</span><span class="pn">&lt;</span><span data-fsdocs-tip="fs53" data-fsdocs-tip-unique="280" class="rt">string</span><span class="pn">*</span><span data-fsdocs-tip="fs119" data-fsdocs-tip-unique="281" class="rt">obj</span><span class="pn">&gt;</span><span class="pn">)</span>  <span class="o">=</span>
-    <span data-fsdocs-tip="fs117" data-fsdocs-tip-unique="282" class="fn">data</span>
-    <span class="o">|&gt;</span> <span data-fsdocs-tip="fs26" data-fsdocs-tip-unique="283" class="m">Seq</span><span class="pn">.</span><span data-fsdocs-tip="fs85" data-fsdocs-tip-unique="284" class="id">map</span><span class="pn">(</span> <span class="c">// Some parsing and validation:</span>
+<span class="k">let</span> <span data-fsdocs-tip="fs121" data-fsdocs-tip-unique="305" class="fn">createSomeItem</span> <span class="pn">(</span><span data-fsdocs-tip="fs122" data-fsdocs-tip-unique="306" class="fn">data</span><span class="pn">:</span> <span data-fsdocs-tip="fs123" data-fsdocs-tip-unique="307" class="if">seq</span><span class="pn">&lt;</span><span data-fsdocs-tip="fs53" data-fsdocs-tip-unique="308" class="rt">string</span><span class="pn">*</span><span data-fsdocs-tip="fs124" data-fsdocs-tip-unique="309" class="rt">obj</span><span class="pn">&gt;</span><span class="pn">)</span>  <span class="o">=</span>
+    <span data-fsdocs-tip="fs122" data-fsdocs-tip-unique="310" class="fn">data</span>
+    <span class="o">|&gt;</span> <span data-fsdocs-tip="fs26" data-fsdocs-tip-unique="311" class="m">Seq</span><span class="pn">.</span><span data-fsdocs-tip="fs85" data-fsdocs-tip-unique="312" class="id">map</span><span class="pn">(</span> <span class="c">// Some parsing and validation:</span>
         <span class="k">function</span>
         <span class="c">// Skip some fields</span>
-        <span class="pn">|</span> <span class="s">&quot;EmployeeId&quot;</span><span class="pn">,</span> <span data-fsdocs-tip="fs120" data-fsdocs-tip-unique="285" class="fn">x</span>
-        <span class="pn">|</span> <span class="s">&quot;PermissionLevel&quot;</span><span class="pn">,</span> <span data-fsdocs-tip="fs120" data-fsdocs-tip-unique="286" class="fn">x</span> <span class="k">-&gt;</span> <span class="s">&quot;&quot;</span><span class="pn">,</span> <span data-fsdocs-tip="fs120" data-fsdocs-tip-unique="287" class="fn">x</span>
+        <span class="pn">|</span> <span class="s">&quot;EmployeeId&quot;</span><span class="pn">,</span> <span data-fsdocs-tip="fs125" data-fsdocs-tip-unique="313" class="fn">x</span>
+        <span class="pn">|</span> <span class="s">&quot;PermissionLevel&quot;</span><span class="pn">,</span> <span data-fsdocs-tip="fs125" data-fsdocs-tip-unique="314" class="fn">x</span> <span class="k">-&gt;</span> <span class="s">&quot;&quot;</span><span class="pn">,</span> <span data-fsdocs-tip="fs125" data-fsdocs-tip-unique="315" class="fn">x</span>
         <span class="c">// Convert and validate some fields</span>
-        <span class="pn">|</span> <span class="s">&quot;PostalCode&quot;</span><span class="pn">,</span> <span data-fsdocs-tip="fs120" data-fsdocs-tip-unique="288" class="fn">x</span> <span class="k">-&gt;</span>
-            <span class="s">&quot;PostalCode&quot;</span><span class="pn">,</span> <span data-fsdocs-tip="fs120" data-fsdocs-tip-unique="289" class="fn">x</span><span class="pn">.</span><span data-fsdocs-tip="fs121" data-fsdocs-tip-unique="290" class="id">ToString</span><span class="pn">(</span><span class="pn">)</span><span class="pn">.</span><span data-fsdocs-tip="fs122" data-fsdocs-tip-unique="291" class="id">ToUpper</span><span class="pn">(</span><span class="pn">)</span><span class="pn">.</span><span data-fsdocs-tip="fs123" data-fsdocs-tip-unique="292" class="id">Replace</span><span class="pn">(</span><span class="s">&quot; &quot;</span><span class="pn">,</span> <span class="s">&quot;&quot;</span><span class="pn">)</span> <span class="o">|&gt;</span> <span data-fsdocs-tip="fs124" data-fsdocs-tip-unique="293" class="fn">box</span>
-        <span class="pn">|</span> <span class="s">&quot;BirthDate&quot;</span><span class="pn">,</span> <span data-fsdocs-tip="fs120" data-fsdocs-tip-unique="294" class="fn">x</span> <span class="k">-&gt;</span>
-            <span class="k">let</span> <span data-fsdocs-tip="fs125" data-fsdocs-tip-unique="295" class="fn">bdate</span> <span class="o">=</span> <span data-fsdocs-tip="fs120" data-fsdocs-tip-unique="296" class="fn">x</span><span class="pn">.</span><span data-fsdocs-tip="fs121" data-fsdocs-tip-unique="297" class="id">ToString</span><span class="pn">(</span><span class="pn">)</span> <span class="o">|&gt;</span> <span data-fsdocs-tip="fs30" data-fsdocs-tip-unique="298" class="vt">DateTime</span><span class="pn">.</span><span data-fsdocs-tip="fs126" data-fsdocs-tip-unique="299" class="id">Parse</span>
-            <span class="k">if</span> <span data-fsdocs-tip="fs125" data-fsdocs-tip-unique="300" class="fn">bdate</span><span class="pn">.</span><span data-fsdocs-tip="fs127" data-fsdocs-tip-unique="301" class="id">AddYears</span><span class="pn">(</span><span class="n">18</span><span class="pn">)</span> <span class="o">&gt;</span> <span data-fsdocs-tip="fs30" data-fsdocs-tip-unique="302" class="vt">DateTime</span><span class="pn">.</span><span data-fsdocs-tip="fs128" data-fsdocs-tip-unique="303" class="id">UtcNow</span> <span class="k">then</span>
-                <span data-fsdocs-tip="fs129" data-fsdocs-tip-unique="304" class="fn">failwith</span> <span class="s">&quot;Too young!&quot;</span>
+        <span class="pn">|</span> <span class="s">&quot;PostalCode&quot;</span><span class="pn">,</span> <span data-fsdocs-tip="fs125" data-fsdocs-tip-unique="316" class="fn">x</span> <span class="k">-&gt;</span>
+            <span class="s">&quot;PostalCode&quot;</span><span class="pn">,</span> <span data-fsdocs-tip="fs125" data-fsdocs-tip-unique="317" class="fn">x</span><span class="pn">.</span><span data-fsdocs-tip="fs126" data-fsdocs-tip-unique="318" class="id">ToString</span><span class="pn">(</span><span class="pn">)</span><span class="pn">.</span><span data-fsdocs-tip="fs127" data-fsdocs-tip-unique="319" class="id">ToUpper</span><span class="pn">(</span><span class="pn">)</span><span class="pn">.</span><span data-fsdocs-tip="fs128" data-fsdocs-tip-unique="320" class="id">Replace</span><span class="pn">(</span><span class="s">&quot; &quot;</span><span class="pn">,</span> <span class="s">&quot;&quot;</span><span class="pn">)</span> <span class="o">|&gt;</span> <span data-fsdocs-tip="fs129" data-fsdocs-tip-unique="321" class="fn">box</span>
+        <span class="pn">|</span> <span class="s">&quot;BirthDate&quot;</span><span class="pn">,</span> <span data-fsdocs-tip="fs125" data-fsdocs-tip-unique="322" class="fn">x</span> <span class="k">-&gt;</span>
+            <span class="k">let</span> <span data-fsdocs-tip="fs130" data-fsdocs-tip-unique="323" class="fn">bdate</span> <span class="o">=</span> <span data-fsdocs-tip="fs125" data-fsdocs-tip-unique="324" class="fn">x</span><span class="pn">.</span><span data-fsdocs-tip="fs126" data-fsdocs-tip-unique="325" class="id">ToString</span><span class="pn">(</span><span class="pn">)</span> <span class="o">|&gt;</span> <span data-fsdocs-tip="fs30" data-fsdocs-tip-unique="326" class="vt">DateTime</span><span class="pn">.</span><span data-fsdocs-tip="fs131" data-fsdocs-tip-unique="327" class="id">Parse</span>
+            <span class="k">if</span> <span data-fsdocs-tip="fs130" data-fsdocs-tip-unique="328" class="fn">bdate</span><span class="pn">.</span><span data-fsdocs-tip="fs132" data-fsdocs-tip-unique="329" class="id">AddYears</span><span class="pn">(</span><span class="n">18</span><span class="pn">)</span> <span class="o">&gt;</span> <span data-fsdocs-tip="fs30" data-fsdocs-tip-unique="330" class="vt">DateTime</span><span class="pn">.</span><span data-fsdocs-tip="fs133" data-fsdocs-tip-unique="331" class="id">UtcNow</span> <span class="k">then</span>
+                <span data-fsdocs-tip="fs134" data-fsdocs-tip-unique="332" class="fn">failwith</span> <span class="s">&quot;Too young!&quot;</span>
             <span class="k">else</span>
-                <span class="s">&quot;BirthDate&quot;</span><span class="pn">,</span> <span data-fsdocs-tip="fs125" data-fsdocs-tip-unique="305" class="fn">bdate</span><span class="pn">.</span><span data-fsdocs-tip="fs130" data-fsdocs-tip-unique="306" class="id">ToString</span><span class="pn">(</span><span class="s">&quot;yyyy-MM-dd&quot;</span><span class="pn">)</span> <span class="o">|&gt;</span> <span data-fsdocs-tip="fs124" data-fsdocs-tip-unique="307" class="fn">box</span>
-        <span class="pn">|</span> <span data-fsdocs-tip="fs131" data-fsdocs-tip-unique="308" class="fn">others</span> <span class="k">-&gt;</span> <span data-fsdocs-tip="fs131" data-fsdocs-tip-unique="309" class="fn">others</span><span class="pn">)</span>
-    <span class="o">|&gt;</span> <span data-fsdocs-tip="fs26" data-fsdocs-tip-unique="310" class="m">Seq</span><span class="pn">.</span><span data-fsdocs-tip="fs132" data-fsdocs-tip-unique="311" class="id">filter</span> <span class="pn">(</span><span class="k">fun</span> <span class="pn">(</span><span data-fsdocs-tip="fs133" data-fsdocs-tip-unique="312" class="fn">key</span><span class="pn">,</span><span class="id">_</span><span class="pn">)</span> <span class="k">-&gt;</span> <span data-fsdocs-tip="fs133" data-fsdocs-tip-unique="313" class="fn">key</span> <span class="o">&lt;&gt;</span> <span class="s">&quot;&quot;</span><span class="pn">)</span>
+                <span class="s">&quot;BirthDate&quot;</span><span class="pn">,</span> <span data-fsdocs-tip="fs130" data-fsdocs-tip-unique="333" class="fn">bdate</span><span class="pn">.</span><span data-fsdocs-tip="fs135" data-fsdocs-tip-unique="334" class="id">ToString</span><span class="pn">(</span><span class="s">&quot;yyyy-MM-dd&quot;</span><span class="pn">)</span> <span class="o">|&gt;</span> <span data-fsdocs-tip="fs129" data-fsdocs-tip-unique="335" class="fn">box</span>
+        <span class="pn">|</span> <span data-fsdocs-tip="fs136" data-fsdocs-tip-unique="336" class="fn">others</span> <span class="k">-&gt;</span> <span data-fsdocs-tip="fs136" data-fsdocs-tip-unique="337" class="fn">others</span><span class="pn">)</span>
+    <span class="o">|&gt;</span> <span data-fsdocs-tip="fs26" data-fsdocs-tip-unique="338" class="m">Seq</span><span class="pn">.</span><span data-fsdocs-tip="fs137" data-fsdocs-tip-unique="339" class="id">filter</span> <span class="pn">(</span><span class="k">fun</span> <span class="pn">(</span><span data-fsdocs-tip="fs138" data-fsdocs-tip-unique="340" class="fn">key</span><span class="pn">,</span><span class="id">_</span><span class="pn">)</span> <span class="k">-&gt;</span> <span data-fsdocs-tip="fs138" data-fsdocs-tip-unique="341" class="fn">key</span> <span class="o">&lt;&gt;</span> <span class="s">&quot;&quot;</span><span class="pn">)</span>
                   <span class="c">// Add some fields:</span>
-    <span class="o">|&gt;</span> <span data-fsdocs-tip="fs26" data-fsdocs-tip-unique="314" class="m">Seq</span><span class="pn">.</span><span data-fsdocs-tip="fs134" data-fsdocs-tip-unique="315" class="id">append</span> <span class="pn">[|</span><span class="s">&quot;EmployeeId&quot;</span><span class="pn">,</span> <span data-fsdocs-tip="fs115" data-fsdocs-tip-unique="316" class="prop">employeeId</span> <span class="o">|&gt;</span> <span data-fsdocs-tip="fs124" data-fsdocs-tip-unique="317" class="fn">box</span><span class="pn">;</span>
-                    <span class="s">&quot;Country&quot;</span><span class="pn">,</span> <span class="s">&quot;UK&quot;</span> <span class="o">|&gt;</span> <span data-fsdocs-tip="fs124" data-fsdocs-tip-unique="318" class="fn">box</span> <span class="pn">|]</span>
-    <span class="o">|&gt;</span> <span data-fsdocs-tip="fs17" data-fsdocs-tip-unique="319" class="id">ctx</span><span class="pn">.</span><span data-fsdocs-tip="fs20" data-fsdocs-tip-unique="320" class="prop">Main</span><span class="pn">.</span><span data-fsdocs-tip="fs23" data-fsdocs-tip-unique="321" class="prop">Employees</span><span class="pn">.</span><span data-fsdocs-tip="fs59" data-fsdocs-tip-unique="322" class="id">Create</span>
+    <span class="o">|&gt;</span> <span data-fsdocs-tip="fs26" data-fsdocs-tip-unique="342" class="m">Seq</span><span class="pn">.</span><span data-fsdocs-tip="fs139" data-fsdocs-tip-unique="343" class="id">append</span> <span class="pn">[|</span><span class="s">&quot;EmployeeId&quot;</span><span class="pn">,</span> <span data-fsdocs-tip="fs120" data-fsdocs-tip-unique="344" class="prop">employeeId</span> <span class="o">|&gt;</span> <span data-fsdocs-tip="fs129" data-fsdocs-tip-unique="345" class="fn">box</span><span class="pn">;</span>
+                    <span class="s">&quot;Country&quot;</span><span class="pn">,</span> <span class="s">&quot;UK&quot;</span> <span class="o">|&gt;</span> <span data-fsdocs-tip="fs129" data-fsdocs-tip-unique="346" class="fn">box</span> <span class="pn">|]</span>
+    <span class="o">|&gt;</span> <span data-fsdocs-tip="fs17" data-fsdocs-tip-unique="347" class="id">ctx</span><span class="pn">.</span><span data-fsdocs-tip="fs20" data-fsdocs-tip-unique="348" class="prop">Main</span><span class="pn">.</span><span data-fsdocs-tip="fs23" data-fsdocs-tip-unique="349" class="prop">Employees</span><span class="pn">.</span><span data-fsdocs-tip="fs59" data-fsdocs-tip-unique="350" class="id">Create</span>
 </code></pre>
 <h3><a name="What-to-do-if-your-creation-fails-systematically-every-time" class="anchor" href="#What-to-do-if-your-creation-fails-systematically-every-time">What to do if your creation fails systematically every time</a></h3>
 <p>Some underlying database connection libraries have problems with serializing underlying data types.
 So, if this fails:</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span data-fsdocs-tip="fs32" data-fsdocs-tip-unique="323" class="id">emp</span><span class="pn">.</span><span data-fsdocs-tip="fs135" data-fsdocs-tip-unique="324" class="id">BirthDate</span> <span class="k">&lt;-</span> <span data-fsdocs-tip="fs30" data-fsdocs-tip-unique="325" class="vt">DateTime</span><span class="pn">.</span><span data-fsdocs-tip="fs128" data-fsdocs-tip-unique="326" class="id">UtcNow</span>
-<span data-fsdocs-tip="fs17" data-fsdocs-tip-unique="327" class="id">ctx</span><span class="pn">.</span><span data-fsdocs-tip="fs49" data-fsdocs-tip-unique="328" class="id">SubmitUpdates</span><span class="pn">(</span><span class="pn">)</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span data-fsdocs-tip="fs32" data-fsdocs-tip-unique="351" class="id">emp</span><span class="pn">.</span><span data-fsdocs-tip="fs140" data-fsdocs-tip-unique="352" class="id">BirthDate</span> <span class="k">&lt;-</span> <span data-fsdocs-tip="fs30" data-fsdocs-tip-unique="353" class="vt">DateTime</span><span class="pn">.</span><span data-fsdocs-tip="fs133" data-fsdocs-tip-unique="354" class="id">UtcNow</span>
+<span data-fsdocs-tip="fs17" data-fsdocs-tip-unique="355" class="id">ctx</span><span class="pn">.</span><span data-fsdocs-tip="fs49" data-fsdocs-tip-unique="356" class="id">SubmitUpdates</span><span class="pn">(</span><span class="pn">)</span>
 </code></pre>
 <p>Try using <code>.SetColumn("ColumnName", value |&gt; box)</code>
 for example:</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span data-fsdocs-tip="fs32" data-fsdocs-tip-unique="329" class="id">emp</span><span class="pn">.</span><span data-fsdocs-tip="fs136" data-fsdocs-tip-unique="330" class="id">SetColumn</span><span class="pn">(</span><span class="s">&quot;BirthDate&quot;</span><span class="pn">,</span> <span data-fsdocs-tip="fs30" data-fsdocs-tip-unique="331" class="vt">DateTime</span><span class="pn">.</span><span data-fsdocs-tip="fs128" data-fsdocs-tip-unique="332" class="id">UtcNow</span><span class="pn">.</span><span data-fsdocs-tip="fs130" data-fsdocs-tip-unique="333" class="id">ToString</span><span class="pn">(</span><span class="s">&quot;yyyy-MM-dd HH\:mm\:ss&quot;</span><span class="pn">)</span> <span class="o">|&gt;</span> <span data-fsdocs-tip="fs124" data-fsdocs-tip-unique="334" class="fn">box</span><span class="pn">)</span>
-<span data-fsdocs-tip="fs17" data-fsdocs-tip-unique="335" class="id">ctx</span><span class="pn">.</span><span data-fsdocs-tip="fs49" data-fsdocs-tip-unique="336" class="id">SubmitUpdates</span><span class="pn">(</span><span class="pn">)</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span data-fsdocs-tip="fs32" data-fsdocs-tip-unique="357" class="id">emp</span><span class="pn">.</span><span data-fsdocs-tip="fs141" data-fsdocs-tip-unique="358" class="id">SetColumn</span><span class="pn">(</span><span class="s">&quot;BirthDate&quot;</span><span class="pn">,</span> <span data-fsdocs-tip="fs30" data-fsdocs-tip-unique="359" class="vt">DateTime</span><span class="pn">.</span><span data-fsdocs-tip="fs133" data-fsdocs-tip-unique="360" class="id">UtcNow</span><span class="pn">.</span><span data-fsdocs-tip="fs135" data-fsdocs-tip-unique="361" class="id">ToString</span><span class="pn">(</span><span class="s">&quot;yyyy-MM-dd HH\:mm\:ss&quot;</span><span class="pn">)</span> <span class="o">|&gt;</span> <span data-fsdocs-tip="fs129" data-fsdocs-tip-unique="362" class="fn">box</span><span class="pn">)</span>
+<span data-fsdocs-tip="fs17" data-fsdocs-tip-unique="363" class="id">ctx</span><span class="pn">.</span><span data-fsdocs-tip="fs49" data-fsdocs-tip-unique="364" class="id">SubmitUpdates</span><span class="pn">(</span><span class="pn">)</span>
 </code></pre>
 <p>SetColumn takes an object, giving you more control over the type serialization.</p>
 <h3><a name="Identifying-columns-dynamically" class="anchor" href="#Identifying-columns-dynamically">Identifying columns dynamically</a></h3>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span data-fsdocs-tip="fs137" data-fsdocs-tip-unique="337" class="fn">setIfExists</span> <span data-fsdocs-tip="fs138" data-fsdocs-tip-unique="338" class="fn">columnName</span> <span class="o">=</span>
-   <span class="k">if</span> <span data-fsdocs-tip="fs32" data-fsdocs-tip-unique="339" class="id">emp</span><span class="pn">.</span><span data-fsdocs-tip="fs139" data-fsdocs-tip-unique="340" class="id">HasColumn</span><span class="pn">(</span><span data-fsdocs-tip="fs138" data-fsdocs-tip-unique="341" class="fn">columnName</span><span class="pn">,</span> <span data-fsdocs-tip="fs140" data-fsdocs-tip-unique="342" class="en">StringComparison</span><span class="pn">.</span><span data-fsdocs-tip="fs141" data-fsdocs-tip-unique="343" class="id">InvariantCultureIgnoreCase</span><span class="pn">)</span> <span class="k">then</span>
-      <span data-fsdocs-tip="fs32" data-fsdocs-tip-unique="344" class="id">emp</span><span class="pn">.</span><span data-fsdocs-tip="fs136" data-fsdocs-tip-unique="345" class="id">SetColumn</span><span class="pn">(</span><span data-fsdocs-tip="fs138" data-fsdocs-tip-unique="346" class="fn">columnName</span><span class="pn">,</span> <span class="s">&quot;testValue&quot;</span><span class="pn">)</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span data-fsdocs-tip="fs142" data-fsdocs-tip-unique="365" class="fn">setIfExists</span> <span data-fsdocs-tip="fs143" data-fsdocs-tip-unique="366" class="fn">columnName</span> <span class="o">=</span>
+   <span class="k">if</span> <span data-fsdocs-tip="fs32" data-fsdocs-tip-unique="367" class="id">emp</span><span class="pn">.</span><span data-fsdocs-tip="fs144" data-fsdocs-tip-unique="368" class="id">HasColumn</span><span class="pn">(</span><span data-fsdocs-tip="fs143" data-fsdocs-tip-unique="369" class="fn">columnName</span><span class="pn">,</span> <span data-fsdocs-tip="fs145" data-fsdocs-tip-unique="370" class="en">StringComparison</span><span class="pn">.</span><span data-fsdocs-tip="fs146" data-fsdocs-tip-unique="371" class="id">InvariantCultureIgnoreCase</span><span class="pn">)</span> <span class="k">then</span>
+      <span data-fsdocs-tip="fs32" data-fsdocs-tip-unique="372" class="id">emp</span><span class="pn">.</span><span data-fsdocs-tip="fs141" data-fsdocs-tip-unique="373" class="id">SetColumn</span><span class="pn">(</span><span data-fsdocs-tip="fs143" data-fsdocs-tip-unique="374" class="fn">columnName</span><span class="pn">,</span> <span class="s">&quot;testValue&quot;</span><span class="pn">)</span>
 </code></pre>
 
         <div popover class="fsdocs-tip" id="fs1">Multiple items<br />type LiteralAttribute =
@@ -771,18 +819,24 @@ type TransactionScopeAsyncFlowOption =
 type OnConflict =
   | Throw
   | Update
-  | DoNothing<br /><em>&lt;summary&gt;
- Specifies how to handle conflicts when inserting records with duplicate primary keys.
- Currently supported only on databases that have UPSERT capabilities.
-&lt;/summary&gt;</em></div>
-<div popover class="fsdocs-tip" id="fs108">union case Common.OnConflict.Update: Common.OnConflict<br /><em>&lt;summary&gt;
- If the primary key already exists, updates the existing row&#39;s columns to match the new entity.
- Currently supported only on PostgreSQL 9.5+
-&lt;/summary&gt;</em></div>
-<div popover class="fsdocs-tip" id="fs109">
+  | DoNothing
+  | DoNothingOn of conflictColumns: string list
+  | UpdateOn of onColumns: string list * updates: ConflictUpdate list<br /><em>&lt;summary&gt;What an insert does when the row would break a primary key or a unique constraint or index.&lt;/summary&gt;<br />&lt;remarks&gt;Set on each row before &lt;c&gt;SubmitUpdates&lt;/c&gt;; rows of one submit may differ. Databases without an upsert
+ (SQL Server, Oracle, Firebird, ODBC, MS Access) ignore &lt;c&gt;Update&lt;/c&gt; and &lt;c&gt;DoNothing&lt;/c&gt; and refuse
+ &lt;c&gt;DoNothingOn&lt;/c&gt; and &lt;c&gt;UpdateOn&lt;/c&gt;. A row inserted without its key reads the key the database gave it; after a
+ conflict it reads the existing row&#39;s key when that row was updated, and none when it was left as it was.&lt;/remarks&gt;</em></div>
+<div popover class="fsdocs-tip" id="fs108">union case Common.OnConflict.Update: Common.OnConflict<br /><em>&lt;summary&gt;The existing row gets every column the new row sets.&lt;/summary&gt;<br />&lt;remarks&gt;PostgreSQL: &lt;c&gt;ON CONFLICT (primary key) DO UPDATE&lt;/c&gt;; DuckDB the same; MySQL:
+ &lt;c&gt;ON DUPLICATE KEY UPDATE&lt;/c&gt;; SQLite: &lt;c&gt;INSERT OR REPLACE&lt;/c&gt;, which deletes the existing row and inserts the new
+ one, so columns not set get their defaults and delete triggers and cascades run.&lt;/remarks&gt;</em></div>
+<div popover class="fsdocs-tip" id="fs109">val upserted: SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity</div>
+<div popover class="fsdocs-tip" id="fs110">property SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity.Title: string with get, set<br /><em>&lt;summary&gt;Title:   nvarchar(30)&lt;/summary&gt;</em></div>
+<div popover class="fsdocs-tip" id="fs111">static member SqlEntityConflictExtensions.OnConflictUpdate: row: &#39;T * conflictColumns: Quotations.Expr&lt;(&#39;T -&gt; &#39;Key)&gt; * update: Quotations.Expr&lt;(&#39;T -&gt; &#39;T -&gt; unit)&gt; -&gt; unit (requires &#39;T :&gt; Common.SqlEntity)</div>
+<div popover class="fsdocs-tip" id="fs112">val existing: SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity</div>
+<div popover class="fsdocs-tip" id="fs113">val inserted: SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity</div>
+<div popover class="fsdocs-tip" id="fs114">
 val conditions: bool = true</div>
-<div popover class="fsdocs-tip" id="fs110">val c: SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity</div>
-<div popover class="fsdocs-tip" id="fs111">Multiple items<br />type Async =
+<div popover class="fsdocs-tip" id="fs115">val c: SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity</div>
+<div popover class="fsdocs-tip" id="fs116">Multiple items<br />type Async =
   static member AsBeginEnd: computation: (&#39;Arg -&gt; Async&lt;&#39;T&gt;) -&gt; (&#39;Arg * AsyncCallback * objnull -&gt; IAsyncResult) * (IAsyncResult -&gt; &#39;T) * (IAsyncResult -&gt; unit)
   static member AwaitEvent: event: IEvent&lt;&#39;Del,&#39;T&gt; * ?cancelAction: (unit -&gt; unit) -&gt; Async&lt;&#39;T&gt; (requires delegate and &#39;Del :&gt; Delegate and &#39;Del: not null)
   static member AwaitIAsyncResult: iar: IAsyncResult * ?millisecondsTimeout: int -&gt; Async&lt;bool&gt;
@@ -794,40 +848,40 @@ val conditions: bool = true</div>
   static member FromBeginEnd: beginAction: (AsyncCallback * objnull -&gt; IAsyncResult) * endAction: (IAsyncResult -&gt; &#39;T) * ?cancelAction: (unit -&gt; unit) -&gt; Async&lt;&#39;T&gt; + 3 overloads
   static member FromContinuations: callback: ((&#39;T -&gt; unit) * (exn -&gt; unit) * (OperationCanceledException -&gt; unit) -&gt; unit) -&gt; Async&lt;&#39;T&gt;
   ...<br /><br />--------------------<br />type Async&lt;&#39;T&gt;</div>
-<div popover class="fsdocs-tip" id="fs112">static member Async.AwaitTask: task: Threading.Tasks.Task -&gt; Async&lt;unit&gt;<br />static member Async.AwaitTask: task: Threading.Tasks.Task&lt;&#39;T&gt; -&gt; Async&lt;&#39;T&gt;</div>
-<div popover class="fsdocs-tip" id="fs113">static member Async.RunSynchronously: computation: Async&lt;&#39;T&gt; * ?timeout: int * ?cancellationToken: Threading.CancellationToken -&gt; &#39;T</div>
-<div popover class="fsdocs-tip" id="fs114">val don: SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity</div>
-<div popover class="fsdocs-tip" id="fs115">
+<div popover class="fsdocs-tip" id="fs117">static member Async.AwaitTask: task: Threading.Tasks.Task -&gt; Async&lt;unit&gt;<br />static member Async.AwaitTask: task: Threading.Tasks.Task&lt;&#39;T&gt; -&gt; Async&lt;&#39;T&gt;</div>
+<div popover class="fsdocs-tip" id="fs118">static member Async.RunSynchronously: computation: Async&lt;&#39;T&gt; * ?timeout: int * ?cancellationToken: Threading.CancellationToken -&gt; &#39;T</div>
+<div popover class="fsdocs-tip" id="fs119">val don: SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity</div>
+<div popover class="fsdocs-tip" id="fs120">
 val employeeId: int = 123</div>
-<div popover class="fsdocs-tip" id="fs116">val createSomeItem: data: (string * obj) seq -&gt; SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity</div>
-<div popover class="fsdocs-tip" id="fs117">val data: (string * obj) seq</div>
-<div popover class="fsdocs-tip" id="fs118">Multiple items<br />val seq: sequence: &#39;T seq -&gt; &#39;T seq<br /><br />--------------------<br />type &#39;T seq = Collections.Generic.IEnumerable&lt;&#39;T&gt;</div>
-<div popover class="fsdocs-tip" id="fs119">type obj = Object</div>
-<div popover class="fsdocs-tip" id="fs120">val x: obj</div>
-<div popover class="fsdocs-tip" id="fs121">Object.ToString() : string</div>
-<div popover class="fsdocs-tip" id="fs122">union case CanonicalOp.ToUpper: CanonicalOp<br /><em>&lt;summary&gt;
+<div popover class="fsdocs-tip" id="fs121">val createSomeItem: data: (string * obj) seq -&gt; SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity</div>
+<div popover class="fsdocs-tip" id="fs122">val data: (string * obj) seq</div>
+<div popover class="fsdocs-tip" id="fs123">Multiple items<br />val seq: sequence: &#39;T seq -&gt; &#39;T seq<br /><br />--------------------<br />type &#39;T seq = Collections.Generic.IEnumerable&lt;&#39;T&gt;</div>
+<div popover class="fsdocs-tip" id="fs124">type obj = Object</div>
+<div popover class="fsdocs-tip" id="fs125">val x: obj</div>
+<div popover class="fsdocs-tip" id="fs126">Object.ToString() : string</div>
+<div popover class="fsdocs-tip" id="fs127">union case CanonicalOp.ToUpper: CanonicalOp<br /><em>&lt;summary&gt;
  Converts string to uppercase
 &lt;/summary&gt;</em></div>
-<div popover class="fsdocs-tip" id="fs123">union case CanonicalOp.Replace: SqlItemOrColumn * SqlItemOrColumn -&gt; CanonicalOp<br /><em>&lt;summary&gt;
+<div popover class="fsdocs-tip" id="fs128">union case CanonicalOp.Replace: SqlItemOrColumn * SqlItemOrColumn -&gt; CanonicalOp<br /><em>&lt;summary&gt;
  Replaces occurrences of a substring with another substring
 &lt;/summary&gt;</em></div>
-<div popover class="fsdocs-tip" id="fs124">val box: value: &#39;T -&gt; objnull</div>
-<div popover class="fsdocs-tip" id="fs125">val bdate: DateTime</div>
-<div popover class="fsdocs-tip" id="fs126">DateTime.Parse(s: string) : DateTime<br />DateTime.Parse(s: string, provider: IFormatProvider) : DateTime<br />DateTime.Parse(s: ReadOnlySpan&lt;char&gt;, provider: IFormatProvider) : DateTime<br />DateTime.Parse(s: string, provider: IFormatProvider, styles: Globalization.DateTimeStyles) : DateTime<br />DateTime.Parse(s: ReadOnlySpan&lt;char&gt;, ?provider: IFormatProvider, ?styles: Globalization.DateTimeStyles) : DateTime</div>
-<div popover class="fsdocs-tip" id="fs127">DateTime.AddYears(value: int) : DateTime</div>
-<div popover class="fsdocs-tip" id="fs128">property DateTime.UtcNow: DateTime with get<br /><em>&lt;summary&gt;Gets a &lt;see cref=&quot;T:System.DateTime&quot; /&gt; object that is set to the current date and time on this computer, expressed as the Coordinated Universal Time (UTC).&lt;/summary&gt;<br />&lt;returns&gt;An object whose value is the current UTC date and time.&lt;/returns&gt;</em></div>
-<div popover class="fsdocs-tip" id="fs129">val failwith: message: string -&gt; &#39;T</div>
-<div popover class="fsdocs-tip" id="fs130">DateTime.ToString() : string<br />DateTime.ToString( format: string) : string<br />DateTime.ToString(provider: IFormatProvider) : string<br />DateTime.ToString( format: string, provider: IFormatProvider) : string</div>
-<div popover class="fsdocs-tip" id="fs131">val others: string * obj</div>
-<div popover class="fsdocs-tip" id="fs132">val filter: predicate: (&#39;T -&gt; bool) -&gt; source: &#39;T seq -&gt; &#39;T seq</div>
-<div popover class="fsdocs-tip" id="fs133">val key: string</div>
-<div popover class="fsdocs-tip" id="fs134">val append: source1: &#39;T seq -&gt; source2: &#39;T seq -&gt; &#39;T seq</div>
-<div popover class="fsdocs-tip" id="fs135">property SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity.BirthDate: DateTime with get, set<br /><em>&lt;summary&gt;BirthDate:   datetime&lt;/summary&gt;</em></div>
-<div popover class="fsdocs-tip" id="fs136">member Common.SqlEntity.SetColumn: key: string * value: &#39;t -&gt; unit</div>
-<div popover class="fsdocs-tip" id="fs137">val setIfExists: columnName: string -&gt; unit</div>
-<div popover class="fsdocs-tip" id="fs138">val columnName: string</div>
-<div popover class="fsdocs-tip" id="fs139">member Common.SqlEntity.HasColumn: key: string * ?comparison: StringComparison -&gt; bool</div>
-<div popover class="fsdocs-tip" id="fs140">
+<div popover class="fsdocs-tip" id="fs129">val box: value: &#39;T -&gt; objnull</div>
+<div popover class="fsdocs-tip" id="fs130">val bdate: DateTime</div>
+<div popover class="fsdocs-tip" id="fs131">DateTime.Parse(s: string) : DateTime<br />DateTime.Parse(s: string, provider: IFormatProvider) : DateTime<br />DateTime.Parse(s: ReadOnlySpan&lt;char&gt;, provider: IFormatProvider) : DateTime<br />DateTime.Parse(s: string, provider: IFormatProvider, styles: Globalization.DateTimeStyles) : DateTime<br />DateTime.Parse(s: ReadOnlySpan&lt;char&gt;, ?provider: IFormatProvider, ?styles: Globalization.DateTimeStyles) : DateTime</div>
+<div popover class="fsdocs-tip" id="fs132">DateTime.AddYears(value: int) : DateTime</div>
+<div popover class="fsdocs-tip" id="fs133">property DateTime.UtcNow: DateTime with get<br /><em>&lt;summary&gt;Gets a &lt;see cref=&quot;T:System.DateTime&quot; /&gt; object that is set to the current date and time on this computer, expressed as the Coordinated Universal Time (UTC).&lt;/summary&gt;<br />&lt;returns&gt;An object whose value is the current UTC date and time.&lt;/returns&gt;</em></div>
+<div popover class="fsdocs-tip" id="fs134">val failwith: message: string -&gt; &#39;T</div>
+<div popover class="fsdocs-tip" id="fs135">DateTime.ToString() : string<br />DateTime.ToString( format: string) : string<br />DateTime.ToString(provider: IFormatProvider) : string<br />DateTime.ToString( format: string, provider: IFormatProvider) : string</div>
+<div popover class="fsdocs-tip" id="fs136">val others: string * obj</div>
+<div popover class="fsdocs-tip" id="fs137">val filter: predicate: (&#39;T -&gt; bool) -&gt; source: &#39;T seq -&gt; &#39;T seq</div>
+<div popover class="fsdocs-tip" id="fs138">val key: string</div>
+<div popover class="fsdocs-tip" id="fs139">val append: source1: &#39;T seq -&gt; source2: &#39;T seq -&gt; &#39;T seq</div>
+<div popover class="fsdocs-tip" id="fs140">property SqlDataProvider&lt;...&gt;.dataContext.main.EmployeesEntity.BirthDate: DateTime with get, set<br /><em>&lt;summary&gt;BirthDate:   datetime&lt;/summary&gt;</em></div>
+<div popover class="fsdocs-tip" id="fs141">member Common.SqlEntity.SetColumn: key: string * value: &#39;t -&gt; unit</div>
+<div popover class="fsdocs-tip" id="fs142">val setIfExists: columnName: string -&gt; unit</div>
+<div popover class="fsdocs-tip" id="fs143">val columnName: string</div>
+<div popover class="fsdocs-tip" id="fs144">member Common.SqlEntity.HasColumn: key: string * ?comparison: StringComparison -&gt; bool</div>
+<div popover class="fsdocs-tip" id="fs145">
 type StringComparison =
   | CurrentCulture = 0
   | CurrentCultureIgnoreCase = 1
@@ -835,7 +889,7 @@ type StringComparison =
   | InvariantCultureIgnoreCase = 3
   | Ordinal = 4
   | OrdinalIgnoreCase = 5<br /><em>&lt;summary&gt;Specifies the culture, case, and sort rules to be used by certain overloads of the &lt;see cref=&quot;M:System.String.Compare(System.String,System.String)&quot; /&gt; and &lt;see cref=&quot;M:System.String.Equals(System.Object)&quot; /&gt; methods.&lt;/summary&gt;</em></div>
-<div popover class="fsdocs-tip" id="fs141">field StringComparison.InvariantCultureIgnoreCase: StringComparison = 3</div>
+<div popover class="fsdocs-tip" id="fs146">field StringComparison.InvariantCultureIgnoreCase: StringComparison = 3</div>
 
     </div>
 </main>

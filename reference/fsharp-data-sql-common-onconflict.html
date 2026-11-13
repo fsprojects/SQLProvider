@@ -90,6 +90,12 @@
   </a>
 </li>             
 <li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/locking.html">
+    Locking rows for update
+
+  </a>
+</li>             
+<li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/mappers.html">
     mappers
   </a>
@@ -213,6 +219,7 @@
         <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/querying.html" class="nav-link">Querying</a></li>
         <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/constraints-relationships.html" class="nav-link">Constraints & Relationships</a></li>
         <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/crud.html" class="nav-link">CRUD</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/locking.html" class="nav-link">Locking rows</a></li>
         <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/programmability.html" class="nav-link">Programmability</a></li>
         <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/individuals.html" class="nav-link">Individuals</a></li>
         <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/composable.html" class="nav-link">Composable Query</a></li>
@@ -268,12 +275,6 @@
       <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-onconflict.html">OnConflict</a>&gt;</span></code>
       , 
       <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralequatable">IStructuralEquatable</a></code>
-      , 
-      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.icomparable-1">IComparable</a>&lt;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-onconflict.html">OnConflict</a>&gt;</span></code>
-      , 
-      <code><a href="https://learn.microsoft.com/dotnet/api/system.icomparable">IComparable</a></code>
-      , 
-      <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralcomparable">IStructuralComparable</a></code>
     </dt>
     <dt>
       Kind: Struct
@@ -283,11 +284,16 @@
     <div>
       <div class="fsdocs-summary-contents">
         <p class="fsdocs-summary">
-           Specifies how to handle conflicts when inserting records with duplicate primary keys.
- Currently supported only on databases that have UPSERT capabilities.
+          What an insert does when the row would break a primary key or a unique constraint or index.
         </p>
       </div>
     </div>
+    <p class="fsdocs-remarks">
+      Set on each row before <code>SubmitUpdates</code>; rows of one submit may differ. Databases without an upsert
+ (SQL Server, Oracle, Firebird, ODBC, MS Access) ignore <code>Update</code> and <code>DoNothing</code> and refuse
+ <code>DoNothingOn</code> and <code>UpdateOn</code>. A row inserted without its key reads the key the database gave it; after a
+ conflict it reads the existing row&#39;s key when that row was updated, and none when it was left as it was.
+    </p>
   </div>
   <div></div>
   <div></div>
@@ -312,7 +318,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="1931" data-fsdocs-tip-unique="1931">
+              <code data-fsdocs-tip="1946" data-fsdocs-tip-unique="1946">
                 <p>
                   <a id="DoNothing">
                     <a href="#DoNothing">
@@ -321,7 +327,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="1931">
+              <div popover="" class="fsdocs-tip" id="1946">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>DoNothing</span></code>
@@ -332,25 +338,107 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-summary-contents">
-                <p class="fsdocs-summary">
-                   If the primary key already exists, leaves the existing row unchanged.
- Currently supported only on PostgreSQL 9.5+
-                </p>
-              </div>
-              <div class="icon-button-row">
-                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L212-212" class="fsdocs-source-link" title="Source on GitHub">
-                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                </a>
-              </div>
-            </div>
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                      The existing row stays as it is, whichever unique constraint the new row breaks.
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L229-229" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                  </div>
+                </div>
+              </summary>
+              <p class="fsdocs-remarks">
+                PostgreSQL and DuckDB: <code>ON CONFLICT DO NOTHING</code>; MySQL: <code>ON DUPLICATE KEY UPDATE</code> of nothing;
+ SQLite: <code>INSERT OR IGNORE</code>.
+              </p>
+            </details>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="1932" data-fsdocs-tip-unique="1932">
+              <code data-fsdocs-tip="1947" data-fsdocs-tip-unique="1947">
+                <p>
+                  <a id="DoNothingOn">
+                    <a href="#DoNothingOn">
+                      <code><span>DoNothingOn&#32;conflictColumns</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="1947">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>DoNothingOn&#32;conflictColumns</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        conflictColumns
+                      </b>
+                      :
+                      <code><span>string&#32;list</span></code>
+                       - 
+                      The constraint&#39;s or index&#39;s columns, as the table has them (matched ignoring case);
+ a partial index can&#39;t be named, so use <code>DoNothing</code> for one. A column named twice is refused.
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                      The existing row stays as it is when the new row breaks the unique constraint or index on exactly these
+ columns: <code>ON CONFLICT (columns) DO NOTHING</code>.
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L235-235" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                  </div>
+                </div>
+              </summary>
+              <p class="fsdocs-remarks">
+                PostgreSQL, SQLite 3.24+ and DuckDB; MySQL refuses it.
+              </p>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    conflictColumns
+                  </span>
+                  :
+                  <code><span>string&#32;list</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    The constraint&#39;s or index&#39;s columns, as the table has them (matched ignoring case);
+ a partial index can&#39;t be named, so use <code>DoNothing</code> for one. A column named twice is refused.
+                  </p>
+                </dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="1948" data-fsdocs-tip-unique="1948">
                 <p>
                   <a id="Throw">
                     <a href="#Throw">
@@ -359,7 +447,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="1932">
+              <div popover="" class="fsdocs-tip" id="1948">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Throw</span></code>
@@ -373,11 +461,11 @@
             <div class="fsdocs-summary">
               <div class="fsdocs-summary-contents">
                 <p class="fsdocs-summary">
-                   Throws an exception if the primary key already exists (default behaviour).
+                  The insert fails with the database's error (the default).
                 </p>
               </div>
               <div class="icon-button-row">
-                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L206-206" class="fsdocs-source-link" title="Source on GitHub">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L220-220" class="fsdocs-source-link" title="Source on GitHub">
                   <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                 </a>
               </div>
@@ -387,7 +475,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="1933" data-fsdocs-tip-unique="1933">
+              <code data-fsdocs-tip="1949" data-fsdocs-tip-unique="1949">
                 <p>
                   <a id="Update">
                     <a href="#Update">
@@ -396,7 +484,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="1933">
+              <div popover="" class="fsdocs-tip" id="1949">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Update</span></code>
@@ -407,19 +495,124 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-summary-contents">
-                <p class="fsdocs-summary">
-                   If the primary key already exists, updates the existing row's columns to match the new entity.
- Currently supported only on PostgreSQL 9.5+
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                      The existing row gets every column the new row sets.
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L225-225" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                  </div>
+                </div>
+              </summary>
+              <p class="fsdocs-remarks">
+                PostgreSQL: <code>ON CONFLICT (primary key) DO UPDATE</code>; DuckDB the same; MySQL:
+ <code>ON DUPLICATE KEY UPDATE</code>; SQLite: <code>INSERT OR REPLACE</code>, which deletes the existing row and inserts the new
+ one, so columns not set get their defaults and delete triggers and cascades run.
+              </p>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="1950" data-fsdocs-tip-unique="1950">
+                <p>
+                  <a id="UpdateOn">
+                    <a href="#UpdateOn">
+                      <code><span>UpdateOn(<span>onColumns,&#32;updates</span>)</span></code>
+                    </a>
+                  </a>
                 </p>
-              </div>
-              <div class="icon-button-row">
-                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L209-209" class="fsdocs-source-link" title="Source on GitHub">
-                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                </a>
+              </code>
+              <div popover="" class="fsdocs-tip" id="1950">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>UpdateOn(<span>onColumns,&#32;updates</span>)</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        onColumns
+                      </b>
+                      :
+                      <code><span>string&#32;list</span></code>
+                       - 
+                      The constraint&#39;s or index&#39;s columns, as the table has them (matched ignoring case).
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        updates
+                      </b>
+                      :
+                      <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-conflictupdate.html">ConflictUpdate</a>&#32;list</span></code>
+                       - 
+                      What each named column becomes: the inserted value or a constant (null clears the column).
+ The columns not named keep their old values; a column named twice is refused.
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
               </div>
             </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                      The existing row changes when the new row breaks the unique constraint or index on exactly
+ <code>onColumns</code>: <code>ON CONFLICT (onColumns) DO UPDATE SET a = EXCLUDED.a, b = @value</code>.
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L242-242" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                  </div>
+                </div>
+              </summary>
+              <p class="fsdocs-remarks">
+                PostgreSQL, SQLite 3.24+ and DuckDB; MySQL refuses it.
+              </p>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    onColumns
+                  </span>
+                  :
+                  <code><span>string&#32;list</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    The constraint&#39;s or index&#39;s columns, as the table has them (matched ignoring case).
+                  </p>
+                </dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    updates
+                  </span>
+                  :
+                  <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-conflictupdate.html">ConflictUpdate</a>&#32;list</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs">
+                  <p>
+                    What each named column becomes: the inserted value or a constant (null clears the column).
+ The columns not named keep their old values; a column named twice is refused.
+                  </p>
+                </dd>
+              </dl>
+            </details>
           </td>
         </tr>
       </tbody>
@@ -448,7 +641,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="1934" data-fsdocs-tip-unique="1934">
+              <code data-fsdocs-tip="1951" data-fsdocs-tip-unique="1951">
                 <p>
                   <a id="IsDoNothing">
                     <a href="#IsDoNothing">
@@ -457,7 +650,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="1934">
+              <div popover="" class="fsdocs-tip" id="1951">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.IsDoNothing</span></code>
@@ -475,7 +668,7 @@
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-member-xmldoc-column">
               <div class="icon-button-row">
-                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L212-212" class="fsdocs-source-link" title="Source on GitHub">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L229-229" class="fsdocs-source-link" title="Source on GitHub">
                   <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                 </a>
               </div>
@@ -494,7 +687,53 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="1935" data-fsdocs-tip-unique="1935">
+              <code data-fsdocs-tip="1952" data-fsdocs-tip-unique="1952">
+                <p>
+                  <a id="IsDoNothingOn">
+                    <a href="#IsDoNothingOn">
+                      <code><span>this.IsDoNothingOn</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="1952">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.IsDoNothingOn</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>bool</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L235-235" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>bool</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="1953" data-fsdocs-tip-unique="1953">
                 <p>
                   <a id="IsThrow">
                     <a href="#IsThrow">
@@ -503,7 +742,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="1935">
+              <div popover="" class="fsdocs-tip" id="1953">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.IsThrow</span></code>
@@ -521,7 +760,7 @@
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-member-xmldoc-column">
               <div class="icon-button-row">
-                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L206-206" class="fsdocs-source-link" title="Source on GitHub">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L220-220" class="fsdocs-source-link" title="Source on GitHub">
                   <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                 </a>
               </div>
@@ -540,7 +779,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="1936" data-fsdocs-tip-unique="1936">
+              <code data-fsdocs-tip="1954" data-fsdocs-tip-unique="1954">
                 <p>
                   <a id="IsUpdate">
                     <a href="#IsUpdate">
@@ -549,7 +788,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="1936">
+              <div popover="" class="fsdocs-tip" id="1954">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.IsUpdate</span></code>
@@ -567,7 +806,53 @@
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-member-xmldoc-column">
               <div class="icon-button-row">
-                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L209-209" class="fsdocs-source-link" title="Source on GitHub">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L225-225" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>bool</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="1955" data-fsdocs-tip-unique="1955">
+                <p>
+                  <a id="IsUpdateOn">
+                    <a href="#IsUpdateOn">
+                      <code><span>this.IsUpdateOn</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="1955">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.IsUpdateOn</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>bool</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L242-242" class="fsdocs-source-link" title="Source on GitHub">
                   <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                 </a>
               </div>

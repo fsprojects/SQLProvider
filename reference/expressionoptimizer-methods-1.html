@@ -90,6 +90,12 @@
   </a>
 </li>             
 <li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/locking.html">
+    Locking rows for update
+
+  </a>
+</li>             
+<li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/mappers.html">
     mappers
   </a>
@@ -213,6 +219,7 @@
         <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/querying.html" class="nav-link">Querying</a></li>
         <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/constraints-relationships.html" class="nav-link">Constraints & Relationships</a></li>
         <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/crud.html" class="nav-link">CRUD</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/locking.html" class="nav-link">Locking rows</a></li>
         <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/programmability.html" class="nav-link">Programmability</a></li>
         <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/individuals.html" class="nav-link">Individuals</a></li>
         <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/composable.html" class="nav-link">Composable Query</a></li>
@@ -295,7 +302,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="776" data-fsdocs-tip-unique="776">
+              <code data-fsdocs-tip="785" data-fsdocs-tip-unique="785">
                 <p>
                   <a id="``compare equality with itself``">
                     <a href="#``compare equality with itself``">
@@ -304,7 +311,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="776">
+              <div popover="" class="fsdocs-tip" id="785">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>``compareequalitywithitself``&#32;<span>_arg1</span></span></code>
@@ -334,7 +341,7 @@
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-member-xmldoc-column">
               <div class="icon-button-row">
-                <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L471-471" class="fsdocs-source-link" title="Source on GitHub">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L640-640" class="fsdocs-source-link" title="Source on GitHub">
                   <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                 </a>
               </div>
@@ -363,7 +370,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="777" data-fsdocs-tip-unique="777">
+              <code data-fsdocs-tip="786" data-fsdocs-tip-unique="786">
                 <p>
                   <a id="``cut not used condition``">
                     <a href="#``cut not used condition``">
@@ -372,7 +379,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="777">
+              <div popover="" class="fsdocs-tip" id="786">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>``cutnotusedcondition``&#32;<span>e</span></span></code>
@@ -406,10 +413,11 @@
                   <div class="fsdocs-summary-contents">
                     <p class="fsdocs-summary">
                        if false then x else y -> y 
+ (a branch of the conditional's own type only: a typed conditional keeps its type)
                     </p>
                   </div>
                   <div class="icon-button-row">
-                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L167-167" class="fsdocs-source-link" title="Source on GitHub">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L314-314" class="fsdocs-source-link" title="Source on GitHub">
                       <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                     </a>
                     <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.cut not used condition\'/>')">
@@ -446,7 +454,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="778" data-fsdocs-tip-unique="778">
+              <code data-fsdocs-tip="787" data-fsdocs-tip-unique="787">
                 <p>
                   <a id="``evaluate basic constant math``">
                     <a href="#``evaluate basic constant math``">
@@ -455,7 +463,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="778">
+              <div popover="" class="fsdocs-tip" id="787">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>``evaluatebasicconstantmath``&#32;<span>e</span></span></code>
@@ -486,11 +494,14 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <pre> Evaluate simple math between two constants.
-  9  *  3     -->    27
- "G" + "G"    -->   "GG"</pre>
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       A fold that overflows here (decimal arithmetic is always checked) is left in
+ the tree for the run time to throw.
+                    </p>
+                  </div>
                   <div class="icon-button-row">
-                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L915-915" class="fsdocs-source-link" title="Source on GitHub">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L1386-1386" class="fsdocs-source-link" title="Source on GitHub">
                       <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                     </a>
                     <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.evaluate basic constant math\'/>')">
@@ -527,7 +538,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="779" data-fsdocs-tip-unique="779">
+              <code data-fsdocs-tip="788" data-fsdocs-tip-unique="788">
                 <p>
                   <a id="``evaluate constants``">
                     <a href="#``evaluate constants``">
@@ -536,7 +547,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="779">
+              <div popover="" class="fsdocs-tip" id="788">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>``evaluateconstants``&#32;<span>e</span></span></code>
@@ -573,7 +584,7 @@
                     </p>
                   </div>
                   <div class="icon-button-row">
-                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L863-863" class="fsdocs-source-link" title="Source on GitHub">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L1046-1046" class="fsdocs-source-link" title="Source on GitHub">
                       <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                     </a>
                     <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.evaluate constants\'/>')">
@@ -610,7 +621,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="780" data-fsdocs-tip-unique="780">
+              <code data-fsdocs-tip="789" data-fsdocs-tip-unique="789">
                 <p>
                   <a id="``not false is true``">
                     <a href="#``not false is true``">
@@ -619,7 +630,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="780">
+              <div popover="" class="fsdocs-tip" id="789">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>``notfalseistrue``&#32;<span>e</span></span></code>
@@ -653,10 +664,11 @@
                   <div class="fsdocs-summary-contents">
                     <p class="fsdocs-summary">
                        not(false) -> true 
+ (a plain bool constant only: Not on a Nullable<bool> constant stays Nullable<bool>)
                     </p>
                   </div>
                   <div class="icon-button-row">
-                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L177-177" class="fsdocs-source-link" title="Source on GitHub">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L325-325" class="fsdocs-source-link" title="Source on GitHub">
                       <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                     </a>
                     <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.not false is true\'/>')">
@@ -693,7 +705,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="781" data-fsdocs-tip-unique="781">
+              <code data-fsdocs-tip="790" data-fsdocs-tip-unique="790">
                 <p>
                   <a id="``optimize comparison ranges``">
                     <a href="#``optimize comparison ranges``">
@@ -702,7 +714,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="781">
+              <div popover="" class="fsdocs-tip" id="790">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>``optimizecomparisonranges``&#32;<span>exp</span></span></code>
@@ -739,7 +751,7 @@
                     </p>
                   </div>
                   <div class="icon-button-row">
-                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L376-376" class="fsdocs-source-link" title="Source on GitHub">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L544-544" class="fsdocs-source-link" title="Source on GitHub">
                       <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                     </a>
                     <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.optimize comparison ranges\'/>')">
@@ -776,7 +788,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="782" data-fsdocs-tip-unique="782">
+              <code data-fsdocs-tip="791" data-fsdocs-tip-unique="791">
                 <p>
                   <a id="``optimize string operations``">
                     <a href="#``optimize string operations``">
@@ -785,7 +797,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="782">
+              <div popover="" class="fsdocs-tip" id="791">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>``optimizestringoperations``&#32;<span>_arg1</span></span></code>
@@ -822,7 +834,7 @@
                     </p>
                   </div>
                   <div class="icon-button-row">
-                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L478-478" class="fsdocs-source-link" title="Source on GitHub">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L647-647" class="fsdocs-source-link" title="Source on GitHub">
                       <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                     </a>
                     <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.optimize string operations\'/>')">
@@ -859,7 +871,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="783" data-fsdocs-tip-unique="783">
+              <code data-fsdocs-tip="792" data-fsdocs-tip-unique="792">
                 <p>
                   <a id="``remove AnonymousType``">
                     <a href="#``remove AnonymousType``">
@@ -868,7 +880,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="783">
+              <div popover="" class="fsdocs-tip" id="792">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>``removeAnonymousType``&#32;<span>e</span></span></code>
@@ -903,10 +915,14 @@
                     <p class="fsdocs-summary">
                        Purpose of this is to replace non-used anonymous types:
  new AnonymousObject(Item1 = x, Item2 = "").Item1    -->   x
+ The member's constructor argument is found through NewExpression.Members (the
+ member at index i is initialised from argument i), for a tuple without Members
+ through its ItemN, and for an anonymous type without Members by the name of
+ the member the argument reads.
                     </p>
                   </div>
                   <div class="icon-button-row">
-                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L105-105" class="fsdocs-source-link" title="Source on GitHub">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L254-254" class="fsdocs-source-link" title="Source on GitHub">
                       <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                     </a>
                     <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.remove AnonymousType\'/>')">
@@ -943,7 +959,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="784" data-fsdocs-tip-unique="784">
+              <code data-fsdocs-tip="793" data-fsdocs-tip-unique="793">
                 <p>
                   <a id="``remove duplicate condition``">
                     <a href="#``remove duplicate condition``">
@@ -952,7 +968,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="784">
+              <div popover="" class="fsdocs-tip" id="793">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>``removeduplicatecondition``&#32;<span>e</span></span></code>
@@ -995,7 +1011,7 @@
                     </p>
                   </div>
                   <div class="icon-button-row">
-                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L780-780" class="fsdocs-source-link" title="Source on GitHub">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L963-963" class="fsdocs-source-link" title="Source on GitHub">
                       <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                     </a>
                     <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.remove duplicate condition\'/>')">
@@ -1032,7 +1048,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="785" data-fsdocs-tip-unique="785">
+              <code data-fsdocs-tip="794" data-fsdocs-tip-unique="794">
                 <p>
                   <a id="``remove mutually exclusive condition``">
                     <a href="#``remove mutually exclusive condition``">
@@ -1041,7 +1057,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="785">
+              <div popover="" class="fsdocs-tip" id="794">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>``removemutuallyexclusivecondition``&#32;<span>e</span></span></code>
@@ -1071,7 +1087,7 @@
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-member-xmldoc-column">
               <div class="icon-button-row">
-                <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L814-814" class="fsdocs-source-link" title="Source on GitHub">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L997-997" class="fsdocs-source-link" title="Source on GitHub">
                   <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                 </a>
               </div>
@@ -1100,7 +1116,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="786" data-fsdocs-tip-unique="786">
+              <code data-fsdocs-tip="795" data-fsdocs-tip-unique="795">
                 <p>
                   <a id="``replace constant comparison``">
                     <a href="#``replace constant comparison``">
@@ -1109,7 +1125,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="786">
+              <div popover="" class="fsdocs-tip" id="795">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>``replaceconstantcomparison``&#32;<span>e</span></span></code>
@@ -1142,9 +1158,11 @@
                 <div class="fsdocs-summary">
                   <pre> The purpose of this is to optimize away already known constant=constant style expressions.
    7 > 8      -->   False
- "G" = "G"    -->   True</pre>
+ "G" = "G"    -->   True
+ Only a comparison by value that returns bool: a built-in operator, and not the
+ reference comparison of two objects (no Method on reference-typed operands).</pre>
                   <div class="icon-button-row">
-                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L74-74" class="fsdocs-source-link" title="Source on GitHub">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L203-203" class="fsdocs-source-link" title="Source on GitHub">
                       <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                     </a>
                     <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.replace constant comparison\'/>')">
@@ -1181,7 +1199,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="787" data-fsdocs-tip-unique="787">
+              <code data-fsdocs-tip="796" data-fsdocs-tip-unique="796">
                 <p>
                   <a id="``simplify arithmetic identities``">
                     <a href="#``simplify arithmetic identities``">
@@ -1190,7 +1208,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="787">
+              <div popover="" class="fsdocs-tip" id="796">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>``simplifyarithmeticidentities``&#32;<span>e</span></span></code>
@@ -1228,7 +1246,7 @@
                     </p>
                   </div>
                   <div class="icon-button-row">
-                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L1327-1327" class="fsdocs-source-link" title="Source on GitHub">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L1438-1438" class="fsdocs-source-link" title="Source on GitHub">
                       <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                     </a>
                     <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.simplify arithmetic identities\'/>')">
@@ -1265,7 +1283,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="788" data-fsdocs-tip-unique="788">
+              <code data-fsdocs-tip="797" data-fsdocs-tip-unique="797">
                 <p>
                   <a id="``simplify conditionals``">
                     <a href="#``simplify conditionals``">
@@ -1274,7 +1292,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="788">
+              <div popover="" class="fsdocs-tip" id="797">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>``simplifyconditionals``&#32;<span>e</span></span></code>
@@ -1312,7 +1330,7 @@
                     </p>
                   </div>
                   <div class="icon-button-row">
-                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L1308-1308" class="fsdocs-source-link" title="Source on GitHub">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L1419-1419" class="fsdocs-source-link" title="Source on GitHub">
                       <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                     </a>
                     <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.simplify conditionals\'/>')">
@@ -1349,7 +1367,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="789" data-fsdocs-tip-unique="789">
+              <code data-fsdocs-tip="798" data-fsdocs-tip-unique="798">
                 <p>
                   <a id="``simplify string operations``">
                     <a href="#``simplify string operations``">
@@ -1358,7 +1376,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="789">
+              <div popover="" class="fsdocs-tip" id="798">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>``simplifystringoperations``&#32;<span>e</span></span></code>
@@ -1398,7 +1416,7 @@
                     </p>
                   </div>
                   <div class="icon-button-row">
-                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L1297-1297" class="fsdocs-source-link" title="Source on GitHub">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L1404-1404" class="fsdocs-source-link" title="Source on GitHub">
                       <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                     </a>
                     <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.simplify string operations\'/>')">
@@ -1435,7 +1453,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="790" data-fsdocs-tip-unique="790">
+              <code data-fsdocs-tip="799" data-fsdocs-tip-unique="799">
                 <p>
                   <a id="absorb">
                     <a href="#absorb">
@@ -1444,7 +1462,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="790">
+              <div popover="" class="fsdocs-tip" id="799">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>absorb&#32;<span>_arg1</span></span></code>
@@ -1474,7 +1492,7 @@
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-member-xmldoc-column">
               <div class="icon-button-row">
-                <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L338-338" class="fsdocs-source-link" title="Source on GitHub">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L483-483" class="fsdocs-source-link" title="Source on GitHub">
                   <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                 </a>
               </div>
@@ -1503,7 +1521,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="791" data-fsdocs-tip-unique="791">
+              <code data-fsdocs-tip="800" data-fsdocs-tip-unique="800">
                 <p>
                   <a id="annihilate">
                     <a href="#annihilate">
@@ -1512,7 +1530,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="791">
+              <div popover="" class="fsdocs-tip" id="800">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>annihilate&#32;<span>_arg1</span></span></code>
@@ -1542,7 +1560,7 @@
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-member-xmldoc-column">
               <div class="icon-button-row">
-                <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L331-331" class="fsdocs-source-link" title="Source on GitHub">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L476-476" class="fsdocs-source-link" title="Source on GitHub">
                   <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                 </a>
               </div>
@@ -1571,7 +1589,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="792" data-fsdocs-tip-unique="792">
+              <code data-fsdocs-tip="801" data-fsdocs-tip-unique="801">
                 <p>
                   <a id="associate">
                     <a href="#associate">
@@ -1580,7 +1598,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="792">
+              <div popover="" class="fsdocs-tip" id="801">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>associate&#32;<span>_arg1</span></span></code>
@@ -1617,7 +1635,7 @@
                     </p>
                   </div>
                   <div class="icon-button-row">
-                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L278-278" class="fsdocs-source-link" title="Source on GitHub">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L423-423" class="fsdocs-source-link" title="Source on GitHub">
                       <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                     </a>
                     <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.associate\'/>')">
@@ -1654,7 +1672,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="793" data-fsdocs-tip-unique="793">
+              <code data-fsdocs-tip="802" data-fsdocs-tip-unique="802">
                 <p>
                   <a id="associate_complement">
                     <a href="#associate_complement">
@@ -1663,7 +1681,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="793">
+              <div popover="" class="fsdocs-tip" id="802">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>associate_complement&#32;<span>exp</span></span></code>
@@ -1693,7 +1711,7 @@
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-member-xmldoc-column">
               <div class="icon-button-row">
-                <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L630-630" class="fsdocs-source-link" title="Source on GitHub">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L810-810" class="fsdocs-source-link" title="Source on GitHub">
                   <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                 </a>
               </div>
@@ -1722,7 +1740,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="794" data-fsdocs-tip-unique="794">
+              <code data-fsdocs-tip="803" data-fsdocs-tip-unique="803">
                 <p>
                   <a id="balancetree">
                     <a href="#balancetree">
@@ -1731,7 +1749,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="794">
+              <div popover="" class="fsdocs-tip" id="803">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>balancetree&#32;<span>_arg1</span></span></code>
@@ -1769,7 +1787,7 @@
                     </p>
                   </div>
                   <div class="icon-button-row">
-                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L696-696" class="fsdocs-source-link" title="Source on GitHub">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L877-877" class="fsdocs-source-link" title="Source on GitHub">
                       <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                     </a>
                     <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.balancetree\'/>')">
@@ -1806,7 +1824,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="795" data-fsdocs-tip-unique="795">
+              <code data-fsdocs-tip="804" data-fsdocs-tip-unique="804">
                 <p>
                   <a id="commute">
                     <a href="#commute">
@@ -1815,7 +1833,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="795">
+              <div popover="" class="fsdocs-tip" id="804">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>commute&#32;<span>_arg1</span></span></code>
@@ -1845,7 +1863,7 @@
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-member-xmldoc-column">
               <div class="icon-button-row">
-                <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L286-286" class="fsdocs-source-link" title="Source on GitHub">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L431-431" class="fsdocs-source-link" title="Source on GitHub">
                   <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                 </a>
               </div>
@@ -1874,7 +1892,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="796" data-fsdocs-tip-unique="796">
+              <code data-fsdocs-tip="805" data-fsdocs-tip-unique="805">
                 <p>
                   <a id="commute2">
                     <a href="#commute2">
@@ -1883,7 +1901,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="796">
+              <div popover="" class="fsdocs-tip" id="805">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>commute2&#32;<span>_arg1</span></span></code>
@@ -1920,7 +1938,7 @@
                     </p>
                   </div>
                   <div class="icon-button-row">
-                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L292-292" class="fsdocs-source-link" title="Source on GitHub">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L437-437" class="fsdocs-source-link" title="Source on GitHub">
                       <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                     </a>
                     <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.commute2\'/>')">
@@ -1957,7 +1975,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="797" data-fsdocs-tip-unique="797">
+              <code data-fsdocs-tip="806" data-fsdocs-tip-unique="806">
                 <p>
                   <a id="commute_absorb">
                     <a href="#commute_absorb">
@@ -1966,7 +1984,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="797">
+              <div popover="" class="fsdocs-tip" id="806">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>commute_absorb&#32;<span>exp</span></span></code>
@@ -1996,7 +2014,7 @@
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-member-xmldoc-column">
               <div class="icon-button-row">
-                <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L497-497" class="fsdocs-source-link" title="Source on GitHub">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L673-673" class="fsdocs-source-link" title="Source on GitHub">
                   <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                 </a>
               </div>
@@ -2025,7 +2043,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="798" data-fsdocs-tip-unique="798">
+              <code data-fsdocs-tip="807" data-fsdocs-tip-unique="807">
                 <p>
                   <a id="complement">
                     <a href="#complement">
@@ -2034,7 +2052,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="798">
+              <div popover="" class="fsdocs-tip" id="807">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>complement&#32;<span>_arg1</span></span></code>
@@ -2064,7 +2082,7 @@
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-member-xmldoc-column">
               <div class="icon-button-row">
-                <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L356-356" class="fsdocs-source-link" title="Source on GitHub">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L501-501" class="fsdocs-source-link" title="Source on GitHub">
                   <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                 </a>
               </div>
@@ -2093,7 +2111,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="799" data-fsdocs-tip-unique="799">
+              <code data-fsdocs-tip="808" data-fsdocs-tip-unique="808">
                 <p>
                   <a id="deMorgan">
                     <a href="#deMorgan">
@@ -2102,7 +2120,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="799">
+              <div popover="" class="fsdocs-tip" id="808">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>deMorgan&#32;<span>_arg1</span></span></code>
@@ -2132,7 +2150,7 @@
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-member-xmldoc-column">
               <div class="icon-button-row">
-                <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L687-687" class="fsdocs-source-link" title="Source on GitHub">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L868-868" class="fsdocs-source-link" title="Source on GitHub">
                   <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                 </a>
               </div>
@@ -2161,7 +2179,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="800" data-fsdocs-tip-unique="800">
+              <code data-fsdocs-tip="809" data-fsdocs-tip-unique="809">
                 <p>
                   <a id="distribute">
                     <a href="#distribute">
@@ -2170,7 +2188,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="800">
+              <div popover="" class="fsdocs-tip" id="809">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>distribute&#32;<span>e</span></span></code>
@@ -2208,7 +2226,7 @@
                     </p>
                   </div>
                   <div class="icon-button-row">
-                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L299-299" class="fsdocs-source-link" title="Source on GitHub">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L444-444" class="fsdocs-source-link" title="Source on GitHub">
                       <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                     </a>
                     <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.distribute\'/>')">
@@ -2245,7 +2263,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="801" data-fsdocs-tip-unique="801">
+              <code data-fsdocs-tip="810" data-fsdocs-tip-unique="810">
                 <p>
                   <a id="distribute_complement">
                     <a href="#distribute_complement">
@@ -2254,7 +2272,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="801">
+              <div popover="" class="fsdocs-tip" id="810">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>distribute_complement&#32;<span>exp</span></span></code>
@@ -2284,7 +2302,7 @@
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-member-xmldoc-column">
               <div class="icon-button-row">
-                <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L543-543" class="fsdocs-source-link" title="Source on GitHub">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L721-721" class="fsdocs-source-link" title="Source on GitHub">
                   <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                 </a>
               </div>
@@ -2313,7 +2331,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="802" data-fsdocs-tip-unique="802">
+              <code data-fsdocs-tip="811" data-fsdocs-tip-unique="811">
                 <p>
                   <a id="doubleNegation">
                     <a href="#doubleNegation">
@@ -2322,7 +2340,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="802">
+              <div popover="" class="fsdocs-tip" id="811">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>doubleNegation&#32;<span>_arg1</span></span></code>
@@ -2352,7 +2370,7 @@
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-member-xmldoc-column">
               <div class="icon-button-row">
-                <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L683-683" class="fsdocs-source-link" title="Source on GitHub">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L864-864" class="fsdocs-source-link" title="Source on GitHub">
                   <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                 </a>
               </div>
@@ -2381,7 +2399,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="803" data-fsdocs-tip-unique="803">
+              <code data-fsdocs-tip="812" data-fsdocs-tip-unique="812">
                 <p>
                   <a id="factorComplement">
                     <a href="#factorComplement">
@@ -2390,7 +2408,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="803">
+              <div popover="" class="fsdocs-tip" id="812">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>factorComplement&#32;<span>_arg1</span></span></code>
@@ -2428,7 +2446,7 @@
                     </p>
                   </div>
                   <div class="icon-button-row">
-                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L316-316" class="fsdocs-source-link" title="Source on GitHub">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L461-461" class="fsdocs-source-link" title="Source on GitHub">
                       <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                     </a>
                     <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:ExpressionOptimizer.Methods.factorComplement\'/>')">
@@ -2465,7 +2483,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="804" data-fsdocs-tip-unique="804">
+              <code data-fsdocs-tip="813" data-fsdocs-tip-unique="813">
                 <p>
                   <a id="gather">
                     <a href="#gather">
@@ -2474,7 +2492,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="804">
+              <div popover="" class="fsdocs-tip" id="813">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>gather&#32;<span>_arg1</span></span></code>
@@ -2504,7 +2522,7 @@
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-member-xmldoc-column">
               <div class="icon-button-row">
-                <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L307-307" class="fsdocs-source-link" title="Source on GitHub">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L452-452" class="fsdocs-source-link" title="Source on GitHub">
                   <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                 </a>
               </div>
@@ -2533,7 +2551,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="805" data-fsdocs-tip-unique="805">
+              <code data-fsdocs-tip="814" data-fsdocs-tip-unique="814">
                 <p>
                   <a id="idempotence">
                     <a href="#idempotence">
@@ -2542,7 +2560,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="805">
+              <div popover="" class="fsdocs-tip" id="814">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>idempotence&#32;<span>_arg1</span></span></code>
@@ -2572,7 +2590,7 @@
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-member-xmldoc-column">
               <div class="icon-button-row">
-                <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L349-349" class="fsdocs-source-link" title="Source on GitHub">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L494-494" class="fsdocs-source-link" title="Source on GitHub">
                   <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                 </a>
               </div>
@@ -2601,7 +2619,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="806" data-fsdocs-tip-unique="806">
+              <code data-fsdocs-tip="815" data-fsdocs-tip-unique="815">
                 <p>
                   <a id="identity">
                     <a href="#identity">
@@ -2610,7 +2628,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="806">
+              <div popover="" class="fsdocs-tip" id="815">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>identity&#32;<span>_arg1</span></span></code>
@@ -2640,7 +2658,7 @@
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-member-xmldoc-column">
               <div class="icon-button-row">
-                <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L323-323" class="fsdocs-source-link" title="Source on GitHub">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/paket-files/sourcefiles/Thorium/Linq.Expression.Optimizer/src/Code/ExpressionOptimizer.fs#L468-468" class="fsdocs-source-link" title="Source on GitHub">
                   <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                 </a>
               </div>

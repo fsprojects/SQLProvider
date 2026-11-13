@@ -93,6 +93,12 @@
   </a>
 </li>             
 <li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/locking.html">
+    Locking rows for update
+
+  </a>
+</li>             
+<li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/mappers.html">
     mappers
   </a>
@@ -216,6 +222,7 @@
         <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/querying.html" class="nav-link">Querying</a></li>
         <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/constraints-relationships.html" class="nav-link">Constraints & Relationships</a></li>
         <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/crud.html" class="nav-link">CRUD</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/locking.html" class="nav-link">Locking rows</a></li>
         <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/programmability.html" class="nav-link">Programmability</a></li>
         <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/individuals.html" class="nav-link">Individuals</a></li>
         <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/composable.html" class="nav-link">Composable Query</a></li>
@@ -414,6 +421,9 @@ You have options to generate nullable fields to Option or ValueOption types.</p>
         <span data-fsdocs-tip="fs45" data-fsdocs-tip-unique="249" class="k">select</span> <span data-fsdocs-tip="fs36" data-fsdocs-tip-unique="250" class="fn">order</span>
     <span class="pn">}</span>
 </code></pre>
+<h2><a name="Locking-rows-for-update" class="anchor" href="#Locking-rows-for-update">Locking rows for update</a></h2>
+<p><code>Seq.lockForUpdate</code>, or an executor such as <code>Seq.lockForUpdateTryHeadAsync</code>, locks the rows a query reads until the
+transaction ends, against two requests changing the same row at once. See <a href="locking.html">Locking rows</a>.</p>
 <h2><a name="SELECT-clause-operations" class="anchor" href="#SELECT-clause-operations">SELECT -clause operations</a></h2>
 <p>You can control the execution context of the select-operations by the <code>GetDataContext</code> parameter <code>selectOperations</code>.
 The LINQ-query stays the same. You have two options: DotNetSide or DatabaseSide.</p>
@@ -2110,6 +2120,11 @@ Calls Linq.QueryBuilder.GroupBy</div>
   <li class="level-2">
     <a href="#Null-handling-with-queries">
       Null-handling with queries
+    </a>
+  </li>
+  <li class="level-2">
+    <a href="#Locking-rows-for-update">
+      Locking rows for update
     </a>
   </li>
   <li class="level-2">

@@ -189,6 +189,11 @@ let findRecentOrders =
     }
 ```
 
+## Locking rows for update
+
+`Seq.lockForUpdate`, or an executor such as `Seq.lockForUpdateTryHeadAsync`, locks the rows a query reads until the
+transaction ends, against two requests changing the same row at once. See [Locking rows](locking.html).
+
 ## SELECT -clause operations
 
 You can control the execution context of the select-operations by the `GetDataContext` parameter `selectOperations`.

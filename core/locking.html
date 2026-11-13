@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en" data-root="https://fsprojects.github.io/SQLProvider/">
+<head>
+    <meta charset="UTF-8">
+    <meta content="IE=edge" http-equiv="X-UA-Compatible">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="pezipink,colinbull,thorium" name="author">
+    <!-- Opengraph properties (https://ogp.me/) -->
+    <meta property="og:site_name" content="SQLProvider">
+    <meta property="og:title" content="Locking rows for update
+" />
+    <meta property="og:url" content="https://fsprojects.github.io/SQLProvider/core/locking.html">
+    <meta property="og:type" content="website" />
+    <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="https://fsprojects.github.io/SQLProvider/">
+    <meta name="twitter:title" content="Locking rows for update
+">
+    
+    <title>Locking rows for update
+ | SQLProvider</title>
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link href="https://fsprojects.github.io/SQLProvider/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="https://fsprojects.github.io/SQLProvider/content/fsdocs-theme-set-dark.js"></script>
+    <link href="https://fsprojects.github.io/SQLProvider/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="https://fsprojects.github.io/SQLProvider/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <link href="https://fsprojects.github.io/SQLProvider/content/fsdocs-custom.css" rel="stylesheet" type="text/css"/>
+    
+    
+</head>
+<body class="content">
+<header>
+    <div class="start">
+        <div id="menu-toggle">
+            <iconify-icon class="icon closed" height="22" icon="eva:menu-fill" width="22"></iconify-icon>
+            <iconify-icon class="icon open" height="22" icon="mi:close" width="22"></iconify-icon>
+            <input type="checkbox" name="mobile-menu" />
+            <ul class="menu">
+                <li class="nav-header">Links</li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt">License</a>
+                </li>
+                <li class="nav-item"><a class="nav-link"
+                                        href="https://github.com/fsprojects/SQLProvider/blob/master/docs/RELEASE_NOTES.md">Release
+                    Notes</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/">Source
+                    Repository</a></li>
+                <li class="nav-header">
+  Documentation
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/async.html">
+    Asynchronous Database Operation
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/composable.html">
+    Composable Queries
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/constraints-relationships.html">
+    Constraints &amp;amp; Relationships
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/contributing.html">
+    How to contribute
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/crud.html">
+    CRUD sample
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/general.html">
+    SQL Provider Basics
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/individuals.html">
+    Individuals
+
+  </a>
+</li>             
+<li class="nav-item active">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/locking.html">
+    Locking rows for update
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/mappers.html">
+    mappers
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/msaccess.html">
+    SQL Provider for MSAccess
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/mssql.html">
+    MSSQL Provider
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/mssqlssdt.html">
+    MSSQL SSDT Provider
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/mysql.html">
+    MySQL Provider
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/netstandard.html">
+    .NET Standard / .NET Core support
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/odbc.html">
+    ODBC
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/oracle.html">
+    SQL Provider for Oracle
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/outline.html">
+    outline
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/parameters.html">
+    SQL Provider Static Parameters
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/postgresql.html">
+    PostgreSQL Provider
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/programmability.html">
+    Programmability
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/querying.html">
+    Querying
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/sqlite.html">
+    SQLite Provider
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/techdetails.html">
+    techdetails
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/unittest.html">
+    SQLProvider allows you to unit-test your SQL-logic
+
+  </a>
+</li>
+                <li class="nav-header">
+  API Reference
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/reference/index.html">
+    All Namespaces
+  </a>
+</li>
+            </ul>
+        </div>
+        <a href="https://fsprojects.github.io/SQLProvider/">
+            <!-- <img alt="Header menu logo" src="https://fsprojects.github.io/SQLProvider/img/logo.png"> -->
+            <H1 style="font-size: 24px;">SQLProvider</H1>
+        </a>
+    </div>
+    <div class="end">
+        <a href="https://github.com/fsprojects/SQLProvider/" target="_blank">
+            <iconify-icon icon="uil:github" width="26" height="26"></iconify-icon>
+        </a>
+        <iconify-icon id="search-btn" icon="carbon:search" class="search" width="24" height="24"></iconify-icon>
+        <fsdocs-theme-toggle></fsdocs-theme-toggle>
+    </div>
+</header>
+<aside id="fsdocs-main-menu">
+    <ul class="menu">
+        <li class="nav-header">Documentation</li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/general.html" class="nav-link">General</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/parameters.html" class="nav-link">Static Parameters</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/querying.html" class="nav-link">Querying</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/constraints-relationships.html" class="nav-link">Constraints & Relationships</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/crud.html" class="nav-link">CRUD</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/locking.html" class="nav-link">Locking rows</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/programmability.html" class="nav-link">Programmability</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/individuals.html" class="nav-link">Individuals</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/composable.html" class="nav-link">Composable Query</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/mssql.html" class="nav-link">SQL Server</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/oracle.html" class="nav-link">Oracle</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/sqlite.html" class="nav-link">SQLite</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/postgresql.html" class="nav-link">PostgreSQL</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/mysql.html" class="nav-link">MySQL</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/odbc.html" class="nav-link">ODBC</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/unittest.html" class="nav-link">Unit-testing</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//reference/index.html" class="nav-link">Internal API Docs</a></li>
+
+        <li class="nav-item"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt">License</a>
+        </li>
+        <li class="nav-item"><a class="nav-link"
+                                href="https://github.com/fsprojects/SQLProvider/blob/master/docs/RELEASE_NOTES.md">Release
+            Notes</a></li>
+        <li class="nav-item"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/">Source
+            Repository</a></li>
+        
+        <li class="nav-header">
+  API Reference
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/reference/index.html">
+    All Namespaces
+  </a>
+</li>
+    </ul>
+</aside>
+<main>
+    <div id="content">
+        <h1><a name="Locking-rows-for-update" class="anchor" href="#Locking-rows-for-update">Locking rows for update</a></h1>
+<h2><a name="The-problem-lost-updates" class="anchor" href="#The-problem-lost-updates">The problem: lost updates</a></h2>
+<p>Most web requests that change data first read it, then decide, then write. When two requests do that to the same row at
+the same moment, both read the old value, both decide on it, and the second write silently undoes or doubles the first:</p>
+<ol>
+<li>Request A reads an account's balance: 50.</li>
+<li>Request B reads the same balance: 50.</li>
+<li>A pays out 40 and writes 10.</li>
+<li>B pays out 40 and writes 10. 80 went out of 50, and the balance says 10.</li>
+</ol>
+<p>A transaction alone doesn't stop this. At the isolation level most databases use by default (read committed), both
+transactions see the committed 50, and each one's write is valid on its own.</p>
+<h2><a name="The-fix-lock-the-rows-you-read" class="anchor" href="#The-fix-lock-the-rows-you-read">The fix: lock the rows you read</a></h2>
+<p><code>Seq.lockForUpdate</code> asks the database to lock each row the query returns until your transaction ends. Another transaction
+that wants to lock, change or delete one of those rows waits until yours commits or rolls back, and then reads the new
+value. In the example, B waits at step 2 until A has written 10, reads 10, and refuses the payment. Plain reads that don't
+lock aren't blocked.</p>
+<p>In SQL this is <code>SELECT ... FOR UPDATE</code>, a "pessimistic lock": the database holds others back, instead of your code
+noticing a clash afterwards.</p>
+<p>Read, decide and write in one transaction. With async code, the TransactionScope needs
+<code>TransactionScopeAsyncFlowOption.Enabled</code>, or the transaction doesn't follow the awaits:</p>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">open</span> <span data-fsdocs-tip="fs16" data-fsdocs-tip-unique="21" class="id">System</span><span class="pn">.</span><span data-fsdocs-tip="fs17" data-fsdocs-tip-unique="22" class="id">Transactions</span>
+
+<span class="k">let</span> <span data-fsdocs-tip="fs18" data-fsdocs-tip-unique="23" class="fn">addToFreight</span> <span class="pn">(</span><span data-fsdocs-tip="fs19" data-fsdocs-tip-unique="24" class="fn">orderId</span><span class="pn">:</span> <span data-fsdocs-tip="fs20" data-fsdocs-tip-unique="25" class="vt">int64</span><span class="pn">)</span> <span class="pn">(</span><span data-fsdocs-tip="fs21" data-fsdocs-tip-unique="26" class="fn">amount</span><span class="pn">:</span> <span data-fsdocs-tip="fs22" data-fsdocs-tip-unique="27" class="vt">decimal</span><span class="pn">)</span> <span class="o">=</span>
+    <span data-fsdocs-tip="fs23" data-fsdocs-tip-unique="28" class="k">task</span> <span class="pn">{</span>
+        <span class="k">let</span> <span data-fsdocs-tip="fs24" data-fsdocs-tip-unique="29" class="fn">ctx</span> <span class="o">=</span> <span data-fsdocs-tip="fs7" data-fsdocs-tip-unique="30" class="rt">sql</span><span class="pn">.</span><span data-fsdocs-tip="fs25" data-fsdocs-tip-unique="31" class="id">GetDataContext</span><span class="pn">(</span><span class="pn">)</span>
+        <span class="k">use</span> <span data-fsdocs-tip="fs26" data-fsdocs-tip-unique="32" class="d">scope</span> <span class="o">=</span> <span class="k">new</span> <span data-fsdocs-tip="fs27" data-fsdocs-tip-unique="33" class="d">TransactionScope</span><span class="pn">(</span><span data-fsdocs-tip="fs28" data-fsdocs-tip-unique="34" class="en">TransactionScopeAsyncFlowOption</span><span class="pn">.</span><span data-fsdocs-tip="fs29" data-fsdocs-tip-unique="35" class="id">Enabled</span><span class="pn">)</span>
+
+        <span class="c">// Locked until the scope completes or is disposed</span>
+        <span class="k">let!</span> <span data-fsdocs-tip="fs30" data-fsdocs-tip-unique="36" class="fn">order</span> <span class="o">=</span>
+            <span data-fsdocs-tip="fs31" data-fsdocs-tip-unique="37" class="k">query</span> <span class="pn">{</span>
+                <span class="k">for</span> <span data-fsdocs-tip="fs30" data-fsdocs-tip-unique="38" class="fn">order</span> <span class="k">in</span> <span data-fsdocs-tip="fs24" data-fsdocs-tip-unique="39" class="fn">ctx</span><span class="pn">.</span><span data-fsdocs-tip="fs32" data-fsdocs-tip-unique="40" class="prop">Main</span><span class="pn">.</span><span data-fsdocs-tip="fs33" data-fsdocs-tip-unique="41" class="id">Orders</span> <span class="k">do</span>
+                <span data-fsdocs-tip="fs34" data-fsdocs-tip-unique="42" class="k">where</span> <span class="pn">(</span><span data-fsdocs-tip="fs30" data-fsdocs-tip-unique="43" class="fn">order</span><span class="pn">.</span><span data-fsdocs-tip="fs35" data-fsdocs-tip-unique="44" class="id">OrderId</span> <span class="o">=</span> <span data-fsdocs-tip="fs19" data-fsdocs-tip-unique="45" class="fn">orderId</span><span class="pn">)</span>
+                <span data-fsdocs-tip="fs36" data-fsdocs-tip-unique="46" class="k">select</span> <span data-fsdocs-tip="fs30" data-fsdocs-tip-unique="47" class="fn">order</span>
+            <span class="pn">}</span>
+            <span class="o">|&gt;</span> <span data-fsdocs-tip="fs37" data-fsdocs-tip-unique="48" class="m">Seq</span><span class="pn">.</span><span data-fsdocs-tip="fs38" data-fsdocs-tip-unique="49" class="id">lockForUpdateHeadAsync</span>
+
+        <span class="fn">order</span><span class="pn">.</span><span class="id">Freight</span> <span class="k">&lt;-</span> <span class="fn">order</span><span class="pn">.</span><span class="id">Freight</span> <span class="o">+</span> <span data-fsdocs-tip="fs21" data-fsdocs-tip-unique="50" class="fn">amount</span>
+        <span class="k">do!</span> <span data-fsdocs-tip="fs24" data-fsdocs-tip-unique="51" class="fn">ctx</span><span class="pn">.</span><span data-fsdocs-tip="fs39" data-fsdocs-tip-unique="52" class="id">SubmitUpdatesAsync</span><span class="pn">(</span><span class="pn">)</span>
+        <span data-fsdocs-tip="fs26" data-fsdocs-tip-unique="53" class="d">scope</span><span class="pn">.</span><span data-fsdocs-tip="fs40" data-fsdocs-tip-unique="54" class="id">Complete</span><span class="pn">(</span><span class="pn">)</span>
+    <span class="pn">}</span>
+</code></pre>
+<h2><a name="The-functions" class="anchor" href="#The-functions">The functions</a></h2>
+<table>
+<thead>
+<tr class="header">
+<th><p>Function</p></th>
+<th><p>Does</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><p><code>Seq.lockForUpdate</code></p></td>
+<td><p>Marks a query to lock its rows; run it with any executor, <code>Seq.toList</code> included.</p></td>
+</tr>
+<tr class="even">
+<td><p><code>Seq.lockForUpdateAsync</code>, <code>Array.lockForUpdateAsync</code>, <code>List.lockForUpdateAsync</code></p></td>
+<td><p>Run the query with its rows locked.</p></td>
+</tr>
+<tr class="odd">
+<td><p><code>Seq.lockForUpdateHeadAsync</code>, <code>Seq.lockForUpdateTryHeadAsync</code></p></td>
+<td><p>Lock and read one row; <code>tryHead...</code> gives <code>None</code> when there's none. On Oracle not after a sort.</p></td>
+</tr>
+</tbody>
+</table>
+
+<h2><a name="What-each-database-does" class="anchor" href="#What-each-database-does">What each database does</a></h2>
+<table>
+<thead>
+<tr class="header">
+<th><p>Database</p></th>
+<th><p>SQL</p></th>
+<th><p>Notes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><p>PostgreSQL</p></td>
+<td><p><code>FOR UPDATE</code></p></td>
+<td><p>With a left outer join, <code>FOR UPDATE OF</code> the other tables: the rows of the outer-joined table aren't locked.</p></td>
+</tr>
+<tr class="even">
+<td><p>MySQL (InnoDB)</p></td>
+<td><p><code>FOR UPDATE</code></p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>Oracle</p></td>
+<td><p><code>FOR UPDATE</code></p></td>
+<td><p>Not with skip, nor with take or head after a sort: refused.</p></td>
+</tr>
+<tr class="even">
+<td><p>Firebird</p></td>
+<td><p><code>FOR UPDATE WITH LOCK</code></p></td>
+<td><p>One table only: a query with joins is refused. <code>FOR UPDATE</code> alone doesn't lock in Firebird.</p></td>
+</tr>
+<tr class="odd">
+<td><p>SQL Server</p></td>
+<td><p><code>WITH (UPDLOCK, ROWLOCK)</code> on every table</p></td>
+<td><p>Held until the transaction ends.</p></td>
+</tr>
+<tr class="even">
+<td><p>SQLite, MS Access, DuckDB, ODBC</p></td>
+<td><p>none</p></td>
+<td><p>No row locks: refused with an error. Use a transaction that writes first, or a unique constraint.</p></td>
+</tr>
+</tbody>
+</table>
+
+<p>A query that isn't one table's rows can't be locked, so a distinct, grouped, counted or aggregated query, or a union, is
+refused. The lock belongs to a whole statement, so a locked query is also refused as a part of another: as a sub-query
+(<code>IN</code>, <code>EXISTS</code>), as one side of a union, as the table joined into a query, and in a delete. Lock the outer query
+instead. In unit tests the mock context's query comes back as it is.</p>
+<h2><a name="Rules-of-thumb" class="anchor" href="#Rules-of-thumb">Rules of thumb</a></h2>
+<ul>
+<li>
+<strong>Always inside a transaction.</strong> Without one the database commits each statement on its own, and the lock ends as soon
+as the query has run. Run the queries of one scope one after another: SQLProvider opens a connection per query, and the
+connections of one TransactionScope share its transaction when they don't overlap.
+</li>
+<li>
+<strong>What is locked:</strong> every row the query returns, and with joins on PostgreSQL, MySQL and Oracle the joined rows too
+(on PostgreSQL not those of a left-outer-joined table); SQL Server's hints go on every table of the query. Rows the filter leaves out aren't locked, and neither is a row
+inserted later: to keep two transactions from both inserting "the first" row, lock a parent row that already exists
+(the customer, the account), or rely on a unique constraint.
+</li>
+<li>
+<strong>Lock the same way everywhere.</strong> Two transactions that lock the same rows in opposite orders wait for each other
+forever; the database spots this deadlock and fails one of them. Lock a parent row first, the same parent in every
+code path, and the deadlock can't happen.
+</li>
+<li>
+<strong>Keep it short.</strong> Others wait while you hold the lock: read, decide and write, and avoid slow work, such as calls to
+other services, in between where you can.
+</li>
+<li>
+<strong>Waiting has no limit by default.</strong> Set one in the database when a wait should fail instead: PostgreSQL's
+<code>lock_timeout</code>, MySQL's <code>innodb_lock_wait_timeout</code>, SQL Server's <code>SET LOCK_TIMEOUT</code>. <code>NOWAIT</code> and <code>SKIP LOCKED</code>
+aren't available through SQLProvider.
+</li>
+</ul>
+<h2><a name="When-not-to-lock" class="anchor" href="#When-not-to-lock">When not to lock</a></h2>
+<p>A lock makes others wait. When clashes are rare and a retry is cheap, optimistic concurrency avoids the waiting: keep a
+version or timestamp column, update with <code>where (row.Version = versionRead)</code>, and treat zero rows changed as "someone
+else changed it, read again". When the rule is about rows that don't exist yet ("one open order per customer"), a unique
+constraint states it best: the database refuses the second insert, and <code>OnConflict</code> on the insert decides what happens
+instead (see <a href="crud.html">CRUD</a>).</p>
+
+        <div popover class="fsdocs-tip" id="fs1">Multiple items<br />type LiteralAttribute =
+  inherit Attribute
+  new: unit -&gt; LiteralAttribute<br /><br />--------------------<br />new: unit -&gt; LiteralAttribute</div>
+<div popover class="fsdocs-tip" id="fs2">
+val resolutionPath: string = &quot;C:\git\SQLProvider\docs\content\core/../../files/sqlite&quot;</div>
+<div popover class="fsdocs-tip" id="fs3">
+val connectionString: string = &quot;Data Source=C:\git\SQLProvider\docs\content\core\..\northwindEF.db;Version=3;Read Only=false;FailIfMissing=True;&quot;</div>
+<div popover class="fsdocs-tip" id="fs4">Multiple items<br />namespace FSharp<br /><br />--------------------<br />namespace Microsoft.FSharp</div>
+<div popover class="fsdocs-tip" id="fs5">Multiple items<br />namespace FSharp.Data<br /><br />--------------------<br />namespace Microsoft.FSharp.Data</div>
+<div popover class="fsdocs-tip" id="fs6">namespace FSharp.Data.Sql</div>
+<div popover class="fsdocs-tip" id="fs7">type sql = SqlDataProvider&lt;...&gt;</div>
+<div popover class="fsdocs-tip" id="fs8">type SqlDataProvider<br /><em>&lt;summary&gt;Typed representation of a database&lt;/summary&gt;
+                    &lt;param name=&#39;ConnectionString&#39;&gt;The connection string for the SQL database&lt;/param&gt;
+                    &lt;param name=&#39;ConnectionStringName&#39;&gt;The connection string name to select from a configuration file&lt;/param&gt;
+                    &lt;param name=&#39;DatabaseVendor&#39;&gt; The target database vendor&lt;/param&gt;
+                    &lt;param name=&#39;IndividualsAmount&#39;&gt;The amount of sample entities to project into the type system for each SQL entity type. Default 50. Note GDPR/PII regulations if using individuals with ContextSchemaPath.&lt;/param&gt;
+                    &lt;param name=&#39;UseOptionTypes&#39;&gt;If set, F# option types will be used in place of nullable database columns.  If not, you will always receive the default value of the column&#39;s type even if it is null in the database.&lt;/param&gt;
+                    &lt;param name=&#39;ResolutionPath&#39;&gt;The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types. Types used in design-time: If no better clue, prefer .NET Standard 2.0 versions. Semicolon to separate multiple.&lt;/param&gt;
+                    &lt;param name=&#39;Owner&#39;&gt;Oracle: The owner of the schema for this provider to resolve. PostgreSQL: A list of schemas to resolve, separated by spaces, newlines, commas, or semicolons.&lt;/param&gt;
+                    &lt;param name=&#39;CaseSensitivityChange&#39;&gt;Should we do ToUpper or ToLower when generating table names?&lt;/param&gt;
+                    &lt;param name=&#39;TableNames&#39;&gt;Comma separated table names list to limit a number of tables in big instances. The names can have &#39;%&#39; sign to handle it as in the &#39;LIKE&#39; query (Oracle and MSSQL Only)&lt;/param&gt;
+                    &lt;param name=&#39;ContextSchemaPath&#39;&gt;The location of the context schema previously saved with SaveContextSchema. When not empty, will be used to populate the database schema instead of retrieving it from then database.&lt;/param&gt;
+                    &lt;param name=&#39;OdbcQuote&#39;&gt;Odbc quote characters: Quote characters for the table and column names: `alias`, [alias]&lt;/param&gt;
+                    &lt;param name=&#39;SQLiteLibrary&#39;&gt;Use System.Data.SQLite or Mono.Data.SQLite or select automatically (SQLite only)&lt;/param&gt;
+                    &lt;param name=&#39;SsdtPath&#39;&gt;A path to an SSDT .dacpac file.&#39;&lt;/param&gt;
+                    </em></div>
+<div popover class="fsdocs-tip" id="fs9">namespace FSharp.Data.Sql.Common</div>
+<div popover class="fsdocs-tip" id="fs10">
+type DatabaseProviderTypes =
+  | MSSQLSERVER = 0
+  | SQLITE = 1
+  | POSTGRESQL = 2
+  | MYSQL = 3
+  | ORACLE = 4
+  | MSACCESS = 5
+  | ODBC = 6
+  | FIREBIRD = 7
+  | MSSQLSERVER_DYNAMIC = 8
+  | MSSQLSERVER_SSDT = 9
+  | DUCKDB = 10
+  | EXTERNAL = 11<br /><em>&lt;summary&gt;
+ Specifies the database provider type for the SQL type provider.
+ Each provider has its own specific implementation for SQL generation and data type mapping.
+&lt;/summary&gt;</em></div>
+<div popover class="fsdocs-tip" id="fs11">Common.DatabaseProviderTypes.SQLITE: Common.DatabaseProviderTypes = 1<br /><em>&lt;summary&gt;
+ SQLite database using System.Data.SQLite or Microsoft.Data.Sqlite
+&lt;/summary&gt;</em></div>
+<div popover class="fsdocs-tip" id="fs12">
+type CaseSensitivityChange =
+  | ORIGINAL = 0
+  | TOUPPER = 1
+  | TOLOWER = 2<br /><em>&lt;summary&gt;
+ Specifies how to handle case sensitivity when generating table and column names.
+&lt;/summary&gt;</em></div>
+<div popover class="fsdocs-tip" id="fs13">Common.CaseSensitivityChange.ORIGINAL: Common.CaseSensitivityChange = 0<br /><em>&lt;summary&gt;
+ Keep original casing from the database
+&lt;/summary&gt;</em></div>
+<div popover class="fsdocs-tip" id="fs14">
+type SQLiteLibrary =
+  | SystemDataSQLite = 0
+  | MonoDataSQLite = 1
+  | AutoSelect = 2
+  | MicrosoftDataSqlite = 3<br /><em>&lt;summary&gt;
+ Specifies which SQLite library to use for connections.
+ Different libraries may have different capabilities and platform support.
+&lt;/summary&gt;</em></div>
+<div popover class="fsdocs-tip" id="fs15">Common.SQLiteLibrary.SystemDataSQLite: Common.SQLiteLibrary = 0<br /><em>&lt;summary&gt;
+ .NET Framework default
+&lt;/summary&gt;</em></div>
+<div popover class="fsdocs-tip" id="fs16">namespace System</div>
+<div popover class="fsdocs-tip" id="fs17">namespace System.Transactions</div>
+<div popover class="fsdocs-tip" id="fs18">val addToFreight: orderId: int64 -&gt; amount: decimal -&gt; System.Threading.Tasks.Task&lt;unit&gt;</div>
+<div popover class="fsdocs-tip" id="fs19">val orderId: int64</div>
+<div popover class="fsdocs-tip" id="fs20">Multiple items<br />val int64: value: &#39;T -&gt; int64 (requires member op_Explicit)<br /><br />--------------------<br />type int64 = System.Int64<br /><br />--------------------<br />type int64&lt;&#39;Measure&gt; =
+  int64</div>
+<div popover class="fsdocs-tip" id="fs21">val amount: decimal</div>
+<div popover class="fsdocs-tip" id="fs22">Multiple items<br />val decimal: value: &#39;T -&gt; decimal (requires member op_Explicit)<br /><br />--------------------<br />type decimal = System.Decimal<br /><br />--------------------<br />type decimal&lt;&#39;Measure&gt; =
+  decimal</div>
+<div popover class="fsdocs-tip" id="fs23">val task: TaskBuilder</div>
+<div popover class="fsdocs-tip" id="fs24">val ctx: SqlDataProvider&lt;...&gt;.dataContext</div>
+<div popover class="fsdocs-tip" id="fs25">SqlDataProvider&lt;...&gt;.GetDataContext() : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(selectOperations: SelectOperations) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;selectOperations&#39;&gt;Execute select-clause operations in SQL database rather than .NET-side.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(commandTimeout: int) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;commandTimeout&#39;&gt;SQL command timeout. Maximum time for single SQL-command in seconds.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(transactionOptions: Transactions.TransactionOptions) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;transactionOptions&#39;&gt;TransactionOptions for the transaction created on SubmitChanges.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string, selectOperations: SelectOperations) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;&lt;param name=&#39;selectOperations&#39;&gt;Execute select-clause operations in SQL database rather than .NET-side.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(transactionOptions: Transactions.TransactionOptions, commandTimeout: int) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;transactionOptions&#39;&gt;TransactionOptions for the transaction created on SubmitChanges.&lt;/param&gt;&lt;param name=&#39;commandTimeout&#39;&gt;SQL command timeout. Maximum time for single SQL-command in seconds.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string, commandTimeout: int) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;&lt;param name=&#39;commandTimeout&#39;&gt;SQL command timeout. Maximum time for single SQL-command in seconds.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string, transactionOptions: Transactions.TransactionOptions) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;&lt;param name=&#39;transactionOptions&#39;&gt;TransactionOptions for the transaction created on SubmitChanges.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string, resolutionPath: string) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;&lt;param name=&#39;resolutionPath&#39;&gt;The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types.  Types used in design-time: If no better clue, prefer .NET Standard 2.0 versions. Semicolon to separate multiple.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em></div>
+<div popover class="fsdocs-tip" id="fs26">val scope: TransactionScope</div>
+<div popover class="fsdocs-tip" id="fs27">Multiple items<br />type TransactionScope =
+  interface IDisposable
+  new: unit -&gt; unit + 13 overloads
+  member Complete: unit -&gt; unit
+  member Dispose: unit -&gt; unit<br /><em>&lt;summary&gt;Makes a code block transactional. This class cannot be inherited.&lt;/summary&gt;</em><br /><br />--------------------<br />TransactionScope() : TransactionScope<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />TransactionScope(transactionToUse: Transaction) : TransactionScope<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />TransactionScope(asyncFlowOption: TransactionScopeAsyncFlowOption) : TransactionScope<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />TransactionScope(scopeOption: TransactionScopeOption) : TransactionScope<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />TransactionScope(transactionToUse: Transaction, scopeTimeout: System.TimeSpan) : TransactionScope<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />TransactionScope(transactionToUse: Transaction, asyncFlowOption: TransactionScopeAsyncFlowOption) : TransactionScope<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />TransactionScope(scopeOption: TransactionScopeOption, scopeTimeout: System.TimeSpan) : TransactionScope<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />TransactionScope(scopeOption: TransactionScopeOption, transactionOptions: TransactionOptions) : TransactionScope<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />TransactionScope(scopeOption: TransactionScopeOption, asyncFlowOption: TransactionScopeAsyncFlowOption) : TransactionScope<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />TransactionScope(transactionToUse: Transaction, scopeTimeout: System.TimeSpan, interopOption: EnterpriseServicesInteropOption) : TransactionScope<br />&#160;&#160;&#160;<em>(+0 other overloads)</em></div>
+<div popover class="fsdocs-tip" id="fs28">
+type TransactionScopeAsyncFlowOption =
+  | Suppress = 0
+  | Enabled = 1<br /><em>&lt;summary&gt;Specifies whether transaction flow across thread continuations is enabled for &lt;see cref=&quot;T:System.Transactions.TransactionScope&quot; /&gt;.&lt;/summary&gt;</em></div>
+<div popover class="fsdocs-tip" id="fs29">field TransactionScopeAsyncFlowOption.Enabled: TransactionScopeAsyncFlowOption = 1</div>
+<div popover class="fsdocs-tip" id="fs30">val order: SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity</div>
+<div popover class="fsdocs-tip" id="fs31">val query: Linq.QueryBuilder</div>
+<div popover class="fsdocs-tip" id="fs32">property SqlDataProvider&lt;...&gt;.dataContext.Main: SqlDataProvider&lt;...&gt;.dataContext.mainSchema with get</div>
+<div popover class="fsdocs-tip" id="fs33">property SqlDataProvider&lt;...&gt;.dataContext.mainSchema.Orders: SqlDataProvider&lt;...&gt;.dataContext.mainSchema.main.Orders with get<br /><em>&lt;summary&gt;  The table Orders belonging to schema main&lt;/summary&gt;</em></div>
+<div popover class="fsdocs-tip" id="fs34">custom operation: where (bool)
+
+Calls Linq.QueryBuilder.Where</div>
+<div popover class="fsdocs-tip" id="fs35">property SqlDataProvider&lt;...&gt;.dataContext.main.OrdersEntity.OrderId: int64 with get, set<br /><em>&lt;summary&gt;OrderID:   integer&lt;/summary&gt;</em></div>
+<div popover class="fsdocs-tip" id="fs36">custom operation: select (&#39;Result)
+
+Calls Linq.QueryBuilder.Select</div>
+<div popover class="fsdocs-tip" id="fs37">Multiple items<br />module Seq
+
+from FSharp.Data.Sql<br /><br />--------------------<br />module Seq
+
+from Microsoft.FSharp.Collections</div>
+<div popover class="fsdocs-tip" id="fs38">val lockForUpdateHeadAsync: query: System.Linq.IQueryable&lt;&#39;T&gt; -&gt; System.Threading.Tasks.Task&lt;&#39;T&gt;<br /><em>&lt;summary&gt;Reads the query&#39;s first row, locked until the transaction ends (see &lt;c&gt;lockForUpdate&lt;/c&gt;), releasing the OS
+ thread while the database works.&lt;/summary&gt;<br />&lt;param name=&quot;query&quot;&gt;The query, as &lt;c&gt;lockForUpdate&lt;/c&gt; takes it.&lt;/param&gt;<br />&lt;returns&gt;The row, locked. Fails when the query reads no rows; see &lt;c&gt;lockForUpdateTryHeadAsync&lt;/c&gt;.&lt;/returns&gt;<br />&lt;remarks&gt;Oracle refuses it after a sort.&lt;/remarks&gt;</em></div>
+<div popover class="fsdocs-tip" id="fs39">SqlDataProvider&lt;...&gt;.dataContext.SubmitUpdatesAsync() : System.Threading.Tasks.Task<br /><em>&lt;summary&gt;Save changes to data-source. May throws errors: Use Async.Catch and to deal with non-saved items use GetUpdates() and ClearUpdates().&lt;/summary&gt;</em></div>
+<div popover class="fsdocs-tip" id="fs40">TransactionScope.Complete() : unit</div>
+
+    </div>
+</main>
+<aside id="fsdocs-page-menu">
+    <p id="on-this-page">On this page</p>
+    <ul>
+  <li class="level-1">
+    <a href="#Locking-rows-for-update">
+      Locking rows for update
+    </a>
+  </li>
+  <li class="level-2">
+    <a href="#The-problem-lost-updates">
+      The problem: lost updates
+    </a>
+  </li>
+  <li class="level-2">
+    <a href="#The-fix-lock-the-rows-you-read">
+      The fix: lock the rows you read
+    </a>
+  </li>
+  <li class="level-2">
+    <a href="#The-functions">
+      The functions
+    </a>
+  </li>
+  <li class="level-2">
+    <a href="#What-each-database-does">
+      What each database does
+    </a>
+  </li>
+  <li class="level-2">
+    <a href="#Rules-of-thumb">
+      Rules of thumb
+    </a>
+  </li>
+  <li class="level-2">
+    <a href="#When-not-to-lock">
+      When not to lock
+    </a>
+  </li>
+</ul>
+</aside>
+<dialog>
+    <input type="search" placeholder="Search docs" />
+    <div class="results">
+        <ul></ul>
+        <p class="empty">Type something to start searching.</p>
+    </div>
+</dialog>
+<script type="module" src="https://fsprojects.github.io/SQLProvider/content/fsdocs-tips.js"></script>
+<script type="module" src="https://fsprojects.github.io/SQLProvider/content/fsdocs-xmldoc-tips.js"></script>
+<script type="module" src="https://fsprojects.github.io/SQLProvider/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="https://fsprojects.github.io/SQLProvider/content/fsdocs-theme.js"></script>
+<script type="module" src="https://fsprojects.github.io/SQLProvider/content/fsdocs-search.js"></script>
+
+</body>
+</html>

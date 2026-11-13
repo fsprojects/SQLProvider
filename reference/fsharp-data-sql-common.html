@@ -90,6 +90,12 @@
   </a>
 </li>             
 <li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/locking.html">
+    Locking rows for update
+
+  </a>
+</li>             
+<li class="nav-item ">
   <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/mappers.html">
     mappers
   </a>
@@ -213,6 +219,7 @@
         <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/querying.html" class="nav-link">Querying</a></li>
         <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/constraints-relationships.html" class="nav-link">Constraints & Relationships</a></li>
         <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/crud.html" class="nav-link">CRUD</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/locking.html" class="nav-link">Locking rows</a></li>
         <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/programmability.html" class="nav-link">Programmability</a></li>
         <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/individuals.html" class="nav-link">Individuals</a></li>
         <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider//core/composable.html" class="nav-link">Composable Query</a></li>
@@ -342,7 +349,7 @@
               </p>
             </div>
             <div class="icon-button-row">
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L1013-1013" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L1074-1074" class="fsdocs-source-link" title="Source on GitHub">
                 <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
               </a>
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:FSharp.Data.Sql.Common.CommonTasks\'/>')">
@@ -380,6 +387,37 @@
                 <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
               </div>
               <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:T:FSharp.Data.Sql.Common.ConfigHelpers`')">
+                <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+              </div>
+            </div>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td class="fsdocs-entity-name">
+          <p>
+            <a name="ConflictUpdate">
+              <a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-conflictupdate.html">
+                ConflictUpdate
+              </a>
+            </a>
+          </p>
+        </td>
+        <td class="fsdocs-entity-xmldoc">
+          <div>
+            <div class="fsdocs-summary-contents">
+              <p class="fsdocs-summary">
+                What one column of the existing row becomes in <code>OnConflict.UpdateOn</code>.
+              </p>
+            </div>
+            <div class="icon-button-row">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L203-203" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:FSharp.Data.Sql.Common.ConflictUpdate\'/>')">
+                <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:T:FSharp.Data.Sql.Common.ConflictUpdate`')">
                 <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
               </div>
             </div>
@@ -467,7 +505,7 @@
               </p>
             </div>
             <div class="icon-button-row">
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L632-632" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L662-662" class="fsdocs-source-link" title="Source on GitHub">
                 <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
               </a>
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:FSharp.Data.Sql.Common.GroupData\'/>')">
@@ -498,7 +536,7 @@
               </p>
             </div>
             <div class="icon-button-row">
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L713-713" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L765-765" class="fsdocs-source-link" title="Source on GitHub">
                 <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
               </a>
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:FSharp.Data.Sql.Common.GroupingColumns\'/>')">
@@ -532,7 +570,7 @@
               </p>
             </div>
             <div class="icon-button-row">
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L906-906" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L967-967" class="fsdocs-source-link" title="Source on GitHub">
                 <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
               </a>
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:FSharp.Data.Sql.Common.GroupResultItems`2\'/>')">
@@ -563,7 +601,7 @@
               </p>
             </div>
             <div class="icon-button-row">
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L244-244" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L274-274" class="fsdocs-source-link" title="Source on GitHub">
                 <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
               </a>
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:FSharp.Data.Sql.Common.IColumnHolder\'/>')">
@@ -596,7 +634,7 @@
               </p>
             </div>
             <div class="icon-button-row">
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L567-567" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L597-597" class="fsdocs-source-link" title="Source on GitHub">
                 <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
               </a>
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:FSharp.Data.Sql.Common.ISqlDataContext\'/>')">
@@ -627,7 +665,7 @@
               </p>
             </div>
             <div class="icon-button-row">
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L808-808" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L869-869" class="fsdocs-source-link" title="Source on GitHub">
                 <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
               </a>
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:FSharp.Data.Sql.Common.ISqlProvider\'/>')">
@@ -659,7 +697,7 @@
               </p>
             </div>
             <div class="icon-button-row">
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L611-611" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L641-641" class="fsdocs-source-link" title="Source on GitHub">
                 <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
               </a>
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:FSharp.Data.Sql.Common.IWithDataContext\'/>')">
@@ -690,7 +728,7 @@
               </p>
             </div>
             <div class="icon-button-row">
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L616-616" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L646-646" class="fsdocs-source-link" title="Source on GitHub">
                 <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
               </a>
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:FSharp.Data.Sql.Common.LinkData\'/>')">
@@ -722,7 +760,7 @@
               </p>
             </div>
             <div class="icon-button-row">
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L217-217" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L247-247" class="fsdocs-source-link" title="Source on GitHub">
                 <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
               </a>
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:FSharp.Data.Sql.Common.MappedColumnAttribute\'/>')">
@@ -815,7 +853,7 @@
               </p>
             </div>
             <div class="icon-button-row">
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L1126-1126" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L1236-1236" class="fsdocs-source-link" title="Source on GitHub">
                 <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
               </a>
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:FSharp.Data.Sql.Common.OfflineTools\'/>')">
@@ -842,12 +880,11 @@
           <div>
             <div class="fsdocs-summary-contents">
               <p class="fsdocs-summary">
-                 Specifies how to handle conflicts when inserting records with duplicate primary keys.
- Currently supported only on databases that have UPSERT capabilities.
+                What an insert does when the row would break a primary key or a unique constraint or index.
               </p>
             </div>
             <div class="icon-button-row">
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L204-204" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L218-218" class="fsdocs-source-link" title="Source on GitHub">
                 <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
               </a>
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:FSharp.Data.Sql.Common.OnConflict\'/>')">
@@ -972,7 +1009,7 @@
               </p>
             </div>
             <div class="icon-button-row">
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L223-223" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L253-253" class="fsdocs-source-link" title="Source on GitHub">
                 <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
               </a>
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:FSharp.Data.Sql.Common.ResultSet\'/>')">
@@ -1003,7 +1040,7 @@
               </p>
             </div>
             <div class="icon-button-row">
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L226-226" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L256-256" class="fsdocs-source-link" title="Source on GitHub">
                 <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
               </a>
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:FSharp.Data.Sql.Common.ReturnSetType\'/>')">
@@ -1034,7 +1071,7 @@
               </p>
             </div>
             <div class="icon-button-row">
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L233-233" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L263-263" class="fsdocs-source-link" title="Source on GitHub">
                 <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
               </a>
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:FSharp.Data.Sql.Common.ReturnValueType\'/>')">
@@ -1065,7 +1102,7 @@
               </p>
             </div>
             <div class="icon-button-row">
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L865-865" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L926-926" class="fsdocs-source-link" title="Source on GitHub">
                 <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
               </a>
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:FSharp.Data.Sql.Common.SchemaCache\'/>')">
@@ -1127,7 +1164,7 @@
               </p>
             </div>
             <div class="icon-button-row">
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L640-640" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L670-670" class="fsdocs-source-link" title="Source on GitHub">
                 <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
               </a>
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:FSharp.Data.Sql.Common.SelectData\'/>')">
@@ -1189,7 +1226,7 @@
               </p>
             </div>
             <div class="icon-button-row">
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L260-260" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L290-290" class="fsdocs-source-link" title="Source on GitHub">
                 <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
               </a>
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:FSharp.Data.Sql.Common.SqlEntity\'/>')">
@@ -1220,7 +1257,7 @@
               </p>
             </div>
             <div class="icon-button-row">
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L642-642" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L672-672" class="fsdocs-source-link" title="Source on GitHub">
                 <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
               </a>
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:FSharp.Data.Sql.Common.SqlExp\'/>')">
@@ -1283,7 +1320,7 @@
               </p>
             </div>
             <div class="icon-button-row">
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L720-720" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L772-772" class="fsdocs-source-link" title="Source on GitHub">
                 <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
               </a>
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:FSharp.Data.Sql.Common.SqlQuery\'/>')">
@@ -1376,7 +1413,7 @@
               </p>
             </div>
             <div class="icon-button-row">
-              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L641-641" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Common/SqlRuntime.Common.fs#L671-671" class="fsdocs-source-link" title="Source on GitHub">
                 <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
               </a>
               <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:FSharp.Data.Sql.Common.UnionType\'/>')">

@@ -12,6 +12,7 @@ Lazy schema exploration
 Automatic constraint navigation
 Individuals
 Transactional CRUD operations with identity support
+Locking rows for update, against lost updates
 Stored Procedures
 Functions
 Packages (Oracle)
@@ -724,6 +725,47 @@ jane.OnConflict <- FSharp.Data.Sql.Common.OnConflict.Update
 
 ctx.SubmitUpdates()
 
+To name the columns whose unique constraint or index decides the conflict, and to say what each column of the
+existing row becomes, use the row's typed methods. The lambdas are the row's own properties, so the compiler checks the
+names and the types:
+
+row.OnConflictDoNothing(fun r -> r.Code) leaves the existing row: ON CONFLICT ("code") DO NOTHING.
+
+row.OnConflictUpdate((fun r -> r.Code), fun existing inserted -> ...) changes the existing row as the second lambda
+says: existing.Name <- inserted.Name takes the inserted value, existing.Note <- "merged" (or a captured value)
+sets a constant, sent as a parameter, and every property the lambda doesn't set keeps its old value.
+
+
+Several columns are a tuple: fun r -> (r.Code, r.Region). A value computed from the rows, such as
+existing.Count <- existing.Count + 1, can't be said this way and is refused when the method is called.
+let upserted = ctx.Main.Employees.Create()
+upserted.EmployeeId <- 1L
+upserted.FirstName <- "John"
+upserted.LastName <- "Doe"
+upserted.Title <- "Developer"
+
+// When employee 1 exists: FirstName takes the inserted value, Title a constant; LastName and the rest stay as they are
+upserted.OnConflictUpdate((fun e -> e.EmployeeId), fun existing inserted ->
+    existing.FirstName <- inserted.FirstName
+    existing.Title <- "Sales Representative")
+
+ctx.SubmitUpdates()
+
+The methods set OnConflict to DoNothingOn or UpdateOn, which take the columns as strings; use those directly when the
+columns are known only at run time:
+
+DoNothingOn [ "code" ]
+UpdateOn([ "code" ], [ Inserted "name"; Constant("note", box "merged") ])
+
+The names are matched to the table's columns, ignoring case; a name the table hasn't is refused, so nothing else reaches
+the SQL. PostgreSQL, SQLite 3.24+ and DuckDB support both. MySQL refuses them, as its ON DUPLICATE KEY applies to any
+unique key, and so do the databases without ON CONFLICT. A partial unique index (one with a WHERE) can't be named this way;
+DoNothing covers it, as it covers every unique constraint.
+A row inserted without its key reads the key the database gave it. After a conflict the row object reads the existing
+row's key when that row was updated (UpdateOn), and no key when it was left as it was (DoNothing, DoNothingOn):
+query the existing row when you need it.
+SQLite's Update is INSERT OR REPLACE: it deletes the conflicting row and inserts the new one, so columns not set get
+their defaults, and delete triggers and cascades run. UpdateOn updates the row in place.
 Delete-query for multiple items
 To delete many items from a database table, DELETE FROM [dbo].[EMPLOYEES] WHERE (...), there is a way, although we don't recommend deleting items from a database. Instead, you should consider a deletion-flag column. You should also back up your database before trying this. Note that changes are immediately saved to the database even if you don't call ctx.SubmitUpdates().
 Selecting which Create() to use
@@ -1157,6 +1199,156 @@ customers.Individuals.``As ContactName``.``COMMI, Pedro Afonso``
 
 Get individual customer row using address
 customers.Individuals.``As Address``.``CONSH, Berkeley Gardens 12  Brewery``
+
+### [Locking rows for update](https://fsprojects.github.io/SQLProvider/core/locking.md)
+
+Locking rows for update
+The problem: lost updates
+Most web requests that change data first read it, then decide, then write. When two requests do that to the same row at
+the same moment, both read the old value, both decide on it, and the second write silently undoes or doubles the first:
+
+Request A reads an account's balance: 50.
+Request B reads the same balance: 50.
+A pays out 40 and writes 10.
+B pays out 40 and writes 10. 80 went out of 50, and the balance says 10.
+
+A transaction alone doesn't stop this. At the isolation level most databases use by default (read committed), both
+transactions see the committed 50, and each one's write is valid on its own.
+The fix: lock the rows you read
+Seq.lockForUpdate asks the database to lock each row the query returns until your transaction ends. Another transaction
+that wants to lock, change or delete one of those rows waits until yours commits or rolls back, and then reads the new
+value. In the example, B waits at step 2 until A has written 10, reads 10, and refuses the payment. Plain reads that don't
+lock aren't blocked.
+In SQL this is SELECT ... FOR UPDATE, a "pessimistic lock": the database holds others back, instead of your code
+noticing a clash afterwards.
+Read, decide and write in one transaction. With async code, the TransactionScope needs
+TransactionScopeAsyncFlowOption.Enabled, or the transaction doesn't follow the awaits:
+open System.Transactions
+
+let addToFreight (orderId: int64) (amount: decimal) =
+    task {
+        let ctx = sql.GetDataContext()
+        use scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled)
+
+        // Locked until the scope completes or is disposed
+        let! order =
+            query {
+                for order in ctx.Main.Orders do
+                where (order.OrderId = orderId)
+                select order
+            }
+            |> Seq.lockForUpdateHeadAsync
+
+        order.Freight <- order.Freight + amount
+        do! ctx.SubmitUpdatesAsync()
+        scope.Complete()
+    }
+
+The functions
+
+
+
+Function
+Does
+
+
+
+
+Seq.lockForUpdate
+Marks a query to lock its rows; run it with any executor, Seq.toList included.
+
+
+Seq.lockForUpdateAsync, Array.lockForUpdateAsync, List.lockForUpdateAsync
+Run the query with its rows locked.
+
+
+Seq.lockForUpdateHeadAsync, Seq.lockForUpdateTryHeadAsync
+Lock and read one row; tryHead... gives None when there's none. On Oracle not after a sort.
+
+
+
+
+What each database does
+
+
+
+Database
+SQL
+Notes
+
+
+
+
+PostgreSQL
+FOR UPDATE
+With a left outer join, FOR UPDATE OF the other tables: the rows of the outer-joined table aren't locked.
+
+
+MySQL (InnoDB)
+FOR UPDATE
+
+
+
+Oracle
+FOR UPDATE
+Not with skip, nor with take or head after a sort: refused.
+
+
+Firebird
+FOR UPDATE WITH LOCK
+One table only: a query with joins is refused. FOR UPDATE alone doesn't lock in Firebird.
+
+
+SQL Server
+WITH (UPDLOCK, ROWLOCK) on every table
+Held until the transaction ends.
+
+
+SQLite, MS Access, DuckDB, ODBC
+none
+No row locks: refused with an error. Use a transaction that writes first, or a unique constraint.
+
+
+
+
+A query that isn't one table's rows can't be locked, so a distinct, grouped, counted or aggregated query, or a union, is
+refused. The lock belongs to a whole statement, so a locked query is also refused as a part of another: as a sub-query
+(IN, EXISTS), as one side of a union, as the table joined into a query, and in a delete. Lock the outer query
+instead. In unit tests the mock context's query comes back as it is.
+Rules of thumb
+
+
+Always inside a transaction. Without one the database commits each statement on its own, and the lock ends as soon
+as the query has run. Run the queries of one scope one after another: SQLProvider opens a connection per query, and the
+connections of one TransactionScope share its transaction when they don't overlap.
+
+
+What is locked: every row the query returns, and with joins on PostgreSQL, MySQL and Oracle the joined rows too
+(on PostgreSQL not those of a left-outer-joined table); SQL Server's hints go on every table of the query. Rows the filter leaves out aren't locked, and neither is a row
+inserted later: to keep two transactions from both inserting "the first" row, lock a parent row that already exists
+(the customer, the account), or rely on a unique constraint.
+
+
+Lock the same way everywhere. Two transactions that lock the same rows in opposite orders wait for each other
+forever; the database spots this deadlock and fails one of them. Lock a parent row first, the same parent in every
+code path, and the deadlock can't happen.
+
+
+Keep it short. Others wait while you hold the lock: read, decide and write, and avoid slow work, such as calls to
+other services, in between where you can.
+
+
+Waiting has no limit by default. Set one in the database when a wait should fail instead: PostgreSQL's
+lock_timeout, MySQL's innodb_lock_wait_timeout, SQL Server's SET LOCK_TIMEOUT. NOWAIT and SKIP LOCKED
+aren't available through SQLProvider.
+
+
+When not to lock
+A lock makes others wait. When clashes are rare and a retry is cheap, optimistic concurrency avoids the waiting: keep a
+version or timestamp column, update with where (row.Version = versionRead), and treat zero rows changed as "someone
+else changed it, read again". When the rule is about rows that don't exist yet ("one open order per customer"), a unique
+constraint states it best: the database refuses the second insert, and OnConflict on the insert decides what happens
+instead (see CRUD).
 
 ### [mappers](https://fsprojects.github.io/SQLProvider/core/mappers.md)
 
@@ -2241,6 +2433,9 @@ let findRecentOrders =
         select order
     }
 
+Locking rows for update
+Seq.lockForUpdate, or an executor such as Seq.lockForUpdateTryHeadAsync, locks the rows a query reads until the
+transaction ends, against two requests changing the same row at once. See Locking rows.
 SELECT -clause operations
 You can control the execution context of the select-operations by the GetDataContext parameter selectOperations.
 The LINQ-query stays the same. You have two options: DotNetSide or DatabaseSide.
@@ -3937,6 +4132,7 @@ Seq
 AggregateOperation 
 ConditionOperator 
 SelectOperations 
+SqlEntityConflictExtensions 
 DesignReflection 
 DesignTimeCache 
 DesignTimeUtils 
@@ -4022,6 +4218,7 @@ StandardExtensions
 Stubs 
 Utilities 
 CaseSensitivityChange 
+ConflictUpdate 
 DatabaseProviderTypes 
 EntityState 
 GroupData 
@@ -4338,13 +4535,22 @@ ExpressionOptimizer
 Array 
  
 Array.executeQueryAsync 
-executeQueryAsync
+executeQueryAsync 
+Array.lockForUpdateAsync 
+lockForUpdateAsync
 
 ### [Array.executeQueryAsync](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-array.html#executeQueryAsync)
 
 Array.executeQueryAsync 
 executeQueryAsync 
  Execute SQLProvider query and release the OS thread while query is being executed.
+
+### [Array.lockForUpdateAsync](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-array.html#lockForUpdateAsync)
+
+Array.lockForUpdateAsync 
+lockForUpdateAsync 
+Runs a query with its rows locked until the transaction ends (see <code>Seq.lockForUpdate</code>), releasing the
+ OS thread while the database works.
 
 ### [AsyncOperations](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-asyncoperations.html)
 
@@ -4425,104 +4631,104 @@ SqlItemOrColumn
 CanonicalOp 
  Represents SQL functions and operations that can be applied to columns.
  These operations are translated to database-specific SQL functions. 
-CanonicalOp.IsBasicMath 
-IsBasicMath 
-CanonicalOp.IsSubstringWithLength 
-IsSubstringWithLength 
-CanonicalOp.IsLength 
-IsLength 
-CanonicalOp.IsCos 
-IsCos 
-CanonicalOp.IsHour 
-IsHour 
-CanonicalOp.IsIndexOfStart 
-IsIndexOfStart 
-CanonicalOp.IsCaseSql 
-IsCaseSql 
-CanonicalOp.IsCaseSqlPlain 
-IsCaseSqlPlain 
-CanonicalOp.IsAddHours 
-IsAddHours 
-CanonicalOp.IsCeil 
-IsCeil 
-CanonicalOp.IsCastInt 
-IsCastInt 
-CanonicalOp.IsFloor 
-IsFloor 
-CanonicalOp.IsSubstring 
-IsSubstring 
-CanonicalOp.IsDateDiffDays 
-IsDateDiffDays 
-CanonicalOp.IsYear 
-IsYear 
-CanonicalOp.IsPowConst 
-IsPowConst 
 CanonicalOp.IsDate 
 IsDate 
-CanonicalOp.IsToUpper 
-IsToUpper 
-CanonicalOp.IsDateDiffSecs 
-IsDateDiffSecs 
-CanonicalOp.IsTrim 
-IsTrim 
-CanonicalOp.IsGreatest 
-IsGreatest 
-CanonicalOp.IsDay 
-IsDay 
-CanonicalOp.IsRound 
-IsRound 
-CanonicalOp.IsToLower 
-IsToLower 
-CanonicalOp.IsAddYears 
-IsAddYears 
-CanonicalOp.IsAddMonths 
-IsAddMonths 
-CanonicalOp.IsReplace 
-IsReplace 
-CanonicalOp.IsSecond 
-IsSecond 
-CanonicalOp.IsCaseNotSql 
-IsCaseNotSql 
-CanonicalOp.IsCastVarchar 
-IsCastVarchar 
-CanonicalOp.IsAddDays 
-IsAddDays 
-CanonicalOp.IsSqrt 
-IsSqrt 
+CanonicalOp.IsCeil 
+IsCeil 
 CanonicalOp.IsATan 
 IsATan 
-CanonicalOp.IsAddMinutes 
-IsAddMinutes 
+CanonicalOp.IsAddMonths 
+IsAddMonths 
+CanonicalOp.IsCaseNotSql 
+IsCaseNotSql 
+CanonicalOp.IsToLower 
+IsToLower 
 CanonicalOp.IsAddSeconds 
 IsAddSeconds 
-CanonicalOp.IsMonth 
-IsMonth 
-CanonicalOp.IsLeast 
-IsLeast 
-CanonicalOp.IsASin 
-IsASin 
-CanonicalOp.IsIndexOf 
-IsIndexOf 
-CanonicalOp.IsBasicMathLeft 
-IsBasicMathLeft 
-CanonicalOp.IsSin 
-IsSin 
-CanonicalOp.IsBasicMathOfColumns 
-IsBasicMathOfColumns 
-CanonicalOp.IsACos 
-IsACos 
-CanonicalOp.IsAbs 
-IsAbs 
+CanonicalOp.IsSecond 
+IsSecond 
 CanonicalOp.IsRoundDecimals 
 IsRoundDecimals 
-CanonicalOp.IsTruncate 
-IsTruncate 
+CanonicalOp.IsSin 
+IsSin 
+CanonicalOp.IsIndexOf 
+IsIndexOf 
+CanonicalOp.IsCaseSqlPlain 
+IsCaseSqlPlain 
+CanonicalOp.IsIndexOfStart 
+IsIndexOfStart 
+CanonicalOp.IsSqrt 
+IsSqrt 
+CanonicalOp.IsToUpper 
+IsToUpper 
+CanonicalOp.IsLeast 
+IsLeast 
+CanonicalOp.IsPowConst 
+IsPowConst 
+CanonicalOp.IsHour 
+IsHour 
+CanonicalOp.IsAddHours 
+IsAddHours 
+CanonicalOp.IsSubstring 
+IsSubstring 
+CanonicalOp.IsLength 
+IsLength 
+CanonicalOp.IsDateDiffDays 
+IsDateDiffDays 
+CanonicalOp.IsMonth 
+IsMonth 
+CanonicalOp.IsCaseSql 
+IsCaseSql 
+CanonicalOp.IsRound 
+IsRound 
+CanonicalOp.IsAbs 
+IsAbs 
+CanonicalOp.IsCastInt 
+IsCastInt 
+CanonicalOp.IsDateDiffSecs 
+IsDateDiffSecs 
+CanonicalOp.IsASin 
+IsASin 
+CanonicalOp.IsReplace 
+IsReplace 
+CanonicalOp.IsSubstringWithLength 
+IsSubstringWithLength 
+CanonicalOp.IsAddDays 
+IsAddDays 
+CanonicalOp.IsYear 
+IsYear 
+CanonicalOp.IsTrim 
+IsTrim 
+CanonicalOp.IsAddMinutes 
+IsAddMinutes 
 CanonicalOp.IsPow 
 IsPow 
 CanonicalOp.IsMinute 
 IsMinute 
+CanonicalOp.IsBasicMathOfColumns 
+IsBasicMathOfColumns 
+CanonicalOp.IsGreatest 
+IsGreatest 
+CanonicalOp.IsTruncate 
+IsTruncate 
+CanonicalOp.IsBasicMath 
+IsBasicMath 
+CanonicalOp.IsACos 
+IsACos 
+CanonicalOp.IsFloor 
+IsFloor 
+CanonicalOp.IsCastVarchar 
+IsCastVarchar 
 CanonicalOp.IsTan 
 IsTan 
+CanonicalOp.IsCos 
+IsCos 
+CanonicalOp.IsAddYears 
+IsAddYears 
+CanonicalOp.IsDay 
+IsDay 
+CanonicalOp.IsBasicMathLeft 
+IsBasicMathLeft 
 CanonicalOp.Substring 
 Substring 
 CanonicalOp.SubstringWithLength 
@@ -4622,235 +4828,180 @@ CastVarchar
 CanonicalOp.CastInt 
 CastInt
 
-### [CanonicalOp.IsBasicMath](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsBasicMath)
+### [CanonicalOp.IsDate](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsDate)
 
-CanonicalOp.IsBasicMath 
-IsBasicMath
-
-### [CanonicalOp.IsSubstringWithLength](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsSubstringWithLength)
-
-CanonicalOp.IsSubstringWithLength 
-IsSubstringWithLength
-
-### [CanonicalOp.IsLength](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsLength)
-
-CanonicalOp.IsLength 
-IsLength
-
-### [CanonicalOp.IsCos](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsCos)
-
-CanonicalOp.IsCos 
-IsCos
-
-### [CanonicalOp.IsHour](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsHour)
-
-CanonicalOp.IsHour 
-IsHour
-
-### [CanonicalOp.IsIndexOfStart](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsIndexOfStart)
-
-CanonicalOp.IsIndexOfStart 
-IsIndexOfStart
-
-### [CanonicalOp.IsCaseSql](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsCaseSql)
-
-CanonicalOp.IsCaseSql 
-IsCaseSql
-
-### [CanonicalOp.IsCaseSqlPlain](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsCaseSqlPlain)
-
-CanonicalOp.IsCaseSqlPlain 
-IsCaseSqlPlain
-
-### [CanonicalOp.IsAddHours](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsAddHours)
-
-CanonicalOp.IsAddHours 
-IsAddHours
+CanonicalOp.IsDate 
+IsDate
 
 ### [CanonicalOp.IsCeil](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsCeil)
 
 CanonicalOp.IsCeil 
 IsCeil
 
-### [CanonicalOp.IsCastInt](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsCastInt)
+### [CanonicalOp.IsATan](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsATan)
 
-CanonicalOp.IsCastInt 
-IsCastInt
-
-### [CanonicalOp.IsFloor](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsFloor)
-
-CanonicalOp.IsFloor 
-IsFloor
-
-### [CanonicalOp.IsSubstring](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsSubstring)
-
-CanonicalOp.IsSubstring 
-IsSubstring
-
-### [CanonicalOp.IsDateDiffDays](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsDateDiffDays)
-
-CanonicalOp.IsDateDiffDays 
-IsDateDiffDays
-
-### [CanonicalOp.IsYear](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsYear)
-
-CanonicalOp.IsYear 
-IsYear
-
-### [CanonicalOp.IsPowConst](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsPowConst)
-
-CanonicalOp.IsPowConst 
-IsPowConst
-
-### [CanonicalOp.IsDate](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsDate)
-
-CanonicalOp.IsDate 
-IsDate
-
-### [CanonicalOp.IsToUpper](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsToUpper)
-
-CanonicalOp.IsToUpper 
-IsToUpper
-
-### [CanonicalOp.IsDateDiffSecs](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsDateDiffSecs)
-
-CanonicalOp.IsDateDiffSecs 
-IsDateDiffSecs
-
-### [CanonicalOp.IsTrim](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsTrim)
-
-CanonicalOp.IsTrim 
-IsTrim
-
-### [CanonicalOp.IsGreatest](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsGreatest)
-
-CanonicalOp.IsGreatest 
-IsGreatest
-
-### [CanonicalOp.IsDay](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsDay)
-
-CanonicalOp.IsDay 
-IsDay
-
-### [CanonicalOp.IsRound](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsRound)
-
-CanonicalOp.IsRound 
-IsRound
-
-### [CanonicalOp.IsToLower](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsToLower)
-
-CanonicalOp.IsToLower 
-IsToLower
-
-### [CanonicalOp.IsAddYears](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsAddYears)
-
-CanonicalOp.IsAddYears 
-IsAddYears
+CanonicalOp.IsATan 
+IsATan
 
 ### [CanonicalOp.IsAddMonths](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsAddMonths)
 
 CanonicalOp.IsAddMonths 
 IsAddMonths
 
-### [CanonicalOp.IsReplace](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsReplace)
-
-CanonicalOp.IsReplace 
-IsReplace
-
-### [CanonicalOp.IsSecond](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsSecond)
-
-CanonicalOp.IsSecond 
-IsSecond
-
 ### [CanonicalOp.IsCaseNotSql](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsCaseNotSql)
 
 CanonicalOp.IsCaseNotSql 
 IsCaseNotSql
 
-### [CanonicalOp.IsCastVarchar](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsCastVarchar)
+### [CanonicalOp.IsToLower](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsToLower)
 
-CanonicalOp.IsCastVarchar 
-IsCastVarchar
-
-### [CanonicalOp.IsAddDays](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsAddDays)
-
-CanonicalOp.IsAddDays 
-IsAddDays
-
-### [CanonicalOp.IsSqrt](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsSqrt)
-
-CanonicalOp.IsSqrt 
-IsSqrt
-
-### [CanonicalOp.IsATan](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsATan)
-
-CanonicalOp.IsATan 
-IsATan
-
-### [CanonicalOp.IsAddMinutes](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsAddMinutes)
-
-CanonicalOp.IsAddMinutes 
-IsAddMinutes
+CanonicalOp.IsToLower 
+IsToLower
 
 ### [CanonicalOp.IsAddSeconds](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsAddSeconds)
 
 CanonicalOp.IsAddSeconds 
 IsAddSeconds
 
-### [CanonicalOp.IsMonth](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsMonth)
+### [CanonicalOp.IsSecond](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsSecond)
 
-CanonicalOp.IsMonth 
-IsMonth
-
-### [CanonicalOp.IsLeast](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsLeast)
-
-CanonicalOp.IsLeast 
-IsLeast
-
-### [CanonicalOp.IsASin](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsASin)
-
-CanonicalOp.IsASin 
-IsASin
-
-### [CanonicalOp.IsIndexOf](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsIndexOf)
-
-CanonicalOp.IsIndexOf 
-IsIndexOf
-
-### [CanonicalOp.IsBasicMathLeft](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsBasicMathLeft)
-
-CanonicalOp.IsBasicMathLeft 
-IsBasicMathLeft
-
-### [CanonicalOp.IsSin](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsSin)
-
-CanonicalOp.IsSin 
-IsSin
-
-### [CanonicalOp.IsBasicMathOfColumns](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsBasicMathOfColumns)
-
-CanonicalOp.IsBasicMathOfColumns 
-IsBasicMathOfColumns
-
-### [CanonicalOp.IsACos](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsACos)
-
-CanonicalOp.IsACos 
-IsACos
-
-### [CanonicalOp.IsAbs](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsAbs)
-
-CanonicalOp.IsAbs 
-IsAbs
+CanonicalOp.IsSecond 
+IsSecond
 
 ### [CanonicalOp.IsRoundDecimals](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsRoundDecimals)
 
 CanonicalOp.IsRoundDecimals 
 IsRoundDecimals
 
-### [CanonicalOp.IsTruncate](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsTruncate)
+### [CanonicalOp.IsSin](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsSin)
 
-CanonicalOp.IsTruncate 
-IsTruncate
+CanonicalOp.IsSin 
+IsSin
+
+### [CanonicalOp.IsIndexOf](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsIndexOf)
+
+CanonicalOp.IsIndexOf 
+IsIndexOf
+
+### [CanonicalOp.IsCaseSqlPlain](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsCaseSqlPlain)
+
+CanonicalOp.IsCaseSqlPlain 
+IsCaseSqlPlain
+
+### [CanonicalOp.IsIndexOfStart](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsIndexOfStart)
+
+CanonicalOp.IsIndexOfStart 
+IsIndexOfStart
+
+### [CanonicalOp.IsSqrt](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsSqrt)
+
+CanonicalOp.IsSqrt 
+IsSqrt
+
+### [CanonicalOp.IsToUpper](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsToUpper)
+
+CanonicalOp.IsToUpper 
+IsToUpper
+
+### [CanonicalOp.IsLeast](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsLeast)
+
+CanonicalOp.IsLeast 
+IsLeast
+
+### [CanonicalOp.IsPowConst](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsPowConst)
+
+CanonicalOp.IsPowConst 
+IsPowConst
+
+### [CanonicalOp.IsHour](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsHour)
+
+CanonicalOp.IsHour 
+IsHour
+
+### [CanonicalOp.IsAddHours](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsAddHours)
+
+CanonicalOp.IsAddHours 
+IsAddHours
+
+### [CanonicalOp.IsSubstring](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsSubstring)
+
+CanonicalOp.IsSubstring 
+IsSubstring
+
+### [CanonicalOp.IsLength](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsLength)
+
+CanonicalOp.IsLength 
+IsLength
+
+### [CanonicalOp.IsDateDiffDays](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsDateDiffDays)
+
+CanonicalOp.IsDateDiffDays 
+IsDateDiffDays
+
+### [CanonicalOp.IsMonth](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsMonth)
+
+CanonicalOp.IsMonth 
+IsMonth
+
+### [CanonicalOp.IsCaseSql](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsCaseSql)
+
+CanonicalOp.IsCaseSql 
+IsCaseSql
+
+### [CanonicalOp.IsRound](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsRound)
+
+CanonicalOp.IsRound 
+IsRound
+
+### [CanonicalOp.IsAbs](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsAbs)
+
+CanonicalOp.IsAbs 
+IsAbs
+
+### [CanonicalOp.IsCastInt](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsCastInt)
+
+CanonicalOp.IsCastInt 
+IsCastInt
+
+### [CanonicalOp.IsDateDiffSecs](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsDateDiffSecs)
+
+CanonicalOp.IsDateDiffSecs 
+IsDateDiffSecs
+
+### [CanonicalOp.IsASin](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsASin)
+
+CanonicalOp.IsASin 
+IsASin
+
+### [CanonicalOp.IsReplace](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsReplace)
+
+CanonicalOp.IsReplace 
+IsReplace
+
+### [CanonicalOp.IsSubstringWithLength](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsSubstringWithLength)
+
+CanonicalOp.IsSubstringWithLength 
+IsSubstringWithLength
+
+### [CanonicalOp.IsAddDays](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsAddDays)
+
+CanonicalOp.IsAddDays 
+IsAddDays
+
+### [CanonicalOp.IsYear](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsYear)
+
+CanonicalOp.IsYear 
+IsYear
+
+### [CanonicalOp.IsTrim](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsTrim)
+
+CanonicalOp.IsTrim 
+IsTrim
+
+### [CanonicalOp.IsAddMinutes](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsAddMinutes)
+
+CanonicalOp.IsAddMinutes 
+IsAddMinutes
 
 ### [CanonicalOp.IsPow](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsPow)
 
@@ -4862,10 +5013,65 @@ IsPow
 CanonicalOp.IsMinute 
 IsMinute
 
+### [CanonicalOp.IsBasicMathOfColumns](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsBasicMathOfColumns)
+
+CanonicalOp.IsBasicMathOfColumns 
+IsBasicMathOfColumns
+
+### [CanonicalOp.IsGreatest](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsGreatest)
+
+CanonicalOp.IsGreatest 
+IsGreatest
+
+### [CanonicalOp.IsTruncate](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsTruncate)
+
+CanonicalOp.IsTruncate 
+IsTruncate
+
+### [CanonicalOp.IsBasicMath](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsBasicMath)
+
+CanonicalOp.IsBasicMath 
+IsBasicMath
+
+### [CanonicalOp.IsACos](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsACos)
+
+CanonicalOp.IsACos 
+IsACos
+
+### [CanonicalOp.IsFloor](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsFloor)
+
+CanonicalOp.IsFloor 
+IsFloor
+
+### [CanonicalOp.IsCastVarchar](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsCastVarchar)
+
+CanonicalOp.IsCastVarchar 
+IsCastVarchar
+
 ### [CanonicalOp.IsTan](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsTan)
 
 CanonicalOp.IsTan 
 IsTan
+
+### [CanonicalOp.IsCos](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsCos)
+
+CanonicalOp.IsCos 
+IsCos
+
+### [CanonicalOp.IsAddYears](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsAddYears)
+
+CanonicalOp.IsAddYears 
+IsAddYears
+
+### [CanonicalOp.IsDay](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsDay)
+
+CanonicalOp.IsDay 
+IsDay
+
+### [CanonicalOp.IsBasicMathLeft](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsBasicMathLeft)
+
+CanonicalOp.IsBasicMathLeft 
+IsBasicMathLeft
 
 ### [CanonicalOp.Substring](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#Substring)
 
@@ -5166,16 +5372,16 @@ CastInt
 Condition 
  Represents WHERE clause conditions for SQL queries.
  Supports complex boolean expressions with AND/OR operators and nested conditions. 
-Condition.IsNotSupported 
-IsNotSupported 
-Condition.IsAnd 
-IsAnd 
 Condition.IsConstantTrue 
 IsConstantTrue 
-Condition.IsOr 
-IsOr 
+Condition.IsNotSupported 
+IsNotSupported 
 Condition.IsConstantFalse 
 IsConstantFalse 
+Condition.IsAnd 
+IsAnd 
+Condition.IsOr 
+IsOr 
 Condition.And 
 And 
 Condition.Or 
@@ -5187,30 +5393,30 @@ ConstantFalse
 Condition.NotSupported 
 NotSupported
 
+### [Condition.IsConstantTrue](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-condition.html#IsConstantTrue)
+
+Condition.IsConstantTrue 
+IsConstantTrue
+
 ### [Condition.IsNotSupported](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-condition.html#IsNotSupported)
 
 Condition.IsNotSupported 
 IsNotSupported
+
+### [Condition.IsConstantFalse](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-condition.html#IsConstantFalse)
+
+Condition.IsConstantFalse 
+IsConstantFalse
 
 ### [Condition.IsAnd](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-condition.html#IsAnd)
 
 Condition.IsAnd 
 IsAnd
 
-### [Condition.IsConstantTrue](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-condition.html#IsConstantTrue)
-
-Condition.IsConstantTrue 
-IsConstantTrue
-
 ### [Condition.IsOr](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-condition.html#IsOr)
 
 Condition.IsOr 
 IsOr
-
-### [Condition.IsConstantFalse](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-condition.html#IsConstantFalse)
-
-Condition.IsConstantFalse 
-IsConstantFalse
 
 ### [Condition.And](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-condition.html#And)
 
@@ -5444,7 +5650,9 @@ List
 List.evaluateOneByOne 
 evaluateOneByOne 
 List.executeQueryAsync 
-executeQueryAsync
+executeQueryAsync 
+List.lockForUpdateAsync 
+lockForUpdateAsync
 
 ### [List.evaluateOneByOne](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-list.html#evaluateOneByOne)
 
@@ -5458,6 +5666,13 @@ evaluateOneByOne
 List.executeQueryAsync 
 executeQueryAsync 
  Execute SQLProvider query and release the OS thread while query is being executed.
+
+### [List.lockForUpdateAsync](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-list.html#lockForUpdateAsync)
+
+List.lockForUpdateAsync 
+lockForUpdateAsync 
+Runs a query with its rows locked until the transaction ends (see <code>Seq.lockForUpdate</code>), releasing the
+ OS thread while the database works.
 
 ### [Operators](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-operators.html)
 
@@ -5627,6 +5842,14 @@ Seq.stdDevAsync
 stdDevAsync 
 Seq.varianceAsync 
 varianceAsync 
+Seq.lockForUpdate 
+lockForUpdate 
+Seq.lockForUpdateAsync 
+lockForUpdateAsync 
+Seq.lockForUpdateHeadAsync 
+lockForUpdateHeadAsync 
+Seq.lockForUpdateTryHeadAsync 
+lockForUpdateTryHeadAsync 
 Seq.``delete all items from single table`` 
 ``delete all items from single table`` 
 Seq.exactlyOneAsync 
@@ -5696,6 +5919,42 @@ Seq.varianceAsync
 varianceAsync 
  Execute SQLProvider query to get the variance of elements, and release the OS thread while query is being executed.
 
+### [Seq.lockForUpdate](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-seq.html#lockForUpdate)
+
+Seq.lockForUpdate 
+lockForUpdate 
+Marks a query to lock the rows it reads until the transaction ends, against lost updates: another
+ transaction that locks, changes or deletes one of them waits until this one commits or rolls back. 
+Run it inside a transaction: a <code>TransactionScope</code>, with <code>TransactionScopeAsyncFlowOption.Enabled</code>
+ in async code. Outside one the lock ends with the query. PostgreSQL, MySQL and Oracle write <code>FOR UPDATE</code>
+ (PostgreSQL not the rows of a left-outer-joined table; Oracle not with skip, nor with take or head after a
+ sort), Firebird <code>FOR UPDATE WITH LOCK</code> (one table, no joins), SQL Server the <code>UPDLOCK</code> and <code>ROWLOCK</code>
+ table hints; SQLite, MS Access, DuckDB and ODBC have no row locks and refuse it. See "Locking rows" in the
+ documentation.
+
+### [Seq.lockForUpdateAsync](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-seq.html#lockForUpdateAsync)
+
+Seq.lockForUpdateAsync 
+lockForUpdateAsync 
+Runs a query with its rows locked until the transaction ends (see <code>lockForUpdate</code>), releasing the OS
+ thread while the database works.
+
+### [Seq.lockForUpdateHeadAsync](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-seq.html#lockForUpdateHeadAsync)
+
+Seq.lockForUpdateHeadAsync 
+lockForUpdateHeadAsync 
+Reads the query's first row, locked until the transaction ends (see <code>lockForUpdate</code>), releasing the OS
+ thread while the database works. 
+Oracle refuses it after a sort.
+
+### [Seq.lockForUpdateTryHeadAsync](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-seq.html#lockForUpdateTryHeadAsync)
+
+Seq.lockForUpdateTryHeadAsync 
+lockForUpdateTryHeadAsync 
+Reads the query's first row, if any, locked until the transaction ends (see <code>lockForUpdate</code>),
+ releasing the OS thread while the database works. 
+Oracle refuses it after a sort.
+
 ### [Seq.``delete all items from single table``](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-seq.html#``delete all items from single table``)
 
 Seq.``delete all items from single table`` 
@@ -5722,24 +5981,24 @@ tryExactlyOneAsync
 AggregateOperation 
  Represents SQL aggregate operations for GROUP BY clauses and data summarization.
  Each operation includes the column name to aggregate. 
-AggregateOperation.IsMinOp 
-IsMinOp 
 AggregateOperation.IsCountOp 
 IsCountOp 
-AggregateOperation.IsKeyOp 
-IsKeyOp 
-AggregateOperation.IsCountDistOp 
-IsCountDistOp 
-AggregateOperation.IsMaxOp 
-IsMaxOp 
 AggregateOperation.IsSumOp 
 IsSumOp 
-AggregateOperation.IsAvgOp 
-IsAvgOp 
-AggregateOperation.IsVarianceOp 
-IsVarianceOp 
 AggregateOperation.IsStdDevOp 
 IsStdDevOp 
+AggregateOperation.IsKeyOp 
+IsKeyOp 
+AggregateOperation.IsMinOp 
+IsMinOp 
+AggregateOperation.IsAvgOp 
+IsAvgOp 
+AggregateOperation.IsMaxOp 
+IsMaxOp 
+AggregateOperation.IsVarianceOp 
+IsVarianceOp 
+AggregateOperation.IsCountDistOp 
+IsCountDistOp 
 AggregateOperation.KeyOp 
 KeyOp 
 AggregateOperation.MaxOp 
@@ -5759,50 +6018,50 @@ StdDevOp
 AggregateOperation.VarianceOp 
 VarianceOp
 
-### [AggregateOperation.IsMinOp](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-aggregateoperation.html#IsMinOp)
-
-AggregateOperation.IsMinOp 
-IsMinOp
-
 ### [AggregateOperation.IsCountOp](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-aggregateoperation.html#IsCountOp)
 
 AggregateOperation.IsCountOp 
 IsCountOp
-
-### [AggregateOperation.IsKeyOp](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-aggregateoperation.html#IsKeyOp)
-
-AggregateOperation.IsKeyOp 
-IsKeyOp
-
-### [AggregateOperation.IsCountDistOp](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-aggregateoperation.html#IsCountDistOp)
-
-AggregateOperation.IsCountDistOp 
-IsCountDistOp
-
-### [AggregateOperation.IsMaxOp](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-aggregateoperation.html#IsMaxOp)
-
-AggregateOperation.IsMaxOp 
-IsMaxOp
 
 ### [AggregateOperation.IsSumOp](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-aggregateoperation.html#IsSumOp)
 
 AggregateOperation.IsSumOp 
 IsSumOp
 
+### [AggregateOperation.IsStdDevOp](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-aggregateoperation.html#IsStdDevOp)
+
+AggregateOperation.IsStdDevOp 
+IsStdDevOp
+
+### [AggregateOperation.IsKeyOp](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-aggregateoperation.html#IsKeyOp)
+
+AggregateOperation.IsKeyOp 
+IsKeyOp
+
+### [AggregateOperation.IsMinOp](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-aggregateoperation.html#IsMinOp)
+
+AggregateOperation.IsMinOp 
+IsMinOp
+
 ### [AggregateOperation.IsAvgOp](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-aggregateoperation.html#IsAvgOp)
 
 AggregateOperation.IsAvgOp 
 IsAvgOp
+
+### [AggregateOperation.IsMaxOp](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-aggregateoperation.html#IsMaxOp)
+
+AggregateOperation.IsMaxOp 
+IsMaxOp
 
 ### [AggregateOperation.IsVarianceOp](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-aggregateoperation.html#IsVarianceOp)
 
 AggregateOperation.IsVarianceOp 
 IsVarianceOp
 
-### [AggregateOperation.IsStdDevOp](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-aggregateoperation.html#IsStdDevOp)
+### [AggregateOperation.IsCountDistOp](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-aggregateoperation.html#IsCountDistOp)
 
-AggregateOperation.IsStdDevOp 
-IsStdDevOp
+AggregateOperation.IsCountDistOp 
+IsCountDistOp
 
 ### [AggregateOperation.KeyOp](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-aggregateoperation.html#KeyOp)
 
@@ -5863,38 +6122,38 @@ VarianceOp
 ConditionOperator 
  Represents SQL conditional operators used in WHERE clauses and query expressions.
  These operators are translated to their SQL equivalents when building database queries. 
-ConditionOperator.IsGreaterEqual 
-IsGreaterEqual 
-ConditionOperator.IsLike 
-IsLike 
-ConditionOperator.IsEqual 
-IsEqual 
-ConditionOperator.IsNotNull 
-IsNotNull 
-ConditionOperator.IsNotIn 
-IsNotIn 
-ConditionOperator.IsLessEqual 
-IsLessEqual 
-ConditionOperator.IsGreaterThan 
-IsGreaterThan 
-ConditionOperator.IsIn 
-IsIn 
-ConditionOperator.IsNestedIn 
-IsNestedIn 
-ConditionOperator.IsIsNull 
-IsIsNull 
-ConditionOperator.IsLessThan 
-IsLessThan 
-ConditionOperator.IsNotEqual 
-IsNotEqual 
-ConditionOperator.IsNestedNotIn 
-IsNestedNotIn 
 ConditionOperator.IsNestedNotExists 
 IsNestedNotExists 
+ConditionOperator.IsLessThan 
+IsLessThan 
+ConditionOperator.IsIn 
+IsIn 
+ConditionOperator.IsIsNull 
+IsIsNull 
+ConditionOperator.IsLessEqual 
+IsLessEqual 
+ConditionOperator.IsNotIn 
+IsNotIn 
 ConditionOperator.IsNestedExists 
 IsNestedExists 
 ConditionOperator.IsNotLike 
 IsNotLike 
+ConditionOperator.IsNestedNotIn 
+IsNestedNotIn 
+ConditionOperator.IsNestedIn 
+IsNestedIn 
+ConditionOperator.IsNotEqual 
+IsNotEqual 
+ConditionOperator.IsNotNull 
+IsNotNull 
+ConditionOperator.IsGreaterThan 
+IsGreaterThan 
+ConditionOperator.IsEqual 
+IsEqual 
+ConditionOperator.IsGreaterEqual 
+IsGreaterEqual 
+ConditionOperator.IsLike 
+IsLike 
 ConditionOperator.Like 
 Like 
 ConditionOperator.NotLike 
@@ -5928,75 +6187,35 @@ NestedExists
 ConditionOperator.NestedNotExists 
 NestedNotExists
 
-### [ConditionOperator.IsGreaterEqual](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsGreaterEqual)
+### [ConditionOperator.IsNestedNotExists](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsNestedNotExists)
 
-ConditionOperator.IsGreaterEqual 
-IsGreaterEqual
-
-### [ConditionOperator.IsLike](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsLike)
-
-ConditionOperator.IsLike 
-IsLike
-
-### [ConditionOperator.IsEqual](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsEqual)
-
-ConditionOperator.IsEqual 
-IsEqual
-
-### [ConditionOperator.IsNotNull](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsNotNull)
-
-ConditionOperator.IsNotNull 
-IsNotNull
-
-### [ConditionOperator.IsNotIn](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsNotIn)
-
-ConditionOperator.IsNotIn 
-IsNotIn
-
-### [ConditionOperator.IsLessEqual](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsLessEqual)
-
-ConditionOperator.IsLessEqual 
-IsLessEqual
-
-### [ConditionOperator.IsGreaterThan](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsGreaterThan)
-
-ConditionOperator.IsGreaterThan 
-IsGreaterThan
-
-### [ConditionOperator.IsIn](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsIn)
-
-ConditionOperator.IsIn 
-IsIn
-
-### [ConditionOperator.IsNestedIn](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsNestedIn)
-
-ConditionOperator.IsNestedIn 
-IsNestedIn
-
-### [ConditionOperator.IsIsNull](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsIsNull)
-
-ConditionOperator.IsIsNull 
-IsIsNull
+ConditionOperator.IsNestedNotExists 
+IsNestedNotExists
 
 ### [ConditionOperator.IsLessThan](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsLessThan)
 
 ConditionOperator.IsLessThan 
 IsLessThan
 
-### [ConditionOperator.IsNotEqual](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsNotEqual)
+### [ConditionOperator.IsIn](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsIn)
 
-ConditionOperator.IsNotEqual 
-IsNotEqual
+ConditionOperator.IsIn 
+IsIn
 
-### [ConditionOperator.IsNestedNotIn](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsNestedNotIn)
+### [ConditionOperator.IsIsNull](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsIsNull)
 
-ConditionOperator.IsNestedNotIn 
-IsNestedNotIn
+ConditionOperator.IsIsNull 
+IsIsNull
 
-### [ConditionOperator.IsNestedNotExists](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsNestedNotExists)
+### [ConditionOperator.IsLessEqual](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsLessEqual)
 
-ConditionOperator.IsNestedNotExists 
-IsNestedNotExists
+ConditionOperator.IsLessEqual 
+IsLessEqual
+
+### [ConditionOperator.IsNotIn](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsNotIn)
+
+ConditionOperator.IsNotIn 
+IsNotIn
 
 ### [ConditionOperator.IsNestedExists](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsNestedExists)
 
@@ -6007,6 +6226,46 @@ IsNestedExists
 
 ConditionOperator.IsNotLike 
 IsNotLike
+
+### [ConditionOperator.IsNestedNotIn](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsNestedNotIn)
+
+ConditionOperator.IsNestedNotIn 
+IsNestedNotIn
+
+### [ConditionOperator.IsNestedIn](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsNestedIn)
+
+ConditionOperator.IsNestedIn 
+IsNestedIn
+
+### [ConditionOperator.IsNotEqual](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsNotEqual)
+
+ConditionOperator.IsNotEqual 
+IsNotEqual
+
+### [ConditionOperator.IsNotNull](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsNotNull)
+
+ConditionOperator.IsNotNull 
+IsNotNull
+
+### [ConditionOperator.IsGreaterThan](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsGreaterThan)
+
+ConditionOperator.IsGreaterThan 
+IsGreaterThan
+
+### [ConditionOperator.IsEqual](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsEqual)
+
+ConditionOperator.IsEqual 
+IsEqual
+
+### [ConditionOperator.IsGreaterEqual](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsGreaterEqual)
+
+ConditionOperator.IsGreaterEqual 
+IsGreaterEqual
+
+### [ConditionOperator.IsLike](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsLike)
+
+ConditionOperator.IsLike 
+IsLike
 
 ### [ConditionOperator.Like](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#Like)
 
@@ -6124,6 +6383,35 @@ DotNetSide
 SelectOperations.DatabaseSide 
 DatabaseSide 
  Execute the operation on the database server side
+
+### [SqlEntityConflictExtensions](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-sqlentityconflictextensions.html)
+
+SqlEntityConflictExtensions 
+ Typed conflict handling for an inserted row (OnConflict.DoNothingOn and UpdateOn, with the columns checked by the
+ compiler). 
+SqlEntityConflictExtensions.OnConflictDoNothing 
+OnConflictDoNothing 
+SqlEntityConflictExtensions.OnConflictUpdate 
+OnConflictUpdate
+
+### [SqlEntityConflictExtensions.OnConflictDoNothing](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-sqlentityconflictextensions.html#OnConflictDoNothing)
+
+SqlEntityConflictExtensions.OnConflictDoNothing 
+OnConflictDoNothing 
+When the inserted row breaks the unique constraint or index on exactly the given columns, the existing row
+ stays as it is: <code>ON CONFLICT (columns) DO NOTHING</code>. 
+Sets <code>row.OnConflict</code> to <code>OnConflict.DoNothingOn</code>. PostgreSQL, SQLite 3.24+ and DuckDB; MySQL
+ and the databases without an upsert refuse it when the row is submitted.
+
+### [SqlEntityConflictExtensions.OnConflictUpdate](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-sqlentityconflictextensions.html#OnConflictUpdate)
+
+SqlEntityConflictExtensions.OnConflictUpdate 
+OnConflictUpdate 
+When the inserted row breaks the unique constraint or index on exactly the given columns, the existing row
+ changes as the update says: <code>ON CONFLICT (columns) DO UPDATE SET ...</code>. 
+Sets <code>row.OnConflict</code> to <code>OnConflict.UpdateOn</code>. A value computed from the rows, such as
+ <code>existing.Count + 1</code>, is refused, and so is an update that sets nothing or one property twice. PostgreSQL,
+ SQLite 3.24+ and DuckDB; MySQL and the databases without an upsert refuse it when the row is submitted.
 
 ### [DesignReflection](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-designreflection.html)
 
@@ -8358,6 +8646,12 @@ sha256
 
 CommonTasks 
  
+CommonTasks.conflictColumns 
+conflictColumns 
+CommonTasks.conflictUpdates 
+conflictUpdates 
+CommonTasks.refuseConflictColumns 
+refuseConflictColumns 
 CommonTasks.``ensure columns have been loaded`` 
 ``ensure columns have been loaded`` 
 CommonTasks.checkKey 
@@ -8374,6 +8668,26 @@ CommonTasks.searchDataTypeFromCache
 searchDataTypeFromCache 
 CommonTasks.initCallSproc 
 initCallSproc
+
+### [CommonTasks.conflictColumns](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-commontasks.html#conflictColumns)
+
+CommonTasks.conflictColumns 
+conflictColumns 
+ The columns OnConflict.DoNothingOn and UpdateOn name, as the table spells them. Each must be one of the table's
+ columns, matched ignoring case, so no other text reaches the SQL. A column named twice is refused.
+
+### [CommonTasks.conflictUpdates](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-commontasks.html#conflictUpdates)
+
+CommonTasks.conflictUpdates 
+conflictUpdates 
+ The SET list of OnConflict.UpdateOn: each named column to the inserted row's value (`excluded column`) or to a
+ constant, which `parameter` adds to the command and names. The names are checked as conflictColumns does.
+
+### [CommonTasks.refuseConflictColumns](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-commontasks.html#refuseConflictColumns)
+
+CommonTasks.refuseConflictColumns 
+refuseConflictColumns 
+ Refuses OnConflict.DoNothingOn and UpdateOn where the database can't do them, saying why.
 
 ### [CommonTasks.``ensure columns have been loaded``](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-commontasks.html#``ensure columns have been loaded``)
 
@@ -8910,6 +9224,42 @@ CaseSensitivityChange.TOLOWER
 TOLOWER 
  Convert all names to lowercase
 
+### [ConflictUpdate](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-conflictupdate.html)
+
+ConflictUpdate 
+What one column of the existing row becomes in <code>OnConflict.UpdateOn</code>. 
+A column not named keeps its old value. 
+ConflictUpdate.IsInserted 
+IsInserted 
+ConflictUpdate.IsConstant 
+IsConstant 
+ConflictUpdate.Inserted 
+Inserted 
+ConflictUpdate.Constant 
+Constant
+
+### [ConflictUpdate.IsInserted](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-conflictupdate.html#IsInserted)
+
+ConflictUpdate.IsInserted 
+IsInserted
+
+### [ConflictUpdate.IsConstant](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-conflictupdate.html#IsConstant)
+
+ConflictUpdate.IsConstant 
+IsConstant
+
+### [ConflictUpdate.Inserted](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-conflictupdate.html#Inserted)
+
+ConflictUpdate.Inserted 
+Inserted 
+The inserted row's value: <code>column = EXCLUDED.column</code>.
+
+### [ConflictUpdate.Constant](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-conflictupdate.html#Constant)
+
+ConflictUpdate.Constant 
+Constant 
+A constant, sent as a parameter: <code>column = @value</code>.
+
 ### [DatabaseProviderTypes](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html)
 
 DatabaseProviderTypes 
@@ -9016,16 +9366,16 @@ EXTERNAL
 
 EntityState 
  
-EntityState.IsDeleted 
-IsDeleted 
-EntityState.IsCreated 
-IsCreated 
 EntityState.IsModified 
 IsModified 
+EntityState.IsDeleted 
+IsDeleted 
 EntityState.IsDelete 
 IsDelete 
 EntityState.IsUnchanged 
 IsUnchanged 
+EntityState.IsCreated 
+IsCreated 
 EntityState.Unchanged 
 Unchanged 
 EntityState.Created 
@@ -9037,20 +9387,15 @@ Delete
 EntityState.Deleted 
 Deleted
 
-### [EntityState.IsDeleted](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-entitystate.html#IsDeleted)
-
-EntityState.IsDeleted 
-IsDeleted
-
-### [EntityState.IsCreated](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-entitystate.html#IsCreated)
-
-EntityState.IsCreated 
-IsCreated
-
 ### [EntityState.IsModified](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-entitystate.html#IsModified)
 
 EntityState.IsModified 
 IsModified
+
+### [EntityState.IsDeleted](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-entitystate.html#IsDeleted)
+
+EntityState.IsDeleted 
+IsDeleted
 
 ### [EntityState.IsDelete](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-entitystate.html#IsDelete)
 
@@ -9061,6 +9406,11 @@ IsDelete
 
 EntityState.IsUnchanged 
 IsUnchanged
+
+### [EntityState.IsCreated](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-entitystate.html#IsCreated)
+
+EntityState.IsCreated 
+IsCreated
 
 ### [EntityState.Unchanged](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-entitystate.html#Unchanged)
 
@@ -9435,14 +9785,14 @@ ISqlDataContext.SubmitPendingChanges
 SubmitPendingChanges 
 ISqlDataContext.SubmitPendingChangesAsync 
 SubmitPendingChangesAsync 
+ISqlDataContext.ConnectionString 
+ConnectionString 
 ISqlDataContext.SqlOperationsInSelect 
 SqlOperationsInSelect 
-ISqlDataContext.CommandTimeout 
-CommandTimeout 
 ISqlDataContext.IsReadOnly 
 IsReadOnly 
-ISqlDataContext.ConnectionString 
-ConnectionString
+ISqlDataContext.CommandTimeout 
+CommandTimeout
 
 ### [ISqlDataContext.CallSproc](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqldatacontext.html#CallSproc)
 
@@ -9540,17 +9890,17 @@ ISqlDataContext.SubmitPendingChangesAsync
 SubmitPendingChangesAsync 
  Save database-changes in a transaction to database.
 
+### [ISqlDataContext.ConnectionString](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqldatacontext.html#ConnectionString)
+
+ISqlDataContext.ConnectionString 
+ConnectionString 
+ Connection string to database
+
 ### [ISqlDataContext.SqlOperationsInSelect](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqldatacontext.html#SqlOperationsInSelect)
 
 ISqlDataContext.SqlOperationsInSelect 
 SqlOperationsInSelect 
  Operations of select in SQL-side or in .NET side?
-
-### [ISqlDataContext.CommandTimeout](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqldatacontext.html#CommandTimeout)
-
-ISqlDataContext.CommandTimeout 
-CommandTimeout 
- Command timeout (in seconds)
 
 ### [ISqlDataContext.IsReadOnly](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqldatacontext.html#IsReadOnly)
 
@@ -9558,11 +9908,11 @@ ISqlDataContext.IsReadOnly
 IsReadOnly 
  Context meant to be read operations only
 
-### [ISqlDataContext.ConnectionString](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqldatacontext.html#ConnectionString)
+### [ISqlDataContext.CommandTimeout](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqldatacontext.html#CommandTimeout)
 
-ISqlDataContext.ConnectionString 
-ConnectionString 
- Connection string to database
+ISqlDataContext.CommandTimeout 
+CommandTimeout 
+ Command timeout (in seconds)
 
 ### [ISqlProvider](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html)
 
@@ -9608,12 +9958,12 @@ ISqlProvider.ProcessUpdates
 ProcessUpdates 
 ISqlProvider.ProcessUpdatesAsync 
 ProcessUpdatesAsync 
+ISqlProvider.DesignConnection 
+DesignConnection 
 ISqlProvider.CloseConnectionAfterQuery 
 CloseConnectionAfterQuery 
 ISqlProvider.StoredProcedures 
-StoredProcedures 
-ISqlProvider.DesignConnection 
-DesignConnection
+StoredProcedures
 
 ### [ISqlProvider.CreateCommand](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html#CreateCommand)
 
@@ -9744,6 +10094,12 @@ ISqlProvider.ProcessUpdatesAsync
 ProcessUpdatesAsync 
  Asynchronously writes all pending database changes to database
 
+### [ISqlProvider.DesignConnection](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html#DesignConnection)
+
+ISqlProvider.DesignConnection 
+DesignConnection 
+ MSSDT doesn't do design-time connection
+
 ### [ISqlProvider.CloseConnectionAfterQuery](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html#CloseConnectionAfterQuery)
 
 ISqlProvider.CloseConnectionAfterQuery 
@@ -9755,12 +10111,6 @@ CloseConnectionAfterQuery
 ISqlProvider.StoredProcedures 
 StoredProcedures 
  SQLITE doesn't have command type of stored procedures
-
-### [ISqlProvider.DesignConnection](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html#DesignConnection)
-
-ISqlProvider.DesignConnection 
-DesignConnection 
- MSSDT doesn't do design-time connection
 
 ### [IWithDataContext](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-iwithdatacontext.html)
 
@@ -9943,55 +10293,95 @@ APHOSTROPHE
 ### [OnConflict](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-onconflict.html)
 
 OnConflict 
- Specifies how to handle conflicts when inserting records with duplicate primary keys.
- Currently supported only on databases that have UPSERT capabilities. 
+What an insert does when the row would break a primary key or a unique constraint or index. 
+Set on each row before <code>SubmitUpdates</code>; rows of one submit may differ. Databases without an upsert
+ (SQL Server, Oracle, Firebird, ODBC, MS Access) ignore <code>Update</code> and <code>DoNothing</code> and refuse
+ <code>DoNothingOn</code> and <code>UpdateOn</code>. A row inserted without its key reads the key the database gave it; after a
+ conflict it reads the existing row's key when that row was updated, and none when it was left as it was. 
 OnConflict.IsDoNothing 
 IsDoNothing 
-OnConflict.IsThrow 
-IsThrow 
+OnConflict.IsDoNothingOn 
+IsDoNothingOn 
 OnConflict.IsUpdate 
 IsUpdate 
+OnConflict.IsThrow 
+IsThrow 
+OnConflict.IsUpdateOn 
+IsUpdateOn 
 OnConflict.Throw 
 Throw 
 OnConflict.Update 
 Update 
 OnConflict.DoNothing 
-DoNothing
+DoNothing 
+OnConflict.DoNothingOn 
+DoNothingOn 
+OnConflict.UpdateOn 
+UpdateOn
 
 ### [OnConflict.IsDoNothing](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-onconflict.html#IsDoNothing)
 
 OnConflict.IsDoNothing 
 IsDoNothing
 
-### [OnConflict.IsThrow](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-onconflict.html#IsThrow)
+### [OnConflict.IsDoNothingOn](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-onconflict.html#IsDoNothingOn)
 
-OnConflict.IsThrow 
-IsThrow
+OnConflict.IsDoNothingOn 
+IsDoNothingOn
 
 ### [OnConflict.IsUpdate](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-onconflict.html#IsUpdate)
 
 OnConflict.IsUpdate 
 IsUpdate
 
+### [OnConflict.IsThrow](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-onconflict.html#IsThrow)
+
+OnConflict.IsThrow 
+IsThrow
+
+### [OnConflict.IsUpdateOn](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-onconflict.html#IsUpdateOn)
+
+OnConflict.IsUpdateOn 
+IsUpdateOn
+
 ### [OnConflict.Throw](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-onconflict.html#Throw)
 
 OnConflict.Throw 
 Throw 
- Throws an exception if the primary key already exists (default behaviour).
+The insert fails with the database's error (the default).
 
 ### [OnConflict.Update](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-onconflict.html#Update)
 
 OnConflict.Update 
 Update 
- If the primary key already exists, updates the existing row's columns to match the new entity.
- Currently supported only on PostgreSQL 9.5+
+The existing row gets every column the new row sets. 
+PostgreSQL: <code>ON CONFLICT (primary key) DO UPDATE</code>; DuckDB the same; MySQL:
+ <code>ON DUPLICATE KEY UPDATE</code>; SQLite: <code>INSERT OR REPLACE</code>, which deletes the existing row and inserts the new
+ one, so columns not set get their defaults and delete triggers and cascades run.
 
 ### [OnConflict.DoNothing](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-onconflict.html#DoNothing)
 
 OnConflict.DoNothing 
 DoNothing 
- If the primary key already exists, leaves the existing row unchanged.
- Currently supported only on PostgreSQL 9.5+
+The existing row stays as it is, whichever unique constraint the new row breaks. 
+PostgreSQL and DuckDB: <code>ON CONFLICT DO NOTHING</code>; MySQL: <code>ON DUPLICATE KEY UPDATE</code> of nothing;
+ SQLite: <code>INSERT OR IGNORE</code>.
+
+### [OnConflict.DoNothingOn](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-onconflict.html#DoNothingOn)
+
+OnConflict.DoNothingOn 
+DoNothingOn 
+The existing row stays as it is when the new row breaks the unique constraint or index on exactly these
+ columns: <code>ON CONFLICT (columns) DO NOTHING</code>. 
+PostgreSQL, SQLite 3.24+ and DuckDB; MySQL refuses it.
+
+### [OnConflict.UpdateOn](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-onconflict.html#UpdateOn)
+
+OnConflict.UpdateOn 
+UpdateOn 
+The existing row changes when the new row breaks the unique constraint or index on exactly
+ <code>onColumns</code>: <code>ON CONFLICT (onColumns) DO UPDATE SET a = EXCLUDED.a, b = @value</code>. 
+PostgreSQL, SQLite 3.24+ and DuckDB; MySQL refuses it.
 
 ### [RelationshipDirection](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-relationshipdirection.html)
 
@@ -10058,10 +10448,10 @@ ResultSet
 
 ReturnValueType 
 Represents different types of return values from stored procedures and functions. 
-ReturnValueType.IsUnit 
-IsUnit 
 ReturnValueType.IsSingleResultSet 
 IsSingleResultSet 
+ReturnValueType.IsUnit 
+IsUnit 
 ReturnValueType.IsSet 
 IsSet 
 ReturnValueType.IsScalar 
@@ -10075,15 +10465,15 @@ SingleResultSet
 ReturnValueType.Set 
 Set
 
-### [ReturnValueType.IsUnit](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-returnvaluetype.html#IsUnit)
-
-ReturnValueType.IsUnit 
-IsUnit
-
 ### [ReturnValueType.IsSingleResultSet](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-returnvaluetype.html#IsSingleResultSet)
 
 ReturnValueType.IsSingleResultSet 
 IsSingleResultSet
+
+### [ReturnValueType.IsUnit](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-returnvaluetype.html#IsUnit)
+
+ReturnValueType.IsUnit 
+IsUnit
 
 ### [ReturnValueType.IsSet](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-returnvaluetype.html#IsSet)
 
@@ -10257,12 +10647,12 @@ IsOffline
 
 SelectData 
  
-SelectData.IsLinkQuery 
-IsLinkQuery 
-SelectData.IsCrossJoin 
-IsCrossJoin 
 SelectData.IsGroupQuery 
 IsGroupQuery 
+SelectData.IsCrossJoin 
+IsCrossJoin 
+SelectData.IsLinkQuery 
+IsLinkQuery 
 SelectData.LinkQuery 
 LinkQuery 
 SelectData.GroupQuery 
@@ -10270,20 +10660,20 @@ GroupQuery
 SelectData.CrossJoin 
 CrossJoin
 
-### [SelectData.IsLinkQuery](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-selectdata.html#IsLinkQuery)
+### [SelectData.IsGroupQuery](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-selectdata.html#IsGroupQuery)
 
-SelectData.IsLinkQuery 
-IsLinkQuery
+SelectData.IsGroupQuery 
+IsGroupQuery
 
 ### [SelectData.IsCrossJoin](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-selectdata.html#IsCrossJoin)
 
 SelectData.IsCrossJoin 
 IsCrossJoin
 
-### [SelectData.IsGroupQuery](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-selectdata.html#IsGroupQuery)
+### [SelectData.IsLinkQuery](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-selectdata.html#IsLinkQuery)
 
-SelectData.IsGroupQuery 
-IsGroupQuery
+SelectData.IsLinkQuery 
+IsLinkQuery
 
 ### [SelectData.LinkQuery](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-selectdata.html#LinkQuery)
 
@@ -10322,16 +10712,16 @@ SqlEntity.SetColumn
 SetColumn 
 SqlEntity.SetData 
 SetData 
-SqlEntity.ColumnValuesWithDefinition 
-ColumnValuesWithDefinition 
-SqlEntity.ColumnValues 
-ColumnValues 
 SqlEntity.OnConflict 
 OnConflict 
-SqlEntity._State 
-_State 
+SqlEntity.ColumnValuesWithDefinition 
+ColumnValuesWithDefinition 
 SqlEntity.DataContext 
-DataContext
+DataContext 
+SqlEntity.ColumnValues 
+ColumnValues 
+SqlEntity._State 
+_State
 
 ### [SqlEntity.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlentity.html#``.ctor``)
 
@@ -10388,32 +10778,32 @@ SetColumn
 SqlEntity.SetData 
 SetData
 
-### [SqlEntity.ColumnValuesWithDefinition](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlentity.html#ColumnValuesWithDefinition)
-
-SqlEntity.ColumnValuesWithDefinition 
-ColumnValuesWithDefinition
-
-### [SqlEntity.ColumnValues](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlentity.html#ColumnValues)
-
-SqlEntity.ColumnValues 
-ColumnValues
-
 ### [SqlEntity.OnConflict](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlentity.html#OnConflict)
 
 SqlEntity.OnConflict 
 OnConflict 
  Determines what should happen when saving this entity if it is newly-created but another entity with the same primary key already exists
 
-### [SqlEntity._State](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlentity.html#_State)
+### [SqlEntity.ColumnValuesWithDefinition](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlentity.html#ColumnValuesWithDefinition)
 
-SqlEntity._State 
-_State 
- Internal state. Modifying not recommended!
+SqlEntity.ColumnValuesWithDefinition 
+ColumnValuesWithDefinition
 
 ### [SqlEntity.DataContext](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlentity.html#DataContext)
 
 SqlEntity.DataContext 
 DataContext
+
+### [SqlEntity.ColumnValues](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlentity.html#ColumnValues)
+
+SqlEntity.ColumnValues 
+ColumnValues
+
+### [SqlEntity._State](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlentity.html#_State)
+
+SqlEntity._State 
+_State 
+ Internal state. Modifying not recommended!
 
 ### [SqlExp](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html)
 
@@ -10425,30 +10815,34 @@ SqlExp.hasGroupBy
 hasGroupBy 
 SqlExp.hasSortBy 
 hasSortBy 
-SqlExp.IsAggregateOp 
-IsAggregateOp 
-SqlExp.IsSelectMany 
-IsSelectMany 
-SqlExp.IsCount 
-IsCount 
+SqlExp.locksRows 
+locksRows 
 SqlExp.IsUnion 
 IsUnion 
-SqlExp.IsFilterClause 
-IsFilterClause 
-SqlExp.IsTake 
-IsTake 
-SqlExp.IsSkip 
-IsSkip 
-SqlExp.IsOrderBy 
-IsOrderBy 
 SqlExp.IsHavingClause 
 IsHavingClause 
-SqlExp.IsDistinct 
-IsDistinct 
-SqlExp.IsProjection 
-IsProjection 
+SqlExp.IsCount 
+IsCount 
 SqlExp.IsBaseTable 
 IsBaseTable 
+SqlExp.IsDistinct 
+IsDistinct 
+SqlExp.IsForUpdate 
+IsForUpdate 
+SqlExp.IsTake 
+IsTake 
+SqlExp.IsAggregateOp 
+IsAggregateOp 
+SqlExp.IsOrderBy 
+IsOrderBy 
+SqlExp.IsFilterClause 
+IsFilterClause 
+SqlExp.IsSkip 
+IsSkip 
+SqlExp.IsSelectMany 
+IsSelectMany 
+SqlExp.IsProjection 
+IsProjection 
 SqlExp.BaseTable 
 BaseTable 
 SqlExp.SelectMany 
@@ -10461,6 +10855,8 @@ SqlExp.Projection
 Projection 
 SqlExp.Distinct 
 Distinct 
+SqlExp.ForUpdate 
+ForUpdate 
 SqlExp.OrderBy 
 OrderBy 
 SqlExp.Union 
@@ -10489,65 +10885,76 @@ hasGroupBy
 SqlExp.hasSortBy 
 hasSortBy
 
-### [SqlExp.IsAggregateOp](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#IsAggregateOp)
+### [SqlExp.locksRows](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#locksRows)
 
-SqlExp.IsAggregateOp 
-IsAggregateOp
-
-### [SqlExp.IsSelectMany](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#IsSelectMany)
-
-SqlExp.IsSelectMany 
-IsSelectMany
-
-### [SqlExp.IsCount](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#IsCount)
-
-SqlExp.IsCount 
-IsCount
+SqlExp.locksRows 
+locksRows 
+ The query locks the rows it reads (Seq.lockForUpdate).
 
 ### [SqlExp.IsUnion](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#IsUnion)
 
 SqlExp.IsUnion 
 IsUnion
 
-### [SqlExp.IsFilterClause](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#IsFilterClause)
-
-SqlExp.IsFilterClause 
-IsFilterClause
-
-### [SqlExp.IsTake](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#IsTake)
-
-SqlExp.IsTake 
-IsTake
-
-### [SqlExp.IsSkip](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#IsSkip)
-
-SqlExp.IsSkip 
-IsSkip
-
-### [SqlExp.IsOrderBy](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#IsOrderBy)
-
-SqlExp.IsOrderBy 
-IsOrderBy
-
 ### [SqlExp.IsHavingClause](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#IsHavingClause)
 
 SqlExp.IsHavingClause 
 IsHavingClause
+
+### [SqlExp.IsCount](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#IsCount)
+
+SqlExp.IsCount 
+IsCount
+
+### [SqlExp.IsBaseTable](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#IsBaseTable)
+
+SqlExp.IsBaseTable 
+IsBaseTable
 
 ### [SqlExp.IsDistinct](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#IsDistinct)
 
 SqlExp.IsDistinct 
 IsDistinct
 
+### [SqlExp.IsForUpdate](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#IsForUpdate)
+
+SqlExp.IsForUpdate 
+IsForUpdate
+
+### [SqlExp.IsTake](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#IsTake)
+
+SqlExp.IsTake 
+IsTake
+
+### [SqlExp.IsAggregateOp](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#IsAggregateOp)
+
+SqlExp.IsAggregateOp 
+IsAggregateOp
+
+### [SqlExp.IsOrderBy](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#IsOrderBy)
+
+SqlExp.IsOrderBy 
+IsOrderBy
+
+### [SqlExp.IsFilterClause](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#IsFilterClause)
+
+SqlExp.IsFilterClause 
+IsFilterClause
+
+### [SqlExp.IsSkip](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#IsSkip)
+
+SqlExp.IsSkip 
+IsSkip
+
+### [SqlExp.IsSelectMany](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#IsSelectMany)
+
+SqlExp.IsSelectMany 
+IsSelectMany
+
 ### [SqlExp.IsProjection](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#IsProjection)
 
 SqlExp.IsProjection 
 IsProjection
-
-### [SqlExp.IsBaseTable](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#IsBaseTable)
-
-SqlExp.IsBaseTable 
-IsBaseTable
 
 ### [SqlExp.BaseTable](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#BaseTable)
 
@@ -10584,6 +10991,12 @@ Projection
 SqlExp.Distinct 
 Distinct 
  distinct indicator
+
+### [SqlExp.ForUpdate](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#ForUpdate)
+
+SqlExp.ForUpdate 
+ForUpdate 
+ lock the rows read until the transaction ends (Seq.lockForUpdate)
 
 ### [SqlExp.OrderBy](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#OrderBy)
 
@@ -10655,7 +11068,9 @@ Union
 SqlQuery.Count 
 Count 
 SqlQuery.AggregateOp 
-AggregateOp
+AggregateOp 
+SqlQuery.ForUpdate 
+ForUpdate
 
 ### [SqlQuery.ofSqlExp](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlquery.html#ofSqlExp)
 
@@ -10743,18 +11158,24 @@ Count
 SqlQuery.AggregateOp 
 AggregateOp
 
+### [SqlQuery.ForUpdate](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlquery.html#ForUpdate)
+
+SqlQuery.ForUpdate 
+ForUpdate 
+ Lock the rows read until the transaction ends: SQL FOR UPDATE, or the database's own way.
+
 ### [UnionType](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-uniontype.html)
 
 UnionType 
  
-UnionType.IsIntersect 
-IsIntersect 
 UnionType.IsUnionAll 
 IsUnionAll 
-UnionType.IsExcept 
-IsExcept 
 UnionType.IsNormalUnion 
 IsNormalUnion 
+UnionType.IsIntersect 
+IsIntersect 
+UnionType.IsExcept 
+IsExcept 
 UnionType.NormalUnion 
 NormalUnion 
 UnionType.UnionAll 
@@ -10764,25 +11185,25 @@ Intersect
 UnionType.Except 
 Except
 
-### [UnionType.IsIntersect](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-uniontype.html#IsIntersect)
-
-UnionType.IsIntersect 
-IsIntersect
-
 ### [UnionType.IsUnionAll](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-uniontype.html#IsUnionAll)
 
 UnionType.IsUnionAll 
 IsUnionAll
 
-### [UnionType.IsExcept](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-uniontype.html#IsExcept)
-
-UnionType.IsExcept 
-IsExcept
-
 ### [UnionType.IsNormalUnion](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-uniontype.html#IsNormalUnion)
 
 UnionType.IsNormalUnion 
 IsNormalUnion
+
+### [UnionType.IsIntersect](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-uniontype.html#IsIntersect)
+
+UnionType.IsIntersect 
+IsIntersect
+
+### [UnionType.IsExcept](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-uniontype.html#IsExcept)
+
+UnionType.IsExcept 
+IsExcept
 
 ### [UnionType.NormalUnion](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-uniontype.html#NormalUnion)
 
@@ -15414,10 +15835,10 @@ Sproc.IsPackage
 IsPackage 
 Sproc.IsRoot 
 IsRoot 
-Sproc.IsSproc 
-IsSproc 
 Sproc.IsEmpty 
 IsEmpty 
+Sproc.IsSproc 
+IsSproc 
 Sproc.GetKnownTypes 
 GetKnownTypes 
 Sproc.Root 
@@ -15439,15 +15860,15 @@ IsPackage
 Sproc.IsRoot 
 IsRoot
 
-### [Sproc.IsSproc](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-sproc.html#IsSproc)
-
-Sproc.IsSproc 
-IsSproc
-
 ### [Sproc.IsEmpty](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-sproc.html#IsEmpty)
 
 Sproc.IsEmpty 
 IsEmpty
+
+### [Sproc.IsSproc](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-sproc.html#IsSproc)
+
+Sproc.IsSproc 
+IsSproc
 
 ### [Sproc.GetKnownTypes](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-sproc.html#GetKnownTypes)
 
@@ -15481,10 +15902,10 @@ SprocName
  Handles different database naming conventions (e.g., Oracle packages, SQL Server schemas). 
 SprocName.ToList 
 ToList 
-SprocName.FullName 
-FullName 
 SprocName.FriendlyName 
 FriendlyName 
+SprocName.FullName 
+FullName 
 SprocName.DbName 
 DbName 
 SprocName.ProcName 
@@ -15499,15 +15920,15 @@ PackageName
 SprocName.ToList 
 ToList
 
-### [SprocName.FullName](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-sprocname.html#FullName)
-
-SprocName.FullName 
-FullName
-
 ### [SprocName.FriendlyName](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-sprocname.html#FriendlyName)
 
 SprocName.FriendlyName 
 FriendlyName
+
+### [SprocName.FullName](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-sprocname.html#FullName)
+
+SprocName.FullName 
+FullName
 
 ### [SprocName.DbName](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-sprocname.html#DbName)
 
@@ -16469,10 +16890,10 @@ ProvidedConstructor.AddXmlDocDelayed
 AddXmlDocDelayed 
 ProvidedConstructor.IsImplicitConstructor 
 IsImplicitConstructor 
-ProvidedConstructor.BaseConstructorCall 
-BaseConstructorCall 
 ProvidedConstructor.IsTypeInitializer 
-IsTypeInitializer
+IsTypeInitializer 
+ProvidedConstructor.BaseConstructorCall 
+BaseConstructorCall
 
 ### [ProvidedConstructor.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor.html#``.ctor``)
 
@@ -16518,16 +16939,16 @@ IsImplicitConstructor
  parameters of the constructor become fields and can be accessed using Expr.GlobalVar with the
  same name.
 
+### [ProvidedConstructor.IsTypeInitializer](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor.html#IsTypeInitializer)
+
+ProvidedConstructor.IsTypeInitializer 
+IsTypeInitializer
+
 ### [ProvidedConstructor.BaseConstructorCall](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor.html#BaseConstructorCall)
 
 ProvidedConstructor.BaseConstructorCall 
 BaseConstructorCall 
  Set the target and arguments of the base constructor call. Only used for generated types.
-
-### [ProvidedConstructor.IsTypeInitializer](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor.html#IsTypeInitializer)
-
-ProvidedConstructor.IsTypeInitializer 
-IsTypeInitializer
 
 ### [ProvidedEvent](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedevent.html)
 
@@ -17038,14 +17459,14 @@ ProvidedTypeDefinition.SetBaseTypeDelayed
 SetBaseTypeDelayed 
 ProvidedTypeDefinition.SetEnumUnderlyingType 
 SetEnumUnderlyingType 
-ProvidedTypeDefinition.NonNullable 
-NonNullable 
-ProvidedTypeDefinition.HideObjectMethods 
-HideObjectMethods 
-ProvidedTypeDefinition.IsErased 
-IsErased 
 ProvidedTypeDefinition.SuppressRelocation 
 SuppressRelocation 
+ProvidedTypeDefinition.IsErased 
+IsErased 
+ProvidedTypeDefinition.HideObjectMethods 
+HideObjectMethods 
+ProvidedTypeDefinition.NonNullable 
+NonNullable 
 ProvidedTypeDefinition.EraseType 
 EraseType 
 ProvidedTypeDefinition.Logger 
@@ -17190,17 +17611,11 @@ ProvidedTypeDefinition.SetEnumUnderlyingType
 SetEnumUnderlyingType 
  Set underlying type for generated enums
 
-### [ProvidedTypeDefinition.NonNullable](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition.html#NonNullable)
+### [ProvidedTypeDefinition.SuppressRelocation](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition.html#SuppressRelocation)
 
-ProvidedTypeDefinition.NonNullable 
-NonNullable 
- Disallows the use of the null literal.
-
-### [ProvidedTypeDefinition.HideObjectMethods](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition.html#HideObjectMethods)
-
-ProvidedTypeDefinition.HideObjectMethods 
-HideObjectMethods 
- Suppress Object entries in intellisense menus in instances of this provided type
+ProvidedTypeDefinition.SuppressRelocation 
+SuppressRelocation 
+ Get or set a flag indicating if the ProvidedTypeDefinition has type-relocation suppressed
 
 ### [ProvidedTypeDefinition.IsErased](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition.html#IsErased)
 
@@ -17208,11 +17623,17 @@ ProvidedTypeDefinition.IsErased
 IsErased 
  Get a flag indicating if the ProvidedTypeDefinition is erased
 
-### [ProvidedTypeDefinition.SuppressRelocation](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition.html#SuppressRelocation)
+### [ProvidedTypeDefinition.HideObjectMethods](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition.html#HideObjectMethods)
 
-ProvidedTypeDefinition.SuppressRelocation 
-SuppressRelocation 
- Get or set a flag indicating if the ProvidedTypeDefinition has type-relocation suppressed
+ProvidedTypeDefinition.HideObjectMethods 
+HideObjectMethods 
+ Suppress Object entries in intellisense menus in instances of this provided type
+
+### [ProvidedTypeDefinition.NonNullable](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition.html#NonNullable)
+
+ProvidedTypeDefinition.NonNullable 
+NonNullable 
+ Disallows the use of the null literal.
 
 ### [ProvidedTypeDefinition.EraseType](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition.html#EraseType)
 
@@ -17373,10 +17794,10 @@ TypeProviderForNamespaces.ResolveAssembly
 ResolveAssembly 
 TypeProviderForNamespaces.TargetContext 
 TargetContext 
-TypeProviderForNamespaces.Disposing 
-Disposing 
 TypeProviderForNamespaces.Namespaces 
-Namespaces
+Namespaces 
+TypeProviderForNamespaces.Disposing 
+Disposing
 
 ### [TypeProviderForNamespaces.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces.html#``.ctor``)
 
@@ -17440,16 +17861,16 @@ TargetContext
  need to use this property directly, as translation from the compiler-hosted context to 
  the design-time context will normally be performed automatically.
 
-### [TypeProviderForNamespaces.Disposing](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces.html#Disposing)
-
-TypeProviderForNamespaces.Disposing 
-Disposing
-
 ### [TypeProviderForNamespaces.Namespaces](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces.html#Namespaces)
 
 TypeProviderForNamespaces.Namespaces 
 Namespaces 
  Invoked by the type provider to get all provided namespaces with their provided types.
+
+### [TypeProviderForNamespaces.Disposing](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces.html#Disposing)
+
+TypeProviderForNamespaces.Disposing 
+Disposing
 
 ### [ProvidedConstructor](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-0.html)
 
@@ -17469,10 +17890,10 @@ ProvidedConstructor.AddXmlDocDelayed
 AddXmlDocDelayed 
 ProvidedConstructor.IsImplicitConstructor 
 IsImplicitConstructor 
-ProvidedConstructor.BaseConstructorCall 
-BaseConstructorCall 
 ProvidedConstructor.IsTypeInitializer 
-IsTypeInitializer
+IsTypeInitializer 
+ProvidedConstructor.BaseConstructorCall 
+BaseConstructorCall
 
 ### [ProvidedConstructor.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-0.html#``.ctor``)
 
@@ -17518,16 +17939,16 @@ IsImplicitConstructor
  parameters of the constructor become fields and can be accessed using Expr.GlobalVar with the
  same name.
 
+### [ProvidedConstructor.IsTypeInitializer](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-0.html#IsTypeInitializer)
+
+ProvidedConstructor.IsTypeInitializer 
+IsTypeInitializer
+
 ### [ProvidedConstructor.BaseConstructorCall](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-0.html#BaseConstructorCall)
 
 ProvidedConstructor.BaseConstructorCall 
 BaseConstructorCall 
  Set the target and arguments of the base constructor call. Only used for generated types.
-
-### [ProvidedConstructor.IsTypeInitializer](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-0.html#IsTypeInitializer)
-
-ProvidedConstructor.IsTypeInitializer 
-IsTypeInitializer
 
 ### [ProvidedEvent](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedevent-0.html)
 
@@ -18038,14 +18459,14 @@ ProvidedTypeDefinition.SetBaseTypeDelayed
 SetBaseTypeDelayed 
 ProvidedTypeDefinition.SetEnumUnderlyingType 
 SetEnumUnderlyingType 
-ProvidedTypeDefinition.NonNullable 
-NonNullable 
-ProvidedTypeDefinition.HideObjectMethods 
-HideObjectMethods 
-ProvidedTypeDefinition.IsErased 
-IsErased 
 ProvidedTypeDefinition.SuppressRelocation 
 SuppressRelocation 
+ProvidedTypeDefinition.IsErased 
+IsErased 
+ProvidedTypeDefinition.HideObjectMethods 
+HideObjectMethods 
+ProvidedTypeDefinition.NonNullable 
+NonNullable 
 ProvidedTypeDefinition.EraseType 
 EraseType 
 ProvidedTypeDefinition.Logger 
@@ -18190,17 +18611,11 @@ ProvidedTypeDefinition.SetEnumUnderlyingType
 SetEnumUnderlyingType 
  Set underlying type for generated enums
 
-### [ProvidedTypeDefinition.NonNullable](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-0.html#NonNullable)
+### [ProvidedTypeDefinition.SuppressRelocation](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-0.html#SuppressRelocation)
 
-ProvidedTypeDefinition.NonNullable 
-NonNullable 
- Disallows the use of the null literal.
-
-### [ProvidedTypeDefinition.HideObjectMethods](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-0.html#HideObjectMethods)
-
-ProvidedTypeDefinition.HideObjectMethods 
-HideObjectMethods 
- Suppress Object entries in intellisense menus in instances of this provided type
+ProvidedTypeDefinition.SuppressRelocation 
+SuppressRelocation 
+ Get or set a flag indicating if the ProvidedTypeDefinition has type-relocation suppressed
 
 ### [ProvidedTypeDefinition.IsErased](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-0.html#IsErased)
 
@@ -18208,11 +18623,17 @@ ProvidedTypeDefinition.IsErased
 IsErased 
  Get a flag indicating if the ProvidedTypeDefinition is erased
 
-### [ProvidedTypeDefinition.SuppressRelocation](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-0.html#SuppressRelocation)
+### [ProvidedTypeDefinition.HideObjectMethods](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-0.html#HideObjectMethods)
 
-ProvidedTypeDefinition.SuppressRelocation 
-SuppressRelocation 
- Get or set a flag indicating if the ProvidedTypeDefinition has type-relocation suppressed
+ProvidedTypeDefinition.HideObjectMethods 
+HideObjectMethods 
+ Suppress Object entries in intellisense menus in instances of this provided type
+
+### [ProvidedTypeDefinition.NonNullable](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-0.html#NonNullable)
+
+ProvidedTypeDefinition.NonNullable 
+NonNullable 
+ Disallows the use of the null literal.
 
 ### [ProvidedTypeDefinition.EraseType](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-0.html#EraseType)
 
@@ -18373,10 +18794,10 @@ TypeProviderForNamespaces.ResolveAssembly
 ResolveAssembly 
 TypeProviderForNamespaces.TargetContext 
 TargetContext 
-TypeProviderForNamespaces.Disposing 
-Disposing 
 TypeProviderForNamespaces.Namespaces 
-Namespaces
+Namespaces 
+TypeProviderForNamespaces.Disposing 
+Disposing
 
 ### [TypeProviderForNamespaces.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-0.html#``.ctor``)
 
@@ -18440,16 +18861,16 @@ TargetContext
  need to use this property directly, as translation from the compiler-hosted context to 
  the design-time context will normally be performed automatically.
 
-### [TypeProviderForNamespaces.Disposing](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-0.html#Disposing)
-
-TypeProviderForNamespaces.Disposing 
-Disposing
-
 ### [TypeProviderForNamespaces.Namespaces](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-0.html#Namespaces)
 
 TypeProviderForNamespaces.Namespaces 
 Namespaces 
  Invoked by the type provider to get all provided namespaces with their provided types.
+
+### [TypeProviderForNamespaces.Disposing](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-0.html#Disposing)
+
+TypeProviderForNamespaces.Disposing 
+Disposing
 
 ### [ProvidedConstructor](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-1.html)
 
@@ -18469,10 +18890,10 @@ ProvidedConstructor.AddXmlDocDelayed
 AddXmlDocDelayed 
 ProvidedConstructor.IsImplicitConstructor 
 IsImplicitConstructor 
-ProvidedConstructor.BaseConstructorCall 
-BaseConstructorCall 
 ProvidedConstructor.IsTypeInitializer 
-IsTypeInitializer
+IsTypeInitializer 
+ProvidedConstructor.BaseConstructorCall 
+BaseConstructorCall
 
 ### [ProvidedConstructor.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-1.html#``.ctor``)
 
@@ -18518,16 +18939,16 @@ IsImplicitConstructor
  parameters of the constructor become fields and can be accessed using Expr.GlobalVar with the
  same name.
 
+### [ProvidedConstructor.IsTypeInitializer](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-1.html#IsTypeInitializer)
+
+ProvidedConstructor.IsTypeInitializer 
+IsTypeInitializer
+
 ### [ProvidedConstructor.BaseConstructorCall](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-1.html#BaseConstructorCall)
 
 ProvidedConstructor.BaseConstructorCall 
 BaseConstructorCall 
  Set the target and arguments of the base constructor call. Only used for generated types.
-
-### [ProvidedConstructor.IsTypeInitializer](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-1.html#IsTypeInitializer)
-
-ProvidedConstructor.IsTypeInitializer 
-IsTypeInitializer
 
 ### [ProvidedEvent](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedevent-1.html)
 
@@ -19038,14 +19459,14 @@ ProvidedTypeDefinition.SetBaseTypeDelayed
 SetBaseTypeDelayed 
 ProvidedTypeDefinition.SetEnumUnderlyingType 
 SetEnumUnderlyingType 
-ProvidedTypeDefinition.NonNullable 
-NonNullable 
-ProvidedTypeDefinition.HideObjectMethods 
-HideObjectMethods 
-ProvidedTypeDefinition.IsErased 
-IsErased 
 ProvidedTypeDefinition.SuppressRelocation 
 SuppressRelocation 
+ProvidedTypeDefinition.IsErased 
+IsErased 
+ProvidedTypeDefinition.HideObjectMethods 
+HideObjectMethods 
+ProvidedTypeDefinition.NonNullable 
+NonNullable 
 ProvidedTypeDefinition.EraseType 
 EraseType 
 ProvidedTypeDefinition.Logger 
@@ -19190,17 +19611,11 @@ ProvidedTypeDefinition.SetEnumUnderlyingType
 SetEnumUnderlyingType 
  Set underlying type for generated enums
 
-### [ProvidedTypeDefinition.NonNullable](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html#NonNullable)
+### [ProvidedTypeDefinition.SuppressRelocation](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html#SuppressRelocation)
 
-ProvidedTypeDefinition.NonNullable 
-NonNullable 
- Disallows the use of the null literal.
-
-### [ProvidedTypeDefinition.HideObjectMethods](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html#HideObjectMethods)
-
-ProvidedTypeDefinition.HideObjectMethods 
-HideObjectMethods 
- Suppress Object entries in intellisense menus in instances of this provided type
+ProvidedTypeDefinition.SuppressRelocation 
+SuppressRelocation 
+ Get or set a flag indicating if the ProvidedTypeDefinition has type-relocation suppressed
 
 ### [ProvidedTypeDefinition.IsErased](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html#IsErased)
 
@@ -19208,11 +19623,17 @@ ProvidedTypeDefinition.IsErased
 IsErased 
  Get a flag indicating if the ProvidedTypeDefinition is erased
 
-### [ProvidedTypeDefinition.SuppressRelocation](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html#SuppressRelocation)
+### [ProvidedTypeDefinition.HideObjectMethods](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html#HideObjectMethods)
 
-ProvidedTypeDefinition.SuppressRelocation 
-SuppressRelocation 
- Get or set a flag indicating if the ProvidedTypeDefinition has type-relocation suppressed
+ProvidedTypeDefinition.HideObjectMethods 
+HideObjectMethods 
+ Suppress Object entries in intellisense menus in instances of this provided type
+
+### [ProvidedTypeDefinition.NonNullable](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html#NonNullable)
+
+ProvidedTypeDefinition.NonNullable 
+NonNullable 
+ Disallows the use of the null literal.
 
 ### [ProvidedTypeDefinition.EraseType](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html#EraseType)
 
@@ -19373,10 +19794,10 @@ TypeProviderForNamespaces.ResolveAssembly
 ResolveAssembly 
 TypeProviderForNamespaces.TargetContext 
 TargetContext 
-TypeProviderForNamespaces.Disposing 
-Disposing 
 TypeProviderForNamespaces.Namespaces 
-Namespaces
+Namespaces 
+TypeProviderForNamespaces.Disposing 
+Disposing
 
 ### [TypeProviderForNamespaces.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-1.html#``.ctor``)
 
@@ -19440,16 +19861,16 @@ TargetContext
  need to use this property directly, as translation from the compiler-hosted context to 
  the design-time context will normally be performed automatically.
 
-### [TypeProviderForNamespaces.Disposing](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-1.html#Disposing)
-
-TypeProviderForNamespaces.Disposing 
-Disposing
-
 ### [TypeProviderForNamespaces.Namespaces](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-1.html#Namespaces)
 
 TypeProviderForNamespaces.Namespaces 
 Namespaces 
  Invoked by the type provider to get all provided namespaces with their provided types.
+
+### [TypeProviderForNamespaces.Disposing](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-1.html#Disposing)
+
+TypeProviderForNamespaces.Disposing 
+Disposing
 
 ### [ProvidedConstructor](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-2.html)
 
@@ -19469,10 +19890,10 @@ ProvidedConstructor.AddXmlDocDelayed
 AddXmlDocDelayed 
 ProvidedConstructor.IsImplicitConstructor 
 IsImplicitConstructor 
-ProvidedConstructor.BaseConstructorCall 
-BaseConstructorCall 
 ProvidedConstructor.IsTypeInitializer 
-IsTypeInitializer
+IsTypeInitializer 
+ProvidedConstructor.BaseConstructorCall 
+BaseConstructorCall
 
 ### [ProvidedConstructor.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-2.html#``.ctor``)
 
@@ -19518,16 +19939,16 @@ IsImplicitConstructor
  parameters of the constructor become fields and can be accessed using Expr.GlobalVar with the
  same name.
 
+### [ProvidedConstructor.IsTypeInitializer](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-2.html#IsTypeInitializer)
+
+ProvidedConstructor.IsTypeInitializer 
+IsTypeInitializer
+
 ### [ProvidedConstructor.BaseConstructorCall](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-2.html#BaseConstructorCall)
 
 ProvidedConstructor.BaseConstructorCall 
 BaseConstructorCall 
  Set the target and arguments of the base constructor call. Only used for generated types.
-
-### [ProvidedConstructor.IsTypeInitializer](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-2.html#IsTypeInitializer)
-
-ProvidedConstructor.IsTypeInitializer 
-IsTypeInitializer
 
 ### [ProvidedEvent](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedevent-2.html)
 
@@ -20038,14 +20459,14 @@ ProvidedTypeDefinition.SetBaseTypeDelayed
 SetBaseTypeDelayed 
 ProvidedTypeDefinition.SetEnumUnderlyingType 
 SetEnumUnderlyingType 
-ProvidedTypeDefinition.NonNullable 
-NonNullable 
-ProvidedTypeDefinition.HideObjectMethods 
-HideObjectMethods 
-ProvidedTypeDefinition.IsErased 
-IsErased 
 ProvidedTypeDefinition.SuppressRelocation 
 SuppressRelocation 
+ProvidedTypeDefinition.IsErased 
+IsErased 
+ProvidedTypeDefinition.HideObjectMethods 
+HideObjectMethods 
+ProvidedTypeDefinition.NonNullable 
+NonNullable 
 ProvidedTypeDefinition.EraseType 
 EraseType 
 ProvidedTypeDefinition.Logger 
@@ -20190,17 +20611,11 @@ ProvidedTypeDefinition.SetEnumUnderlyingType
 SetEnumUnderlyingType 
  Set underlying type for generated enums
 
-### [ProvidedTypeDefinition.NonNullable](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-2.html#NonNullable)
+### [ProvidedTypeDefinition.SuppressRelocation](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-2.html#SuppressRelocation)
 
-ProvidedTypeDefinition.NonNullable 
-NonNullable 
- Disallows the use of the null literal.
-
-### [ProvidedTypeDefinition.HideObjectMethods](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-2.html#HideObjectMethods)
-
-ProvidedTypeDefinition.HideObjectMethods 
-HideObjectMethods 
- Suppress Object entries in intellisense menus in instances of this provided type
+ProvidedTypeDefinition.SuppressRelocation 
+SuppressRelocation 
+ Get or set a flag indicating if the ProvidedTypeDefinition has type-relocation suppressed
 
 ### [ProvidedTypeDefinition.IsErased](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-2.html#IsErased)
 
@@ -20208,11 +20623,17 @@ ProvidedTypeDefinition.IsErased
 IsErased 
  Get a flag indicating if the ProvidedTypeDefinition is erased
 
-### [ProvidedTypeDefinition.SuppressRelocation](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-2.html#SuppressRelocation)
+### [ProvidedTypeDefinition.HideObjectMethods](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-2.html#HideObjectMethods)
 
-ProvidedTypeDefinition.SuppressRelocation 
-SuppressRelocation 
- Get or set a flag indicating if the ProvidedTypeDefinition has type-relocation suppressed
+ProvidedTypeDefinition.HideObjectMethods 
+HideObjectMethods 
+ Suppress Object entries in intellisense menus in instances of this provided type
+
+### [ProvidedTypeDefinition.NonNullable](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-2.html#NonNullable)
+
+ProvidedTypeDefinition.NonNullable 
+NonNullable 
+ Disallows the use of the null literal.
 
 ### [ProvidedTypeDefinition.EraseType](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-2.html#EraseType)
 
@@ -20373,10 +20794,10 @@ TypeProviderForNamespaces.ResolveAssembly
 ResolveAssembly 
 TypeProviderForNamespaces.TargetContext 
 TargetContext 
-TypeProviderForNamespaces.Disposing 
-Disposing 
 TypeProviderForNamespaces.Namespaces 
-Namespaces
+Namespaces 
+TypeProviderForNamespaces.Disposing 
+Disposing
 
 ### [TypeProviderForNamespaces.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-2.html#``.ctor``)
 
@@ -20440,16 +20861,16 @@ TargetContext
  need to use this property directly, as translation from the compiler-hosted context to 
  the design-time context will normally be performed automatically.
 
-### [TypeProviderForNamespaces.Disposing](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-2.html#Disposing)
-
-TypeProviderForNamespaces.Disposing 
-Disposing
-
 ### [TypeProviderForNamespaces.Namespaces](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-2.html#Namespaces)
 
 TypeProviderForNamespaces.Namespaces 
 Namespaces 
  Invoked by the type provider to get all provided namespaces with their provided types.
+
+### [TypeProviderForNamespaces.Disposing](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-2.html#Disposing)
+
+TypeProviderForNamespaces.Disposing 
+Disposing
 
 ### [ProvidedConstructor](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-3.html)
 
@@ -20469,10 +20890,10 @@ ProvidedConstructor.AddXmlDocDelayed
 AddXmlDocDelayed 
 ProvidedConstructor.IsImplicitConstructor 
 IsImplicitConstructor 
-ProvidedConstructor.BaseConstructorCall 
-BaseConstructorCall 
 ProvidedConstructor.IsTypeInitializer 
-IsTypeInitializer
+IsTypeInitializer 
+ProvidedConstructor.BaseConstructorCall 
+BaseConstructorCall
 
 ### [ProvidedConstructor.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-3.html#``.ctor``)
 
@@ -20518,16 +20939,16 @@ IsImplicitConstructor
  parameters of the constructor become fields and can be accessed using Expr.GlobalVar with the
  same name.
 
+### [ProvidedConstructor.IsTypeInitializer](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-3.html#IsTypeInitializer)
+
+ProvidedConstructor.IsTypeInitializer 
+IsTypeInitializer
+
 ### [ProvidedConstructor.BaseConstructorCall](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-3.html#BaseConstructorCall)
 
 ProvidedConstructor.BaseConstructorCall 
 BaseConstructorCall 
  Set the target and arguments of the base constructor call. Only used for generated types.
-
-### [ProvidedConstructor.IsTypeInitializer](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-3.html#IsTypeInitializer)
-
-ProvidedConstructor.IsTypeInitializer 
-IsTypeInitializer
 
 ### [ProvidedEvent](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedevent-3.html)
 
@@ -21038,14 +21459,14 @@ ProvidedTypeDefinition.SetBaseTypeDelayed
 SetBaseTypeDelayed 
 ProvidedTypeDefinition.SetEnumUnderlyingType 
 SetEnumUnderlyingType 
-ProvidedTypeDefinition.NonNullable 
-NonNullable 
-ProvidedTypeDefinition.HideObjectMethods 
-HideObjectMethods 
-ProvidedTypeDefinition.IsErased 
-IsErased 
 ProvidedTypeDefinition.SuppressRelocation 
 SuppressRelocation 
+ProvidedTypeDefinition.IsErased 
+IsErased 
+ProvidedTypeDefinition.HideObjectMethods 
+HideObjectMethods 
+ProvidedTypeDefinition.NonNullable 
+NonNullable 
 ProvidedTypeDefinition.EraseType 
 EraseType 
 ProvidedTypeDefinition.Logger 
@@ -21190,17 +21611,11 @@ ProvidedTypeDefinition.SetEnumUnderlyingType
 SetEnumUnderlyingType 
  Set underlying type for generated enums
 
-### [ProvidedTypeDefinition.NonNullable](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-3.html#NonNullable)
+### [ProvidedTypeDefinition.SuppressRelocation](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-3.html#SuppressRelocation)
 
-ProvidedTypeDefinition.NonNullable 
-NonNullable 
- Disallows the use of the null literal.
-
-### [ProvidedTypeDefinition.HideObjectMethods](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-3.html#HideObjectMethods)
-
-ProvidedTypeDefinition.HideObjectMethods 
-HideObjectMethods 
- Suppress Object entries in intellisense menus in instances of this provided type
+ProvidedTypeDefinition.SuppressRelocation 
+SuppressRelocation 
+ Get or set a flag indicating if the ProvidedTypeDefinition has type-relocation suppressed
 
 ### [ProvidedTypeDefinition.IsErased](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-3.html#IsErased)
 
@@ -21208,11 +21623,17 @@ ProvidedTypeDefinition.IsErased
 IsErased 
  Get a flag indicating if the ProvidedTypeDefinition is erased
 
-### [ProvidedTypeDefinition.SuppressRelocation](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-3.html#SuppressRelocation)
+### [ProvidedTypeDefinition.HideObjectMethods](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-3.html#HideObjectMethods)
 
-ProvidedTypeDefinition.SuppressRelocation 
-SuppressRelocation 
- Get or set a flag indicating if the ProvidedTypeDefinition has type-relocation suppressed
+ProvidedTypeDefinition.HideObjectMethods 
+HideObjectMethods 
+ Suppress Object entries in intellisense menus in instances of this provided type
+
+### [ProvidedTypeDefinition.NonNullable](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-3.html#NonNullable)
+
+ProvidedTypeDefinition.NonNullable 
+NonNullable 
+ Disallows the use of the null literal.
 
 ### [ProvidedTypeDefinition.EraseType](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-3.html#EraseType)
 
@@ -21373,10 +21794,10 @@ TypeProviderForNamespaces.ResolveAssembly
 ResolveAssembly 
 TypeProviderForNamespaces.TargetContext 
 TargetContext 
-TypeProviderForNamespaces.Disposing 
-Disposing 
 TypeProviderForNamespaces.Namespaces 
-Namespaces
+Namespaces 
+TypeProviderForNamespaces.Disposing 
+Disposing
 
 ### [TypeProviderForNamespaces.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-3.html#``.ctor``)
 
@@ -21440,16 +21861,16 @@ TargetContext
  need to use this property directly, as translation from the compiler-hosted context to 
  the design-time context will normally be performed automatically.
 
-### [TypeProviderForNamespaces.Disposing](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-3.html#Disposing)
-
-TypeProviderForNamespaces.Disposing 
-Disposing
-
 ### [TypeProviderForNamespaces.Namespaces](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-3.html#Namespaces)
 
 TypeProviderForNamespaces.Namespaces 
 Namespaces 
  Invoked by the type provider to get all provided namespaces with their provided types.
+
+### [TypeProviderForNamespaces.Disposing](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-3.html#Disposing)
+
+TypeProviderForNamespaces.Disposing 
+Disposing
 
 ### [ProvidedConstructor](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-4.html)
 
@@ -21469,10 +21890,10 @@ ProvidedConstructor.AddXmlDocDelayed
 AddXmlDocDelayed 
 ProvidedConstructor.IsImplicitConstructor 
 IsImplicitConstructor 
-ProvidedConstructor.BaseConstructorCall 
-BaseConstructorCall 
 ProvidedConstructor.IsTypeInitializer 
-IsTypeInitializer
+IsTypeInitializer 
+ProvidedConstructor.BaseConstructorCall 
+BaseConstructorCall
 
 ### [ProvidedConstructor.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-4.html#``.ctor``)
 
@@ -21518,16 +21939,16 @@ IsImplicitConstructor
  parameters of the constructor become fields and can be accessed using Expr.GlobalVar with the
  same name.
 
+### [ProvidedConstructor.IsTypeInitializer](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-4.html#IsTypeInitializer)
+
+ProvidedConstructor.IsTypeInitializer 
+IsTypeInitializer
+
 ### [ProvidedConstructor.BaseConstructorCall](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-4.html#BaseConstructorCall)
 
 ProvidedConstructor.BaseConstructorCall 
 BaseConstructorCall 
  Set the target and arguments of the base constructor call. Only used for generated types.
-
-### [ProvidedConstructor.IsTypeInitializer](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-4.html#IsTypeInitializer)
-
-ProvidedConstructor.IsTypeInitializer 
-IsTypeInitializer
 
 ### [ProvidedEvent](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedevent-4.html)
 
@@ -22038,14 +22459,14 @@ ProvidedTypeDefinition.SetBaseTypeDelayed
 SetBaseTypeDelayed 
 ProvidedTypeDefinition.SetEnumUnderlyingType 
 SetEnumUnderlyingType 
-ProvidedTypeDefinition.NonNullable 
-NonNullable 
-ProvidedTypeDefinition.HideObjectMethods 
-HideObjectMethods 
-ProvidedTypeDefinition.IsErased 
-IsErased 
 ProvidedTypeDefinition.SuppressRelocation 
 SuppressRelocation 
+ProvidedTypeDefinition.IsErased 
+IsErased 
+ProvidedTypeDefinition.HideObjectMethods 
+HideObjectMethods 
+ProvidedTypeDefinition.NonNullable 
+NonNullable 
 ProvidedTypeDefinition.EraseType 
 EraseType 
 ProvidedTypeDefinition.Logger 
@@ -22190,17 +22611,11 @@ ProvidedTypeDefinition.SetEnumUnderlyingType
 SetEnumUnderlyingType 
  Set underlying type for generated enums
 
-### [ProvidedTypeDefinition.NonNullable](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-4.html#NonNullable)
+### [ProvidedTypeDefinition.SuppressRelocation](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-4.html#SuppressRelocation)
 
-ProvidedTypeDefinition.NonNullable 
-NonNullable 
- Disallows the use of the null literal.
-
-### [ProvidedTypeDefinition.HideObjectMethods](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-4.html#HideObjectMethods)
-
-ProvidedTypeDefinition.HideObjectMethods 
-HideObjectMethods 
- Suppress Object entries in intellisense menus in instances of this provided type
+ProvidedTypeDefinition.SuppressRelocation 
+SuppressRelocation 
+ Get or set a flag indicating if the ProvidedTypeDefinition has type-relocation suppressed
 
 ### [ProvidedTypeDefinition.IsErased](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-4.html#IsErased)
 
@@ -22208,11 +22623,17 @@ ProvidedTypeDefinition.IsErased
 IsErased 
  Get a flag indicating if the ProvidedTypeDefinition is erased
 
-### [ProvidedTypeDefinition.SuppressRelocation](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-4.html#SuppressRelocation)
+### [ProvidedTypeDefinition.HideObjectMethods](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-4.html#HideObjectMethods)
 
-ProvidedTypeDefinition.SuppressRelocation 
-SuppressRelocation 
- Get or set a flag indicating if the ProvidedTypeDefinition has type-relocation suppressed
+ProvidedTypeDefinition.HideObjectMethods 
+HideObjectMethods 
+ Suppress Object entries in intellisense menus in instances of this provided type
+
+### [ProvidedTypeDefinition.NonNullable](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-4.html#NonNullable)
+
+ProvidedTypeDefinition.NonNullable 
+NonNullable 
+ Disallows the use of the null literal.
 
 ### [ProvidedTypeDefinition.EraseType](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-4.html#EraseType)
 
@@ -22373,10 +22794,10 @@ TypeProviderForNamespaces.ResolveAssembly
 ResolveAssembly 
 TypeProviderForNamespaces.TargetContext 
 TargetContext 
-TypeProviderForNamespaces.Disposing 
-Disposing 
 TypeProviderForNamespaces.Namespaces 
-Namespaces
+Namespaces 
+TypeProviderForNamespaces.Disposing 
+Disposing
 
 ### [TypeProviderForNamespaces.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-4.html#``.ctor``)
 
@@ -22440,16 +22861,16 @@ TargetContext
  need to use this property directly, as translation from the compiler-hosted context to 
  the design-time context will normally be performed automatically.
 
-### [TypeProviderForNamespaces.Disposing](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-4.html#Disposing)
-
-TypeProviderForNamespaces.Disposing 
-Disposing
-
 ### [TypeProviderForNamespaces.Namespaces](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-4.html#Namespaces)
 
 TypeProviderForNamespaces.Namespaces 
 Namespaces 
  Invoked by the type provider to get all provided namespaces with their provided types.
+
+### [TypeProviderForNamespaces.Disposing](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-4.html#Disposing)
+
+TypeProviderForNamespaces.Disposing 
+Disposing
 
 ### [ProvidedConstructor](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-5.html)
 
@@ -22469,10 +22890,10 @@ ProvidedConstructor.AddXmlDocDelayed
 AddXmlDocDelayed 
 ProvidedConstructor.IsImplicitConstructor 
 IsImplicitConstructor 
-ProvidedConstructor.BaseConstructorCall 
-BaseConstructorCall 
 ProvidedConstructor.IsTypeInitializer 
-IsTypeInitializer
+IsTypeInitializer 
+ProvidedConstructor.BaseConstructorCall 
+BaseConstructorCall
 
 ### [ProvidedConstructor.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-5.html#``.ctor``)
 
@@ -22518,16 +22939,16 @@ IsImplicitConstructor
  parameters of the constructor become fields and can be accessed using Expr.GlobalVar with the
  same name.
 
+### [ProvidedConstructor.IsTypeInitializer](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-5.html#IsTypeInitializer)
+
+ProvidedConstructor.IsTypeInitializer 
+IsTypeInitializer
+
 ### [ProvidedConstructor.BaseConstructorCall](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-5.html#BaseConstructorCall)
 
 ProvidedConstructor.BaseConstructorCall 
 BaseConstructorCall 
  Set the target and arguments of the base constructor call. Only used for generated types.
-
-### [ProvidedConstructor.IsTypeInitializer](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-5.html#IsTypeInitializer)
-
-ProvidedConstructor.IsTypeInitializer 
-IsTypeInitializer
 
 ### [ProvidedEvent](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedevent-5.html)
 
@@ -23038,14 +23459,14 @@ ProvidedTypeDefinition.SetBaseTypeDelayed
 SetBaseTypeDelayed 
 ProvidedTypeDefinition.SetEnumUnderlyingType 
 SetEnumUnderlyingType 
-ProvidedTypeDefinition.NonNullable 
-NonNullable 
-ProvidedTypeDefinition.HideObjectMethods 
-HideObjectMethods 
-ProvidedTypeDefinition.IsErased 
-IsErased 
 ProvidedTypeDefinition.SuppressRelocation 
 SuppressRelocation 
+ProvidedTypeDefinition.IsErased 
+IsErased 
+ProvidedTypeDefinition.HideObjectMethods 
+HideObjectMethods 
+ProvidedTypeDefinition.NonNullable 
+NonNullable 
 ProvidedTypeDefinition.EraseType 
 EraseType 
 ProvidedTypeDefinition.Logger 
@@ -23190,17 +23611,11 @@ ProvidedTypeDefinition.SetEnumUnderlyingType
 SetEnumUnderlyingType 
  Set underlying type for generated enums
 
-### [ProvidedTypeDefinition.NonNullable](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-5.html#NonNullable)
+### [ProvidedTypeDefinition.SuppressRelocation](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-5.html#SuppressRelocation)
 
-ProvidedTypeDefinition.NonNullable 
-NonNullable 
- Disallows the use of the null literal.
-
-### [ProvidedTypeDefinition.HideObjectMethods](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-5.html#HideObjectMethods)
-
-ProvidedTypeDefinition.HideObjectMethods 
-HideObjectMethods 
- Suppress Object entries in intellisense menus in instances of this provided type
+ProvidedTypeDefinition.SuppressRelocation 
+SuppressRelocation 
+ Get or set a flag indicating if the ProvidedTypeDefinition has type-relocation suppressed
 
 ### [ProvidedTypeDefinition.IsErased](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-5.html#IsErased)
 
@@ -23208,11 +23623,17 @@ ProvidedTypeDefinition.IsErased
 IsErased 
  Get a flag indicating if the ProvidedTypeDefinition is erased
 
-### [ProvidedTypeDefinition.SuppressRelocation](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-5.html#SuppressRelocation)
+### [ProvidedTypeDefinition.HideObjectMethods](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-5.html#HideObjectMethods)
 
-ProvidedTypeDefinition.SuppressRelocation 
-SuppressRelocation 
- Get or set a flag indicating if the ProvidedTypeDefinition has type-relocation suppressed
+ProvidedTypeDefinition.HideObjectMethods 
+HideObjectMethods 
+ Suppress Object entries in intellisense menus in instances of this provided type
+
+### [ProvidedTypeDefinition.NonNullable](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-5.html#NonNullable)
+
+ProvidedTypeDefinition.NonNullable 
+NonNullable 
+ Disallows the use of the null literal.
 
 ### [ProvidedTypeDefinition.EraseType](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-5.html#EraseType)
 
@@ -23373,10 +23794,10 @@ TypeProviderForNamespaces.ResolveAssembly
 ResolveAssembly 
 TypeProviderForNamespaces.TargetContext 
 TargetContext 
-TypeProviderForNamespaces.Disposing 
-Disposing 
 TypeProviderForNamespaces.Namespaces 
-Namespaces
+Namespaces 
+TypeProviderForNamespaces.Disposing 
+Disposing
 
 ### [TypeProviderForNamespaces.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-5.html#``.ctor``)
 
@@ -23440,16 +23861,16 @@ TargetContext
  need to use this property directly, as translation from the compiler-hosted context to 
  the design-time context will normally be performed automatically.
 
-### [TypeProviderForNamespaces.Disposing](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-5.html#Disposing)
-
-TypeProviderForNamespaces.Disposing 
-Disposing
-
 ### [TypeProviderForNamespaces.Namespaces](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-5.html#Namespaces)
 
 TypeProviderForNamespaces.Namespaces 
 Namespaces 
  Invoked by the type provider to get all provided namespaces with their provided types.
+
+### [TypeProviderForNamespaces.Disposing](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-5.html#Disposing)
+
+TypeProviderForNamespaces.Disposing 
+Disposing
 
 ### [ProvidedConstructor](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-6.html)
 
@@ -23469,10 +23890,10 @@ ProvidedConstructor.AddXmlDocDelayed
 AddXmlDocDelayed 
 ProvidedConstructor.IsImplicitConstructor 
 IsImplicitConstructor 
-ProvidedConstructor.BaseConstructorCall 
-BaseConstructorCall 
 ProvidedConstructor.IsTypeInitializer 
-IsTypeInitializer
+IsTypeInitializer 
+ProvidedConstructor.BaseConstructorCall 
+BaseConstructorCall
 
 ### [ProvidedConstructor.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-6.html#``.ctor``)
 
@@ -23518,16 +23939,16 @@ IsImplicitConstructor
  parameters of the constructor become fields and can be accessed using Expr.GlobalVar with the
  same name.
 
+### [ProvidedConstructor.IsTypeInitializer](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-6.html#IsTypeInitializer)
+
+ProvidedConstructor.IsTypeInitializer 
+IsTypeInitializer
+
 ### [ProvidedConstructor.BaseConstructorCall](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-6.html#BaseConstructorCall)
 
 ProvidedConstructor.BaseConstructorCall 
 BaseConstructorCall 
  Set the target and arguments of the base constructor call. Only used for generated types.
-
-### [ProvidedConstructor.IsTypeInitializer](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-6.html#IsTypeInitializer)
-
-ProvidedConstructor.IsTypeInitializer 
-IsTypeInitializer
 
 ### [ProvidedEvent](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedevent-6.html)
 
@@ -24038,14 +24459,14 @@ ProvidedTypeDefinition.SetBaseTypeDelayed
 SetBaseTypeDelayed 
 ProvidedTypeDefinition.SetEnumUnderlyingType 
 SetEnumUnderlyingType 
-ProvidedTypeDefinition.NonNullable 
-NonNullable 
-ProvidedTypeDefinition.HideObjectMethods 
-HideObjectMethods 
-ProvidedTypeDefinition.IsErased 
-IsErased 
 ProvidedTypeDefinition.SuppressRelocation 
 SuppressRelocation 
+ProvidedTypeDefinition.IsErased 
+IsErased 
+ProvidedTypeDefinition.HideObjectMethods 
+HideObjectMethods 
+ProvidedTypeDefinition.NonNullable 
+NonNullable 
 ProvidedTypeDefinition.EraseType 
 EraseType 
 ProvidedTypeDefinition.Logger 
@@ -24190,17 +24611,11 @@ ProvidedTypeDefinition.SetEnumUnderlyingType
 SetEnumUnderlyingType 
  Set underlying type for generated enums
 
-### [ProvidedTypeDefinition.NonNullable](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-6.html#NonNullable)
+### [ProvidedTypeDefinition.SuppressRelocation](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-6.html#SuppressRelocation)
 
-ProvidedTypeDefinition.NonNullable 
-NonNullable 
- Disallows the use of the null literal.
-
-### [ProvidedTypeDefinition.HideObjectMethods](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-6.html#HideObjectMethods)
-
-ProvidedTypeDefinition.HideObjectMethods 
-HideObjectMethods 
- Suppress Object entries in intellisense menus in instances of this provided type
+ProvidedTypeDefinition.SuppressRelocation 
+SuppressRelocation 
+ Get or set a flag indicating if the ProvidedTypeDefinition has type-relocation suppressed
 
 ### [ProvidedTypeDefinition.IsErased](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-6.html#IsErased)
 
@@ -24208,11 +24623,17 @@ ProvidedTypeDefinition.IsErased
 IsErased 
  Get a flag indicating if the ProvidedTypeDefinition is erased
 
-### [ProvidedTypeDefinition.SuppressRelocation](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-6.html#SuppressRelocation)
+### [ProvidedTypeDefinition.HideObjectMethods](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-6.html#HideObjectMethods)
 
-ProvidedTypeDefinition.SuppressRelocation 
-SuppressRelocation 
- Get or set a flag indicating if the ProvidedTypeDefinition has type-relocation suppressed
+ProvidedTypeDefinition.HideObjectMethods 
+HideObjectMethods 
+ Suppress Object entries in intellisense menus in instances of this provided type
+
+### [ProvidedTypeDefinition.NonNullable](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-6.html#NonNullable)
+
+ProvidedTypeDefinition.NonNullable 
+NonNullable 
+ Disallows the use of the null literal.
 
 ### [ProvidedTypeDefinition.EraseType](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-6.html#EraseType)
 
@@ -24373,10 +24794,10 @@ TypeProviderForNamespaces.ResolveAssembly
 ResolveAssembly 
 TypeProviderForNamespaces.TargetContext 
 TargetContext 
-TypeProviderForNamespaces.Disposing 
-Disposing 
 TypeProviderForNamespaces.Namespaces 
-Namespaces
+Namespaces 
+TypeProviderForNamespaces.Disposing 
+Disposing
 
 ### [TypeProviderForNamespaces.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-6.html#``.ctor``)
 
@@ -24440,16 +24861,16 @@ TargetContext
  need to use this property directly, as translation from the compiler-hosted context to 
  the design-time context will normally be performed automatically.
 
-### [TypeProviderForNamespaces.Disposing](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-6.html#Disposing)
-
-TypeProviderForNamespaces.Disposing 
-Disposing
-
 ### [TypeProviderForNamespaces.Namespaces](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-6.html#Namespaces)
 
 TypeProviderForNamespaces.Namespaces 
 Namespaces 
  Invoked by the type provider to get all provided namespaces with their provided types.
+
+### [TypeProviderForNamespaces.Disposing](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-6.html#Disposing)
+
+TypeProviderForNamespaces.Disposing 
+Disposing
 
 ### [ProvidedConstructor](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-7.html)
 
@@ -24469,10 +24890,10 @@ ProvidedConstructor.AddXmlDocDelayed
 AddXmlDocDelayed 
 ProvidedConstructor.IsImplicitConstructor 
 IsImplicitConstructor 
-ProvidedConstructor.BaseConstructorCall 
-BaseConstructorCall 
 ProvidedConstructor.IsTypeInitializer 
-IsTypeInitializer
+IsTypeInitializer 
+ProvidedConstructor.BaseConstructorCall 
+BaseConstructorCall
 
 ### [ProvidedConstructor.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-7.html#``.ctor``)
 
@@ -24518,16 +24939,16 @@ IsImplicitConstructor
  parameters of the constructor become fields and can be accessed using Expr.GlobalVar with the
  same name.
 
+### [ProvidedConstructor.IsTypeInitializer](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-7.html#IsTypeInitializer)
+
+ProvidedConstructor.IsTypeInitializer 
+IsTypeInitializer
+
 ### [ProvidedConstructor.BaseConstructorCall](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-7.html#BaseConstructorCall)
 
 ProvidedConstructor.BaseConstructorCall 
 BaseConstructorCall 
  Set the target and arguments of the base constructor call. Only used for generated types.
-
-### [ProvidedConstructor.IsTypeInitializer](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-7.html#IsTypeInitializer)
-
-ProvidedConstructor.IsTypeInitializer 
-IsTypeInitializer
 
 ### [ProvidedEvent](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedevent-7.html)
 
@@ -25038,14 +25459,14 @@ ProvidedTypeDefinition.SetBaseTypeDelayed
 SetBaseTypeDelayed 
 ProvidedTypeDefinition.SetEnumUnderlyingType 
 SetEnumUnderlyingType 
-ProvidedTypeDefinition.NonNullable 
-NonNullable 
-ProvidedTypeDefinition.HideObjectMethods 
-HideObjectMethods 
-ProvidedTypeDefinition.IsErased 
-IsErased 
 ProvidedTypeDefinition.SuppressRelocation 
 SuppressRelocation 
+ProvidedTypeDefinition.IsErased 
+IsErased 
+ProvidedTypeDefinition.HideObjectMethods 
+HideObjectMethods 
+ProvidedTypeDefinition.NonNullable 
+NonNullable 
 ProvidedTypeDefinition.EraseType 
 EraseType 
 ProvidedTypeDefinition.Logger 
@@ -25190,17 +25611,11 @@ ProvidedTypeDefinition.SetEnumUnderlyingType
 SetEnumUnderlyingType 
  Set underlying type for generated enums
 
-### [ProvidedTypeDefinition.NonNullable](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-7.html#NonNullable)
+### [ProvidedTypeDefinition.SuppressRelocation](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-7.html#SuppressRelocation)
 
-ProvidedTypeDefinition.NonNullable 
-NonNullable 
- Disallows the use of the null literal.
-
-### [ProvidedTypeDefinition.HideObjectMethods](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-7.html#HideObjectMethods)
-
-ProvidedTypeDefinition.HideObjectMethods 
-HideObjectMethods 
- Suppress Object entries in intellisense menus in instances of this provided type
+ProvidedTypeDefinition.SuppressRelocation 
+SuppressRelocation 
+ Get or set a flag indicating if the ProvidedTypeDefinition has type-relocation suppressed
 
 ### [ProvidedTypeDefinition.IsErased](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-7.html#IsErased)
 
@@ -25208,11 +25623,17 @@ ProvidedTypeDefinition.IsErased
 IsErased 
  Get a flag indicating if the ProvidedTypeDefinition is erased
 
-### [ProvidedTypeDefinition.SuppressRelocation](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-7.html#SuppressRelocation)
+### [ProvidedTypeDefinition.HideObjectMethods](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-7.html#HideObjectMethods)
 
-ProvidedTypeDefinition.SuppressRelocation 
-SuppressRelocation 
- Get or set a flag indicating if the ProvidedTypeDefinition has type-relocation suppressed
+ProvidedTypeDefinition.HideObjectMethods 
+HideObjectMethods 
+ Suppress Object entries in intellisense menus in instances of this provided type
+
+### [ProvidedTypeDefinition.NonNullable](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-7.html#NonNullable)
+
+ProvidedTypeDefinition.NonNullable 
+NonNullable 
+ Disallows the use of the null literal.
 
 ### [ProvidedTypeDefinition.EraseType](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-7.html#EraseType)
 
@@ -25373,10 +25794,10 @@ TypeProviderForNamespaces.ResolveAssembly
 ResolveAssembly 
 TypeProviderForNamespaces.TargetContext 
 TargetContext 
-TypeProviderForNamespaces.Disposing 
-Disposing 
 TypeProviderForNamespaces.Namespaces 
-Namespaces
+Namespaces 
+TypeProviderForNamespaces.Disposing 
+Disposing
 
 ### [TypeProviderForNamespaces.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-7.html#``.ctor``)
 
@@ -25440,16 +25861,16 @@ TargetContext
  need to use this property directly, as translation from the compiler-hosted context to 
  the design-time context will normally be performed automatically.
 
-### [TypeProviderForNamespaces.Disposing](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-7.html#Disposing)
-
-TypeProviderForNamespaces.Disposing 
-Disposing
-
 ### [TypeProviderForNamespaces.Namespaces](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-7.html#Namespaces)
 
 TypeProviderForNamespaces.Namespaces 
 Namespaces 
  Invoked by the type provider to get all provided namespaces with their provided types.
+
+### [TypeProviderForNamespaces.Disposing](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-7.html#Disposing)
+
+TypeProviderForNamespaces.Disposing 
+Disposing
 
 ### [ProvidedConstructor](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-8.html)
 
@@ -25469,10 +25890,10 @@ ProvidedConstructor.AddXmlDocDelayed
 AddXmlDocDelayed 
 ProvidedConstructor.IsImplicitConstructor 
 IsImplicitConstructor 
-ProvidedConstructor.BaseConstructorCall 
-BaseConstructorCall 
 ProvidedConstructor.IsTypeInitializer 
-IsTypeInitializer
+IsTypeInitializer 
+ProvidedConstructor.BaseConstructorCall 
+BaseConstructorCall
 
 ### [ProvidedConstructor.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-8.html#``.ctor``)
 
@@ -25518,16 +25939,16 @@ IsImplicitConstructor
  parameters of the constructor become fields and can be accessed using Expr.GlobalVar with the
  same name.
 
+### [ProvidedConstructor.IsTypeInitializer](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-8.html#IsTypeInitializer)
+
+ProvidedConstructor.IsTypeInitializer 
+IsTypeInitializer
+
 ### [ProvidedConstructor.BaseConstructorCall](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-8.html#BaseConstructorCall)
 
 ProvidedConstructor.BaseConstructorCall 
 BaseConstructorCall 
  Set the target and arguments of the base constructor call. Only used for generated types.
-
-### [ProvidedConstructor.IsTypeInitializer](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-8.html#IsTypeInitializer)
-
-ProvidedConstructor.IsTypeInitializer 
-IsTypeInitializer
 
 ### [ProvidedEvent](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedevent-8.html)
 
@@ -26038,14 +26459,14 @@ ProvidedTypeDefinition.SetBaseTypeDelayed
 SetBaseTypeDelayed 
 ProvidedTypeDefinition.SetEnumUnderlyingType 
 SetEnumUnderlyingType 
-ProvidedTypeDefinition.NonNullable 
-NonNullable 
-ProvidedTypeDefinition.HideObjectMethods 
-HideObjectMethods 
-ProvidedTypeDefinition.IsErased 
-IsErased 
 ProvidedTypeDefinition.SuppressRelocation 
 SuppressRelocation 
+ProvidedTypeDefinition.IsErased 
+IsErased 
+ProvidedTypeDefinition.HideObjectMethods 
+HideObjectMethods 
+ProvidedTypeDefinition.NonNullable 
+NonNullable 
 ProvidedTypeDefinition.EraseType 
 EraseType 
 ProvidedTypeDefinition.Logger 
@@ -26190,17 +26611,11 @@ ProvidedTypeDefinition.SetEnumUnderlyingType
 SetEnumUnderlyingType 
  Set underlying type for generated enums
 
-### [ProvidedTypeDefinition.NonNullable](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-8.html#NonNullable)
+### [ProvidedTypeDefinition.SuppressRelocation](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-8.html#SuppressRelocation)
 
-ProvidedTypeDefinition.NonNullable 
-NonNullable 
- Disallows the use of the null literal.
-
-### [ProvidedTypeDefinition.HideObjectMethods](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-8.html#HideObjectMethods)
-
-ProvidedTypeDefinition.HideObjectMethods 
-HideObjectMethods 
- Suppress Object entries in intellisense menus in instances of this provided type
+ProvidedTypeDefinition.SuppressRelocation 
+SuppressRelocation 
+ Get or set a flag indicating if the ProvidedTypeDefinition has type-relocation suppressed
 
 ### [ProvidedTypeDefinition.IsErased](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-8.html#IsErased)
 
@@ -26208,11 +26623,17 @@ ProvidedTypeDefinition.IsErased
 IsErased 
  Get a flag indicating if the ProvidedTypeDefinition is erased
 
-### [ProvidedTypeDefinition.SuppressRelocation](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-8.html#SuppressRelocation)
+### [ProvidedTypeDefinition.HideObjectMethods](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-8.html#HideObjectMethods)
 
-ProvidedTypeDefinition.SuppressRelocation 
-SuppressRelocation 
- Get or set a flag indicating if the ProvidedTypeDefinition has type-relocation suppressed
+ProvidedTypeDefinition.HideObjectMethods 
+HideObjectMethods 
+ Suppress Object entries in intellisense menus in instances of this provided type
+
+### [ProvidedTypeDefinition.NonNullable](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-8.html#NonNullable)
+
+ProvidedTypeDefinition.NonNullable 
+NonNullable 
+ Disallows the use of the null literal.
 
 ### [ProvidedTypeDefinition.EraseType](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-8.html#EraseType)
 
@@ -26373,10 +26794,10 @@ TypeProviderForNamespaces.ResolveAssembly
 ResolveAssembly 
 TypeProviderForNamespaces.TargetContext 
 TargetContext 
-TypeProviderForNamespaces.Disposing 
-Disposing 
 TypeProviderForNamespaces.Namespaces 
-Namespaces
+Namespaces 
+TypeProviderForNamespaces.Disposing 
+Disposing
 
 ### [TypeProviderForNamespaces.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-8.html#``.ctor``)
 
@@ -26440,16 +26861,16 @@ TargetContext
  need to use this property directly, as translation from the compiler-hosted context to 
  the design-time context will normally be performed automatically.
 
-### [TypeProviderForNamespaces.Disposing](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-8.html#Disposing)
-
-TypeProviderForNamespaces.Disposing 
-Disposing
-
 ### [TypeProviderForNamespaces.Namespaces](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-8.html#Namespaces)
 
 TypeProviderForNamespaces.Namespaces 
 Namespaces 
  Invoked by the type provider to get all provided namespaces with their provided types.
+
+### [TypeProviderForNamespaces.Disposing](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-8.html#Disposing)
+
+TypeProviderForNamespaces.Disposing 
+Disposing
 
 ### [ExpressionOptimizer](https://fsprojects.github.io/SQLProvider/reference/global-expressionoptimizer.html)
 
@@ -26582,7 +27003,9 @@ Methods.``replace constant comparison``
 ``replace constant comparison`` 
 <pre> The purpose of this is to optimize away already known constant=constant style expressions.
    7 > 8      -->   False
- "G" = "G"    -->   True</pre>
+ "G" = "G"    -->   True
+ Only a comparison by value that returns bool: a built-in operator, and not the
+ reference comparison of two objects (no Method on reference-typed operands).</pre>
 
 ### [Methods.``remove AnonymousType``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods.html#``remove AnonymousType``)
 
@@ -26590,18 +27013,24 @@ Methods.``remove AnonymousType``
 ``remove AnonymousType`` 
  Purpose of this is to replace non-used anonymous types:
  new AnonymousObject(Item1 = x, Item2 = "").Item1    -->   x
+ The member's constructor argument is found through NewExpression.Members (the
+ member at index i is initialised from argument i), for a tuple without Members
+ through its ItemN, and for an anonymous type without Members by the name of
+ the member the argument reads.
 
 ### [Methods.``cut not used condition``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods.html#``cut not used condition``)
 
 Methods.``cut not used condition`` 
 ``cut not used condition`` 
- if false then x else y -> y
+ if false then x else y -> y 
+ (a branch of the conditional's own type only: a typed conditional keeps its type)
 
 ### [Methods.``not false is true``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods.html#``not false is true``)
 
 Methods.``not false is true`` 
 ``not false is true`` 
- not(false) -> true
+ not(false) -> true 
+ (a plain bool constant only: Not on a Nullable<bool> constant stays Nullable<bool>)
 
 ### [Methods.associate](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods.html#associate)
 
@@ -26740,9 +27169,8 @@ Methods.``evaluate constants``
 
 Methods.``evaluate basic constant math`` 
 ``evaluate basic constant math`` 
-<pre> Evaluate simple math between two constants.
-  9  *  3     -->    27
- "G" + "G"    -->   "GG"</pre>
+ A fold that overflows here (decimal arithmetic is always checked) is left in
+ the tree for the run time to throw.
 
 ### [Methods.``simplify string operations``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods.html#``simplify string operations``)
 
@@ -26898,7 +27326,9 @@ Methods.``replace constant comparison``
 ``replace constant comparison`` 
 <pre> The purpose of this is to optimize away already known constant=constant style expressions.
    7 > 8      -->   False
- "G" = "G"    -->   True</pre>
+ "G" = "G"    -->   True
+ Only a comparison by value that returns bool: a built-in operator, and not the
+ reference comparison of two objects (no Method on reference-typed operands).</pre>
 
 ### [Methods.``remove AnonymousType``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-0.html#``remove AnonymousType``)
 
@@ -26906,18 +27336,24 @@ Methods.``remove AnonymousType``
 ``remove AnonymousType`` 
  Purpose of this is to replace non-used anonymous types:
  new AnonymousObject(Item1 = x, Item2 = "").Item1    -->   x
+ The member's constructor argument is found through NewExpression.Members (the
+ member at index i is initialised from argument i), for a tuple without Members
+ through its ItemN, and for an anonymous type without Members by the name of
+ the member the argument reads.
 
 ### [Methods.``cut not used condition``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-0.html#``cut not used condition``)
 
 Methods.``cut not used condition`` 
 ``cut not used condition`` 
- if false then x else y -> y
+ if false then x else y -> y 
+ (a branch of the conditional's own type only: a typed conditional keeps its type)
 
 ### [Methods.``not false is true``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-0.html#``not false is true``)
 
 Methods.``not false is true`` 
 ``not false is true`` 
- not(false) -> true
+ not(false) -> true 
+ (a plain bool constant only: Not on a Nullable<bool> constant stays Nullable<bool>)
 
 ### [Methods.associate](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-0.html#associate)
 
@@ -27056,9 +27492,8 @@ Methods.``evaluate constants``
 
 Methods.``evaluate basic constant math`` 
 ``evaluate basic constant math`` 
-<pre> Evaluate simple math between two constants.
-  9  *  3     -->    27
- "G" + "G"    -->   "GG"</pre>
+ A fold that overflows here (decimal arithmetic is always checked) is left in
+ the tree for the run time to throw.
 
 ### [Methods.``simplify string operations``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-0.html#``simplify string operations``)
 
@@ -27214,7 +27649,9 @@ Methods.``replace constant comparison``
 ``replace constant comparison`` 
 <pre> The purpose of this is to optimize away already known constant=constant style expressions.
    7 > 8      -->   False
- "G" = "G"    -->   True</pre>
+ "G" = "G"    -->   True
+ Only a comparison by value that returns bool: a built-in operator, and not the
+ reference comparison of two objects (no Method on reference-typed operands).</pre>
 
 ### [Methods.``remove AnonymousType``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-1.html#``remove AnonymousType``)
 
@@ -27222,18 +27659,24 @@ Methods.``remove AnonymousType``
 ``remove AnonymousType`` 
  Purpose of this is to replace non-used anonymous types:
  new AnonymousObject(Item1 = x, Item2 = "").Item1    -->   x
+ The member's constructor argument is found through NewExpression.Members (the
+ member at index i is initialised from argument i), for a tuple without Members
+ through its ItemN, and for an anonymous type without Members by the name of
+ the member the argument reads.
 
 ### [Methods.``cut not used condition``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-1.html#``cut not used condition``)
 
 Methods.``cut not used condition`` 
 ``cut not used condition`` 
- if false then x else y -> y
+ if false then x else y -> y 
+ (a branch of the conditional's own type only: a typed conditional keeps its type)
 
 ### [Methods.``not false is true``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-1.html#``not false is true``)
 
 Methods.``not false is true`` 
 ``not false is true`` 
- not(false) -> true
+ not(false) -> true 
+ (a plain bool constant only: Not on a Nullable<bool> constant stays Nullable<bool>)
 
 ### [Methods.associate](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-1.html#associate)
 
@@ -27372,9 +27815,8 @@ Methods.``evaluate constants``
 
 Methods.``evaluate basic constant math`` 
 ``evaluate basic constant math`` 
-<pre> Evaluate simple math between two constants.
-  9  *  3     -->    27
- "G" + "G"    -->   "GG"</pre>
+ A fold that overflows here (decimal arithmetic is always checked) is left in
+ the tree for the run time to throw.
 
 ### [Methods.``simplify string operations``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-1.html#``simplify string operations``)
 
@@ -27530,7 +27972,9 @@ Methods.``replace constant comparison``
 ``replace constant comparison`` 
 <pre> The purpose of this is to optimize away already known constant=constant style expressions.
    7 > 8      -->   False
- "G" = "G"    -->   True</pre>
+ "G" = "G"    -->   True
+ Only a comparison by value that returns bool: a built-in operator, and not the
+ reference comparison of two objects (no Method on reference-typed operands).</pre>
 
 ### [Methods.``remove AnonymousType``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-2.html#``remove AnonymousType``)
 
@@ -27538,18 +27982,24 @@ Methods.``remove AnonymousType``
 ``remove AnonymousType`` 
  Purpose of this is to replace non-used anonymous types:
  new AnonymousObject(Item1 = x, Item2 = "").Item1    -->   x
+ The member's constructor argument is found through NewExpression.Members (the
+ member at index i is initialised from argument i), for a tuple without Members
+ through its ItemN, and for an anonymous type without Members by the name of
+ the member the argument reads.
 
 ### [Methods.``cut not used condition``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-2.html#``cut not used condition``)
 
 Methods.``cut not used condition`` 
 ``cut not used condition`` 
- if false then x else y -> y
+ if false then x else y -> y 
+ (a branch of the conditional's own type only: a typed conditional keeps its type)
 
 ### [Methods.``not false is true``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-2.html#``not false is true``)
 
 Methods.``not false is true`` 
 ``not false is true`` 
- not(false) -> true
+ not(false) -> true 
+ (a plain bool constant only: Not on a Nullable<bool> constant stays Nullable<bool>)
 
 ### [Methods.associate](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-2.html#associate)
 
@@ -27688,9 +28138,8 @@ Methods.``evaluate constants``
 
 Methods.``evaluate basic constant math`` 
 ``evaluate basic constant math`` 
-<pre> Evaluate simple math between two constants.
-  9  *  3     -->    27
- "G" + "G"    -->   "GG"</pre>
+ A fold that overflows here (decimal arithmetic is always checked) is left in
+ the tree for the run time to throw.
 
 ### [Methods.``simplify string operations``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-2.html#``simplify string operations``)
 
@@ -27846,7 +28295,9 @@ Methods.``replace constant comparison``
 ``replace constant comparison`` 
 <pre> The purpose of this is to optimize away already known constant=constant style expressions.
    7 > 8      -->   False
- "G" = "G"    -->   True</pre>
+ "G" = "G"    -->   True
+ Only a comparison by value that returns bool: a built-in operator, and not the
+ reference comparison of two objects (no Method on reference-typed operands).</pre>
 
 ### [Methods.``remove AnonymousType``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-3.html#``remove AnonymousType``)
 
@@ -27854,18 +28305,24 @@ Methods.``remove AnonymousType``
 ``remove AnonymousType`` 
  Purpose of this is to replace non-used anonymous types:
  new AnonymousObject(Item1 = x, Item2 = "").Item1    -->   x
+ The member's constructor argument is found through NewExpression.Members (the
+ member at index i is initialised from argument i), for a tuple without Members
+ through its ItemN, and for an anonymous type without Members by the name of
+ the member the argument reads.
 
 ### [Methods.``cut not used condition``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-3.html#``cut not used condition``)
 
 Methods.``cut not used condition`` 
 ``cut not used condition`` 
- if false then x else y -> y
+ if false then x else y -> y 
+ (a branch of the conditional's own type only: a typed conditional keeps its type)
 
 ### [Methods.``not false is true``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-3.html#``not false is true``)
 
 Methods.``not false is true`` 
 ``not false is true`` 
- not(false) -> true
+ not(false) -> true 
+ (a plain bool constant only: Not on a Nullable<bool> constant stays Nullable<bool>)
 
 ### [Methods.associate](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-3.html#associate)
 
@@ -28004,9 +28461,8 @@ Methods.``evaluate constants``
 
 Methods.``evaluate basic constant math`` 
 ``evaluate basic constant math`` 
-<pre> Evaluate simple math between two constants.
-  9  *  3     -->    27
- "G" + "G"    -->   "GG"</pre>
+ A fold that overflows here (decimal arithmetic is always checked) is left in
+ the tree for the run time to throw.
 
 ### [Methods.``simplify string operations``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-3.html#``simplify string operations``)
 
@@ -28162,7 +28618,9 @@ Methods.``replace constant comparison``
 ``replace constant comparison`` 
 <pre> The purpose of this is to optimize away already known constant=constant style expressions.
    7 > 8      -->   False
- "G" = "G"    -->   True</pre>
+ "G" = "G"    -->   True
+ Only a comparison by value that returns bool: a built-in operator, and not the
+ reference comparison of two objects (no Method on reference-typed operands).</pre>
 
 ### [Methods.``remove AnonymousType``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-4.html#``remove AnonymousType``)
 
@@ -28170,18 +28628,24 @@ Methods.``remove AnonymousType``
 ``remove AnonymousType`` 
  Purpose of this is to replace non-used anonymous types:
  new AnonymousObject(Item1 = x, Item2 = "").Item1    -->   x
+ The member's constructor argument is found through NewExpression.Members (the
+ member at index i is initialised from argument i), for a tuple without Members
+ through its ItemN, and for an anonymous type without Members by the name of
+ the member the argument reads.
 
 ### [Methods.``cut not used condition``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-4.html#``cut not used condition``)
 
 Methods.``cut not used condition`` 
 ``cut not used condition`` 
- if false then x else y -> y
+ if false then x else y -> y 
+ (a branch of the conditional's own type only: a typed conditional keeps its type)
 
 ### [Methods.``not false is true``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-4.html#``not false is true``)
 
 Methods.``not false is true`` 
 ``not false is true`` 
- not(false) -> true
+ not(false) -> true 
+ (a plain bool constant only: Not on a Nullable<bool> constant stays Nullable<bool>)
 
 ### [Methods.associate](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-4.html#associate)
 
@@ -28320,9 +28784,8 @@ Methods.``evaluate constants``
 
 Methods.``evaluate basic constant math`` 
 ``evaluate basic constant math`` 
-<pre> Evaluate simple math between two constants.
-  9  *  3     -->    27
- "G" + "G"    -->   "GG"</pre>
+ A fold that overflows here (decimal arithmetic is always checked) is left in
+ the tree for the run time to throw.
 
 ### [Methods.``simplify string operations``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-4.html#``simplify string operations``)
 
@@ -28478,7 +28941,9 @@ Methods.``replace constant comparison``
 ``replace constant comparison`` 
 <pre> The purpose of this is to optimize away already known constant=constant style expressions.
    7 > 8      -->   False
- "G" = "G"    -->   True</pre>
+ "G" = "G"    -->   True
+ Only a comparison by value that returns bool: a built-in operator, and not the
+ reference comparison of two objects (no Method on reference-typed operands).</pre>
 
 ### [Methods.``remove AnonymousType``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-5.html#``remove AnonymousType``)
 
@@ -28486,18 +28951,24 @@ Methods.``remove AnonymousType``
 ``remove AnonymousType`` 
  Purpose of this is to replace non-used anonymous types:
  new AnonymousObject(Item1 = x, Item2 = "").Item1    -->   x
+ The member's constructor argument is found through NewExpression.Members (the
+ member at index i is initialised from argument i), for a tuple without Members
+ through its ItemN, and for an anonymous type without Members by the name of
+ the member the argument reads.
 
 ### [Methods.``cut not used condition``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-5.html#``cut not used condition``)
 
 Methods.``cut not used condition`` 
 ``cut not used condition`` 
- if false then x else y -> y
+ if false then x else y -> y 
+ (a branch of the conditional's own type only: a typed conditional keeps its type)
 
 ### [Methods.``not false is true``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-5.html#``not false is true``)
 
 Methods.``not false is true`` 
 ``not false is true`` 
- not(false) -> true
+ not(false) -> true 
+ (a plain bool constant only: Not on a Nullable<bool> constant stays Nullable<bool>)
 
 ### [Methods.associate](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-5.html#associate)
 
@@ -28636,9 +29107,8 @@ Methods.``evaluate constants``
 
 Methods.``evaluate basic constant math`` 
 ``evaluate basic constant math`` 
-<pre> Evaluate simple math between two constants.
-  9  *  3     -->    27
- "G" + "G"    -->   "GG"</pre>
+ A fold that overflows here (decimal arithmetic is always checked) is left in
+ the tree for the run time to throw.
 
 ### [Methods.``simplify string operations``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-5.html#``simplify string operations``)
 
@@ -28794,7 +29264,9 @@ Methods.``replace constant comparison``
 ``replace constant comparison`` 
 <pre> The purpose of this is to optimize away already known constant=constant style expressions.
    7 > 8      -->   False
- "G" = "G"    -->   True</pre>
+ "G" = "G"    -->   True
+ Only a comparison by value that returns bool: a built-in operator, and not the
+ reference comparison of two objects (no Method on reference-typed operands).</pre>
 
 ### [Methods.``remove AnonymousType``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-6.html#``remove AnonymousType``)
 
@@ -28802,18 +29274,24 @@ Methods.``remove AnonymousType``
 ``remove AnonymousType`` 
  Purpose of this is to replace non-used anonymous types:
  new AnonymousObject(Item1 = x, Item2 = "").Item1    -->   x
+ The member's constructor argument is found through NewExpression.Members (the
+ member at index i is initialised from argument i), for a tuple without Members
+ through its ItemN, and for an anonymous type without Members by the name of
+ the member the argument reads.
 
 ### [Methods.``cut not used condition``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-6.html#``cut not used condition``)
 
 Methods.``cut not used condition`` 
 ``cut not used condition`` 
- if false then x else y -> y
+ if false then x else y -> y 
+ (a branch of the conditional's own type only: a typed conditional keeps its type)
 
 ### [Methods.``not false is true``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-6.html#``not false is true``)
 
 Methods.``not false is true`` 
 ``not false is true`` 
- not(false) -> true
+ not(false) -> true 
+ (a plain bool constant only: Not on a Nullable<bool> constant stays Nullable<bool>)
 
 ### [Methods.associate](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-6.html#associate)
 
@@ -28952,9 +29430,8 @@ Methods.``evaluate constants``
 
 Methods.``evaluate basic constant math`` 
 ``evaluate basic constant math`` 
-<pre> Evaluate simple math between two constants.
-  9  *  3     -->    27
- "G" + "G"    -->   "GG"</pre>
+ A fold that overflows here (decimal arithmetic is always checked) is left in
+ the tree for the run time to throw.
 
 ### [Methods.``simplify string operations``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-6.html#``simplify string operations``)
 
@@ -29110,7 +29587,9 @@ Methods.``replace constant comparison``
 ``replace constant comparison`` 
 <pre> The purpose of this is to optimize away already known constant=constant style expressions.
    7 > 8      -->   False
- "G" = "G"    -->   True</pre>
+ "G" = "G"    -->   True
+ Only a comparison by value that returns bool: a built-in operator, and not the
+ reference comparison of two objects (no Method on reference-typed operands).</pre>
 
 ### [Methods.``remove AnonymousType``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-7.html#``remove AnonymousType``)
 
@@ -29118,18 +29597,24 @@ Methods.``remove AnonymousType``
 ``remove AnonymousType`` 
  Purpose of this is to replace non-used anonymous types:
  new AnonymousObject(Item1 = x, Item2 = "").Item1    -->   x
+ The member's constructor argument is found through NewExpression.Members (the
+ member at index i is initialised from argument i), for a tuple without Members
+ through its ItemN, and for an anonymous type without Members by the name of
+ the member the argument reads.
 
 ### [Methods.``cut not used condition``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-7.html#``cut not used condition``)
 
 Methods.``cut not used condition`` 
 ``cut not used condition`` 
- if false then x else y -> y
+ if false then x else y -> y 
+ (a branch of the conditional's own type only: a typed conditional keeps its type)
 
 ### [Methods.``not false is true``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-7.html#``not false is true``)
 
 Methods.``not false is true`` 
 ``not false is true`` 
- not(false) -> true
+ not(false) -> true 
+ (a plain bool constant only: Not on a Nullable<bool> constant stays Nullable<bool>)
 
 ### [Methods.associate](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-7.html#associate)
 
@@ -29268,9 +29753,8 @@ Methods.``evaluate constants``
 
 Methods.``evaluate basic constant math`` 
 ``evaluate basic constant math`` 
-<pre> Evaluate simple math between two constants.
-  9  *  3     -->    27
- "G" + "G"    -->   "GG"</pre>
+ A fold that overflows here (decimal arithmetic is always checked) is left in
+ the tree for the run time to throw.
 
 ### [Methods.``simplify string operations``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-7.html#``simplify string operations``)
 
@@ -29426,7 +29910,9 @@ Methods.``replace constant comparison``
 ``replace constant comparison`` 
 <pre> The purpose of this is to optimize away already known constant=constant style expressions.
    7 > 8      -->   False
- "G" = "G"    -->   True</pre>
+ "G" = "G"    -->   True
+ Only a comparison by value that returns bool: a built-in operator, and not the
+ reference comparison of two objects (no Method on reference-typed operands).</pre>
 
 ### [Methods.``remove AnonymousType``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-8.html#``remove AnonymousType``)
 
@@ -29434,18 +29920,24 @@ Methods.``remove AnonymousType``
 ``remove AnonymousType`` 
  Purpose of this is to replace non-used anonymous types:
  new AnonymousObject(Item1 = x, Item2 = "").Item1    -->   x
+ The member's constructor argument is found through NewExpression.Members (the
+ member at index i is initialised from argument i), for a tuple without Members
+ through its ItemN, and for an anonymous type without Members by the name of
+ the member the argument reads.
 
 ### [Methods.``cut not used condition``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-8.html#``cut not used condition``)
 
 Methods.``cut not used condition`` 
 ``cut not used condition`` 
- if false then x else y -> y
+ if false then x else y -> y 
+ (a branch of the conditional's own type only: a typed conditional keeps its type)
 
 ### [Methods.``not false is true``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-8.html#``not false is true``)
 
 Methods.``not false is true`` 
 ``not false is true`` 
- not(false) -> true
+ not(false) -> true 
+ (a plain bool constant only: Not on a Nullable<bool> constant stays Nullable<bool>)
 
 ### [Methods.associate](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-8.html#associate)
 
@@ -29584,9 +30076,8 @@ Methods.``evaluate constants``
 
 Methods.``evaluate basic constant math`` 
 ``evaluate basic constant math`` 
-<pre> Evaluate simple math between two constants.
-  9  *  3     -->    27
- "G" + "G"    -->   "GG"</pre>
+ A fold that overflows here (decimal arithmetic is always checked) is left in
+ the tree for the run time to throw.
 
 ### [Methods.``simplify string operations``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-8.html#``simplify string operations``)
 
@@ -29742,7 +30233,9 @@ Methods.``replace constant comparison``
 ``replace constant comparison`` 
 <pre> The purpose of this is to optimize away already known constant=constant style expressions.
    7 > 8      -->   False
- "G" = "G"    -->   True</pre>
+ "G" = "G"    -->   True
+ Only a comparison by value that returns bool: a built-in operator, and not the
+ reference comparison of two objects (no Method on reference-typed operands).</pre>
 
 ### [Methods.``remove AnonymousType``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-9.html#``remove AnonymousType``)
 
@@ -29750,18 +30243,24 @@ Methods.``remove AnonymousType``
 ``remove AnonymousType`` 
  Purpose of this is to replace non-used anonymous types:
  new AnonymousObject(Item1 = x, Item2 = "").Item1    -->   x
+ The member's constructor argument is found through NewExpression.Members (the
+ member at index i is initialised from argument i), for a tuple without Members
+ through its ItemN, and for an anonymous type without Members by the name of
+ the member the argument reads.
 
 ### [Methods.``cut not used condition``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-9.html#``cut not used condition``)
 
 Methods.``cut not used condition`` 
 ``cut not used condition`` 
- if false then x else y -> y
+ if false then x else y -> y 
+ (a branch of the conditional's own type only: a typed conditional keeps its type)
 
 ### [Methods.``not false is true``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-9.html#``not false is true``)
 
 Methods.``not false is true`` 
 ``not false is true`` 
- not(false) -> true
+ not(false) -> true 
+ (a plain bool constant only: Not on a Nullable<bool> constant stays Nullable<bool>)
 
 ### [Methods.associate](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-9.html#associate)
 
@@ -29900,9 +30399,8 @@ Methods.``evaluate constants``
 
 Methods.``evaluate basic constant math`` 
 ``evaluate basic constant math`` 
-<pre> Evaluate simple math between two constants.
-  9  *  3     -->    27
- "G" + "G"    -->   "GG"</pre>
+ A fold that overflows here (decimal arithmetic is always checked) is left in
+ the tree for the run time to throw.
 
 ### [Methods.``simplify string operations``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-9.html#``simplify string operations``)
 
@@ -30058,7 +30556,9 @@ Methods.``replace constant comparison``
 ``replace constant comparison`` 
 <pre> The purpose of this is to optimize away already known constant=constant style expressions.
    7 > 8      -->   False
- "G" = "G"    -->   True</pre>
+ "G" = "G"    -->   True
+ Only a comparison by value that returns bool: a built-in operator, and not the
+ reference comparison of two objects (no Method on reference-typed operands).</pre>
 
 ### [Methods.``remove AnonymousType``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-10.html#``remove AnonymousType``)
 
@@ -30066,18 +30566,24 @@ Methods.``remove AnonymousType``
 ``remove AnonymousType`` 
  Purpose of this is to replace non-used anonymous types:
  new AnonymousObject(Item1 = x, Item2 = "").Item1    -->   x
+ The member's constructor argument is found through NewExpression.Members (the
+ member at index i is initialised from argument i), for a tuple without Members
+ through its ItemN, and for an anonymous type without Members by the name of
+ the member the argument reads.
 
 ### [Methods.``cut not used condition``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-10.html#``cut not used condition``)
 
 Methods.``cut not used condition`` 
 ``cut not used condition`` 
- if false then x else y -> y
+ if false then x else y -> y 
+ (a branch of the conditional's own type only: a typed conditional keeps its type)
 
 ### [Methods.``not false is true``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-10.html#``not false is true``)
 
 Methods.``not false is true`` 
 ``not false is true`` 
- not(false) -> true
+ not(false) -> true 
+ (a plain bool constant only: Not on a Nullable<bool> constant stays Nullable<bool>)
 
 ### [Methods.associate](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-10.html#associate)
 
@@ -30216,9 +30722,8 @@ Methods.``evaluate constants``
 
 Methods.``evaluate basic constant math`` 
 ``evaluate basic constant math`` 
-<pre> Evaluate simple math between two constants.
-  9  *  3     -->    27
- "G" + "G"    -->   "GG"</pre>
+ A fold that overflows here (decimal arithmetic is always checked) is left in
+ the tree for the run time to throw.
 
 ### [Methods.``simplify string operations``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-10.html#``simplify string operations``)
 
@@ -30374,7 +30879,9 @@ Methods.``replace constant comparison``
 ``replace constant comparison`` 
 <pre> The purpose of this is to optimize away already known constant=constant style expressions.
    7 > 8      -->   False
- "G" = "G"    -->   True</pre>
+ "G" = "G"    -->   True
+ Only a comparison by value that returns bool: a built-in operator, and not the
+ reference comparison of two objects (no Method on reference-typed operands).</pre>
 
 ### [Methods.``remove AnonymousType``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-11.html#``remove AnonymousType``)
 
@@ -30382,18 +30889,24 @@ Methods.``remove AnonymousType``
 ``remove AnonymousType`` 
  Purpose of this is to replace non-used anonymous types:
  new AnonymousObject(Item1 = x, Item2 = "").Item1    -->   x
+ The member's constructor argument is found through NewExpression.Members (the
+ member at index i is initialised from argument i), for a tuple without Members
+ through its ItemN, and for an anonymous type without Members by the name of
+ the member the argument reads.
 
 ### [Methods.``cut not used condition``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-11.html#``cut not used condition``)
 
 Methods.``cut not used condition`` 
 ``cut not used condition`` 
- if false then x else y -> y
+ if false then x else y -> y 
+ (a branch of the conditional's own type only: a typed conditional keeps its type)
 
 ### [Methods.``not false is true``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-11.html#``not false is true``)
 
 Methods.``not false is true`` 
 ``not false is true`` 
- not(false) -> true
+ not(false) -> true 
+ (a plain bool constant only: Not on a Nullable<bool> constant stays Nullable<bool>)
 
 ### [Methods.associate](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-11.html#associate)
 
@@ -30532,9 +31045,8 @@ Methods.``evaluate constants``
 
 Methods.``evaluate basic constant math`` 
 ``evaluate basic constant math`` 
-<pre> Evaluate simple math between two constants.
-  9  *  3     -->    27
- "G" + "G"    -->   "GG"</pre>
+ A fold that overflows here (decimal arithmetic is always checked) is left in
+ the tree for the run time to throw.
 
 ### [Methods.``simplify string operations``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-11.html#``simplify string operations``)
 
@@ -30690,7 +31202,9 @@ Methods.``replace constant comparison``
 ``replace constant comparison`` 
 <pre> The purpose of this is to optimize away already known constant=constant style expressions.
    7 > 8      -->   False
- "G" = "G"    -->   True</pre>
+ "G" = "G"    -->   True
+ Only a comparison by value that returns bool: a built-in operator, and not the
+ reference comparison of two objects (no Method on reference-typed operands).</pre>
 
 ### [Methods.``remove AnonymousType``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-12.html#``remove AnonymousType``)
 
@@ -30698,18 +31212,24 @@ Methods.``remove AnonymousType``
 ``remove AnonymousType`` 
  Purpose of this is to replace non-used anonymous types:
  new AnonymousObject(Item1 = x, Item2 = "").Item1    -->   x
+ The member's constructor argument is found through NewExpression.Members (the
+ member at index i is initialised from argument i), for a tuple without Members
+ through its ItemN, and for an anonymous type without Members by the name of
+ the member the argument reads.
 
 ### [Methods.``cut not used condition``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-12.html#``cut not used condition``)
 
 Methods.``cut not used condition`` 
 ``cut not used condition`` 
- if false then x else y -> y
+ if false then x else y -> y 
+ (a branch of the conditional's own type only: a typed conditional keeps its type)
 
 ### [Methods.``not false is true``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-12.html#``not false is true``)
 
 Methods.``not false is true`` 
 ``not false is true`` 
- not(false) -> true
+ not(false) -> true 
+ (a plain bool constant only: Not on a Nullable<bool> constant stays Nullable<bool>)
 
 ### [Methods.associate](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-12.html#associate)
 
@@ -30848,9 +31368,8 @@ Methods.``evaluate constants``
 
 Methods.``evaluate basic constant math`` 
 ``evaluate basic constant math`` 
-<pre> Evaluate simple math between two constants.
-  9  *  3     -->    27
- "G" + "G"    -->   "GG"</pre>
+ A fold that overflows here (decimal arithmetic is always checked) is left in
+ the tree for the run time to throw.
 
 ### [Methods.``simplify string operations``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-12.html#``simplify string operations``)
 
@@ -31006,7 +31525,9 @@ Methods.``replace constant comparison``
 ``replace constant comparison`` 
 <pre> The purpose of this is to optimize away already known constant=constant style expressions.
    7 > 8      -->   False
- "G" = "G"    -->   True</pre>
+ "G" = "G"    -->   True
+ Only a comparison by value that returns bool: a built-in operator, and not the
+ reference comparison of two objects (no Method on reference-typed operands).</pre>
 
 ### [Methods.``remove AnonymousType``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-13.html#``remove AnonymousType``)
 
@@ -31014,18 +31535,24 @@ Methods.``remove AnonymousType``
 ``remove AnonymousType`` 
  Purpose of this is to replace non-used anonymous types:
  new AnonymousObject(Item1 = x, Item2 = "").Item1    -->   x
+ The member's constructor argument is found through NewExpression.Members (the
+ member at index i is initialised from argument i), for a tuple without Members
+ through its ItemN, and for an anonymous type without Members by the name of
+ the member the argument reads.
 
 ### [Methods.``cut not used condition``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-13.html#``cut not used condition``)
 
 Methods.``cut not used condition`` 
 ``cut not used condition`` 
- if false then x else y -> y
+ if false then x else y -> y 
+ (a branch of the conditional's own type only: a typed conditional keeps its type)
 
 ### [Methods.``not false is true``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-13.html#``not false is true``)
 
 Methods.``not false is true`` 
 ``not false is true`` 
- not(false) -> true
+ not(false) -> true 
+ (a plain bool constant only: Not on a Nullable<bool> constant stays Nullable<bool>)
 
 ### [Methods.associate](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-13.html#associate)
 
@@ -31164,9 +31691,8 @@ Methods.``evaluate constants``
 
 Methods.``evaluate basic constant math`` 
 ``evaluate basic constant math`` 
-<pre> Evaluate simple math between two constants.
-  9  *  3     -->    27
- "G" + "G"    -->   "GG"</pre>
+ A fold that overflows here (decimal arithmetic is always checked) is left in
+ the tree for the run time to throw.
 
 ### [Methods.``simplify string operations``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-13.html#``simplify string operations``)
 
@@ -31322,7 +31848,9 @@ Methods.``replace constant comparison``
 ``replace constant comparison`` 
 <pre> The purpose of this is to optimize away already known constant=constant style expressions.
    7 > 8      -->   False
- "G" = "G"    -->   True</pre>
+ "G" = "G"    -->   True
+ Only a comparison by value that returns bool: a built-in operator, and not the
+ reference comparison of two objects (no Method on reference-typed operands).</pre>
 
 ### [Methods.``remove AnonymousType``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-14.html#``remove AnonymousType``)
 
@@ -31330,18 +31858,24 @@ Methods.``remove AnonymousType``
 ``remove AnonymousType`` 
  Purpose of this is to replace non-used anonymous types:
  new AnonymousObject(Item1 = x, Item2 = "").Item1    -->   x
+ The member's constructor argument is found through NewExpression.Members (the
+ member at index i is initialised from argument i), for a tuple without Members
+ through its ItemN, and for an anonymous type without Members by the name of
+ the member the argument reads.
 
 ### [Methods.``cut not used condition``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-14.html#``cut not used condition``)
 
 Methods.``cut not used condition`` 
 ``cut not used condition`` 
- if false then x else y -> y
+ if false then x else y -> y 
+ (a branch of the conditional's own type only: a typed conditional keeps its type)
 
 ### [Methods.``not false is true``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-14.html#``not false is true``)
 
 Methods.``not false is true`` 
 ``not false is true`` 
- not(false) -> true
+ not(false) -> true 
+ (a plain bool constant only: Not on a Nullable<bool> constant stays Nullable<bool>)
 
 ### [Methods.associate](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-14.html#associate)
 
@@ -31480,9 +32014,8 @@ Methods.``evaluate constants``
 
 Methods.``evaluate basic constant math`` 
 ``evaluate basic constant math`` 
-<pre> Evaluate simple math between two constants.
-  9  *  3     -->    27
- "G" + "G"    -->   "GG"</pre>
+ A fold that overflows here (decimal arithmetic is always checked) is left in
+ the tree for the run time to throw.
 
 ### [Methods.``simplify string operations``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-14.html#``simplify string operations``)
 
@@ -31638,7 +32171,9 @@ Methods.``replace constant comparison``
 ``replace constant comparison`` 
 <pre> The purpose of this is to optimize away already known constant=constant style expressions.
    7 > 8      -->   False
- "G" = "G"    -->   True</pre>
+ "G" = "G"    -->   True
+ Only a comparison by value that returns bool: a built-in operator, and not the
+ reference comparison of two objects (no Method on reference-typed operands).</pre>
 
 ### [Methods.``remove AnonymousType``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-15.html#``remove AnonymousType``)
 
@@ -31646,18 +32181,24 @@ Methods.``remove AnonymousType``
 ``remove AnonymousType`` 
  Purpose of this is to replace non-used anonymous types:
  new AnonymousObject(Item1 = x, Item2 = "").Item1    -->   x
+ The member's constructor argument is found through NewExpression.Members (the
+ member at index i is initialised from argument i), for a tuple without Members
+ through its ItemN, and for an anonymous type without Members by the name of
+ the member the argument reads.
 
 ### [Methods.``cut not used condition``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-15.html#``cut not used condition``)
 
 Methods.``cut not used condition`` 
 ``cut not used condition`` 
- if false then x else y -> y
+ if false then x else y -> y 
+ (a branch of the conditional's own type only: a typed conditional keeps its type)
 
 ### [Methods.``not false is true``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-15.html#``not false is true``)
 
 Methods.``not false is true`` 
 ``not false is true`` 
- not(false) -> true
+ not(false) -> true 
+ (a plain bool constant only: Not on a Nullable<bool> constant stays Nullable<bool>)
 
 ### [Methods.associate](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-15.html#associate)
 
@@ -31796,9 +32337,8 @@ Methods.``evaluate constants``
 
 Methods.``evaluate basic constant math`` 
 ``evaluate basic constant math`` 
-<pre> Evaluate simple math between two constants.
-  9  *  3     -->    27
- "G" + "G"    -->   "GG"</pre>
+ A fold that overflows here (decimal arithmetic is always checked) is left in
+ the tree for the run time to throw.
 
 ### [Methods.``simplify string operations``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-15.html#``simplify string operations``)
 
@@ -31954,7 +32494,9 @@ Methods.``replace constant comparison``
 ``replace constant comparison`` 
 <pre> The purpose of this is to optimize away already known constant=constant style expressions.
    7 > 8      -->   False
- "G" = "G"    -->   True</pre>
+ "G" = "G"    -->   True
+ Only a comparison by value that returns bool: a built-in operator, and not the
+ reference comparison of two objects (no Method on reference-typed operands).</pre>
 
 ### [Methods.``remove AnonymousType``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-16.html#``remove AnonymousType``)
 
@@ -31962,18 +32504,24 @@ Methods.``remove AnonymousType``
 ``remove AnonymousType`` 
  Purpose of this is to replace non-used anonymous types:
  new AnonymousObject(Item1 = x, Item2 = "").Item1    -->   x
+ The member's constructor argument is found through NewExpression.Members (the
+ member at index i is initialised from argument i), for a tuple without Members
+ through its ItemN, and for an anonymous type without Members by the name of
+ the member the argument reads.
 
 ### [Methods.``cut not used condition``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-16.html#``cut not used condition``)
 
 Methods.``cut not used condition`` 
 ``cut not used condition`` 
- if false then x else y -> y
+ if false then x else y -> y 
+ (a branch of the conditional's own type only: a typed conditional keeps its type)
 
 ### [Methods.``not false is true``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-16.html#``not false is true``)
 
 Methods.``not false is true`` 
 ``not false is true`` 
- not(false) -> true
+ not(false) -> true 
+ (a plain bool constant only: Not on a Nullable<bool> constant stays Nullable<bool>)
 
 ### [Methods.associate](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-16.html#associate)
 
@@ -32112,9 +32660,8 @@ Methods.``evaluate constants``
 
 Methods.``evaluate basic constant math`` 
 ``evaluate basic constant math`` 
-<pre> Evaluate simple math between two constants.
-  9  *  3     -->    27
- "G" + "G"    -->   "GG"</pre>
+ A fold that overflows here (decimal arithmetic is always checked) is left in
+ the tree for the run time to throw.
 
 ### [Methods.``simplify string operations``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-16.html#``simplify string operations``)
 
@@ -32270,7 +32817,9 @@ Methods.``replace constant comparison``
 ``replace constant comparison`` 
 <pre> The purpose of this is to optimize away already known constant=constant style expressions.
    7 > 8      -->   False
- "G" = "G"    -->   True</pre>
+ "G" = "G"    -->   True
+ Only a comparison by value that returns bool: a built-in operator, and not the
+ reference comparison of two objects (no Method on reference-typed operands).</pre>
 
 ### [Methods.``remove AnonymousType``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-17.html#``remove AnonymousType``)
 
@@ -32278,18 +32827,24 @@ Methods.``remove AnonymousType``
 ``remove AnonymousType`` 
  Purpose of this is to replace non-used anonymous types:
  new AnonymousObject(Item1 = x, Item2 = "").Item1    -->   x
+ The member's constructor argument is found through NewExpression.Members (the
+ member at index i is initialised from argument i), for a tuple without Members
+ through its ItemN, and for an anonymous type without Members by the name of
+ the member the argument reads.
 
 ### [Methods.``cut not used condition``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-17.html#``cut not used condition``)
 
 Methods.``cut not used condition`` 
 ``cut not used condition`` 
- if false then x else y -> y
+ if false then x else y -> y 
+ (a branch of the conditional's own type only: a typed conditional keeps its type)
 
 ### [Methods.``not false is true``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-17.html#``not false is true``)
 
 Methods.``not false is true`` 
 ``not false is true`` 
- not(false) -> true
+ not(false) -> true 
+ (a plain bool constant only: Not on a Nullable<bool> constant stays Nullable<bool>)
 
 ### [Methods.associate](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-17.html#associate)
 
@@ -32428,9 +32983,8 @@ Methods.``evaluate constants``
 
 Methods.``evaluate basic constant math`` 
 ``evaluate basic constant math`` 
-<pre> Evaluate simple math between two constants.
-  9  *  3     -->    27
- "G" + "G"    -->   "GG"</pre>
+ A fold that overflows here (decimal arithmetic is always checked) is left in
+ the tree for the run time to throw.
 
 ### [Methods.``simplify string operations``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-17.html#``simplify string operations``)
 
@@ -32586,7 +33140,9 @@ Methods.``replace constant comparison``
 ``replace constant comparison`` 
 <pre> The purpose of this is to optimize away already known constant=constant style expressions.
    7 > 8      -->   False
- "G" = "G"    -->   True</pre>
+ "G" = "G"    -->   True
+ Only a comparison by value that returns bool: a built-in operator, and not the
+ reference comparison of two objects (no Method on reference-typed operands).</pre>
 
 ### [Methods.``remove AnonymousType``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-18.html#``remove AnonymousType``)
 
@@ -32594,18 +33150,24 @@ Methods.``remove AnonymousType``
 ``remove AnonymousType`` 
  Purpose of this is to replace non-used anonymous types:
  new AnonymousObject(Item1 = x, Item2 = "").Item1    -->   x
+ The member's constructor argument is found through NewExpression.Members (the
+ member at index i is initialised from argument i), for a tuple without Members
+ through its ItemN, and for an anonymous type without Members by the name of
+ the member the argument reads.
 
 ### [Methods.``cut not used condition``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-18.html#``cut not used condition``)
 
 Methods.``cut not used condition`` 
 ``cut not used condition`` 
- if false then x else y -> y
+ if false then x else y -> y 
+ (a branch of the conditional's own type only: a typed conditional keeps its type)
 
 ### [Methods.``not false is true``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-18.html#``not false is true``)
 
 Methods.``not false is true`` 
 ``not false is true`` 
- not(false) -> true
+ not(false) -> true 
+ (a plain bool constant only: Not on a Nullable<bool> constant stays Nullable<bool>)
 
 ### [Methods.associate](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-18.html#associate)
 
@@ -32744,9 +33306,8 @@ Methods.``evaluate constants``
 
 Methods.``evaluate basic constant math`` 
 ``evaluate basic constant math`` 
-<pre> Evaluate simple math between two constants.
-  9  *  3     -->    27
- "G" + "G"    -->   "GG"</pre>
+ A fold that overflows here (decimal arithmetic is always checked) is left in
+ the tree for the run time to throw.
 
 ### [Methods.``simplify string operations``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-18.html#``simplify string operations``)
 
@@ -32902,7 +33463,9 @@ Methods.``replace constant comparison``
 ``replace constant comparison`` 
 <pre> The purpose of this is to optimize away already known constant=constant style expressions.
    7 > 8      -->   False
- "G" = "G"    -->   True</pre>
+ "G" = "G"    -->   True
+ Only a comparison by value that returns bool: a built-in operator, and not the
+ reference comparison of two objects (no Method on reference-typed operands).</pre>
 
 ### [Methods.``remove AnonymousType``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-19.html#``remove AnonymousType``)
 
@@ -32910,18 +33473,24 @@ Methods.``remove AnonymousType``
 ``remove AnonymousType`` 
  Purpose of this is to replace non-used anonymous types:
  new AnonymousObject(Item1 = x, Item2 = "").Item1    -->   x
+ The member's constructor argument is found through NewExpression.Members (the
+ member at index i is initialised from argument i), for a tuple without Members
+ through its ItemN, and for an anonymous type without Members by the name of
+ the member the argument reads.
 
 ### [Methods.``cut not used condition``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-19.html#``cut not used condition``)
 
 Methods.``cut not used condition`` 
 ``cut not used condition`` 
- if false then x else y -> y
+ if false then x else y -> y 
+ (a branch of the conditional's own type only: a typed conditional keeps its type)
 
 ### [Methods.``not false is true``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-19.html#``not false is true``)
 
 Methods.``not false is true`` 
 ``not false is true`` 
- not(false) -> true
+ not(false) -> true 
+ (a plain bool constant only: Not on a Nullable<bool> constant stays Nullable<bool>)
 
 ### [Methods.associate](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-19.html#associate)
 
@@ -33060,9 +33629,8 @@ Methods.``evaluate constants``
 
 Methods.``evaluate basic constant math`` 
 ``evaluate basic constant math`` 
-<pre> Evaluate simple math between two constants.
-  9  *  3     -->    27
- "G" + "G"    -->   "GG"</pre>
+ A fold that overflows here (decimal arithmetic is always checked) is left in
+ the tree for the run time to throw.
 
 ### [Methods.``simplify string operations``](https://fsprojects.github.io/SQLProvider/reference/expressionoptimizer-methods-19.html#``simplify string operations``)
 
