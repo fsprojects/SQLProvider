@@ -281,6 +281,52 @@
     <span class="c">// Name: Gail, Level: 2</span>
     <span class="c">// ...</span>
 </code></pre>
+<h2><a name="What-each-database-gives" class="anchor" href="#What-each-database-gives">What each database gives</a></h2>
+<table>
+<thead>
+<tr class="header">
+<th><p>Database</p></th>
+<th><p>Functions</p></th>
+<th><p>Procedures</p></th>
+<th><p>Notes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><p>SQL Server</p></td>
+<td><p><code>ctx.Functions</code> (scalar)</p></td>
+<td><p><code>ctx.Procedures</code></p></td>
+<td><p>Table-valued functions aren't listed.</p></td>
+</tr>
+<tr class="even">
+<td><p>PostgreSQL</p></td>
+<td><p><code>ctx.Functions</code></p></td>
+<td><p><code>ctx.Procedures</code> (PostgreSQL 11+)</p></td>
+<td><p>Called by schema and name. See the <a href="postgresql.html">PostgreSQL</a> page.</p></td>
+</tr>
+<tr class="odd">
+<td><p>MySQL</p></td>
+<td><p><code>ctx.Functions</code></p></td>
+<td><p><code>ctx.Procedures</code></p></td>
+<td><p>A routine of another database of <code>Owner</code> is called by database and name.</p></td>
+</tr>
+<tr class="even">
+<td><p>Oracle</p></td>
+<td><p><code>ctx.Functions</code></p></td>
+<td><p><code>ctx.Procedures</code>, <code>ctx.Packages</code></p></td>
+<td><p>Called by owner and name, so another schema's routines work with a grant.</p></td>
+</tr>
+<tr class="odd">
+<td><p>Firebird</p></td>
+<td><p>not listed</p></td>
+<td><p><code>ctx.Procedures</code></p></td>
+<td><p>A procedure's output parameters are the one row of <code>ResultSet</code>; a selectable procedure gives its rows there.</p></td>
+</tr>
+</tbody>
+</table>
+
+<p><code>Invoke</code> and <code>InvokeAsync</code> take the routine's IN and INOUT parameters in their order. A function's value is
+<code>ReturnValue</code>; OUT and INOUT parameters are properties of the result, by their names.</p>
 
         <div popover class="fsdocs-tip" id="fs1">namespace System</div>
 <div popover class="fsdocs-tip" id="fs2">Multiple items<br />namespace FSharp<br /><br />--------------------<br />namespace Microsoft.FSharp</div>
@@ -387,6 +433,11 @@ from Microsoft.FSharp.Collections<br /><br />--------------------<br />type Map&
   <li class="level-1">
     <a href="#Programmability">
       Programmability
+    </a>
+  </li>
+  <li class="level-2">
+    <a href="#What-each-database-gives">
+      What each database gives
     </a>
   </li>
 </ul>

@@ -314,6 +314,54 @@ Defaults to "public".</p>
         <span data-fsdocs-tip="fs15" data-fsdocs-tip-unique="36" class="prop">useOptTypes</span><span class="pn">,</span>
         <span data-fsdocs-tip="fs18" data-fsdocs-tip-unique="37" class="prop">owner</span><span class="pn">&gt;</span>
 </code></pre>
+<h2><a name="Functions-and-procedures" class="anchor" href="#Functions-and-procedures">Functions and procedures</a></h2>
+<p>Functions are under <code>ctx.Functions</code> and procedures (PostgreSQL 11 and newer) under <code>ctx.Procedures</code>. Each has
+<code>Invoke</code> and <code>InvokeAsync</code>, which take the routine's IN and INOUT parameters in their order.</p>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span data-fsdocs-tip="fs21" data-fsdocs-tip-unique="38" class="id">ctx</span> <span class="o">=</span> <span class="id">sql</span><span class="pn">.</span><span class="id">GetDataContext</span><span class="pn">(</span><span class="pn">)</span>
+
+<span class="c">// A function&#39;s value</span>
+<span class="k">let</span> <span data-fsdocs-tip="fs22" data-fsdocs-tip-unique="39" class="id">total</span> <span class="o">=</span> <span data-fsdocs-tip="fs21" data-fsdocs-tip-unique="40" class="id">ctx</span><span class="pn">.</span><span class="id">Functions</span><span class="pn">.</span><span class="id">OrderTotal</span><span class="pn">.</span><span class="id">Invoke</span><span class="pn">(</span><span class="id">orderId</span><span class="pn">)</span><span class="pn">.</span><span class="id">ReturnValue</span>
+
+<span class="c">// A function that returns a table or a refcursor gives its rows</span>
+<span class="k">let</span> <span data-fsdocs-tip="fs23" data-fsdocs-tip-unique="41" class="id">rows</span> <span class="o">=</span> <span data-fsdocs-tip="fs21" data-fsdocs-tip-unique="42" class="id">ctx</span><span class="pn">.</span><span class="id">Functions</span><span class="pn">.</span><span class="id">OrdersOf</span><span class="pn">.</span><span class="id">Invoke</span><span class="pn">(</span><span class="id">customerId</span><span class="pn">)</span><span class="pn">.</span><span class="id">ReturnValue</span>
+
+<span class="c">// A procedure; its INOUT and OUT parameters are properties of the result</span>
+<span data-fsdocs-tip="fs21" data-fsdocs-tip-unique="43" class="id">ctx</span><span class="pn">.</span><span class="id">Procedures</span><span class="pn">.</span><span class="id">CloseOrder</span><span class="pn">.</span><span class="id">Invoke</span> <span class="id">orderId</span>
+<span class="k">let</span> <span data-fsdocs-tip="fs24" data-fsdocs-tip-unique="44" class="id">next</span> <span class="o">=</span> <span data-fsdocs-tip="fs21" data-fsdocs-tip-unique="45" class="id">ctx</span><span class="pn">.</span><span class="id">Procedures</span><span class="pn">.</span><span class="id">NextNumber</span><span class="pn">.</span><span class="id">Invoke</span><span class="pn">(</span><span class="s">&quot;invoice&quot;</span><span class="pn">,</span> <span class="n">0</span><span class="pn">)</span><span class="pn">.</span><span class="id">number</span>
+</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th><p>What</p></th>
+<th><p>How it is called</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><p><strong>Name</strong></p></td>
+<td><p>By schema and name, so the schema needn't be on the connection's search path.</p></td>
+</tr>
+<tr class="even">
+<td><p><strong>Function</strong></p></td>
+<td><p><code>SELECT * FROM schema.function(...)</code></p></td>
+</tr>
+<tr class="odd">
+<td><p><strong>Procedure</strong></p></td>
+<td><p><code>CALL schema.procedure(...)</code>; an OUT parameter's place takes a NULL (PostgreSQL 14 and newer).</p></td>
+</tr>
+<tr class="even">
+<td><p><strong>Transaction</strong></p></td>
+<td><p>Inside a <code>TransactionScope</code> the call runs in the scope's transaction. Outside one it runs in its own, so a procedure can't commit or roll back itself.</p></td>
+</tr>
+<tr class="odd">
+<td><p><strong>Npgsql</strong></p></td>
+<td><p>The same calls with every Npgsql version: SQLProvider writes the call's text itself.</p></td>
+</tr>
+</tbody>
+</table>
+
+<p>A function that returns a set of one column (<code>RETURNS SETOF integer</code>, or a table of one column) gives its first row's
+value; return a table of two or more columns to read the rows.</p>
 
         <div popover class="fsdocs-tip" id="fs1">val connectionString: string</div>
 <div popover class="fsdocs-tip" id="fs2">Multiple items<br />type LiteralAttribute =
@@ -385,6 +433,10 @@ val owner: string = &quot;public, admin, references&quot;</div>
                     &lt;param name=&#39;SQLiteLibrary&#39;&gt;Use System.Data.SQLite or Mono.Data.SQLite or select automatically (SQLite only)&lt;/param&gt;
                     &lt;param name=&#39;SsdtPath&#39;&gt;A path to an SSDT .dacpac file.&#39;&lt;/param&gt;
                     </em></div>
+<div popover class="fsdocs-tip" id="fs21">val ctx: obj</div>
+<div popover class="fsdocs-tip" id="fs22">val total: obj</div>
+<div popover class="fsdocs-tip" id="fs23">val rows: obj</div>
+<div popover class="fsdocs-tip" id="fs24">val next: obj</div>
 
     </div>
 </main>
@@ -434,6 +486,11 @@ val owner: string = &quot;public, admin, references&quot;</div>
   <li class="level-3">
     <a href="#Owner">
       Owner
+    </a>
+  </li>
+  <li class="level-2">
+    <a href="#Functions-and-procedures">
+      Functions and procedures
     </a>
   </li>
 </ul>

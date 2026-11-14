@@ -86,3 +86,34 @@ type sql =
         useOptTypes,
         owner>
 ```
+
+## Functions and procedures
+
+Functions are under `ctx.Functions` and procedures (PostgreSQL 11 and newer) under `ctx.Procedures`. Each has
+`Invoke` and `InvokeAsync`, which take the routine's IN and INOUT parameters in their order.
+
+```fsharp
+let ctx = sql.GetDataContext()
+
+// A function's value
+let total = ctx.Functions.OrderTotal.Invoke(orderId).ReturnValue
+
+// A function that returns a table or a refcursor gives its rows
+let rows = ctx.Functions.OrdersOf.Invoke(customerId).ReturnValue
+
+// A procedure; its INOUT and OUT parameters are properties of the result
+ctx.Procedures.CloseOrder.Invoke orderId
+let next = ctx.Procedures.NextNumber.Invoke("invoice", 0).number
+
+```
+
+What | How it is called
+--- | ---
+**Name** | By schema and name, so the schema needn't be on the connection's search path.
+**Function** | `SELECT * FROM schema.function(...)`
+**Procedure** | `CALL schema.procedure(...)`; an OUT parameter's place takes a NULL (PostgreSQL 14 and newer).
+**Transaction** | Inside a `TransactionScope` the call runs in the scope's transaction. Outside one it runs in its own, so a procedure can't commit or roll back itself.
+**Npgsql** | The same calls with every Npgsql version: SQLProvider writes the call's text itself.
+
+A function that returns a set of one column (`RETURNS SETOF integer`, or a table of one column) gives its first row's
+value; return a table of two or more columns to read the rows.

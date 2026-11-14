@@ -445,6 +445,12 @@ same: it also defaults to <code>Serializable</code>. So if you want <code>ReadCo
 avoid over-locking on a larger system), pass it explicitly through <code>TransactionOptions</code>, as above. Choosing the isolation
 level for a unit of work is intentionally the caller's job, not SQLProvider's (see
 <a href="https://github.com/fsprojects/SQLProvider/issues/238">issue #238</a> for one real-world use-case solution).</p>
+<p><strong>Firebird:</strong> <code>Serializable</code> is Firebird's SNAPSHOT TABLE STABILITY, which locks whole tables: every other writer of
+a table fails at once with "lock conflict on no wait transaction". A standalone <code>SubmitUpdates</code> therefore runs as
+<code>RepeatableRead</code> there, Firebird's SNAPSHOT, which locks the rows it writes. Inside your own <code>TransactionScope</code>
+the level is yours: pass <code>ReadCommitted</code> or <code>RepeatableRead</code>. The Firebird driver's pool gives a connection that
+was closed inside a running scope to the next caller with that transaction still on it ("a local transaction already
+exists"), so when scopes of several threads overlap, add <code>Pooling=false</code> to the connection string.</p>
 <p>If your transaction spans an <code>await</code> / async continuation, remember <code>TransactionScopeAsyncFlowOption.Enabled</code>
 (otherwise the ambient transaction won't flow to the continuation thread &mdash; see the <a href="async.html">async</a>
 page for a full example).</p>
