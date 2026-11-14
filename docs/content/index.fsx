@@ -9,7 +9,6 @@ A general .NET/Mono SQL database type provider. Current features:
 * Automatic constraint navigation
 * [Individuals](core/individuals.html)
 * Transactional [CRUD](core/crud.html) operations with identity support
-* [Locking rows for update](core/locking.html), against lost updates
 * [Stored Procedures](core/programmability.html)
 * [Functions](core/programmability.html)
 * Packages (Oracle)
@@ -17,6 +16,7 @@ A general .NET/Mono SQL database type provider. Current features:
 * Optional option types
 * [Mapping to record types](core/mappers.html)
 * Custom Operators
+* [Locking rows for update](core/locking.html), against lost updates
 * Supports [Asynchronous Operations](core/async.html)
 * Supports [.NET Standard / .NET Core](core/netstandard.html)
 * Supports [saving DB schema offline](core/parameters.html#ContextSchemaPath), and [SQL-Server *.dacpac files](core/mssqlssdt.html)

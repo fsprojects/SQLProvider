@@ -200,6 +200,10 @@ ctx.SubmitUpdates() // no record is added
 
 (**
 
+An update writes the columns you changed to the row with that primary key. It doesn't check whether another request
+changed the row after you read it: the last write wins. [Locking rows](locking.html) says when that matters and how to
+check for a change at save time.
+
 ### Transactions and isolation level
 
 `SubmitUpdates` / `SubmitUpdatesAsync` wrap the write in a `TransactionScope` created with
@@ -346,6 +350,10 @@ query the existing row when you need it.
 
 SQLite's `Update` is `INSERT OR REPLACE`: it deletes the conflicting row and inserts the new one, so columns not set get
 their defaults, and delete triggers and cascades run. `UpdateOn` updates the row in place.
+
+SQLite's `DoNothing` is `INSERT OR IGNORE`, which skips the row on any constraint failure: a NOT NULL column left empty
+or a failed CHECK too, not only a duplicate key, and without an error. `DoNothingOn` skips the row only for a duplicate
+on the columns it names; every other failure is an error.
 *)
 
 (**
