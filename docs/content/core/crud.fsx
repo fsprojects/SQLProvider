@@ -253,6 +253,13 @@ avoid over-locking on a larger system), pass it explicitly through `TransactionO
 level for a unit of work is intentionally the caller's job, not SQLProvider's (see
 [issue #238](https://github.com/fsprojects/SQLProvider/issues/238) for one real-world use-case solution).
 
+**Firebird:** `Serializable` is Firebird's SNAPSHOT TABLE STABILITY, which locks whole tables: every other writer of
+a table fails at once with "lock conflict on no wait transaction". A standalone `SubmitUpdates` therefore runs as
+`RepeatableRead` there, Firebird's SNAPSHOT, which locks the rows it writes. Inside your own `TransactionScope`
+the level is yours: pass `ReadCommitted` or `RepeatableRead`. The Firebird driver's pool gives a connection that
+was closed inside a running scope to the next caller with that transaction still on it ("a local transaction already
+exists"), so when scopes of several threads overlap, add `Pooling=false` to the connection string.
+
 If your transaction spans an `await` / async continuation, remember `TransactionScopeAsyncFlowOption.Enabled`
 (otherwise the ambient transaction won't flow to the continuation thread &mdash; see the [async](async.html)
 page for a full example).

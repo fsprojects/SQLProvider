@@ -10,6 +10,15 @@ open FSharp.Data.Sql.Patterns
 open FSharp.Data.Sql.Schema
 
 module internal QueryExpressionTransformer =
+
+    /// One lock for each table of each provider. The first query of a table reads its columns from the database inside
+    /// the lock, so that holds back the other queries of that table only, not every query of the provider.
+    let private columnLocks = System.Collections.Concurrent.ConcurrentDictionary<struct (obj * string), obj>()
+
+    /// The table's columns, read from the database once however many queries ask at the same moment.
+    let private columnsOf (provider: ISqlProvider) (con: System.Data.IDbConnection) (table: Table) =
+        let tableLock = columnLocks.GetOrAdd(struct (provider.GetLockObject(), table.FullName), fun _ -> obj ())
+        lock tableLock (fun () -> provider.GetColumns(con, table))
     open FSharp.Data.Sql
 
     let getSubEntityMi =
@@ -998,8 +1007,7 @@ module internal QueryExpressionTransformer =
                         | Some sel when useCanonicalsOnSelect && projectionColumns |> Seq.exists(fun kvp ->
                                         kvp.Value |> Seq.exists(fun co -> match co with | OperationColumn _ -> true | EntityColumn _ -> false)) ->
                             // Whole entity plus operation columns. We need urgent table lookup.
-                            let myLock = provider.GetLockObject()
-                            let cols = lock myLock (fun () -> provider.GetColumns (con,snd sqlQuery.UltimateChild.Value))
+                            let cols = columnsOf provider con (snd sqlQuery.UltimateChild.Value)
                             let opcols = projectionColumns |> Seq.collect(fun p -> p.Value)
                             let allcols = cols |> Map.toSeq |> Seq.map(fun (k,_) -> EntityColumn k)
                             let itms = Seq.concat [|opcols;allcols|] |> Seq.distinct |> Seq.toList
@@ -1190,9 +1198,7 @@ module internal QueryExpressionTransformer =
                                 | Some v -> v
                                 | None -> snd sqlQuery.UltimateChild.Value)
         |> Seq.distinct
-        |> Seq.iter(function table ->
-                                let myLock = provider.GetLockObject()
-                                lock myLock (fun () -> provider.GetColumns (con,table) |> ignore ))
+        |> Seq.iter (fun table -> columnsOf provider con table |> ignore)
 
         // A grouping without aggregates selects its keys: they are its only columns
         let sqlQuery =

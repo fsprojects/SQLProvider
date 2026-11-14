@@ -275,13 +275,18 @@ module MySql =
         let createSprocParameters (row:DataRow) =
             let dataType = Sql.dbUnbox row.["data_type"]
             let argumentName = Sql.dbUnbox row.["parameter_name"]
+            // MySQL 8 gives the length as bigint and the position as bigint unsigned; before it both were int
             let maxLength =
-                let r = Sql.dbUnboxWithDefault<int> -1 row.["character_maximum_length"]
-                if r = -1 then ValueNone else ValueSome r
+                match row.["character_maximum_length"] with
+                | length when Convert.IsDBNull length -> ValueNone
+                | length -> ValueSome(int (min (Convert.ToInt64 length) (int64 Int32.MaxValue)))
 
             findDbType dataType
             |> Option.map (fun m ->
-                let ordinal_position = Sql.dbUnboxWithDefault<int> 0 row.["ORDINAL_POSITION"]
+                let ordinal_position =
+                    match row.["ORDINAL_POSITION"] with
+                    | position when Convert.IsDBNull position -> 0
+                    | position -> Convert.ToInt32 position
                 let parameter_mode = Sql.dbUnbox<string> row.["PARAMETER_MODE"]
                 let returnValue = isNull argumentName && ordinal_position = 0
                 let direction =
@@ -351,19 +356,24 @@ module MySql =
         }
 
     let executeSprocCommandCommon (inputParams:QueryParameter []) (retCols:QueryParameter[]) (values:obj[]) =
-        let inputParameters = inputParams |> Array.filter (fun p -> p.Direction = ParameterDirection.Input)
+        // Values come for the Input and InputOutput parameters, in their order: the generated Invoke's signature
+        let valued =
+            inputParams
+            |> Array.filter (fun p -> p.Direction = ParameterDirection.Input || p.Direction = ParameterDirection.InputOutput)
+            |> Array.mapi (fun i ip -> ip, createCommandParameter true ip values.[i])
 
+        // An InputOutput parameter is one parameter: it carries its value in and its result out
         let outps =
-             retCols
-             |> Array.map(fun ip ->
-                 let p = createCommandParameter true ip null
-                 (ip.Ordinal, p))
+            retCols
+            |> Array.map (fun ip ->
+                match valued |> Array.tryFind (fun (v, _) -> v.Direction = ParameterDirection.InputOutput && v.Name = ip.Name) with
+                | Some (_, p) -> (ip.Ordinal, p)
+                | None -> (ip.Ordinal, createCommandParameter true ip null))
 
         let inps =
-             inputParameters
-             |> Array.mapi(fun i ip ->
-                 let p = createCommandParameter true ip values.[i]
-                 (ip.Ordinal,p))
+            valued
+            |> Array.filter (fun (_, p) -> outps |> Array.forall (fun (_, o) -> not (obj.ReferenceEquals(o, p))))
+            |> Array.map (fun (ip, p) -> (ip.Ordinal, p))
 
         let allParams =
             Array.append outps inps
@@ -379,13 +389,15 @@ module MySql =
         match retCols with
         | [||] -> com.ExecuteNonQuery() |> ignore; Unit
         | [|retCol|] ->
-            use reader = com.ExecuteReader()
             match retCol.TypeMapping.ProviderTypeName with
             | ValueSome "cursor" ->
+                use reader = com.ExecuteReader()
                 let result = SingleResultSet(retCol.Name, Sql.dataReaderToArray reader)
                 reader.NextResult() |> ignore
                 result
             | _ ->
+                // The parameter has its value once the command has run to its end: MySqlConnector sets it as the reader closes
+                com.ExecuteNonQuery() |> ignore
                 match outps |> Array.tryFind (fun (_,p) -> p.ParameterName = retCol.Name) with
                 | Some(_,p) -> Scalar(p.ParameterName, readParameter p)
                 | None -> failwithf "Excepted return column %s but could not find it in the parameter set" retCol.Name
@@ -411,6 +423,7 @@ module MySql =
                     if not reader.IsClosed then reader.Close()
                     return result
                 | _ ->
+                    let! _ = com.ExecuteNonQueryAsync()
                     return
                         match outps |> Array.tryFind (fun (_,p) -> p.ParameterName = retCol.Name) with
                         | Some(_,p) -> Scalar(p.ParameterName, readParameter p)

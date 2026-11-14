@@ -339,19 +339,30 @@ module PostgreSQL =
             | None -> parameter.Value |> box
 
     let executeSprocCommandCommon (inputParams:QueryParameter []) (retCols:QueryParameter[]) (values:obj[]) =
-        let inputParameters = inputParams |> Array.filter (fun p -> p.Direction = ParameterDirection.Input)
+        // Every parameter has a name, so the call's text can refer to it: one the routine doesn't name is named by its place
+        let named (ip: QueryParameter) value =
+            let p = createCommandParameter ip value
+            if String.IsNullOrEmpty p.ParameterName then p.ParameterName <- ip.Name
+            p
 
+        // Values come for the Input and InputOutput parameters, in their order: the generated Invoke's signature
+        let valued =
+            inputParams
+            |> Array.filter (fun p -> p.Direction = ParameterDirection.Input || p.Direction = ParameterDirection.InputOutput)
+            |> Array.mapi (fun i ip -> ip, named ip values.[i])
+
+        // An InputOutput parameter is one parameter: it carries its value in and its result out
         let outps =
-             retCols
-             |> Array.map(fun ip ->
-                 let p = createCommandParameter ip null
-                 (ip.Ordinal, p))
+            retCols
+            |> Array.map (fun ip ->
+                match valued |> Array.tryFind (fun (v, _) -> v.Direction = ParameterDirection.InputOutput && v.Name = ip.Name) with
+                | Some (_, p) -> (ip.Ordinal, p)
+                | None -> (ip.Ordinal, named ip null))
 
         let inps =
-             inputParameters
-             |> Array.mapi(fun i ip ->
-                 let p = createCommandParameter ip values.[i]
-                 (ip.Ordinal,p))
+            valued
+            |> Array.filter (fun (_, p) -> outps |> Array.forall (fun (_, o) -> not (obj.ReferenceEquals(o, p))))
+            |> Array.map (fun (ip, p) -> (ip.Ordinal, p))
 
         let allParams =
             Array.append outps inps
@@ -360,21 +371,89 @@ module PostgreSQL =
         allParams, outps
 
     /// A transaction for the call (a refcursor lives only inside one), unless the connection is already in one: enlisted
-    /// in an ambient System.Transactions scope, it runs in the scope's, and Npgsql refuses a second. Null then. A
-    /// connection opened with Enlist=false isn't in the scope's transaction and gets its own.
+    /// in an ambient System.Transactions scope, it runs in the scope's, and Npgsql refuses a second (with an
+    /// InvalidOperationException; before Npgsql 5 a NotSupportedException). Null then. A connection opened with
+    /// Enlist=false isn't in the scope's transaction and gets its own.
     let private beginCallTransaction (connection: IDbConnection) : IDbTransaction =
         if isNull System.Transactions.Transaction.Current then
             connection.BeginTransaction()
         else
             try
                 connection.BeginTransaction()
-            with :? InvalidOperationException ->
+            with
+            | :? InvalidOperationException
+            | :? NotSupportedException ->
                 null
+
+    /// Whether each routine is a procedure (PostgreSQL 11 and newer), by connection and the command text of its call.
+    let private procedures = System.Collections.Concurrent.ConcurrentDictionary<string, bool>()
+
+    let private routineKey (com: IDbCommand) = com.Connection.ConnectionString + "\n" + com.CommandText
+
+    /// Asks whether the routine a command names is a procedure. The command text is the routine's name, or its quoted
+    /// schema and name.
+    let private procedureLookup (com: IDbCommand) =
+        let lookup = com.Connection.CreateCommand()
+        lookup.CommandText <-
+            "SELECT EXISTS (SELECT 1 FROM information_schema.routines r WHERE r.routine_type = 'PROCEDURE' AND (r.routine_name = @routine OR '\"' || replace(r.routine_schema, '\"', '\"\"') || '\".\"' || replace(r.routine_name, '\"', '\"\"') || '\"' = @routine))"
+        let routine = lookup.CreateParameter()
+        routine.ParameterName <- "routine"
+        routine.DbType <- DbType.String
+        routine.Value <- com.CommandText
+        lookup.Parameters.Add routine |> ignore
+        lookup
+
+    /// The routine's call as text, with the command's parameters in their order: a function inside a SELECT with its
+    /// Input and InputOutput parameters, a procedure with CALL, where an Output parameter's place takes a NULL
+    /// (PostgreSQL 14 and newer; before it a procedure has none). Left as a stored procedure, the command would be a
+    /// SELECT in Npgsql before 7, which runs functions only, and a CALL from 7 on, which runs procedures only.
+    let private asCallText (isProcedure: bool) (com: IDbCommand) =
+        let parameters = com.Parameters |> Seq.cast<IDbDataParameter> |> Seq.toArray
+        let passed (p: IDbDataParameter) = p.Direction = ParameterDirection.Input || p.Direction = ParameterDirection.InputOutput
+        let arguments =
+            parameters
+            |> Array.choose (fun p ->
+                if passed p then Some("@" + p.ParameterName)
+                elif isProcedure && p.Direction = ParameterDirection.Output then Some "NULL"
+                else None)
+            |> String.concat ", "
+        com.CommandText <-
+            if isProcedure then sprintf "CALL %s(%s)" com.CommandText arguments
+            else sprintf "SELECT * FROM %s(%s)" com.CommandText arguments
+        com.CommandType <- CommandType.Text
+
+    /// A command that names a routine as a stored procedure becomes the text of its call, by what the routine is.
+    let private callByKind (com: IDbCommand) =
+        if com.CommandType = CommandType.StoredProcedure then
+            let isProcedure =
+                procedures.GetOrAdd(routineKey com, fun _ ->
+                    use lookup = procedureLookup com
+                    lookup.ExecuteScalar() |> unbox<bool>)
+            asCallText isProcedure com
+
+    let private callByKindAsync (com: DbCommand) =
+        task {
+            if com.CommandType = CommandType.StoredProcedure then
+                let key = routineKey com
+                let! isProcedure =
+                    task {
+                        match procedures.TryGetValue key with
+                        | true, known -> return known
+                        | false, _ ->
+                            use lookup = procedureLookup com :?> DbCommand
+                            let! found = lookup.ExecuteScalarAsync()
+                            let found = unbox<bool> found
+                            procedures.[key] <- found
+                            return found
+                    }
+                asCallText isProcedure com
+        }
 
     let executeSprocCommand (com:IDbCommand) (inputParams:QueryParameter[]) (retCols:QueryParameter[]) (values:obj[]) =
 
         let allParams, outps = executeSprocCommandCommon inputParams retCols values
         allParams |> Array.iter (fun (_,p) -> com.Parameters.Add(p) |> ignore)
+        callByKind com
 
         let tran = beginCallTransaction com.Connection
         let entities =
@@ -426,6 +505,7 @@ module PostgreSQL =
         let allParams, outps = executeSprocCommandCommon inputParams retCols values
         task {
             allParams |> Array.iter (fun (_,p) -> com.Parameters.Add(p) |> ignore)
+            do! callByKindAsync com
 
             let tran = beginCallTransaction com.Connection
                 //try
@@ -507,6 +587,7 @@ module PostgreSQL =
 	          ,r.routine_schema AS schema_name
 	          ,r.routine_name AS name
 	          ,r.data_type AS returntype
+	          ,r.routine_type AS routine_type
 	          ,COALESCE((
 			          SELECT STRING_AGG(x.param, E'\n')
 			          FROM (
@@ -519,7 +600,7 @@ module PostgreSQL =
           FROM information_schema.routines r
           NATURAL JOIN information_schema.routine_privileges p
           WHERE r.routine_schema NOT IN ('pg_catalog', 'information_schema')
-            AND r.data_type <> 'trigger'
+            AND (r.data_type IS NULL OR r.data_type <> 'trigger')
 	          AND p.grantee = current_user
             AND p.privilege_type = 'EXECUTE'
         """
@@ -575,9 +656,11 @@ module PostgreSQL =
                         findDbType rtype
                         |> Option.map (fun m -> QueryParameter.Create("ReturnValue",0,m,ParameterDirection.ReturnValue))
                         |> Option.fold (fun acc col -> fst acc, col :: (snd acc)) (sp, rcolumns)
-                Some <| Root("Functions", Sproc({ Name = name
-                                                  Params = (fun _ -> sparams)
-                                                  ReturnColumns = (fun _ _ -> rcolumns) }))
+                // A procedure (PostgreSQL 11 and newer; it has no return type) is listed apart from the functions
+                let kind = if Sql.dbUnbox<string> r.["routine_type"] = "PROCEDURE" then "Procedures" else "Functions"
+                Some <| Root(kind, Sproc({ Name = name
+                                           Params = (fun _ -> sparams)
+                                           ReturnColumns = (fun _ _ -> rcolumns) }))
         )
 
 type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, referencedAssemblies) =
@@ -815,12 +898,28 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
             | _ -> None
 
         member __.GetColumns(con,table) =
+            // Columns already read need no lock; the lock is for the read from the database, which then looks again
+            match schemaCache.Columns.TryGetValue table.FullName with
+            | (true,data) when data.Count > 0 -> data
+            | _ ->
+
             Monitor.Enter schemaCache.Columns
 
             try
                 match schemaCache.Columns.TryGetValue table.FullName with
                 | (true,data) when data.Count > 0 -> data
                 | _ ->
+                    // attgenerated came with PostgreSQL 12 and attidentity with 10: a server before them has no such
+                    // column, and no generated or identity columns either
+                    let columnsQuery (serverVersion: string) (query: string) =
+                        let major =
+                            match Int32.TryParse(String(serverVersion |> Seq.takeWhile Char.IsDigit |> Seq.toArray)) with
+                            | true, version -> version
+                            | _ -> Int32.MaxValue
+                        query
+                            .Replace("{is_generated}", (if major >= 12 then "coalesce(pg_attribute.attgenerated = 's', false)" else "false"))
+                            .Replace("{is_identity}", (if major >= 10 then "coalesce(pg_attribute.attidentity <> '', false)" else "false"))
+
                     let baseQuery = @"
                         SELECT DISTINCT
                              pg_attribute.attname                                          AS column_name
@@ -831,8 +930,8 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                             ,coalesce(pg_index.indisprimary, false)                        AS is_primary_key
                             ,coalesce(pg_class.relkind = 'S', false)                       AS is_sequence
                             ,pg_attribute.atthasdef                                        AS has_default
-                            ,coalesce(pg_attribute.attgenerated = 's', false)              AS is_generated
-                            ,coalesce(pg_attribute.attidentity <> '', false)               AS is_identity
+                            ,{is_generated}                                                AS is_generated
+                            ,{is_identity}                                                 AS is_identity
                         FROM pg_attribute 
                         LEFT JOIN pg_index
                             ON pg_attribute.attrelid = pg_index.indrelid
@@ -852,6 +951,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                     PostgreSQL.createCommandParameter (QueryParameter.Create("@schema", 0)) table.Schema |> command.Parameters.Add |> ignore
                     PostgreSQL.createCommandParameter (QueryParameter.Create("@table", 1)) table.Name |> command.Parameters.Add |> ignore
                     Sql.connect con (fun _ ->
+                        command.CommandText <- columnsQuery (con :?> System.Data.Common.DbConnection).ServerVersion baseQuery
                         use reader = command.ExecuteReader()
                         let columns =
                             [ while reader.Read() do
@@ -928,6 +1028,11 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                 Monitor.Exit schemaCache.Columns
 
         member __.GetRelationships(con,table) =
+            // Relationships already read need no lock
+            match schemaCache.Relationships.TryGetValue table.FullName with
+            | true,v -> v
+            | _ ->
+
             Monitor.Enter schemaCache.Relationships
             try
                 match schemaCache.Relationships.TryGetValue table.FullName with

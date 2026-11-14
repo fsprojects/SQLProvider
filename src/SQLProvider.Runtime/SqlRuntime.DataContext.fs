@@ -94,6 +94,23 @@ type public SqlDataContext (typeName, connectionString:string, providerType:Data
             let x = DcCache.providerCache.TryRemove typeName
             reraise()
 
+    /// The command text of a stored procedure's call. PostgreSQL gets the schema with the name, both quoted: a routine
+    /// of a schema that isn't on the search path isn't found by its name alone. MySQL gets the routine's database with
+    /// the name when that isn't the connection's own, where the name alone is looked up. Oracle gets the owner with the
+    /// name, as its queries name tables: a routine of another schema isn't found by its name alone.
+    let sprocCommandText (con: IDbConnection) (name: SprocName) =
+        match providerType with
+        | DatabaseProviderTypes.POSTGRESQL when not (String.IsNullOrEmpty name.Owner) ->
+            let quoted (identifier: string) = "\"" + identifier.Replace("\"", "\"\"") + "\""
+            quoted name.Owner + "." + quoted name.ProcName
+        | DatabaseProviderTypes.MYSQL
+            when not (String.IsNullOrEmpty name.Owner)
+                 && not (String.Equals(name.Owner, con.Database, StringComparison.OrdinalIgnoreCase)) ->
+            let quoted (identifier: string) = "`" + identifier.Replace("`", "``") + "`"
+            quoted name.Owner + "." + quoted name.ProcName
+        | DatabaseProviderTypes.ORACLE when not (String.IsNullOrEmpty name.Owner) -> name.Owner + "." + name.DbName
+        | _ -> name.DbName
+
     /// IoC: A factory that can be used to extend custom SQLProvider implementations from separate Nuget packages
     /// Parameters: vendor resolutionPath referencedAssemblies runtimeAssembly owner tableNames contextSchemaPath odbcquote sqliteLibrary ssdtPath
     static member val ProviderFactory = ProviderBuilder.providerFactory with get, set
@@ -158,7 +175,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType:Data
         member this.CallSproc(def:RunTimeSprocDefinition, retCols:QueryParameter[], values:obj array) =
             use con = provider.CreateConnection connectionString
             con.Open()
-            use com = provider.CreateCommand(con, def.Name.DbName)
+            use com = provider.CreateCommand(con, sprocCommandText con def.Name)
             match commandTimeout with | Some v -> com.CommandTimeout <- v | None -> ()
             let param, entity, toEntityArray = CommonTasks.initCallSproc this def values con com provider.StoredProcedures
 
@@ -184,7 +201,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType:Data
                 use con = provider.CreateConnection connectionString :?> DbConnection
                 do! con.OpenAsync()
 
-                use com = provider.CreateCommand(con, def.Name.DbName)
+                use com = provider.CreateCommand(con, sprocCommandText con def.Name)
                 match commandTimeout with | Some v -> com.CommandTimeout <- v | None -> ()
                 let param, entity, toEntityArray = CommonTasks.initCallSproc this def values con com provider.StoredProcedures
 

@@ -1,3 +1,18 @@
+### 1.5.32 - unreleased
+- Fix: PostgreSQL functions are called inside a SELECT. With Npgsql 7 and newer they failed with "procedure ... does not exist", as a stored-procedure command is a CALL there
+- PostgreSQL procedures (11 and newer) are under ctx.Procedures and called with CALL, with any Npgsql version; they weren't listed before. INOUT and OUT parameters are the result's properties
+- PostgreSQL functions and procedures are called by schema and name, so the schema needn't be on the search path
+- Fix: an INOUT parameter takes the value given to Invoke on PostgreSQL, MySQL and Oracle; a parameter after it took the wrong value
+- Fix: MySQL 8 routines with parameters broke the type provider ("Unable to cast object of type 'System.UInt64' to type 'System.Int32'")
+- Fix: MySQL functions return their value with MySqlConnector, and when called async with either driver (the async call didn't run the function)
+- Fix: Oracle functions called async return their value (the async call didn't run the function)
+- MySQL routines of another database of Owner are called by database and name, and Oracle routines by owner and name: another schema's routines were not found
+- Fix: Firebird 3 and newer: a procedure without SUSPEND gives its output parameters as the one row of ResultSet; it failed with "invalid request BLR" (the procedure is not selectable)
+- Firebird: a standalone SubmitUpdates runs as SNAPSHOT instead of SNAPSHOT TABLE STABILITY (Firebird's Serializable), which locked whole tables: concurrent writers of a table failed with "lock conflict on no wait transaction". Its transaction ends before its connection returns to the pool
+- A query's column lookup locks one table instead of the whole provider, and PostgreSQL reads cached columns and relationships without a lock
+- Fix: a PostgreSQL function called inside a TransactionScope with Npgsql before 5 failed with "Nested/Concurrent transactions aren't supported"
+- Fix: PostgreSQL 10 and 11 work again: the column query needed pg_attribute.attgenerated (PostgreSQL 12)
+
 ### 1.5.31 - 13.11.2026
 - Seq.lockForUpdate locks the rows a query reads until the transaction ends: FOR UPDATE on PostgreSQL (FOR UPDATE OF the other tables beside a left join), MySQL and Oracle (Oracle not with skip or a sorted take), FOR UPDATE WITH LOCK on Firebird (no joins), UPDLOCK and ROWLOCK on SQL Server; SQLite, MS Access, DuckDB and ODBC refuse it, and so does a locked query inside another query or a delete. New page: Locking rows
 - Seq/Array/List.lockForUpdateAsync, Seq.lockForUpdateHeadAsync and Seq.lockForUpdateTryHeadAsync run a query with its rows locked

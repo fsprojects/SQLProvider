@@ -54,3 +54,19 @@ let uspGetManagerEmployees =
     // Name: Rob, Level: 2
     // Name: Gail, Level: 2
     // ...
+
+(**
+
+## What each database gives
+
+| Database | Functions | Procedures | Notes |
+| --- | --- | --- | --- |
+| SQL Server | `ctx.Functions` (scalar) | `ctx.Procedures` | Table-valued functions aren't listed. |
+| PostgreSQL | `ctx.Functions` | `ctx.Procedures` (PostgreSQL 11+) | Called by schema and name. See the [PostgreSQL](postgresql.html) page. |
+| MySQL | `ctx.Functions` | `ctx.Procedures` | A routine of another database of `Owner` is called by database and name. |
+| Oracle | `ctx.Functions` | `ctx.Procedures`, `ctx.Packages` | Called by owner and name, so another schema's routines work with a grant. |
+| Firebird | not listed | `ctx.Procedures` | A procedure's output parameters are the one row of `ResultSet`; a selectable procedure gives its rows there. |
+
+`Invoke` and `InvokeAsync` take the routine's IN and INOUT parameters in their order. A function's value is
+`ReturnValue`; OUT and INOUT parameters are properties of the result, by their names.
+*)

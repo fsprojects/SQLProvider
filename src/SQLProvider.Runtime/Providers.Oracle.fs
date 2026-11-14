@@ -503,19 +503,24 @@ module internal Oracle =
         functions @ procs @ packages
 
     let executeSprocCommandCommon (inputParameters:QueryParameter []) (retCols:QueryParameter[]) (values:obj[]) =
-        let inputParameters = inputParameters |> Array.filter (fun p -> p.Direction = ParameterDirection.Input)
+        // Values come for the Input and InputOutput parameters, in their order: the generated Invoke's signature
+        let valued =
+            inputParameters
+            |> Array.filter (fun p -> p.Direction = ParameterDirection.Input || p.Direction = ParameterDirection.InputOutput)
+            |> Array.mapi (fun i ip -> ip, createCommandParameter ip values.[i])
 
+        // An IN OUT parameter is one parameter: it carries its value in and its result out
         let outps =
-             retCols
-             |> Array.map(fun ip ->
-                 let p = createCommandParameter ip null
-                 (ip.Ordinal, p))
+            retCols
+            |> Array.map (fun ip ->
+                match valued |> Array.tryFind (fun (v, _) -> v.Direction = ParameterDirection.InputOutput && v.Name = ip.Name) with
+                | Some (_, p) -> (ip.Ordinal, p)
+                | None -> (ip.Ordinal, createCommandParameter ip null))
 
         let inps =
-             inputParameters
-             |> Array.mapi(fun i ip ->
-                 let p = createCommandParameter ip values.[i]
-                 (ip.Ordinal,p))
+            valued
+            |> Array.filter (fun (_, p) -> outps |> Array.forall (fun (_, o) -> not (obj.ReferenceEquals(o, p))))
+            |> Array.map (fun (ip, p) -> (ip.Ordinal, p))
 
         let allParams =
             Array.append outps inps
@@ -573,6 +578,7 @@ module internal Oracle =
                 | _ ->
                     match outps |> Array.tryFind (fun (_,p) -> p.ParameterName = col.Name) with
                     | Some(_,p) -> 
+                        let! _ = com.ExecuteNonQueryAsync()
                         let! r = readParameterAsync p
                         return Scalar(p.ParameterName, r)
                     | None -> return failwithf "Excepted return column %s but could not find it in the parameter set" col.Name

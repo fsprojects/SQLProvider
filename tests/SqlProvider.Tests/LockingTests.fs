@@ -161,3 +161,20 @@ let ``a locked query is refused inside another query and in a delete``() =
          |> Seq.lockForUpdate
          |> Seq.``delete all items from single table``)
             .Wait())
+
+// Firebird's Serializable is SNAPSHOT TABLE STABILITY: it locks whole tables, and eight writers of one table at once lost
+// 70 of their 80 rows to "lock conflict on no wait transaction" (Firebird 5). A write batch's own transaction is a
+// snapshot instead. Inside the caller's transaction the options stay as given: the level there is the caller's.
+[<Test; SqlCheck.NoSql>]
+let ``Firebird's own write transaction is a snapshot, not table-locking``() =
+    let writes = typeof<FSharp.Data.Sql.Runtime.SqlDataContext>.Assembly.GetType("FSharp.Data.Sql.Providers.FirebirdWrites", true)
+    let flags = Reflection.BindingFlags.Static ||| Reflection.BindingFlags.Public ||| Reflection.BindingFlags.NonPublic
+    let ownTransaction (options: Transactions.TransactionOptions) =
+        writes.GetMethod("ownTransaction", flags).Invoke(null, [| box options |]) :?> Transactions.TransactionOptions
+    let standard = Transactions.TransactionOptions.Default
+    let readCommitted = { standard with IsolationLevel = Transactions.IsolationLevel.ReadCommitted }
+    Assert.AreEqual(Transactions.IsolationLevel.Serializable, standard.IsolationLevel, "the default of every database")
+    Assert.AreEqual(Transactions.IsolationLevel.RepeatableRead, (ownTransaction standard).IsolationLevel, "a snapshot")
+    Assert.AreEqual(Transactions.IsolationLevel.ReadCommitted, (ownTransaction readCommitted).IsolationLevel, "another level stays")
+    use scope = new System.Transactions.TransactionScope()
+    Assert.AreEqual(Transactions.IsolationLevel.Serializable, (ownTransaction standard).IsolationLevel, "inside the caller's transaction")

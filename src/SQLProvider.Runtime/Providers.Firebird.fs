@@ -423,7 +423,59 @@ module Firebird =
 
         allParams, outps
 
+    /// Whether each procedure is executable: it has no SUSPEND, so it gives its output parameters once and can't be
+    /// selected from. By connection and procedure name.
+    let private executables = System.Collections.Concurrent.ConcurrentDictionary<string, bool>()
+
+    let private procedureKey (com: IDbCommand) = com.Connection.ConnectionString + "\n" + com.CommandText
+
+    /// Asks whether the procedure a command names is executable (RDB$PROCEDURE_TYPE 2; 1 is selectable).
+    let private executableLookup (com: IDbCommand) =
+        let lookup = com.Connection.CreateCommand()
+        lookup.CommandText <- "SELECT COUNT(*) FROM RDB$PROCEDURES WHERE TRIM(RDB$PROCEDURE_NAME) = @name AND RDB$PROCEDURE_TYPE = 2"
+        let name = lookup.CreateParameter()
+        name.ParameterName <- "@name"
+        name.Value <- com.CommandText.Trim()
+        lookup.Parameters.Add name |> ignore
+        lookup
+
+    /// The parameters of an executable procedure's call: its inputs with their values, then its outputs, which the
+    /// call fills. The command gets them; the outputs come back with their names.
+    let private executableParameters (com: IDbCommand) (inputParams: QueryParameter[]) (values: obj[]) =
+        inputParams
+        |> Array.filter (fun p -> p.Direction = ParameterDirection.Input)
+        |> Array.iteri (fun i ip -> com.Parameters.Add(createCommandParameter true ip values.[i]) |> ignore)
+
+        inputParams
+        |> Array.filter (fun p -> p.Direction = ParameterDirection.Output)
+        |> Array.map (fun ip ->
+            let p = createCommandParameter true ip null
+            com.Parameters.Add p |> ignore
+            ip.Name, p)
+
+    /// The output parameters as the one row of the procedure's result set.
+    let private outputRow (outputs: (string * IDbDataParameter)[]) : ResultSet =
+        [| outputs |> Array.map (fun (name, p) -> name, readParameter p) |] :> ResultSet
+
+    let private returnsRows (retCols: QueryParameter[]) =
+        match retCols with
+        | [| retCol |] -> retCol.TypeMapping.ProviderTypeName = ValueSome "cursor"
+        | _ -> false
+
     let executeSprocCommand (com:IDbCommand) (inputParams:QueryParameter[]) (retCols:QueryParameter[]) (values:obj[]) =
+
+        let executable =
+            returnsRows retCols
+            && executables.GetOrAdd(procedureKey com, fun _ ->
+                use lookup = executableLookup com
+                Convert.ToInt32(lookup.ExecuteScalar()) > 0)
+
+        if executable then
+            // A reader would SELECT from the procedure, which Firebird 3 and newer refuse when it has no SUSPEND
+            let outputs = executableParameters com inputParams values
+            com.ExecuteNonQuery() |> ignore
+            SingleResultSet(retCols.[0].Name, outputRow outputs)
+        else
 
         let allParams, outps = executeSprocCommandCommon inputParams retCols values
         allParams |> Array.iter (fun (_,p) -> com.Parameters.Add(p) |> ignore)
@@ -447,6 +499,28 @@ module Firebird =
 
     let executeSprocCommandAsync (com:DbCommand) (inputParams:QueryParameter[]) (retCols:QueryParameter[]) (values:obj[]) =
         task {
+            let! executable =
+                task {
+                    if not (returnsRows retCols) then
+                        return false
+                    else
+                        let key = procedureKey com
+                        match executables.TryGetValue key with
+                        | true, known -> return known
+                        | false, _ ->
+                            use lookup = executableLookup com :?> DbCommand
+                            let! found = lookup.ExecuteScalarAsync()
+                            let found = Convert.ToInt32 found > 0
+                            executables.[key] <- found
+                            return found
+                }
+
+            if executable then
+                let outputs = executableParameters com inputParams values
+                let! _ = com.ExecuteNonQueryAsync()
+                return SingleResultSet(retCols.[0].Name, outputRow outputs)
+            else
+
             let allParams, outps = executeSprocCommandCommon inputParams retCols values
             allParams |> Array.iter (fun (_,p) -> com.Parameters.Add(p) |> ignore)
 
@@ -473,6 +547,26 @@ module Firebird =
                 if not reader.IsClosed then reader.Close()
                 return Set(r)
         }
+
+module internal FirebirdWrites =
+
+    /// The options of a write batch's own transaction. Serializable, the default, is SNAPSHOT TABLE STABILITY in
+    /// Firebird: it locks the whole of each table the batch writes and fails every other writer of the table at once,
+    /// though the batch reads nothing that the lock would protect. RepeatableRead is Firebird's SNAPSHOT, which locks
+    /// the rows written. Inside the caller's own transaction the options stay as given: its level is the caller's.
+    let ownTransaction (transactionOptions: TransactionOptions) =
+        if isNull System.Transactions.Transaction.Current && transactionOptions.IsolationLevel = IsolationLevel.Serializable then
+            { transactionOptions with IsolationLevel = IsolationLevel.RepeatableRead }
+        else
+            transactionOptions
+
+    /// Ends the batch's transaction, then closes its connection. The driver's pool gives a connection closed inside a
+    /// running transaction to the next caller with that transaction still on it ("a local transaction already exists").
+    let finish (scope: System.Transactions.TransactionScope) (con: IDbConnection) =
+        try
+            if not (isNull scope) then scope.Dispose()
+        finally
+            con.Close()
 
 type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referencedAssemblies, quoteChar: OdbcQuoteCharacter) as this =
     let schemaCache = SchemaCache.LoadOrEmpty(contextSchemaPath)
@@ -1153,7 +1247,7 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
                 ()
             else
             //con.Open()
-            use scope = TransactionUtils.ensureTransaction transactionOptions //use scope = Utilities.ensureTransaction()
+            let scope = TransactionUtils.ensureTransaction (FirebirdWrites.ownTransaction transactionOptions)
             try
                 // close the connection first otherwise it won't get enlisted into the transaction
                 if con.State = ConnectionState.Open then con.Close()
@@ -1186,10 +1280,10 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
                         e._State <- Deleted
                     | Deleted | Unchanged -> failwithf "Unchanged entity encountered in update list - this should not be possible! (%O)" e)
 
-                if not(isNull scope) then scope.Complete() //scope.Complete()
-                
+                if not(isNull scope) then scope.Complete()
+
             finally
-                con.Close()
+                FirebirdWrites.finish scope con
 
         member this.ProcessUpdatesAsync(con, entities, transactionOptions, timeout) =
             let sb = Text.StringBuilder()            
@@ -1202,7 +1296,7 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
 
             task {
 
-                use scope = TransactionUtils.ensureTransaction transactionOptions
+                let scope = TransactionUtils.ensureTransaction (FirebirdWrites.ownTransaction transactionOptions)
                 try
                     // close the connection first otherwise it won't get enlisted into the transaction
                     if con.State = ConnectionState.Open then con.Close()
@@ -1245,5 +1339,5 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
                     if not(isNull scope) then scope.Complete()
 
                 finally
-                    con.Close()
+                    FirebirdWrites.finish scope con
             }

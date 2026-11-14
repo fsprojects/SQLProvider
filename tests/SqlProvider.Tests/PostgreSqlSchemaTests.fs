@@ -1,6 +1,6 @@
 module PostgreSqlSchemaTests
 
-// Schema-reading tests against a live PostgreSQL (10 or newer).
+// Schema-reading tests against a live PostgreSQL (11 or newer: the call test makes procedures).
 // Set SQLPROVIDER_POSTGRES_TEST_CONNECTION to an Npgsql connection string of a scratch database
 // where the tests may create and drop schemas; without it the tests are ignored.
 
@@ -122,6 +122,100 @@ let ``a function called inside a TransactionScope runs in that transaction``() =
             | other -> failwithf "Expected the cursor's rows, got %A" other
         Assert.AreEqual(2, readMarks (cs + ";Enlist=false"), "outside the scope's transaction")
         Assert.AreEqual(2, readMarks cs, "inside the scope's transaction")
+    finally
+        execute setup $"DROP SCHEMA IF EXISTS {schema} CASCADE"
+
+// The call a provided ctx.Functions.X.Invoke or ctx.Procedures.X.Invoke makes, through the data context: the routine by
+// its schema and name (the schema isn't on the search path), a function inside a SELECT and a procedure with CALL, in
+// the scope's transaction.
+[<Test; SqlCheck.ExpectSql("EXEC")>]
+let ``a function and a procedure outside the search path are called by schema and name``() =
+    let cs = connectionString ()
+    let provider = createProvider ()
+    let schema = "sqlprovider_call_" + Guid.NewGuid().ToString("N").Substring(0, 8)
+    use setup = provider.CreateConnection cs
+    setup.Open()
+    let marks () =
+        if setup.State <> ConnectionState.Open then setup.Open()
+        use read = setup.CreateCommand()
+        read.CommandText <- $"SELECT coalesce(string_agg(id::text, ',' ORDER BY id), '') FROM {schema}.mark"
+        read.ExecuteScalar() |> string
+    try
+        execute setup $"CREATE SCHEMA {schema}"
+        execute setup $"CREATE TABLE {schema}.mark (id int)"
+        execute setup $"CREATE FUNCTION {schema}.add_mark(mark integer) RETURNS void LANGUAGE sql AS $$ INSERT INTO {schema}.mark VALUES (mark) $$"
+        execute setup $"CREATE FUNCTION {schema}.sum_marks(mark integer, integer) RETURNS integer LANGUAGE sql AS $$ SELECT $1 + $2 $$"
+        execute setup $"CREATE PROCEDURE {schema}.put_mark(mark integer) LANGUAGE sql AS $$ INSERT INTO {schema}.mark VALUES (mark) $$"
+        execute setup $"CREATE FUNCTION {schema}.marks_from(lowest integer) RETURNS TABLE (id integer) LANGUAGE sql AS $$ SELECT id FROM {schema}.mark WHERE id >= lowest $$"
+        execute setup $"CREATE FUNCTION {schema}.mark_cursor() RETURNS refcursor LANGUAGE plpgsql AS $$ DECLARE c refcursor; BEGIN OPEN c FOR SELECT id FROM {schema}.mark; RETURN c; END $$"
+        execute setup $"CREATE PROCEDURE {schema}.double_mark(step integer, INOUT mark integer) LANGUAGE plpgsql AS $$ BEGIN mark := mark * 2 + step; END $$"
+        execute setup $"CREATE FUNCTION {schema}.mark_cursor_from(lowest integer) RETURNS refcursor LANGUAGE plpgsql AS $$ DECLARE c refcursor; BEGIN OPEN c FOR SELECT id FROM {schema}.mark WHERE id >= lowest; RETURN c; END $$"
+
+        // Procedures are listed apart from the functions
+        let listed kind =
+            provider.GetSprocs setup
+            |> List.choose (function
+                | Root(root, Sproc routine) when root = kind && routine.Name.Owner = schema -> Some routine.Name.ProcName
+                | _ -> None)
+            |> List.sort
+        CollectionAssert.AreEqual([ "add_mark"; "mark_cursor"; "mark_cursor_from"; "marks_from"; "sum_marks" ], listed "Functions")
+        CollectionAssert.AreEqual([ "double_mark"; "put_mark" ], listed "Procedures")
+        let context =
+            FSharp.Data.Sql.Runtime.SqlDataContext(
+                "PostgreSqlCall_" + schema, cs, DatabaseProviderTypes.POSTGRESQL, AppContext.BaseDirectory, [||],
+                typeof<FSharp.Data.Sql.Runtime.SqlDataContext>.Assembly.Location, schema, CaseSensitivityChange.ORIGINAL, "", "",
+                OdbcQuoteCharacter.DEFAULT_QUOTE, SQLiteLibrary.AutoSelect, Transactions.TransactionOptions.Default, None,
+                SelectOperations.DotNetSide, "", false)
+            :> ISqlDataContext
+        let integer = TypeMapping.Create(clrType = typeof<int>.ToString(), dbType = DbType.Int32, providerTypeName = "integer", providerType = 9)
+        let input name ordinal = QueryParameter.Create(name, ordinal, integer, ParameterDirection.Input)
+        let routine name parameters : RunTimeSprocDefinition =
+            { Name = { ProcName = name; Owner = schema; PackageName = "" }; Params = parameters }
+        let addMark = routine "add_mark" [ input "mark" 0 ]
+        let putMark = routine "put_mark" [ input "mark" 0 ]
+        // The second parameter has no name: the provider names it by its place
+        let sumMarks = routine "sum_marks" [ input "mark" 0; input "param1" 1 ]
+        let returned = [| QueryParameter.Create("ReturnValue", 0, integer, ParameterDirection.ReturnValue) |]
+
+        context.CallSproc(addMark, [||], [| box 1 |]) |> ignore
+        context.CallSproc(putMark, [||], [| box 2 |]) |> ignore
+        Assert.AreEqual("1,2", marks (), "a function and a procedure, each on its own")
+        let sum = context.CallSproc(sumMarks, returned, [| box 3; box 4 |]) :?> SqlEntity
+        Assert.AreEqual(7, (sum :> IColumnHolder).GetColumn<int> "ReturnValue", "a function's value, with a parameter that has no name")
+
+        let inScope complete =
+            use scope = new Transactions.TransactionScope(Transactions.TransactionScopeAsyncFlowOption.Enabled)
+            context.CallSproc(addMark, [||], [| box 3 |]) |> ignore
+            context.CallSproc(putMark, [||], [| box 4 |]) |> ignore
+            if complete then scope.Complete()
+        inScope false
+        Assert.AreEqual("1,2", marks (), "rolled back with the scope")
+        inScope true
+        Assert.AreEqual("1,2,3,4", marks (), "committed with the scope")
+
+        (task {
+            let! _ = context.CallSprocAsync(addMark, [||], [| box 5 |])
+            let! _ = context.CallSprocAsync(putMark, [||], [| box 6 |])
+            let! sum = context.CallSprocAsync(sumMarks, returned, [| box 5; box 6 |])
+            Assert.AreEqual(11, (sum :> IColumnHolder).GetColumn<int> "ReturnValue", "async")
+        }).Wait()
+        Assert.AreEqual("1,2,3,4,5,6", marks (), "async")
+
+        // Rows: a function that returns a table, and one that returns a cursor
+        let rowsOf (result: obj) = (result :?> SqlEntity :> IColumnHolder).GetColumn<SqlEntity[]> "ReturnValue" |> Array.length
+        let rows typeName providerType =
+            [| QueryParameter.Create(
+                   "ReturnValue", -1,
+                   TypeMapping.Create(clrType = typeof<SqlEntity[]>.ToString(), dbType = DbType.Object, providerTypeName = typeName, providerType = providerType),
+                   ParameterDirection.ReturnValue) |]
+        Assert.AreEqual(3, context.CallSproc(routine "marks_from" [ input "lowest" 0 ], rows "record" 23, [| box 4 |]) |> rowsOf, "a table")
+        Assert.AreEqual(6, context.CallSproc(routine "mark_cursor" [], rows "refcursor" 23, [||]) |> rowsOf, "a cursor")
+        Assert.AreEqual(2, context.CallSproc(routine "mark_cursor_from" [ input "lowest" 0 ], rows "refcursor" 23, [| box 5 |]) |> rowsOf, "a cursor of a function with a parameter")
+
+        // A procedure's InputOutput parameter takes its value in and gives its result
+        let inOut = QueryParameter.Create("mark", 1, integer, ParameterDirection.InputOutput)
+        let doubled = context.CallSproc(routine "double_mark" [ input "step" 0; inOut ], [| inOut |], [| box 1; box 20 |]) :?> SqlEntity
+        Assert.AreEqual(41, (doubled :> IColumnHolder).GetColumn<int> "mark", "an InputOutput parameter")
     finally
         execute setup $"DROP SCHEMA IF EXISTS {schema} CASCADE"
 
