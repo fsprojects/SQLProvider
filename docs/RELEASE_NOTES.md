@@ -1,4 +1,4 @@
-### 1.5.32 - unreleased
+### 1.5.32 - 14.11.2026
 - Fix: PostgreSQL functions are called inside a SELECT. With Npgsql 7 and newer they failed with "procedure ... does not exist", as a stored-procedure command is a CALL there
 - PostgreSQL procedures (11 and newer) are under ctx.Procedures and called with CALL, with any Npgsql version; they weren't listed before. INOUT and OUT parameters are the result's properties
 - PostgreSQL functions and procedures are called by schema and name, so the schema needn't be on the search path
