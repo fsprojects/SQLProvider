@@ -9,6 +9,114 @@ open FSharp.Data.Sql.Schema
 /// Marker interface
 type ISqlQueryable = interface end
 
+/// Reflection raises a member's exception wrapped in TargetInvocationException; compiled code raises it as it is.
+let private unwrapInvocation (read: unit -> obj) =
+    try read ()
+    with :? TargetInvocationException as ex when not (isNull ex.InnerException) ->
+        Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(ex.InnerException).Throw()
+        null
+
+/// A Convert that keeps the value as it is: a reference cast, boxing, unboxing to the same type or wrapping in
+/// Nullable. A numeric, enum or user-defined conversion computes a new value, so it isn't one.
+let private convertsAsIs (u:UnaryExpression) (value:obj) =
+    isNull u.Method
+    && (if isNull value then not u.Type.IsValueType || not (isNull (Nullable.GetUnderlyingType u.Type))
+        else u.Type.IsInstanceOfType value)
+
+/// Value types whose methods don't change the value. Reflection calls a method on a boxed copy, which compiled code
+/// doesn't, so a method of any other value type is left to the interpreter.
+let private unchangedByMethods =
+    Collections.Generic.HashSet<Type>([ typeof<DateTime>; typeof<DateTimeOffset>; typeof<TimeSpan>; typeof<Guid>; typeof<Decimal> ])
+
+let private callableByReflection (mc:MethodCallExpression) =
+    (mc.Method.IsStatic
+     || not mc.Object.Type.IsValueType || mc.Object.Type.IsPrimitive || mc.Object.Type.IsEnum
+     || unchangedByMethods.Contains mc.Object.Type)
+    && mc.Method.GetParameters() |> Array.forall (fun p -> not p.ParameterType.IsByRef)
+
+/// Finds a parameter that none of the expression's own lambdas, blocks or catch blocks declares.
+type private OuterParameterFinder() =
+    inherit ExpressionVisitor()
+    let declared = Collections.Generic.HashSet<ParameterExpression>()
+    let used = Collections.Generic.HashSet<ParameterExpression>()
+    member _.Found = not (used.IsSubsetOf declared)
+    override _.Visit (e:Expression) =
+        match e with
+        | :? LambdaExpression as l -> declared.UnionWith l.Parameters
+        | :? BlockExpression as b -> declared.UnionWith b.Variables
+        | :? TryExpression as t -> for h in t.Handlers do if not (isNull h.Variable) then declared.Add h.Variable |> ignore
+        | :? ParameterExpression as p -> used.Add p |> ignore
+        | _ -> ()
+        base.Visit e
+
+/// Whether readValue reads the expression: a constant, a field or property of a readable value or a static one, a
+/// method call on readable values, a Convert or TypeAs of one, and a Quote that uses no outer lambda's parameter.
+/// The answer comes from the expression's shape, so nothing has been evaluated when it is false.
+let rec private isReadable (e:Expression) =
+    match e.NodeType, e with
+    | ExpressionType.Constant, _ -> true
+    | ExpressionType.MemberAccess, (:? MemberExpression as me) -> isNull me.Expression || isReadable me.Expression
+    | ExpressionType.Call, (:? MethodCallExpression as mc) ->
+        callableByReflection mc && (isNull mc.Object || isReadable mc.Object) && Seq.forall isReadable mc.Arguments
+    | (ExpressionType.Convert | ExpressionType.ConvertChecked | ExpressionType.TypeAs), (:? UnaryExpression as ue) ->
+        isReadable ue.Operand
+    | ExpressionType.Quote, (:? UnaryExpression as ue) ->
+        let finder = OuterParameterFinder()
+        finder.Visit ue.Operand |> ignore
+        not finder.Found
+    | _ -> false
+
+/// Runs a parameterless expression interpreted, as compiling it would JIT code that runs once.
+let private interpret (e:Expression) : obj =
+    let body =
+        if Type.(=)(e.Type, typeof<Void>) then Expression.Block(e, Expression.Constant(null)) :> Expression
+        else Expression.Convert(e, typeof<obj>) :> Expression
+    let lambda = Expression.Lambda<Func<obj>> body
+#if NET461 || NET462
+    lambda.Compile().Invoke()
+#else
+    lambda.Compile(preferInterpretation = true).Invoke()
+#endif
+
+/// The value of an expression isReadable accepts, each part of it evaluated once. Where reflection doesn't answer as
+/// compiled code does (a member of null or of a Nullable, a conversion that computes a new value), the node is
+/// interpreted over its operand's value.
+let rec private readValue (e:Expression) : obj =
+    match e.NodeType, e with
+    | ExpressionType.MemberAccess, (:? MemberExpression as me) ->
+        let owner = if isNull me.Expression then null else readValue me.Expression
+        if not (isNull me.Expression) && (isNull owner || not (isNull (Nullable.GetUnderlyingType me.Expression.Type))) then
+            interpret (me.Update(Expression.Constant(owner, me.Expression.Type)))
+        else
+            match me.Member with
+            | :? FieldInfo as f -> f.GetValue owner
+            | m -> unwrapInvocation (fun () -> (m :?> PropertyInfo).GetValue(owner, null))
+    | ExpressionType.Call, (:? MethodCallExpression as mc) ->
+        let owner = if isNull mc.Object then null else readValue mc.Object
+        let args = Array.zeroCreate mc.Arguments.Count
+        for i in 0 .. args.Length - 1 do
+            args.[i] <- readValue mc.Arguments.[i]
+        if isNull owner && not mc.Method.IsStatic then raise (NullReferenceException())
+        unwrapInvocation (fun () -> mc.Method.Invoke(owner, args))
+    | (ExpressionType.Convert | ExpressionType.ConvertChecked), (:? UnaryExpression as ue) ->
+        let value = readValue ue.Operand
+        if convertsAsIs ue value then value
+        else interpret (ue.Update(Expression.Constant(value, ue.Operand.Type)))
+    | ExpressionType.TypeAs, (:? UnaryExpression as ue) ->
+        let value = readValue ue.Operand
+        if isNull value || ue.Type.IsInstanceOfType value then value else null
+    | ExpressionType.Quote, (:? UnaryExpression as ue) -> box ue.Operand
+    | _ -> (e :?> ConstantExpression).Value
+
+/// The value of a parameterless expression when isReadable accepts it.
+let private tryReadValue (e:Expression) : obj voption =
+    if isReadable e then ValueSome (readValue e) else ValueNone
+
+/// The value of a parameterless expression, evaluated once: read by reflection where isReadable accepts it,
+/// interpreted otherwise.
+let internal evaluateExpression (e:Expression) : obj =
+    if isReadable e then readValue e else interpret e
+
 [<return: Struct>]
 let inline (|MethodWithName|_|)   (s:string) (m:MethodInfo)   = if String.Equals(m.Name, s, StringComparison.Ordinal) then ValueSome () else ValueNone
 [<return: Struct>]
@@ -67,14 +175,11 @@ let (|SeqValuesQueryable|_|) (e:Expression) =
         match e.NodeType, e with
         | ExpressionType.Constant, (:? ConstantExpression as ce) ->
             match ce.Value with
-            | :? ISqlQueryable ->
-                let values = (Expression.Lambda(e).Compile() :?> Func<System.Linq.IQueryable>).Invoke()
-                ValueSome values
+            | :? ISqlQueryable -> ValueSome (ce.Value :?> System.Linq.IQueryable)
             | _ -> ValueNone
         | _ ->
-            let values = (Expression.Lambda(e).Compile() :?> Func<System.Linq.IQueryable>).Invoke()
-            match values with
-            | :? ISqlQueryable -> ValueSome values
+            match evaluateExpression e with
+            | :? ISqlQueryable as values -> ValueSome (values :?> System.Linq.IQueryable)
             | _ -> ValueNone
 
 [<return: Struct>]
@@ -92,22 +197,7 @@ let (|SeqValues|_|) (e:Expression) =
         // select x from xs where x in (select y from ys)
         // ...but instead we just execute the sub-query. Works when sub-query results are small.
 
-        let values = 
-            match e.NodeType, e with
-            | ExpressionType.Constant, (:? ConstantExpression as ce) when not(isNull ce.Value) ->
-                ce.Value :?> System.Collections.IEnumerable
-            | ExpressionType.MemberAccess, (:? MemberExpression as me) when (me.Expression :? ConstantExpression) ->
-                let ceVal = (me.Expression :?> ConstantExpression).Value
-                let myVal = 
-                    match me.Member with
-                    | :? FieldInfo as fieldInfo when not(isNull fieldInfo) ->
-                        fieldInfo.GetValue ceVal
-                    | :? PropertyInfo as propInfo when not(isNull propInfo) ->
-                        propInfo.GetValue(ceVal, null)
-                    | _ -> ceVal
-                myVal :?> System.Collections.IEnumerable
-            | _ ->
-                (Expression.Lambda(e).Compile() :?> Func<System.Collections.IEnumerable>).Invoke()
+        let values = evaluateExpression e :?> System.Collections.IEnumerable
 
         // Working with untyped IEnumerable so need to do a lot manually instead of using Seq
         // Work out the size the sequence
@@ -174,11 +264,7 @@ let (|ConstantOrNullableConstant|_|) (e:Expression) =
         match ue.Operand.NodeType, ue.Operand with
         | ExpressionType.Constant, (:? ConstantExpression as ce) -> if isNull ce.Value then Some None else Some(Some ce.Value)
         | ExpressionType.New, (:? NewExpression as ne) ->
-            try
-                if ne.Type.IsClass then
-                    Some(Some((Expression.Lambda(ne).Compile() :?> Func<_>).Invoke()))
-                else
-                    Some(Some(Expression.Lambda(ne).Compile().DynamicInvoke()))
+            try Some(Some(evaluateExpression ne))
             with err -> failwith ("unsupported nullable new expression " + ne.ToString() + " err: " + err.Message)
         | _ -> failwith ("unsupported nullable expression " + e.ToString())
     | _ -> None
@@ -392,82 +478,26 @@ let intType (typ:Type) =
     elif (not (isNull typ)) && Common.Utilities.isVOpt typ then typeof<ValueOption<int>>
     else typeof<int>
 
-/// Fast type-safe evaluation without boxing for common types
+/// Return types whose evaluation errors propagate; for other types evaluateMethodCall gives None on an error.
+let private propagatingReturnTypes =
+    System.Collections.Generic.HashSet<Type>(
+        [ typeof<Int32>; typeof<Int64>; typeof<Decimal>; typeof<DateTime>; typeof<Guid>; typeof<Boolean>; typeof<Single>
+          typeof<Int16>; typeof<UInt32>; typeof<UInt16>; typeof<UInt64>; typeof<Byte>; typeof<Char>; typeof<DateTimeOffset>
+          typeof<TimeSpan>; typeof<bigint>
+          typeof<ValueOption<Int32>>; typeof<ValueOption<Int64>>; typeof<ValueOption<Decimal>>; typeof<ValueOption<DateTime>>
+          typeof<ValueOption<Guid>>; typeof<ValueOption<Boolean>>; typeof<ValueOption<Single>>; typeof<ValueOption<Int16>>
+          typeof<ValueOption<UInt32>>; typeof<ValueOption<UInt16>>; typeof<ValueOption<UInt64>>; typeof<ValueOption<Byte>>
+          typeof<ValueOption<Char>>; typeof<ValueOption<DateTimeOffset>>; typeof<ValueOption<TimeSpan>>; typeof<ValueOption<bigint>> ])
+
+/// Evaluates a parameterless method call once
 let internal evaluateMethodCall (meth: MethodCallExpression) : obj option =
     let returnType = meth.Method.ReturnType
-
-    if returnType.IsClass then
-        try
-            Some((Expression.Lambda(meth).Compile() :?> Func<_>).Invoke() |> box)
-        with
-        _ -> None
-    elif Type.(=)(returnType, typeof<Int32>) then Some((Expression.Lambda(meth).Compile() :?> Func<Int32>).Invoke() |> box)
-    elif Type.(=)(returnType, typeof<Int64>) then Some((Expression.Lambda(meth).Compile() :?> Func<Int64>).Invoke() |> box)
-    elif Type.(=)(returnType, typeof<Decimal>) then Some((Expression.Lambda(meth).Compile() :?> Func<Decimal>).Invoke() |> box)
-    elif Type.(=)(returnType, typeof<DateTime>) then
-        // Should we handle case where isNull e.Object and e.Method.Name in (get_Now, get_UtcNow, get_Today) ?
-        Some((Expression.Lambda(meth).Compile() :?> Func<DateTime>).Invoke() |> box)
-    elif Type.(=)(returnType, typeof<Guid>) then Some((Expression.Lambda(meth).Compile() :?> Func<Guid>).Invoke() |> box)
-    elif Type.(=)(returnType, typeof<Boolean>) then Some((Expression.Lambda(meth).Compile() :?> Func<Boolean>).Invoke() |> box)
-    elif Type.(=)(returnType, typeof<Single>) then Some((Expression.Lambda(meth).Compile() :?> Func<Single>).Invoke() |> box)
-    elif Type.(=)(returnType, typeof<Int16>) then Some((Expression.Lambda(meth).Compile() :?> Func<Int16>).Invoke() |> box)
-    elif Type.(=)(returnType, typeof<UInt32>) then Some((Expression.Lambda(meth).Compile() :?> Func<UInt32>).Invoke() |> box)
-    elif Type.(=)(returnType, typeof<UInt16>) then Some((Expression.Lambda(meth).Compile() :?> Func<UInt16>).Invoke() |> box)
-    elif Type.(=)(returnType, typeof<UInt64>) then Some((Expression.Lambda(meth).Compile() :?> Func<UInt64>).Invoke() |> box)
-    elif Type.(=)(returnType, typeof<Byte>) then Some((Expression.Lambda(meth).Compile() :?> Func<Byte>).Invoke() |> box)
-    elif Type.(=)(returnType, typeof<Char>) then Some((Expression.Lambda(meth).Compile() :?> Func<Char>).Invoke() |> box)
-    elif Type.(=)(returnType, typeof<DateTimeOffset>) then
-        // Should we handle case where isNull e.Object and e.Method.Name in (get_Now, get_UtcNow) ?
-        Some((Expression.Lambda(meth).Compile() :?> Func<DateTimeOffset>).Invoke() |> box)
-    elif Type.(=)(returnType, typeof<TimeSpan>) then Some((Expression.Lambda(meth).Compile() :?> Func<TimeSpan>).Invoke() |> box)
-    elif Type.(=)(returnType, typeof<bigint>) then Some((Expression.Lambda(meth).Compile() :?> Func<bigint>).Invoke() |> box)
-
-    elif Type.(=)(returnType, typeof<ValueOption<Int32>>) then Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Int32>>).Invoke() |> box)
-    elif Type.(=)(returnType, typeof<ValueOption<Int64>>) then Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Int64>>).Invoke() |> box)
-    elif Type.(=)(returnType, typeof<ValueOption<Decimal>>) then Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Decimal>>).Invoke() |> box)
-    elif Type.(=)(returnType, typeof<ValueOption<DateTime>>) then Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<DateTime>>).Invoke() |> box)
-    elif Type.(=)(returnType, typeof<ValueOption<Guid>>) then Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Guid>>).Invoke() |> box)
-    elif Type.(=)(returnType, typeof<ValueOption<Boolean>>) then Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Boolean>>).Invoke() |> box)
-    elif Type.(=)(returnType, typeof<ValueOption<Single>>) then Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Single>>).Invoke() |> box)
-    elif Type.(=)(returnType, typeof<ValueOption<Int16>>) then Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Int16>>).Invoke() |> box)
-    elif Type.(=)(returnType, typeof<ValueOption<UInt32>>) then Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<UInt32>>).Invoke() |> box)
-    elif Type.(=)(returnType, typeof<ValueOption<UInt16>>) then Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<UInt16>>).Invoke() |> box)
-    elif Type.(=)(returnType, typeof<ValueOption<UInt64>>) then Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<UInt64>>).Invoke() |> box)
-    elif Type.(=)(returnType, typeof<ValueOption<Byte>>) then Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Byte>>).Invoke() |> box)
-    elif Type.(=)(returnType, typeof<ValueOption<Char>>) then Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<Char>>).Invoke() |> box)
-    elif Type.(=)(returnType, typeof<ValueOption<DateTimeOffset>>) then Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<DateTimeOffset>>).Invoke() |> box)
-    elif Type.(=)(returnType, typeof<ValueOption<TimeSpan>>) then Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<TimeSpan>>).Invoke() |> box)
-    elif Type.(=)(returnType, typeof<ValueOption<bigint>>) then Some((Expression.Lambda(meth).Compile() :?> Func<ValueOption<bigint>>).Invoke() |> box)
+    if not returnType.IsClass && propagatingReturnTypes.Contains returnType then Some(evaluateExpression meth)
     else
-    try
-        Some(Expression.Lambda(meth).Compile().DynamicInvoke())
-    with err -> None
+        try Some(evaluateExpression meth)
+        with _ -> None
 
-let internal getRightFromOp (right:Expression) =
-    match right.NodeType, right with
-    | ExpressionType.Constant, (:? ConstantExpression as ce) -> ce.Value
-    | ExpressionType.MemberAccess, (:? MemberExpression as me) when (me.Expression :? ConstantExpression) ->
-        let ceVal = (me.Expression :?> ConstantExpression).Value
-        let myVal = 
-            match me.Member with
-            | :? FieldInfo as fieldInfo when not(isNull fieldInfo) ->
-                fieldInfo.GetValue ceVal
-            | :? PropertyInfo as propInfo when not(isNull propInfo) ->
-                propInfo.GetValue(ceVal, null)
-            | _ -> ceVal
-        myVal
-    | ExpressionType.Call, (:? MethodCallExpression as e) ->
-        match evaluateMethodCall e with
-        | Some x -> x
-        | None -> Expression.Lambda(right).Compile().DynamicInvoke()
-    | _ ->
-        if right.Type.IsClass then
-            try
-                (Expression.Lambda(right).Compile() :?> Func<_>).Invoke() |> box
-            with
-            | _ -> Expression.Lambda(right).Compile().DynamicInvoke()
-        else Expression.Lambda(right).Compile().DynamicInvoke()
-
+let internal getRightFromOp (right:Expression) = evaluateExpression right
 
 let (|SqlExistsClause|_|) = function 
     | MethodCall(None, (MethodWithName "Any" as meth), [ SeqValuesQueryable src; OptionalQuote qual ]) ->
@@ -783,15 +813,7 @@ and (|SimpleCondition|_|) exp =
             match meth.NodeType, meth with
             | ExpressionType.Constant, (:? ConstantExpression as ce) -> Some ce.Value
             | ExpressionType.MemberAccess, (:? MemberExpression as me) when (me.Expression :? ConstantExpression) ->
-                let ceVal = (me.Expression :?> ConstantExpression).Value
-                let myVal = 
-                    match me.Member with
-                    | :? FieldInfo as fieldInfo when not(isNull fieldInfo) ->
-                        fieldInfo.GetValue ceVal
-                    | :? PropertyInfo as propInfo when not(isNull propInfo) ->
-                        propInfo.GetValue(ceVal, null)
-                    | _ -> ceVal
-                Some myVal
+                Some(evaluateExpression me)
             | ExpressionType.Call, (:? MethodCallExpression as e) ->
 
                 evaluateMethodCall e
@@ -803,10 +825,8 @@ and (|SimpleCondition|_|) exp =
             | ExpressionType.MemberAccess, (:? MemberExpression as me) when Type.(=)(me.Type, typeof<DateTimeOffset>) && me.Member.Name = "UtcNow" -> Some(DateTimeOffset.UtcNow |> box)
             | _ ->
                 // In case user feeds us incomplete lambda, we will not execute: the user might have a context needed for the compilation.
-                try
-                    if meth.Type.IsClass then (Expression.Lambda(meth).Compile() :?> Func<_>).Invoke() |> box |> Some
-                    else Some(Expression.Lambda(meth).Compile().DynamicInvoke())
-                with err -> None
+                try Some(evaluateExpression meth)
+                with _ -> None
         match invokation with
         | None -> None
         | Some invokedResult -> 
