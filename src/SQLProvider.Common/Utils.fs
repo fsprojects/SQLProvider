@@ -88,34 +88,37 @@ module Utilities =
     /// A saved schema names types as the runtime that saved it had them: "System.String, System.Private.CoreLib,
     /// Version=10.0.0.0, ..." from .NET, "System.String, mscorlib, Version=4.0.0.0, ..." from .NET Framework, and a type
     /// such as System.Net.IPAddress lives in System.Net.Primitives on one and System on the other. So a name that doesn't
-    /// load as written is tried with its assembly's simple name only (any version), then by its full name alone (the
-    /// core library), then in the assemblies already loaded. Only the outermost assembly part is read: a generic type's
-    /// arguments are taken as written.
+    /// load as written is read again part by part, generic arguments included: an assembly is loaded as named, then by
+    /// its simple name (any version), and a type that isn't in its named assembly is looked for in the core library and
+    /// then in the assemblies already loaded, public types only. A part that names no assembly is not looked for there.
     let getType (typename:string) =
-        // the comma outside any brackets: "System.Collections.Generic.List`1[[System.Int32, mscorlib]], mscorlib"
-        let assemblyComma () =
-            typename
-            |> Seq.indexed
-            |> Seq.scan (fun (depth, _) (i, c) ->
-                match c with
-                | '[' -> depth + 1, ValueNone
-                | ']' -> depth - 1, ValueNone
-                | ',' when depth = 0 -> depth, ValueSome i
-                | _ -> depth, ValueNone) (0, ValueNone)
-            |> Seq.tryPick (fun (_, i) -> match i with ValueSome i -> Some i | ValueNone -> None)
-        let elsewhere comma =
-            let fullName = typename.Substring(0, comma).Trim()
-            let assemblyName = typename.Substring(comma + 1).Split(',').[0].Trim()
-            seq {
-                yield fun () -> Type.GetType($"{fullName}, {assemblyName}", false)
-                yield fun () -> Type.GetType(fullName, false)
-                for a in AppDomain.CurrentDomain.GetAssemblies() do
-                    if not a.IsDynamic then yield fun () -> a.GetType(fullName, false)
-            }
-            |> Seq.tryPick (fun attempt -> match (try attempt () with _ -> null) with null -> None | t -> Some t)
         match Type.GetType typename with
         | null when not (String.IsNullOrEmpty typename) ->
-            assemblyComma () |> Option.bind elsewhere |> Option.toObj
+            let coreLibrary = typeof<obj>.Assembly
+            let load (name:Reflection.AssemblyName) = try Reflection.Assembly.Load name with _ -> null
+            // Never null: Type.GetType gives up on a null assembly without asking for the type.
+            let assemblyOf (name:Reflection.AssemblyName) =
+                match load name with
+                | null ->
+                    match load (Reflection.AssemblyName name.Name) with
+                    | null -> coreLibrary
+                    | a -> a
+                | a -> a
+            let typeOf (assembly:Reflection.Assembly) (name:string) (ignoreCase:bool) =
+                let publicTypeIn (a:Reflection.Assembly) =
+                    match (try a.GetType(name, false, ignoreCase) with _ -> null) with
+                    | null -> None
+                    | t -> if t.IsVisible then Some t else None
+                match assembly with
+                | null -> Type.GetType(name, false, ignoreCase)
+                | named ->
+                    seq { yield named
+                          yield coreLibrary
+                          for a in AppDomain.CurrentDomain.GetAssemblies() do
+                              if not a.IsDynamic then yield a }
+                    |> Seq.tryPick publicTypeIn
+                    |> Option.toObj
+            try Type.GetType(typename, Func<_,_> assemblyOf, Func<_,_,_,_> typeOf, false) with _ -> null
         | t -> t
 
     /// Some/ValueSome case of the given option or voption type holding the value.
