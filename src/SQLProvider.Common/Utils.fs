@@ -84,9 +84,39 @@ module Utilities =
                 parseAggregates' fieldNotation fieldNotationAlias tail parsed
         parseAggregates' fieldNotat fieldNotationAlias query []
 
-    // https://stackoverflow.com/questions/1825147/type-gettypenamespace-a-b-classname-returns-null
-    let getType typename =
-        Type.GetType typename
+    /// The type of an assembly-qualified or plain type name, or null.
+    /// A saved schema names types as the runtime that saved it had them: "System.String, System.Private.CoreLib,
+    /// Version=10.0.0.0, ..." from .NET, "System.String, mscorlib, Version=4.0.0.0, ..." from .NET Framework, and a type
+    /// such as System.Net.IPAddress lives in System.Net.Primitives on one and System on the other. So a name that doesn't
+    /// load as written is tried with its assembly's simple name only (any version), then by its full name alone (the
+    /// core library), then in the assemblies already loaded. Only the outermost assembly part is read: a generic type's
+    /// arguments are taken as written.
+    let getType (typename:string) =
+        // the comma outside any brackets: "System.Collections.Generic.List`1[[System.Int32, mscorlib]], mscorlib"
+        let assemblyComma () =
+            typename
+            |> Seq.indexed
+            |> Seq.scan (fun (depth, _) (i, c) ->
+                match c with
+                | '[' -> depth + 1, ValueNone
+                | ']' -> depth - 1, ValueNone
+                | ',' when depth = 0 -> depth, ValueSome i
+                | _ -> depth, ValueNone) (0, ValueNone)
+            |> Seq.tryPick (fun (_, i) -> match i with ValueSome i -> Some i | ValueNone -> None)
+        let elsewhere comma =
+            let fullName = typename.Substring(0, comma).Trim()
+            let assemblyName = typename.Substring(comma + 1).Split(',').[0].Trim()
+            seq {
+                yield fun () -> Type.GetType($"{fullName}, {assemblyName}", false)
+                yield fun () -> Type.GetType(fullName, false)
+                for a in AppDomain.CurrentDomain.GetAssemblies() do
+                    if not a.IsDynamic then yield fun () -> a.GetType(fullName, false)
+            }
+            |> Seq.tryPick (fun attempt -> match (try attempt () with _ -> null) with null -> None | t -> Some t)
+        match Type.GetType typename with
+        | null when not (String.IsNullOrEmpty typename) ->
+            assemblyComma () |> Option.bind elsewhere |> Option.toObj
+        | t -> t
 
     /// Some/ValueSome case of the given option or voption type holding the value.
     let private makeSomeOf (optionType:Type) (value:obj) =
