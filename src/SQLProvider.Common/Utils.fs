@@ -84,9 +84,42 @@ module Utilities =
                 parseAggregates' fieldNotation fieldNotationAlias tail parsed
         parseAggregates' fieldNotat fieldNotationAlias query []
 
-    // https://stackoverflow.com/questions/1825147/type-gettypenamespace-a-b-classname-returns-null
-    let getType typename =
-        Type.GetType typename
+    /// The type of an assembly-qualified or plain type name, or null.
+    /// A saved schema names types as the runtime that saved it had them: "System.String, System.Private.CoreLib,
+    /// Version=10.0.0.0, ..." from .NET, "System.String, mscorlib, Version=4.0.0.0, ..." from .NET Framework, and a type
+    /// such as System.Net.IPAddress lives in System.Net.Primitives on one and System on the other. So a name that doesn't
+    /// load as written is read again part by part, generic arguments included: an assembly is loaded as named, then by
+    /// its simple name (any version), and a type that isn't in its named assembly is looked for in the core library and
+    /// then in the assemblies already loaded, public types only. A part that names no assembly is not looked for there.
+    let getType (typename:string) =
+        match Type.GetType typename with
+        | null when not (String.IsNullOrEmpty typename) ->
+            let coreLibrary = typeof<obj>.Assembly
+            let load (name:Reflection.AssemblyName) = try Reflection.Assembly.Load name with _ -> null
+            // Never null: Type.GetType gives up on a null assembly without asking for the type.
+            let assemblyOf (name:Reflection.AssemblyName) =
+                match load name with
+                | null ->
+                    match load (Reflection.AssemblyName name.Name) with
+                    | null -> coreLibrary
+                    | a -> a
+                | a -> a
+            let typeOf (assembly:Reflection.Assembly) (name:string) (ignoreCase:bool) =
+                let publicTypeIn (a:Reflection.Assembly) =
+                    match (try a.GetType(name, false, ignoreCase) with _ -> null) with
+                    | null -> None
+                    | t -> if t.IsVisible then Some t else None
+                match assembly with
+                | null -> Type.GetType(name, false, ignoreCase)
+                | named ->
+                    seq { yield named
+                          yield coreLibrary
+                          for a in AppDomain.CurrentDomain.GetAssemblies() do
+                              if not a.IsDynamic then yield a }
+                    |> Seq.tryPick publicTypeIn
+                    |> Option.toObj
+            try Type.GetType(typename, Func<_,_> assemblyOf, Func<_,_,_,_> typeOf, false) with _ -> null
+        | t -> t
 
     /// Some/ValueSome case of the given option or voption type holding the value.
     let private makeSomeOf (optionType:Type) (value:obj) =

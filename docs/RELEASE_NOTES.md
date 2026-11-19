@@ -1,3 +1,6 @@
+### 1.5.33 - 19.11.2026
+- Fix: a saved schema (ContextSchemaPath) loads on both .NET and .NET Framework, whichever saved it. Visual Studio, whose editor and compiler run on .NET Framework, failed on a schema saved by dotnet with "Value cannot be null. Parameter name: key"
+
 ### 1.5.32 - 14.11.2026
 - Fix: PostgreSQL functions are called inside a SELECT. With Npgsql 7 and newer they failed with "procedure ... does not exist", as a stored-procedure command is a CALL there
 - PostgreSQL procedures (11 and newer) are under ctx.Procedures and called with CALL, with any Npgsql version; they weren't listed before. INOUT and OUT parameters are the result's properties
