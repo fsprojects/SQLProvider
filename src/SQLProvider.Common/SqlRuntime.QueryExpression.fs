@@ -9,6 +9,160 @@ open FSharp.Data.Sql.Common
 open FSharp.Data.Sql.Patterns
 open FSharp.Data.Sql.Schema
 
+/// Compiled lambdas cached by shape. A lambda's constants become reads of an array argument, so lambdas that differ
+/// only in their constants' values share one compiled factory, which binds the values into a new delegate.
+module internal CompiledLambdas =
+
+    /// A lambda's shape as a sequence of tokens: node types, types, members, methods, counts and parameter
+    /// positions, with each constant's type but not its value.
+    [<CustomEquality; NoComparison>]
+    type ShapeKey =
+        { Tokens: obj[]; Hash: int }
+        override this.GetHashCode() = this.Hash
+        override this.Equals other =
+            match other with
+            | :? ShapeKey as o ->
+                this.Hash = o.Hash && this.Tokens.Length = o.Tokens.Length
+                && Array.forall2 (fun (a: obj) b -> obj.Equals(a, b)) this.Tokens o.Tokens
+            | _ -> false
+
+    /// Assignments: a constant they write to can't become an array read.
+    let private assignments =
+        HashSet<ExpressionType>(
+            [ ExpressionType.Assign; ExpressionType.AddAssign; ExpressionType.AddAssignChecked; ExpressionType.AndAssign
+              ExpressionType.DivideAssign; ExpressionType.ExclusiveOrAssign; ExpressionType.LeftShiftAssign
+              ExpressionType.ModuloAssign; ExpressionType.MultiplyAssign; ExpressionType.MultiplyAssignChecked
+              ExpressionType.OrAssign; ExpressionType.PowerAssign; ExpressionType.RightShiftAssign
+              ExpressionType.SubtractAssign; ExpressionType.SubtractAssignChecked; ExpressionType.PreIncrementAssign
+              ExpressionType.PreDecrementAssign; ExpressionType.PostIncrementAssign; ExpressionType.PostDecrementAssign ])
+
+    /// Reads a lambda's shape and its constants' values, both in the order ExpressionVisitor visits the nodes.
+    /// Supported is false when the lambda holds a node kind the shape doesn't describe, a Quote (its expression is a
+    /// value, whose constants must stay constants) or an assignment to anything but a variable.
+    type private ShapeReader() =
+        inherit ExpressionVisitor()
+        let tokens = ResizeArray<obj> 64
+        let values = ResizeArray<obj>()
+        let parameters = Dictionary<ParameterExpression, int>(HashIdentity.Reference)
+        let positionOf (p: ParameterExpression) =
+            match parameters.TryGetValue p with
+            | true, i -> i
+            | false, _ ->
+                parameters.Add(p, parameters.Count)
+                parameters.Count - 1
+        let add (token: obj) = tokens.Add token
+        member val Supported = true with get, set
+        member _.Tokens = tokens.ToArray()
+        member _.Values = values.ToArray()
+        override this.Visit (e: Expression) =
+            if not this.Supported then e
+            elif isNull e then
+                add null
+                e
+            else
+                add (box e.NodeType)
+                add e.Type
+                let supported =
+                    match e with
+                    | :? ConstantExpression -> true
+                    | :? ParameterExpression as p ->
+                        add (box (positionOf p))
+                        add (box p.IsByRef)
+                        true
+                    | :? LambdaExpression as l ->
+                        add (box l.Parameters.Count)
+                        true
+                    | :? MemberExpression as m ->
+                        add m.Member
+                        true
+                    | :? MethodCallExpression as c ->
+                        add c.Method
+                        add (box c.Arguments.Count)
+                        true
+                    | :? UnaryExpression as u ->
+                        add u.Method
+                        add (box u.IsLiftedToNull)
+                        e.NodeType <> ExpressionType.Quote
+                        && not (assignments.Contains e.NodeType && not (u.Operand :? ParameterExpression))
+                    | :? BinaryExpression as b ->
+                        add b.Method
+                        add (box b.IsLiftedToNull)
+                        not (assignments.Contains e.NodeType && not (b.Left :? ParameterExpression))
+                    | :? ConditionalExpression | :? DefaultExpression -> true
+                    | :? NewExpression as n ->
+                        add n.Constructor
+                        add (box n.Arguments.Count)
+                        true
+                    | :? NewArrayExpression as n ->
+                        add (box n.Expressions.Count)
+                        true
+                    | :? InvocationExpression as i ->
+                        add (box i.Arguments.Count)
+                        true
+                    | :? TypeBinaryExpression as t ->
+                        add t.TypeOperand
+                        true
+                    | :? BlockExpression as b ->
+                        add (box b.Variables.Count)
+                        add (box b.Expressions.Count)
+                        true
+                    | :? MemberInitExpression as mi ->
+                        add (box mi.Bindings.Count)
+                        mi.Bindings |> Seq.forall (fun b -> add b.Member; b :? MemberAssignment)
+                    | :? ListInitExpression as li ->
+                        add (box li.Initializers.Count)
+                        li.Initializers |> Seq.iter (fun i -> add i.AddMethod; add (box i.Arguments.Count))
+                        true
+                    | _ -> false
+                if supported then base.Visit e
+                else
+                    this.Supported <- false
+                    e
+        override _.VisitConstant c =
+            values.Add c.Value
+            upcast c
+
+    /// Replaces each constant with a read of the array parameter, numbered in the order ShapeReader reads them.
+    type private ConstantLifter(constants: ParameterExpression) =
+        inherit ExpressionVisitor()
+        let mutable count = 0
+        override _.VisitConstant c =
+            let read = Expression.ArrayIndex(constants, Expression.Constant count)
+            count <- count + 1
+            if Type.(=)(c.Type, typeof<obj>) then upcast read else upcast Expression.Convert(read, c.Type)
+
+    let private factories = System.Collections.Concurrent.ConcurrentDictionary<ShapeKey, Func<obj[], Delegate>>()
+
+    /// The number of shapes compiled.
+    let internal cachedShapes () = factories.Count
+
+    /// Whether the runtime compiles lambdas to IL. Where it interprets them (RuntimeFeature.IsDynamicCodeSupported is
+    /// false), a lambda costs little to compile and a factory's array reads slow every row, so the cache isn't used.
+    let private compilesToIL =
+        match Type.GetType "System.Runtime.CompilerServices.RuntimeFeature" with
+        | null -> true
+        | feature ->
+            match feature.GetProperty "IsDynamicCodeSupported" with
+            | null -> true
+            | supported -> supported.GetValue null :?> bool
+
+    /// The lambda's delegate, from the factory compiled for its shape; a lambda the shape doesn't describe is compiled alone.
+    let internal compile (lambda: LambdaExpression) : Delegate =
+        if not compilesToIL then lambda.Compile()
+        else
+        let reader = ShapeReader()
+        reader.Visit lambda |> ignore
+        if not reader.Supported then lambda.Compile()
+        else
+        let tokens = reader.Tokens
+        let key = { Tokens = tokens; Hash = tokens |> Array.fold (fun h t -> h * 31 + (if isNull t then 0 else t.GetHashCode())) 17 }
+        let factory =
+            factories.GetOrAdd(key, fun _ ->
+                let constants = Expression.Parameter(typeof<obj[]>, "constants")
+                let lifted = ConstantLifter(constants).Visit lambda
+                Expression.Lambda<Func<obj[], Delegate>>(Expression.Convert(lifted, typeof<Delegate>), constants).Compile())
+        factory.Invoke reader.Values
+
 module internal QueryExpressionTransformer =
 
     /// One lock for each table of each provider. The first query of a table reads its columns from the database inside
@@ -742,7 +896,7 @@ module internal QueryExpressionTransformer =
                     | _ -> Expression.Parameter(typeof<SqlEntity>,"result")
                 let pmap = Dictionary<string,ProjectionParameter ResizeArray>()
                 pmap.Add(baseAlias, ResizeArray<_>())
-                (Expression.Lambda(initDbParam,initDbParam).Compile(),pmap)
+                (CompiledLambdas.compile (Expression.Lambda(initDbParam,initDbParam)),pmap)
             | projs ->
                 let replaceParams = Dictionary<ParameterExpression, LambdaExpression>()
 
@@ -978,7 +1132,7 @@ module internal QueryExpressionTransformer =
                 QueryEvents.PublishExpression generatedMegaLambda
                 if membershipSubquery && not (isNull generatedMegaLambda) && not (isColumnRead generatedMegaLambda.Body) then
                     failwithf "IN / NOT IN needs a sub-query that selects one column as the database computes it, but this projection is computed in .NET after the rows are read: %O. Select the column or aggregate itself, or read the values first with Seq.toArray." generatedMegaLambda
-                (generatedMegaLambda.Compile(),finalParams)
+                (CompiledLambdas.compile generatedMegaLambda,finalParams)
 
         let sqlQuery = 
             if groupgin.Count > 0 then

@@ -1,3 +1,8 @@
+### 1.5.33 - 17.11.2026
+- A query's row reader is compiled once per shape and reused when the query runs again, with any captured values: a run no longer compiles and JITs a new delegate. Unchanged where the runtime interprets lambdas (IsDynamicCodeSupported false)
+- Values a query reads once (a captured variable's member, a sub-query's source, a method call on captured values) are read by reflection, and other one-off expressions are interpreted where the runtime can (not on .NET Framework), instead of compiled
+- An exception thrown while evaluating a query's captured value is raised as it is, not wrapped in TargetInvocationException
+
 ### 1.5.32 - 14.11.2026
 - Fix: PostgreSQL functions are called inside a SELECT. With Npgsql 7 and newer they failed with "procedure ... does not exist", as a stored-procedure command is a CALL there
 - PostgreSQL procedures (11 and newer) are under ctx.Procedures and called with CALL, with any Npgsql version; they weren't listed before. INOUT and OUT parameters are the result's properties
