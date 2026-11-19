@@ -4832,104 +4832,104 @@ SqlItemOrColumn
 CanonicalOp 
  Represents SQL functions and operations that can be applied to columns.
  These operations are translated to database-specific SQL functions. 
-CanonicalOp.IsReplace 
-IsReplace 
-CanonicalOp.IsTrim 
-IsTrim 
-CanonicalOp.IsPow 
-IsPow 
-CanonicalOp.IsBasicMathLeft 
-IsBasicMathLeft 
-CanonicalOp.IsSubstring 
-IsSubstring 
-CanonicalOp.IsBasicMathOfColumns 
-IsBasicMathOfColumns 
-CanonicalOp.IsATan 
-IsATan 
-CanonicalOp.IsSecond 
-IsSecond 
-CanonicalOp.IsAddYears 
-IsAddYears 
-CanonicalOp.IsAddMinutes 
-IsAddMinutes 
-CanonicalOp.IsRound 
-IsRound 
-CanonicalOp.IsAbs 
-IsAbs 
-CanonicalOp.IsLeast 
-IsLeast 
-CanonicalOp.IsAddSeconds 
-IsAddSeconds 
-CanonicalOp.IsIndexOf 
-IsIndexOf 
-CanonicalOp.IsCaseSql 
-IsCaseSql 
-CanonicalOp.IsTan 
-IsTan 
-CanonicalOp.IsMinute 
-IsMinute 
-CanonicalOp.IsCaseSqlPlain 
-IsCaseSqlPlain 
 CanonicalOp.IsACos 
 IsACos 
-CanonicalOp.IsAddHours 
-IsAddHours 
-CanonicalOp.IsDateDiffSecs 
-IsDateDiffSecs 
-CanonicalOp.IsToLower 
-IsToLower 
-CanonicalOp.IsYear 
-IsYear 
-CanonicalOp.IsDate 
-IsDate 
-CanonicalOp.IsCeil 
-IsCeil 
 CanonicalOp.IsCos 
 IsCos 
-CanonicalOp.IsHour 
-IsHour 
-CanonicalOp.IsSin 
-IsSin 
-CanonicalOp.IsCaseNotSql 
-IsCaseNotSql 
-CanonicalOp.IsGreatest 
-IsGreatest 
-CanonicalOp.IsLength 
-IsLength 
-CanonicalOp.IsCastVarchar 
-IsCastVarchar 
-CanonicalOp.IsToUpper 
-IsToUpper 
-CanonicalOp.IsDateDiffDays 
-IsDateDiffDays 
-CanonicalOp.IsDay 
-IsDay 
-CanonicalOp.IsMonth 
-IsMonth 
-CanonicalOp.IsRoundDecimals 
-IsRoundDecimals 
-CanonicalOp.IsFloor 
-IsFloor 
-CanonicalOp.IsCastInt 
-IsCastInt 
-CanonicalOp.IsPowConst 
-IsPowConst 
-CanonicalOp.IsSqrt 
-IsSqrt 
 CanonicalOp.IsASin 
 IsASin 
-CanonicalOp.IsAddDays 
-IsAddDays 
-CanonicalOp.IsIndexOfStart 
-IsIndexOfStart 
+CanonicalOp.IsGreatest 
+IsGreatest 
+CanonicalOp.IsAddYears 
+IsAddYears 
+CanonicalOp.IsCaseSqlPlain 
+IsCaseSqlPlain 
+CanonicalOp.IsReplace 
+IsReplace 
+CanonicalOp.IsMonth 
+IsMonth 
 CanonicalOp.IsTruncate 
 IsTruncate 
-CanonicalOp.IsAddMonths 
-IsAddMonths 
-CanonicalOp.IsSubstringWithLength 
-IsSubstringWithLength 
+CanonicalOp.IsRound 
+IsRound 
+CanonicalOp.IsLeast 
+IsLeast 
+CanonicalOp.IsBasicMathLeft 
+IsBasicMathLeft 
+CanonicalOp.IsMinute 
+IsMinute 
+CanonicalOp.IsToUpper 
+IsToUpper 
+CanonicalOp.IsIndexOfStart 
+IsIndexOfStart 
 CanonicalOp.IsBasicMath 
 IsBasicMath 
+CanonicalOp.IsLength 
+IsLength 
+CanonicalOp.IsCaseNotSql 
+IsCaseNotSql 
+CanonicalOp.IsRoundDecimals 
+IsRoundDecimals 
+CanonicalOp.IsSecond 
+IsSecond 
+CanonicalOp.IsHour 
+IsHour 
+CanonicalOp.IsYear 
+IsYear 
+CanonicalOp.IsBasicMathOfColumns 
+IsBasicMathOfColumns 
+CanonicalOp.IsTrim 
+IsTrim 
+CanonicalOp.IsAddDays 
+IsAddDays 
+CanonicalOp.IsSubstringWithLength 
+IsSubstringWithLength 
+CanonicalOp.IsAddHours 
+IsAddHours 
+CanonicalOp.IsAddSeconds 
+IsAddSeconds 
+CanonicalOp.IsAddMonths 
+IsAddMonths 
+CanonicalOp.IsCastVarchar 
+IsCastVarchar 
+CanonicalOp.IsDate 
+IsDate 
+CanonicalOp.IsSin 
+IsSin 
+CanonicalOp.IsPowConst 
+IsPowConst 
+CanonicalOp.IsSubstring 
+IsSubstring 
+CanonicalOp.IsFloor 
+IsFloor 
+CanonicalOp.IsTan 
+IsTan 
+CanonicalOp.IsDateDiffSecs 
+IsDateDiffSecs 
+CanonicalOp.IsATan 
+IsATan 
+CanonicalOp.IsDateDiffDays 
+IsDateDiffDays 
+CanonicalOp.IsIndexOf 
+IsIndexOf 
+CanonicalOp.IsAddMinutes 
+IsAddMinutes 
+CanonicalOp.IsCeil 
+IsCeil 
+CanonicalOp.IsSqrt 
+IsSqrt 
+CanonicalOp.IsCaseSql 
+IsCaseSql 
+CanonicalOp.IsDay 
+IsDay 
+CanonicalOp.IsToLower 
+IsToLower 
+CanonicalOp.IsAbs 
+IsAbs 
+CanonicalOp.IsCastInt 
+IsCastInt 
+CanonicalOp.IsPow 
+IsPow 
 CanonicalOp.Substring 
 Substring 
 CanonicalOp.SubstringWithLength 
@@ -5029,250 +5029,250 @@ CastVarchar
 CanonicalOp.CastInt 
 CastInt
 
-### [CanonicalOp.IsReplace](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsReplace)
-
-CanonicalOp.IsReplace 
-IsReplace
-
-### [CanonicalOp.IsTrim](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsTrim)
-
-CanonicalOp.IsTrim 
-IsTrim
-
-### [CanonicalOp.IsPow](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsPow)
-
-CanonicalOp.IsPow 
-IsPow
-
-### [CanonicalOp.IsBasicMathLeft](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsBasicMathLeft)
-
-CanonicalOp.IsBasicMathLeft 
-IsBasicMathLeft
-
-### [CanonicalOp.IsSubstring](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsSubstring)
-
-CanonicalOp.IsSubstring 
-IsSubstring
-
-### [CanonicalOp.IsBasicMathOfColumns](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsBasicMathOfColumns)
-
-CanonicalOp.IsBasicMathOfColumns 
-IsBasicMathOfColumns
-
-### [CanonicalOp.IsATan](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsATan)
-
-CanonicalOp.IsATan 
-IsATan
-
-### [CanonicalOp.IsSecond](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsSecond)
-
-CanonicalOp.IsSecond 
-IsSecond
-
-### [CanonicalOp.IsAddYears](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsAddYears)
-
-CanonicalOp.IsAddYears 
-IsAddYears
-
-### [CanonicalOp.IsAddMinutes](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsAddMinutes)
-
-CanonicalOp.IsAddMinutes 
-IsAddMinutes
-
-### [CanonicalOp.IsRound](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsRound)
-
-CanonicalOp.IsRound 
-IsRound
-
-### [CanonicalOp.IsAbs](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsAbs)
-
-CanonicalOp.IsAbs 
-IsAbs
-
-### [CanonicalOp.IsLeast](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsLeast)
-
-CanonicalOp.IsLeast 
-IsLeast
-
-### [CanonicalOp.IsAddSeconds](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsAddSeconds)
-
-CanonicalOp.IsAddSeconds 
-IsAddSeconds
-
-### [CanonicalOp.IsIndexOf](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsIndexOf)
-
-CanonicalOp.IsIndexOf 
-IsIndexOf
-
-### [CanonicalOp.IsCaseSql](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsCaseSql)
-
-CanonicalOp.IsCaseSql 
-IsCaseSql
-
-### [CanonicalOp.IsTan](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsTan)
-
-CanonicalOp.IsTan 
-IsTan
-
-### [CanonicalOp.IsMinute](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsMinute)
-
-CanonicalOp.IsMinute 
-IsMinute
-
-### [CanonicalOp.IsCaseSqlPlain](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsCaseSqlPlain)
-
-CanonicalOp.IsCaseSqlPlain 
-IsCaseSqlPlain
-
 ### [CanonicalOp.IsACos](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsACos)
 
 CanonicalOp.IsACos 
 IsACos
-
-### [CanonicalOp.IsAddHours](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsAddHours)
-
-CanonicalOp.IsAddHours 
-IsAddHours
-
-### [CanonicalOp.IsDateDiffSecs](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsDateDiffSecs)
-
-CanonicalOp.IsDateDiffSecs 
-IsDateDiffSecs
-
-### [CanonicalOp.IsToLower](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsToLower)
-
-CanonicalOp.IsToLower 
-IsToLower
-
-### [CanonicalOp.IsYear](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsYear)
-
-CanonicalOp.IsYear 
-IsYear
-
-### [CanonicalOp.IsDate](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsDate)
-
-CanonicalOp.IsDate 
-IsDate
-
-### [CanonicalOp.IsCeil](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsCeil)
-
-CanonicalOp.IsCeil 
-IsCeil
 
 ### [CanonicalOp.IsCos](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsCos)
 
 CanonicalOp.IsCos 
 IsCos
 
-### [CanonicalOp.IsHour](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsHour)
+### [CanonicalOp.IsASin](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsASin)
 
-CanonicalOp.IsHour 
-IsHour
-
-### [CanonicalOp.IsSin](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsSin)
-
-CanonicalOp.IsSin 
-IsSin
-
-### [CanonicalOp.IsCaseNotSql](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsCaseNotSql)
-
-CanonicalOp.IsCaseNotSql 
-IsCaseNotSql
+CanonicalOp.IsASin 
+IsASin
 
 ### [CanonicalOp.IsGreatest](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsGreatest)
 
 CanonicalOp.IsGreatest 
 IsGreatest
 
-### [CanonicalOp.IsLength](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsLength)
+### [CanonicalOp.IsAddYears](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsAddYears)
 
-CanonicalOp.IsLength 
-IsLength
+CanonicalOp.IsAddYears 
+IsAddYears
 
-### [CanonicalOp.IsCastVarchar](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsCastVarchar)
+### [CanonicalOp.IsCaseSqlPlain](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsCaseSqlPlain)
 
-CanonicalOp.IsCastVarchar 
-IsCastVarchar
+CanonicalOp.IsCaseSqlPlain 
+IsCaseSqlPlain
 
-### [CanonicalOp.IsToUpper](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsToUpper)
+### [CanonicalOp.IsReplace](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsReplace)
 
-CanonicalOp.IsToUpper 
-IsToUpper
-
-### [CanonicalOp.IsDateDiffDays](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsDateDiffDays)
-
-CanonicalOp.IsDateDiffDays 
-IsDateDiffDays
-
-### [CanonicalOp.IsDay](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsDay)
-
-CanonicalOp.IsDay 
-IsDay
+CanonicalOp.IsReplace 
+IsReplace
 
 ### [CanonicalOp.IsMonth](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsMonth)
 
 CanonicalOp.IsMonth 
 IsMonth
 
-### [CanonicalOp.IsRoundDecimals](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsRoundDecimals)
+### [CanonicalOp.IsTruncate](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsTruncate)
 
-CanonicalOp.IsRoundDecimals 
-IsRoundDecimals
+CanonicalOp.IsTruncate 
+IsTruncate
 
-### [CanonicalOp.IsFloor](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsFloor)
+### [CanonicalOp.IsRound](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsRound)
 
-CanonicalOp.IsFloor 
-IsFloor
+CanonicalOp.IsRound 
+IsRound
 
-### [CanonicalOp.IsCastInt](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsCastInt)
+### [CanonicalOp.IsLeast](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsLeast)
 
-CanonicalOp.IsCastInt 
-IsCastInt
+CanonicalOp.IsLeast 
+IsLeast
 
-### [CanonicalOp.IsPowConst](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsPowConst)
+### [CanonicalOp.IsBasicMathLeft](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsBasicMathLeft)
 
-CanonicalOp.IsPowConst 
-IsPowConst
+CanonicalOp.IsBasicMathLeft 
+IsBasicMathLeft
 
-### [CanonicalOp.IsSqrt](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsSqrt)
+### [CanonicalOp.IsMinute](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsMinute)
 
-CanonicalOp.IsSqrt 
-IsSqrt
+CanonicalOp.IsMinute 
+IsMinute
 
-### [CanonicalOp.IsASin](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsASin)
+### [CanonicalOp.IsToUpper](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsToUpper)
 
-CanonicalOp.IsASin 
-IsASin
-
-### [CanonicalOp.IsAddDays](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsAddDays)
-
-CanonicalOp.IsAddDays 
-IsAddDays
+CanonicalOp.IsToUpper 
+IsToUpper
 
 ### [CanonicalOp.IsIndexOfStart](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsIndexOfStart)
 
 CanonicalOp.IsIndexOfStart 
 IsIndexOfStart
 
-### [CanonicalOp.IsTruncate](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsTruncate)
+### [CanonicalOp.IsBasicMath](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsBasicMath)
 
-CanonicalOp.IsTruncate 
-IsTruncate
+CanonicalOp.IsBasicMath 
+IsBasicMath
 
-### [CanonicalOp.IsAddMonths](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsAddMonths)
+### [CanonicalOp.IsLength](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsLength)
 
-CanonicalOp.IsAddMonths 
-IsAddMonths
+CanonicalOp.IsLength 
+IsLength
+
+### [CanonicalOp.IsCaseNotSql](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsCaseNotSql)
+
+CanonicalOp.IsCaseNotSql 
+IsCaseNotSql
+
+### [CanonicalOp.IsRoundDecimals](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsRoundDecimals)
+
+CanonicalOp.IsRoundDecimals 
+IsRoundDecimals
+
+### [CanonicalOp.IsSecond](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsSecond)
+
+CanonicalOp.IsSecond 
+IsSecond
+
+### [CanonicalOp.IsHour](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsHour)
+
+CanonicalOp.IsHour 
+IsHour
+
+### [CanonicalOp.IsYear](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsYear)
+
+CanonicalOp.IsYear 
+IsYear
+
+### [CanonicalOp.IsBasicMathOfColumns](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsBasicMathOfColumns)
+
+CanonicalOp.IsBasicMathOfColumns 
+IsBasicMathOfColumns
+
+### [CanonicalOp.IsTrim](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsTrim)
+
+CanonicalOp.IsTrim 
+IsTrim
+
+### [CanonicalOp.IsAddDays](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsAddDays)
+
+CanonicalOp.IsAddDays 
+IsAddDays
 
 ### [CanonicalOp.IsSubstringWithLength](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsSubstringWithLength)
 
 CanonicalOp.IsSubstringWithLength 
 IsSubstringWithLength
 
-### [CanonicalOp.IsBasicMath](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsBasicMath)
+### [CanonicalOp.IsAddHours](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsAddHours)
 
-CanonicalOp.IsBasicMath 
-IsBasicMath
+CanonicalOp.IsAddHours 
+IsAddHours
+
+### [CanonicalOp.IsAddSeconds](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsAddSeconds)
+
+CanonicalOp.IsAddSeconds 
+IsAddSeconds
+
+### [CanonicalOp.IsAddMonths](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsAddMonths)
+
+CanonicalOp.IsAddMonths 
+IsAddMonths
+
+### [CanonicalOp.IsCastVarchar](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsCastVarchar)
+
+CanonicalOp.IsCastVarchar 
+IsCastVarchar
+
+### [CanonicalOp.IsDate](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsDate)
+
+CanonicalOp.IsDate 
+IsDate
+
+### [CanonicalOp.IsSin](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsSin)
+
+CanonicalOp.IsSin 
+IsSin
+
+### [CanonicalOp.IsPowConst](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsPowConst)
+
+CanonicalOp.IsPowConst 
+IsPowConst
+
+### [CanonicalOp.IsSubstring](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsSubstring)
+
+CanonicalOp.IsSubstring 
+IsSubstring
+
+### [CanonicalOp.IsFloor](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsFloor)
+
+CanonicalOp.IsFloor 
+IsFloor
+
+### [CanonicalOp.IsTan](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsTan)
+
+CanonicalOp.IsTan 
+IsTan
+
+### [CanonicalOp.IsDateDiffSecs](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsDateDiffSecs)
+
+CanonicalOp.IsDateDiffSecs 
+IsDateDiffSecs
+
+### [CanonicalOp.IsATan](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsATan)
+
+CanonicalOp.IsATan 
+IsATan
+
+### [CanonicalOp.IsDateDiffDays](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsDateDiffDays)
+
+CanonicalOp.IsDateDiffDays 
+IsDateDiffDays
+
+### [CanonicalOp.IsIndexOf](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsIndexOf)
+
+CanonicalOp.IsIndexOf 
+IsIndexOf
+
+### [CanonicalOp.IsAddMinutes](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsAddMinutes)
+
+CanonicalOp.IsAddMinutes 
+IsAddMinutes
+
+### [CanonicalOp.IsCeil](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsCeil)
+
+CanonicalOp.IsCeil 
+IsCeil
+
+### [CanonicalOp.IsSqrt](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsSqrt)
+
+CanonicalOp.IsSqrt 
+IsSqrt
+
+### [CanonicalOp.IsCaseSql](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsCaseSql)
+
+CanonicalOp.IsCaseSql 
+IsCaseSql
+
+### [CanonicalOp.IsDay](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsDay)
+
+CanonicalOp.IsDay 
+IsDay
+
+### [CanonicalOp.IsToLower](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsToLower)
+
+CanonicalOp.IsToLower 
+IsToLower
+
+### [CanonicalOp.IsAbs](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsAbs)
+
+CanonicalOp.IsAbs 
+IsAbs
+
+### [CanonicalOp.IsCastInt](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsCastInt)
+
+CanonicalOp.IsCastInt 
+IsCastInt
+
+### [CanonicalOp.IsPow](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#IsPow)
+
+CanonicalOp.IsPow 
+IsPow
 
 ### [CanonicalOp.Substring](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-canonicalop.html#Substring)
 
@@ -5575,14 +5575,14 @@ Condition
  Supports complex boolean expressions with AND/OR operators and nested conditions. 
 Condition.IsConstantTrue 
 IsConstantTrue 
-Condition.IsConstantFalse 
-IsConstantFalse 
 Condition.IsNotSupported 
 IsNotSupported 
-Condition.IsAnd 
-IsAnd 
 Condition.IsOr 
 IsOr 
+Condition.IsAnd 
+IsAnd 
+Condition.IsConstantFalse 
+IsConstantFalse 
 Condition.And 
 And 
 Condition.Or 
@@ -5599,25 +5599,25 @@ NotSupported
 Condition.IsConstantTrue 
 IsConstantTrue
 
-### [Condition.IsConstantFalse](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-condition.html#IsConstantFalse)
-
-Condition.IsConstantFalse 
-IsConstantFalse
-
 ### [Condition.IsNotSupported](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-condition.html#IsNotSupported)
 
 Condition.IsNotSupported 
 IsNotSupported
+
+### [Condition.IsOr](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-condition.html#IsOr)
+
+Condition.IsOr 
+IsOr
 
 ### [Condition.IsAnd](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-condition.html#IsAnd)
 
 Condition.IsAnd 
 IsAnd
 
-### [Condition.IsOr](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-condition.html#IsOr)
+### [Condition.IsConstantFalse](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-condition.html#IsConstantFalse)
 
-Condition.IsOr 
-IsOr
+Condition.IsConstantFalse 
+IsConstantFalse
 
 ### [Condition.And](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-condition.html#And)
 
@@ -5688,12 +5688,12 @@ OperationColumn
 
 SqlColumnType 
  Represents a column with optional operations applied to it. 
-SqlColumnType.IsKeyColumn 
-IsKeyColumn 
-SqlColumnType.IsCanonicalOperation 
-IsCanonicalOperation 
 SqlColumnType.IsGroupColumn 
 IsGroupColumn 
+SqlColumnType.IsCanonicalOperation 
+IsCanonicalOperation 
+SqlColumnType.IsKeyColumn 
+IsKeyColumn 
 SqlColumnType.KeyColumn 
 KeyColumn 
 SqlColumnType.CanonicalOperation 
@@ -5701,20 +5701,20 @@ CanonicalOperation
 SqlColumnType.GroupColumn 
 GroupColumn
 
-### [SqlColumnType.IsKeyColumn](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlcolumntype.html#IsKeyColumn)
+### [SqlColumnType.IsGroupColumn](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlcolumntype.html#IsGroupColumn)
 
-SqlColumnType.IsKeyColumn 
-IsKeyColumn
+SqlColumnType.IsGroupColumn 
+IsGroupColumn
 
 ### [SqlColumnType.IsCanonicalOperation](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlcolumntype.html#IsCanonicalOperation)
 
 SqlColumnType.IsCanonicalOperation 
 IsCanonicalOperation
 
-### [SqlColumnType.IsGroupColumn](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlcolumntype.html#IsGroupColumn)
+### [SqlColumnType.IsKeyColumn](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlcolumntype.html#IsKeyColumn)
 
-SqlColumnType.IsGroupColumn 
-IsGroupColumn
+SqlColumnType.IsKeyColumn 
+IsKeyColumn
 
 ### [SqlColumnType.KeyColumn](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlcolumntype.html#KeyColumn)
 
@@ -5738,24 +5738,24 @@ GroupColumn
 
 SqlItemOrColumn 
  Represents either a database column or a constant value in SQL expressions. 
-SqlItemOrColumn.IsSqlConstant 
-IsSqlConstant 
 SqlItemOrColumn.IsSqlCol 
 IsSqlCol 
+SqlItemOrColumn.IsSqlConstant 
+IsSqlConstant 
 SqlItemOrColumn.SqlCol 
 SqlCol 
 SqlItemOrColumn.SqlConstant 
 SqlConstant
 
-### [SqlItemOrColumn.IsSqlConstant](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html#IsSqlConstant)
-
-SqlItemOrColumn.IsSqlConstant 
-IsSqlConstant
-
 ### [SqlItemOrColumn.IsSqlCol](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html#IsSqlCol)
 
 SqlItemOrColumn.IsSqlCol 
 IsSqlCol
+
+### [SqlItemOrColumn.IsSqlConstant](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html#IsSqlConstant)
+
+SqlItemOrColumn.IsSqlConstant 
+IsSqlConstant
 
 ### [SqlItemOrColumn.SqlCol](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlitemorcolumn.html#SqlCol)
 
@@ -6182,24 +6182,24 @@ tryExactlyOneAsync
 AggregateOperation 
  Represents SQL aggregate operations for GROUP BY clauses and data summarization.
  Each operation includes the column name to aggregate. 
-AggregateOperation.IsStdDevOp 
-IsStdDevOp 
-AggregateOperation.IsCountOp 
-IsCountOp 
-AggregateOperation.IsMaxOp 
-IsMaxOp 
-AggregateOperation.IsKeyOp 
-IsKeyOp 
-AggregateOperation.IsMinOp 
-IsMinOp 
 AggregateOperation.IsCountDistOp 
 IsCountDistOp 
 AggregateOperation.IsVarianceOp 
 IsVarianceOp 
-AggregateOperation.IsSumOp 
-IsSumOp 
+AggregateOperation.IsMinOp 
+IsMinOp 
 AggregateOperation.IsAvgOp 
 IsAvgOp 
+AggregateOperation.IsSumOp 
+IsSumOp 
+AggregateOperation.IsMaxOp 
+IsMaxOp 
+AggregateOperation.IsCountOp 
+IsCountOp 
+AggregateOperation.IsKeyOp 
+IsKeyOp 
+AggregateOperation.IsStdDevOp 
+IsStdDevOp 
 AggregateOperation.KeyOp 
 KeyOp 
 AggregateOperation.MaxOp 
@@ -6219,31 +6219,6 @@ StdDevOp
 AggregateOperation.VarianceOp 
 VarianceOp
 
-### [AggregateOperation.IsStdDevOp](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-aggregateoperation.html#IsStdDevOp)
-
-AggregateOperation.IsStdDevOp 
-IsStdDevOp
-
-### [AggregateOperation.IsCountOp](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-aggregateoperation.html#IsCountOp)
-
-AggregateOperation.IsCountOp 
-IsCountOp
-
-### [AggregateOperation.IsMaxOp](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-aggregateoperation.html#IsMaxOp)
-
-AggregateOperation.IsMaxOp 
-IsMaxOp
-
-### [AggregateOperation.IsKeyOp](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-aggregateoperation.html#IsKeyOp)
-
-AggregateOperation.IsKeyOp 
-IsKeyOp
-
-### [AggregateOperation.IsMinOp](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-aggregateoperation.html#IsMinOp)
-
-AggregateOperation.IsMinOp 
-IsMinOp
-
 ### [AggregateOperation.IsCountDistOp](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-aggregateoperation.html#IsCountDistOp)
 
 AggregateOperation.IsCountDistOp 
@@ -6254,15 +6229,40 @@ IsCountDistOp
 AggregateOperation.IsVarianceOp 
 IsVarianceOp
 
-### [AggregateOperation.IsSumOp](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-aggregateoperation.html#IsSumOp)
+### [AggregateOperation.IsMinOp](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-aggregateoperation.html#IsMinOp)
 
-AggregateOperation.IsSumOp 
-IsSumOp
+AggregateOperation.IsMinOp 
+IsMinOp
 
 ### [AggregateOperation.IsAvgOp](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-aggregateoperation.html#IsAvgOp)
 
 AggregateOperation.IsAvgOp 
 IsAvgOp
+
+### [AggregateOperation.IsSumOp](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-aggregateoperation.html#IsSumOp)
+
+AggregateOperation.IsSumOp 
+IsSumOp
+
+### [AggregateOperation.IsMaxOp](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-aggregateoperation.html#IsMaxOp)
+
+AggregateOperation.IsMaxOp 
+IsMaxOp
+
+### [AggregateOperation.IsCountOp](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-aggregateoperation.html#IsCountOp)
+
+AggregateOperation.IsCountOp 
+IsCountOp
+
+### [AggregateOperation.IsKeyOp](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-aggregateoperation.html#IsKeyOp)
+
+AggregateOperation.IsKeyOp 
+IsKeyOp
+
+### [AggregateOperation.IsStdDevOp](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-aggregateoperation.html#IsStdDevOp)
+
+AggregateOperation.IsStdDevOp 
+IsStdDevOp
 
 ### [AggregateOperation.KeyOp](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-aggregateoperation.html#KeyOp)
 
@@ -6323,38 +6323,38 @@ VarianceOp
 ConditionOperator 
  Represents SQL conditional operators used in WHERE clauses and query expressions.
  These operators are translated to their SQL equivalents when building database queries. 
-ConditionOperator.IsIsNull 
-IsIsNull 
-ConditionOperator.IsGreaterEqual 
-IsGreaterEqual 
-ConditionOperator.IsNotLike 
-IsNotLike 
-ConditionOperator.IsNestedNotIn 
-IsNestedNotIn 
-ConditionOperator.IsEqual 
-IsEqual 
-ConditionOperator.IsNestedNotExists 
-IsNestedNotExists 
-ConditionOperator.IsLike 
-IsLike 
-ConditionOperator.IsLessThan 
-IsLessThan 
-ConditionOperator.IsNestedIn 
-IsNestedIn 
-ConditionOperator.IsGreaterThan 
-IsGreaterThan 
-ConditionOperator.IsNestedExists 
-IsNestedExists 
-ConditionOperator.IsNotIn 
-IsNotIn 
 ConditionOperator.IsNotEqual 
 IsNotEqual 
-ConditionOperator.IsNotNull 
-IsNotNull 
+ConditionOperator.IsEqual 
+IsEqual 
 ConditionOperator.IsIn 
 IsIn 
+ConditionOperator.IsIsNull 
+IsIsNull 
+ConditionOperator.IsNotIn 
+IsNotIn 
+ConditionOperator.IsNestedIn 
+IsNestedIn 
+ConditionOperator.IsGreaterEqual 
+IsGreaterEqual 
+ConditionOperator.IsLessThan 
+IsLessThan 
+ConditionOperator.IsLike 
+IsLike 
+ConditionOperator.IsNestedExists 
+IsNestedExists 
+ConditionOperator.IsNestedNotIn 
+IsNestedNotIn 
+ConditionOperator.IsGreaterThan 
+IsGreaterThan 
 ConditionOperator.IsLessEqual 
 IsLessEqual 
+ConditionOperator.IsNotLike 
+IsNotLike 
+ConditionOperator.IsNestedNotExists 
+IsNestedNotExists 
+ConditionOperator.IsNotNull 
+IsNotNull 
 ConditionOperator.Like 
 Like 
 ConditionOperator.NotLike 
@@ -6388,85 +6388,85 @@ NestedExists
 ConditionOperator.NestedNotExists 
 NestedNotExists
 
-### [ConditionOperator.IsIsNull](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsIsNull)
+### [ConditionOperator.IsNotEqual](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsNotEqual)
 
-ConditionOperator.IsIsNull 
-IsIsNull
-
-### [ConditionOperator.IsGreaterEqual](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsGreaterEqual)
-
-ConditionOperator.IsGreaterEqual 
-IsGreaterEqual
-
-### [ConditionOperator.IsNotLike](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsNotLike)
-
-ConditionOperator.IsNotLike 
-IsNotLike
-
-### [ConditionOperator.IsNestedNotIn](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsNestedNotIn)
-
-ConditionOperator.IsNestedNotIn 
-IsNestedNotIn
+ConditionOperator.IsNotEqual 
+IsNotEqual
 
 ### [ConditionOperator.IsEqual](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsEqual)
 
 ConditionOperator.IsEqual 
 IsEqual
 
-### [ConditionOperator.IsNestedNotExists](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsNestedNotExists)
+### [ConditionOperator.IsIn](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsIn)
 
-ConditionOperator.IsNestedNotExists 
-IsNestedNotExists
+ConditionOperator.IsIn 
+IsIn
 
-### [ConditionOperator.IsLike](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsLike)
+### [ConditionOperator.IsIsNull](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsIsNull)
 
-ConditionOperator.IsLike 
-IsLike
-
-### [ConditionOperator.IsLessThan](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsLessThan)
-
-ConditionOperator.IsLessThan 
-IsLessThan
-
-### [ConditionOperator.IsNestedIn](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsNestedIn)
-
-ConditionOperator.IsNestedIn 
-IsNestedIn
-
-### [ConditionOperator.IsGreaterThan](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsGreaterThan)
-
-ConditionOperator.IsGreaterThan 
-IsGreaterThan
-
-### [ConditionOperator.IsNestedExists](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsNestedExists)
-
-ConditionOperator.IsNestedExists 
-IsNestedExists
+ConditionOperator.IsIsNull 
+IsIsNull
 
 ### [ConditionOperator.IsNotIn](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsNotIn)
 
 ConditionOperator.IsNotIn 
 IsNotIn
 
-### [ConditionOperator.IsNotEqual](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsNotEqual)
+### [ConditionOperator.IsNestedIn](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsNestedIn)
 
-ConditionOperator.IsNotEqual 
-IsNotEqual
+ConditionOperator.IsNestedIn 
+IsNestedIn
 
-### [ConditionOperator.IsNotNull](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsNotNull)
+### [ConditionOperator.IsGreaterEqual](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsGreaterEqual)
 
-ConditionOperator.IsNotNull 
-IsNotNull
+ConditionOperator.IsGreaterEqual 
+IsGreaterEqual
 
-### [ConditionOperator.IsIn](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsIn)
+### [ConditionOperator.IsLessThan](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsLessThan)
 
-ConditionOperator.IsIn 
-IsIn
+ConditionOperator.IsLessThan 
+IsLessThan
+
+### [ConditionOperator.IsLike](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsLike)
+
+ConditionOperator.IsLike 
+IsLike
+
+### [ConditionOperator.IsNestedExists](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsNestedExists)
+
+ConditionOperator.IsNestedExists 
+IsNestedExists
+
+### [ConditionOperator.IsNestedNotIn](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsNestedNotIn)
+
+ConditionOperator.IsNestedNotIn 
+IsNestedNotIn
+
+### [ConditionOperator.IsGreaterThan](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsGreaterThan)
+
+ConditionOperator.IsGreaterThan 
+IsGreaterThan
 
 ### [ConditionOperator.IsLessEqual](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsLessEqual)
 
 ConditionOperator.IsLessEqual 
 IsLessEqual
+
+### [ConditionOperator.IsNotLike](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsNotLike)
+
+ConditionOperator.IsNotLike 
+IsNotLike
+
+### [ConditionOperator.IsNestedNotExists](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsNestedNotExists)
+
+ConditionOperator.IsNestedNotExists 
+IsNestedNotExists
+
+### [ConditionOperator.IsNotNull](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#IsNotNull)
+
+ConditionOperator.IsNotNull 
+IsNotNull
 
 ### [ConditionOperator.Like](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-conditionoperator.html#Like)
 
@@ -9365,7 +9365,14 @@ parseAggregates
 ### [Utilities.getType](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-utilities.html#getType)
 
 Utilities.getType 
-getType
+getType 
+ The type of an assembly-qualified or plain type name, or null.
+ A saved schema names types as the runtime that saved it had them: "System.String, System.Private.CoreLib,
+ Version=10.0.0.0, ..." from .NET, "System.String, mscorlib, Version=4.0.0.0, ..." from .NET Framework, and a type
+ such as System.Net.IPAddress lives in System.Net.Primitives on one and System on the other. So a name that doesn't
+ load as written is read again part by part, generic arguments included: an assembly is loaded as named, then by
+ its simple name (any version), and a type that isn't in its named assembly is looked for in the core library and
+ then in the assemblies already loaded, public types only. A part that names no assembly is not looked for there.
 
 ### [Utilities.genericFieldNotation](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-utilities.html#genericFieldNotation)
 
@@ -9567,16 +9574,16 @@ EXTERNAL
 
 EntityState 
  
-EntityState.IsModified 
-IsModified 
-EntityState.IsUnchanged 
-IsUnchanged 
 EntityState.IsCreated 
 IsCreated 
-EntityState.IsDelete 
-IsDelete 
+EntityState.IsModified 
+IsModified 
 EntityState.IsDeleted 
 IsDeleted 
+EntityState.IsUnchanged 
+IsUnchanged 
+EntityState.IsDelete 
+IsDelete 
 EntityState.Unchanged 
 Unchanged 
 EntityState.Created 
@@ -9588,30 +9595,30 @@ Delete
 EntityState.Deleted 
 Deleted
 
+### [EntityState.IsCreated](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-entitystate.html#IsCreated)
+
+EntityState.IsCreated 
+IsCreated
+
 ### [EntityState.IsModified](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-entitystate.html#IsModified)
 
 EntityState.IsModified 
 IsModified
+
+### [EntityState.IsDeleted](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-entitystate.html#IsDeleted)
+
+EntityState.IsDeleted 
+IsDeleted
 
 ### [EntityState.IsUnchanged](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-entitystate.html#IsUnchanged)
 
 EntityState.IsUnchanged 
 IsUnchanged
 
-### [EntityState.IsCreated](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-entitystate.html#IsCreated)
-
-EntityState.IsCreated 
-IsCreated
-
 ### [EntityState.IsDelete](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-entitystate.html#IsDelete)
 
 EntityState.IsDelete 
 IsDelete
-
-### [EntityState.IsDeleted](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-entitystate.html#IsDeleted)
-
-EntityState.IsDeleted 
-IsDeleted
 
 ### [EntityState.Unchanged](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-entitystate.html#Unchanged)
 
@@ -9986,14 +9993,14 @@ ISqlDataContext.SubmitPendingChanges
 SubmitPendingChanges 
 ISqlDataContext.SubmitPendingChangesAsync 
 SubmitPendingChangesAsync 
+ISqlDataContext.CommandTimeout 
+CommandTimeout 
 ISqlDataContext.ConnectionString 
 ConnectionString 
-ISqlDataContext.SqlOperationsInSelect 
-SqlOperationsInSelect 
 ISqlDataContext.IsReadOnly 
 IsReadOnly 
-ISqlDataContext.CommandTimeout 
-CommandTimeout
+ISqlDataContext.SqlOperationsInSelect 
+SqlOperationsInSelect
 
 ### [ISqlDataContext.CallSproc](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqldatacontext.html#CallSproc)
 
@@ -10091,17 +10098,17 @@ ISqlDataContext.SubmitPendingChangesAsync
 SubmitPendingChangesAsync 
  Save database-changes in a transaction to database.
 
+### [ISqlDataContext.CommandTimeout](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqldatacontext.html#CommandTimeout)
+
+ISqlDataContext.CommandTimeout 
+CommandTimeout 
+ Command timeout (in seconds)
+
 ### [ISqlDataContext.ConnectionString](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqldatacontext.html#ConnectionString)
 
 ISqlDataContext.ConnectionString 
 ConnectionString 
  Connection string to database
-
-### [ISqlDataContext.SqlOperationsInSelect](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqldatacontext.html#SqlOperationsInSelect)
-
-ISqlDataContext.SqlOperationsInSelect 
-SqlOperationsInSelect 
- Operations of select in SQL-side or in .NET side?
 
 ### [ISqlDataContext.IsReadOnly](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqldatacontext.html#IsReadOnly)
 
@@ -10109,11 +10116,11 @@ ISqlDataContext.IsReadOnly
 IsReadOnly 
  Context meant to be read operations only
 
-### [ISqlDataContext.CommandTimeout](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqldatacontext.html#CommandTimeout)
+### [ISqlDataContext.SqlOperationsInSelect](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqldatacontext.html#SqlOperationsInSelect)
 
-ISqlDataContext.CommandTimeout 
-CommandTimeout 
- Command timeout (in seconds)
+ISqlDataContext.SqlOperationsInSelect 
+SqlOperationsInSelect 
+ Operations of select in SQL-side or in .NET side?
 
 ### [ISqlProvider](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html)
 
@@ -10159,12 +10166,12 @@ ISqlProvider.ProcessUpdates
 ProcessUpdates 
 ISqlProvider.ProcessUpdatesAsync 
 ProcessUpdatesAsync 
+ISqlProvider.CloseConnectionAfterQuery 
+CloseConnectionAfterQuery 
 ISqlProvider.StoredProcedures 
 StoredProcedures 
 ISqlProvider.DesignConnection 
-DesignConnection 
-ISqlProvider.CloseConnectionAfterQuery 
-CloseConnectionAfterQuery
+DesignConnection
 
 ### [ISqlProvider.CreateCommand](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html#CreateCommand)
 
@@ -10295,6 +10302,12 @@ ISqlProvider.ProcessUpdatesAsync
 ProcessUpdatesAsync 
  Asynchronously writes all pending database changes to database
 
+### [ISqlProvider.CloseConnectionAfterQuery](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html#CloseConnectionAfterQuery)
+
+ISqlProvider.CloseConnectionAfterQuery 
+CloseConnectionAfterQuery 
+ MS Access needs to keep connection open
+
 ### [ISqlProvider.StoredProcedures](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html#StoredProcedures)
 
 ISqlProvider.StoredProcedures 
@@ -10306,12 +10319,6 @@ StoredProcedures
 ISqlProvider.DesignConnection 
 DesignConnection 
  MSSDT doesn't do design-time connection
-
-### [ISqlProvider.CloseConnectionAfterQuery](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html#CloseConnectionAfterQuery)
-
-ISqlProvider.CloseConnectionAfterQuery 
-CloseConnectionAfterQuery 
- MS Access needs to keep connection open
 
 ### [IWithDataContext](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-iwithdatacontext.html)
 
@@ -10501,14 +10508,14 @@ Set on each row before <code>SubmitUpdates</code>; rows of one submit may differ
  conflict it reads the existing row's key when that row was updated, and none when it was left as it was. 
 OnConflict.IsUpdateOn 
 IsUpdateOn 
-OnConflict.IsDoNothingOn 
-IsDoNothingOn 
-OnConflict.IsDoNothing 
-IsDoNothing 
 OnConflict.IsUpdate 
 IsUpdate 
 OnConflict.IsThrow 
 IsThrow 
+OnConflict.IsDoNothing 
+IsDoNothing 
+OnConflict.IsDoNothingOn 
+IsDoNothingOn 
 OnConflict.Throw 
 Throw 
 OnConflict.Update 
@@ -10525,16 +10532,6 @@ UpdateOn
 OnConflict.IsUpdateOn 
 IsUpdateOn
 
-### [OnConflict.IsDoNothingOn](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-onconflict.html#IsDoNothingOn)
-
-OnConflict.IsDoNothingOn 
-IsDoNothingOn
-
-### [OnConflict.IsDoNothing](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-onconflict.html#IsDoNothing)
-
-OnConflict.IsDoNothing 
-IsDoNothing
-
 ### [OnConflict.IsUpdate](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-onconflict.html#IsUpdate)
 
 OnConflict.IsUpdate 
@@ -10544,6 +10541,16 @@ IsUpdate
 
 OnConflict.IsThrow 
 IsThrow
+
+### [OnConflict.IsDoNothing](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-onconflict.html#IsDoNothing)
+
+OnConflict.IsDoNothing 
+IsDoNothing
+
+### [OnConflict.IsDoNothingOn](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-onconflict.html#IsDoNothingOn)
+
+OnConflict.IsDoNothingOn 
+IsDoNothingOn
 
 ### [OnConflict.Throw](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-onconflict.html#Throw)
 
@@ -10614,24 +10621,24 @@ Represents a result set as a sequence of rows, where each row is an array of col
 
 ReturnSetType 
 Represents different types of result sets that can be returned from stored procedures. 
-ReturnSetType.IsResultSet 
-IsResultSet 
 ReturnSetType.IsScalarResultSet 
 IsScalarResultSet 
+ReturnSetType.IsResultSet 
+IsResultSet 
 ReturnSetType.ScalarResultSet 
 ScalarResultSet 
 ReturnSetType.ResultSet 
 ResultSet
 
-### [ReturnSetType.IsResultSet](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-returnsettype.html#IsResultSet)
-
-ReturnSetType.IsResultSet 
-IsResultSet
-
 ### [ReturnSetType.IsScalarResultSet](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-returnsettype.html#IsScalarResultSet)
 
 ReturnSetType.IsScalarResultSet 
 IsScalarResultSet
+
+### [ReturnSetType.IsResultSet](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-returnsettype.html#IsResultSet)
+
+ReturnSetType.IsResultSet 
+IsResultSet
 
 ### [ReturnSetType.ScalarResultSet](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-returnsettype.html#ScalarResultSet)
 
@@ -10649,14 +10656,14 @@ ResultSet
 
 ReturnValueType 
 Represents different types of return values from stored procedures and functions. 
-ReturnValueType.IsSet 
-IsSet 
-ReturnValueType.IsScalar 
-IsScalar 
 ReturnValueType.IsUnit 
 IsUnit 
+ReturnValueType.IsScalar 
+IsScalar 
 ReturnValueType.IsSingleResultSet 
 IsSingleResultSet 
+ReturnValueType.IsSet 
+IsSet 
 ReturnValueType.Unit 
 Unit 
 ReturnValueType.Scalar 
@@ -10666,25 +10673,25 @@ SingleResultSet
 ReturnValueType.Set 
 Set
 
-### [ReturnValueType.IsSet](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-returnvaluetype.html#IsSet)
+### [ReturnValueType.IsUnit](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-returnvaluetype.html#IsUnit)
 
-ReturnValueType.IsSet 
-IsSet
+ReturnValueType.IsUnit 
+IsUnit
 
 ### [ReturnValueType.IsScalar](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-returnvaluetype.html#IsScalar)
 
 ReturnValueType.IsScalar 
 IsScalar
 
-### [ReturnValueType.IsUnit](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-returnvaluetype.html#IsUnit)
-
-ReturnValueType.IsUnit 
-IsUnit
-
 ### [ReturnValueType.IsSingleResultSet](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-returnvaluetype.html#IsSingleResultSet)
 
 ReturnValueType.IsSingleResultSet 
 IsSingleResultSet
+
+### [ReturnValueType.IsSet](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-returnvaluetype.html#IsSet)
+
+ReturnValueType.IsSet 
+IsSet
 
 ### [ReturnValueType.Unit](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-returnvaluetype.html#Unit)
 
@@ -10848,12 +10855,12 @@ IsOffline
 
 SelectData 
  
-SelectData.IsGroupQuery 
-IsGroupQuery 
-SelectData.IsCrossJoin 
-IsCrossJoin 
 SelectData.IsLinkQuery 
 IsLinkQuery 
+SelectData.IsCrossJoin 
+IsCrossJoin 
+SelectData.IsGroupQuery 
+IsGroupQuery 
 SelectData.LinkQuery 
 LinkQuery 
 SelectData.GroupQuery 
@@ -10861,20 +10868,20 @@ GroupQuery
 SelectData.CrossJoin 
 CrossJoin
 
-### [SelectData.IsGroupQuery](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-selectdata.html#IsGroupQuery)
+### [SelectData.IsLinkQuery](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-selectdata.html#IsLinkQuery)
 
-SelectData.IsGroupQuery 
-IsGroupQuery
+SelectData.IsLinkQuery 
+IsLinkQuery
 
 ### [SelectData.IsCrossJoin](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-selectdata.html#IsCrossJoin)
 
 SelectData.IsCrossJoin 
 IsCrossJoin
 
-### [SelectData.IsLinkQuery](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-selectdata.html#IsLinkQuery)
+### [SelectData.IsGroupQuery](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-selectdata.html#IsGroupQuery)
 
-SelectData.IsLinkQuery 
-IsLinkQuery
+SelectData.IsGroupQuery 
+IsGroupQuery
 
 ### [SelectData.LinkQuery](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-selectdata.html#LinkQuery)
 
@@ -10917,12 +10924,12 @@ SqlEntity.OnConflict
 OnConflict 
 SqlEntity.ColumnValuesWithDefinition 
 ColumnValuesWithDefinition 
-SqlEntity.ColumnValues 
-ColumnValues 
 SqlEntity._State 
 _State 
 SqlEntity.DataContext 
-DataContext
+DataContext 
+SqlEntity.ColumnValues 
+ColumnValues
 
 ### [SqlEntity.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlentity.html#``.ctor``)
 
@@ -10990,11 +10997,6 @@ OnConflict
 SqlEntity.ColumnValuesWithDefinition 
 ColumnValuesWithDefinition
 
-### [SqlEntity.ColumnValues](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlentity.html#ColumnValues)
-
-SqlEntity.ColumnValues 
-ColumnValues
-
 ### [SqlEntity._State](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlentity.html#_State)
 
 SqlEntity._State 
@@ -11005,6 +11007,11 @@ _State
 
 SqlEntity.DataContext 
 DataContext
+
+### [SqlEntity.ColumnValues](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlentity.html#ColumnValues)
+
+SqlEntity.ColumnValues 
+ColumnValues
 
 ### [SqlExp](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html)
 
@@ -11018,32 +11025,32 @@ SqlExp.hasSortBy
 hasSortBy 
 SqlExp.locksRows 
 locksRows 
-SqlExp.IsSelectMany 
-IsSelectMany 
-SqlExp.IsForUpdate 
-IsForUpdate 
+SqlExp.IsAggregateOp 
+IsAggregateOp 
+SqlExp.IsProjection 
+IsProjection 
+SqlExp.IsBaseTable 
+IsBaseTable 
+SqlExp.IsUnion 
+IsUnion 
+SqlExp.IsFilterClause 
+IsFilterClause 
+SqlExp.IsHavingClause 
+IsHavingClause 
+SqlExp.IsDistinct 
+IsDistinct 
+SqlExp.IsTake 
+IsTake 
 SqlExp.IsSkip 
 IsSkip 
 SqlExp.IsCount 
 IsCount 
-SqlExp.IsDistinct 
-IsDistinct 
-SqlExp.IsFilterClause 
-IsFilterClause 
-SqlExp.IsProjection 
-IsProjection 
+SqlExp.IsForUpdate 
+IsForUpdate 
 SqlExp.IsOrderBy 
 IsOrderBy 
-SqlExp.IsBaseTable 
-IsBaseTable 
-SqlExp.IsAggregateOp 
-IsAggregateOp 
-SqlExp.IsUnion 
-IsUnion 
-SqlExp.IsTake 
-IsTake 
-SqlExp.IsHavingClause 
-IsHavingClause 
+SqlExp.IsSelectMany 
+IsSelectMany 
 SqlExp.BaseTable 
 BaseTable 
 SqlExp.SelectMany 
@@ -11092,15 +11099,45 @@ SqlExp.locksRows
 locksRows 
  The query locks the rows it reads (Seq.lockForUpdate).
 
-### [SqlExp.IsSelectMany](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#IsSelectMany)
+### [SqlExp.IsAggregateOp](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#IsAggregateOp)
 
-SqlExp.IsSelectMany 
-IsSelectMany
+SqlExp.IsAggregateOp 
+IsAggregateOp
 
-### [SqlExp.IsForUpdate](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#IsForUpdate)
+### [SqlExp.IsProjection](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#IsProjection)
 
-SqlExp.IsForUpdate 
-IsForUpdate
+SqlExp.IsProjection 
+IsProjection
+
+### [SqlExp.IsBaseTable](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#IsBaseTable)
+
+SqlExp.IsBaseTable 
+IsBaseTable
+
+### [SqlExp.IsUnion](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#IsUnion)
+
+SqlExp.IsUnion 
+IsUnion
+
+### [SqlExp.IsFilterClause](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#IsFilterClause)
+
+SqlExp.IsFilterClause 
+IsFilterClause
+
+### [SqlExp.IsHavingClause](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#IsHavingClause)
+
+SqlExp.IsHavingClause 
+IsHavingClause
+
+### [SqlExp.IsDistinct](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#IsDistinct)
+
+SqlExp.IsDistinct 
+IsDistinct
+
+### [SqlExp.IsTake](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#IsTake)
+
+SqlExp.IsTake 
+IsTake
 
 ### [SqlExp.IsSkip](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#IsSkip)
 
@@ -11112,50 +11149,20 @@ IsSkip
 SqlExp.IsCount 
 IsCount
 
-### [SqlExp.IsDistinct](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#IsDistinct)
+### [SqlExp.IsForUpdate](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#IsForUpdate)
 
-SqlExp.IsDistinct 
-IsDistinct
-
-### [SqlExp.IsFilterClause](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#IsFilterClause)
-
-SqlExp.IsFilterClause 
-IsFilterClause
-
-### [SqlExp.IsProjection](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#IsProjection)
-
-SqlExp.IsProjection 
-IsProjection
+SqlExp.IsForUpdate 
+IsForUpdate
 
 ### [SqlExp.IsOrderBy](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#IsOrderBy)
 
 SqlExp.IsOrderBy 
 IsOrderBy
 
-### [SqlExp.IsBaseTable](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#IsBaseTable)
+### [SqlExp.IsSelectMany](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#IsSelectMany)
 
-SqlExp.IsBaseTable 
-IsBaseTable
-
-### [SqlExp.IsAggregateOp](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#IsAggregateOp)
-
-SqlExp.IsAggregateOp 
-IsAggregateOp
-
-### [SqlExp.IsUnion](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#IsUnion)
-
-SqlExp.IsUnion 
-IsUnion
-
-### [SqlExp.IsTake](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#IsTake)
-
-SqlExp.IsTake 
-IsTake
-
-### [SqlExp.IsHavingClause](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#IsHavingClause)
-
-SqlExp.IsHavingClause 
-IsHavingClause
+SqlExp.IsSelectMany 
+IsSelectMany
 
 ### [SqlExp.BaseTable](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-sqlexp.html#BaseTable)
 
@@ -12835,25 +12842,25 @@ DataReaderWithCommand
  
 DataReaderWithCommand.``.ctor`` 
 ``.ctor`` 
-DataReaderWithCommand.Command 
-Command 
 DataReaderWithCommand.DataReader 
-DataReader
+DataReader 
+DataReaderWithCommand.Command 
+Command
 
 ### [DataReaderWithCommand.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-providers-firebird-datareaderwithcommand.html#``.ctor``)
 
 DataReaderWithCommand.``.ctor`` 
 ``.ctor``
 
-### [DataReaderWithCommand.Command](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-providers-firebird-datareaderwithcommand.html#Command)
-
-DataReaderWithCommand.Command 
-Command
-
 ### [DataReaderWithCommand.DataReader](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-providers-firebird-datareaderwithcommand.html#DataReader)
 
 DataReaderWithCommand.DataReader 
 DataReader
+
+### [DataReaderWithCommand.Command](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-providers-firebird-datareaderwithcommand.html#Command)
+
+DataReaderWithCommand.Command 
+Command
 
 ### [Firebird](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-providers-firebird-0.html)
 
@@ -13064,25 +13071,25 @@ DataReaderWithCommand
  
 DataReaderWithCommand.``.ctor`` 
 ``.ctor`` 
-DataReaderWithCommand.Command 
-Command 
 DataReaderWithCommand.DataReader 
-DataReader
+DataReader 
+DataReaderWithCommand.Command 
+Command
 
 ### [DataReaderWithCommand.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-providers-firebird-datareaderwithcommand-0.html#``.ctor``)
 
 DataReaderWithCommand.``.ctor`` 
 ``.ctor``
 
-### [DataReaderWithCommand.Command](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-providers-firebird-datareaderwithcommand-0.html#Command)
-
-DataReaderWithCommand.Command 
-Command
-
 ### [DataReaderWithCommand.DataReader](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-providers-firebird-datareaderwithcommand-0.html#DataReader)
 
 DataReaderWithCommand.DataReader 
 DataReader
+
+### [DataReaderWithCommand.Command](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-providers-firebird-datareaderwithcommand-0.html#Command)
+
+DataReaderWithCommand.Command 
+Command
 
 ### [MSSqlServer](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-providers-mssqlserver.html)
 
@@ -16032,14 +16039,14 @@ Params
 
 Sproc 
  
-Sproc.IsSproc 
-IsSproc 
 Sproc.IsEmpty 
 IsEmpty 
-Sproc.IsRoot 
-IsRoot 
 Sproc.IsPackage 
 IsPackage 
+Sproc.IsSproc 
+IsSproc 
+Sproc.IsRoot 
+IsRoot 
 Sproc.GetKnownTypes 
 GetKnownTypes 
 Sproc.Root 
@@ -16051,25 +16058,25 @@ Sproc
 Sproc.Empty 
 Empty
 
-### [Sproc.IsSproc](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-sproc.html#IsSproc)
-
-Sproc.IsSproc 
-IsSproc
-
 ### [Sproc.IsEmpty](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-sproc.html#IsEmpty)
 
 Sproc.IsEmpty 
 IsEmpty
 
-### [Sproc.IsRoot](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-sproc.html#IsRoot)
-
-Sproc.IsRoot 
-IsRoot
-
 ### [Sproc.IsPackage](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-sproc.html#IsPackage)
 
 Sproc.IsPackage 
 IsPackage
+
+### [Sproc.IsSproc](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-sproc.html#IsSproc)
+
+Sproc.IsSproc 
+IsSproc
+
+### [Sproc.IsRoot](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-sproc.html#IsRoot)
+
+Sproc.IsRoot 
+IsRoot
 
 ### [Sproc.GetKnownTypes](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-sproc.html#GetKnownTypes)
 
@@ -16103,10 +16110,10 @@ SprocName
  Handles different database naming conventions (e.g., Oracle packages, SQL Server schemas). 
 SprocName.ToList 
 ToList 
-SprocName.FriendlyName 
-FriendlyName 
 SprocName.FullName 
 FullName 
+SprocName.FriendlyName 
+FriendlyName 
 SprocName.DbName 
 DbName 
 SprocName.ProcName 
@@ -16121,15 +16128,15 @@ PackageName
 SprocName.ToList 
 ToList
 
-### [SprocName.FriendlyName](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-sprocname.html#FriendlyName)
-
-SprocName.FriendlyName 
-FriendlyName
-
 ### [SprocName.FullName](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-sprocname.html#FullName)
 
 SprocName.FullName 
 FullName
+
+### [SprocName.FriendlyName](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-sprocname.html#FriendlyName)
+
+SprocName.FriendlyName 
+FriendlyName
 
 ### [SprocName.DbName](https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-sprocname.html#DbName)
 
@@ -17089,12 +17096,12 @@ ProvidedConstructor.AddXmlDocComputed
 AddXmlDocComputed 
 ProvidedConstructor.AddXmlDocDelayed 
 AddXmlDocDelayed 
-ProvidedConstructor.IsTypeInitializer 
-IsTypeInitializer 
 ProvidedConstructor.BaseConstructorCall 
 BaseConstructorCall 
 ProvidedConstructor.IsImplicitConstructor 
-IsImplicitConstructor
+IsImplicitConstructor 
+ProvidedConstructor.IsTypeInitializer 
+IsTypeInitializer
 
 ### [ProvidedConstructor.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor.html#``.ctor``)
 
@@ -17132,11 +17139,6 @@ ProvidedConstructor.AddXmlDocDelayed
 AddXmlDocDelayed 
  Add XML documentation information to this provided constructor, where the computation of the documentation is delayed until necessary
 
-### [ProvidedConstructor.IsTypeInitializer](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor.html#IsTypeInitializer)
-
-ProvidedConstructor.IsTypeInitializer 
-IsTypeInitializer
-
 ### [ProvidedConstructor.BaseConstructorCall](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor.html#BaseConstructorCall)
 
 ProvidedConstructor.BaseConstructorCall 
@@ -17150,6 +17152,11 @@ IsImplicitConstructor
  Set a flag indicating that the constructor acts like an F# implicit constructor, so the
  parameters of the constructor become fields and can be accessed using Expr.GlobalVar with the
  same name.
+
+### [ProvidedConstructor.IsTypeInitializer](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor.html#IsTypeInitializer)
+
+ProvidedConstructor.IsTypeInitializer 
+IsTypeInitializer
 
 ### [ProvidedEvent](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedevent.html)
 
@@ -17439,10 +17446,10 @@ ProvidedParameter.AddCustomAttribute
 AddCustomAttribute 
 ProvidedParameter.HasDefaultParameterValue 
 HasDefaultParameterValue 
-ProvidedParameter.IsParamArray 
-IsParamArray 
 ProvidedParameter.IsReflectedDefinition 
-IsReflectedDefinition
+IsReflectedDefinition 
+ProvidedParameter.IsParamArray 
+IsParamArray
 
 ### [ProvidedParameter.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedparameter.html#``.ctor``)
 
@@ -17462,17 +17469,17 @@ ProvidedParameter.HasDefaultParameterValue
 HasDefaultParameterValue 
  Indicates if the parameter has a default value
 
-### [ProvidedParameter.IsParamArray](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedparameter.html#IsParamArray)
-
-ProvidedParameter.IsParamArray 
-IsParamArray 
- Indicates if the parameter is marked as ParamArray
-
 ### [ProvidedParameter.IsReflectedDefinition](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedparameter.html#IsReflectedDefinition)
 
 ProvidedParameter.IsReflectedDefinition 
 IsReflectedDefinition 
  Indicates if the parameter is marked as ReflectedDefinition
+
+### [ProvidedParameter.IsParamArray](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedparameter.html#IsParamArray)
+
+ProvidedParameter.IsParamArray 
+IsParamArray 
+ Indicates if the parameter is marked as ParamArray
 
 ### [ProvidedProperty](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedproperty.html)
 
@@ -17660,14 +17667,14 @@ ProvidedTypeDefinition.SetBaseTypeDelayed
 SetBaseTypeDelayed 
 ProvidedTypeDefinition.SetEnumUnderlyingType 
 SetEnumUnderlyingType 
-ProvidedTypeDefinition.IsErased 
-IsErased 
 ProvidedTypeDefinition.HideObjectMethods 
 HideObjectMethods 
-ProvidedTypeDefinition.SuppressRelocation 
-SuppressRelocation 
+ProvidedTypeDefinition.IsErased 
+IsErased 
 ProvidedTypeDefinition.NonNullable 
 NonNullable 
+ProvidedTypeDefinition.SuppressRelocation 
+SuppressRelocation 
 ProvidedTypeDefinition.EraseType 
 EraseType 
 ProvidedTypeDefinition.Logger 
@@ -17812,29 +17819,29 @@ ProvidedTypeDefinition.SetEnumUnderlyingType
 SetEnumUnderlyingType 
  Set underlying type for generated enums
 
-### [ProvidedTypeDefinition.IsErased](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition.html#IsErased)
-
-ProvidedTypeDefinition.IsErased 
-IsErased 
- Get a flag indicating if the ProvidedTypeDefinition is erased
-
 ### [ProvidedTypeDefinition.HideObjectMethods](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition.html#HideObjectMethods)
 
 ProvidedTypeDefinition.HideObjectMethods 
 HideObjectMethods 
  Suppress Object entries in intellisense menus in instances of this provided type
 
-### [ProvidedTypeDefinition.SuppressRelocation](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition.html#SuppressRelocation)
+### [ProvidedTypeDefinition.IsErased](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition.html#IsErased)
 
-ProvidedTypeDefinition.SuppressRelocation 
-SuppressRelocation 
- Get or set a flag indicating if the ProvidedTypeDefinition has type-relocation suppressed
+ProvidedTypeDefinition.IsErased 
+IsErased 
+ Get a flag indicating if the ProvidedTypeDefinition is erased
 
 ### [ProvidedTypeDefinition.NonNullable](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition.html#NonNullable)
 
 ProvidedTypeDefinition.NonNullable 
 NonNullable 
  Disallows the use of the null literal.
+
+### [ProvidedTypeDefinition.SuppressRelocation](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition.html#SuppressRelocation)
+
+ProvidedTypeDefinition.SuppressRelocation 
+SuppressRelocation 
+ Get or set a flag indicating if the ProvidedTypeDefinition has type-relocation suppressed
 
 ### [ProvidedTypeDefinition.EraseType](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition.html#EraseType)
 
@@ -17993,12 +18000,12 @@ TypeProviderForNamespaces.RegisterRuntimeAssemblyLocationAsProbingFolder
 RegisterRuntimeAssemblyLocationAsProbingFolder 
 TypeProviderForNamespaces.ResolveAssembly 
 ResolveAssembly 
+TypeProviderForNamespaces.TargetContext 
+TargetContext 
 TypeProviderForNamespaces.Namespaces 
 Namespaces 
 TypeProviderForNamespaces.Disposing 
-Disposing 
-TypeProviderForNamespaces.TargetContext 
-TargetContext
+Disposing
 
 ### [TypeProviderForNamespaces.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces.html#``.ctor``)
 
@@ -18054,6 +18061,14 @@ TypeProviderForNamespaces.ResolveAssembly
 ResolveAssembly 
  AssemblyResolve handler. Default implementation searches <assemblyname>.dll file in registered folders
 
+### [TypeProviderForNamespaces.TargetContext](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces.html#TargetContext)
+
+TypeProviderForNamespaces.TargetContext 
+TargetContext 
+ The context for which code is eventually to be generated. You should not normally
+ need to use this property directly, as translation from the compiler-hosted context to 
+ the design-time context will normally be performed automatically.
+
 ### [TypeProviderForNamespaces.Namespaces](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces.html#Namespaces)
 
 TypeProviderForNamespaces.Namespaces 
@@ -18064,14 +18079,6 @@ Namespaces
 
 TypeProviderForNamespaces.Disposing 
 Disposing
-
-### [TypeProviderForNamespaces.TargetContext](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces.html#TargetContext)
-
-TypeProviderForNamespaces.TargetContext 
-TargetContext 
- The context for which code is eventually to be generated. You should not normally
- need to use this property directly, as translation from the compiler-hosted context to 
- the design-time context will normally be performed automatically.
 
 ### [ProvidedConstructor](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-0.html)
 
@@ -18089,12 +18096,12 @@ ProvidedConstructor.AddXmlDocComputed
 AddXmlDocComputed 
 ProvidedConstructor.AddXmlDocDelayed 
 AddXmlDocDelayed 
-ProvidedConstructor.IsTypeInitializer 
-IsTypeInitializer 
 ProvidedConstructor.BaseConstructorCall 
 BaseConstructorCall 
 ProvidedConstructor.IsImplicitConstructor 
-IsImplicitConstructor
+IsImplicitConstructor 
+ProvidedConstructor.IsTypeInitializer 
+IsTypeInitializer
 
 ### [ProvidedConstructor.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-0.html#``.ctor``)
 
@@ -18132,11 +18139,6 @@ ProvidedConstructor.AddXmlDocDelayed
 AddXmlDocDelayed 
  Add XML documentation information to this provided constructor, where the computation of the documentation is delayed until necessary
 
-### [ProvidedConstructor.IsTypeInitializer](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-0.html#IsTypeInitializer)
-
-ProvidedConstructor.IsTypeInitializer 
-IsTypeInitializer
-
 ### [ProvidedConstructor.BaseConstructorCall](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-0.html#BaseConstructorCall)
 
 ProvidedConstructor.BaseConstructorCall 
@@ -18150,6 +18152,11 @@ IsImplicitConstructor
  Set a flag indicating that the constructor acts like an F# implicit constructor, so the
  parameters of the constructor become fields and can be accessed using Expr.GlobalVar with the
  same name.
+
+### [ProvidedConstructor.IsTypeInitializer](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-0.html#IsTypeInitializer)
+
+ProvidedConstructor.IsTypeInitializer 
+IsTypeInitializer
 
 ### [ProvidedEvent](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedevent-0.html)
 
@@ -18439,10 +18446,10 @@ ProvidedParameter.AddCustomAttribute
 AddCustomAttribute 
 ProvidedParameter.HasDefaultParameterValue 
 HasDefaultParameterValue 
-ProvidedParameter.IsParamArray 
-IsParamArray 
 ProvidedParameter.IsReflectedDefinition 
-IsReflectedDefinition
+IsReflectedDefinition 
+ProvidedParameter.IsParamArray 
+IsParamArray
 
 ### [ProvidedParameter.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedparameter-0.html#``.ctor``)
 
@@ -18462,17 +18469,17 @@ ProvidedParameter.HasDefaultParameterValue
 HasDefaultParameterValue 
  Indicates if the parameter has a default value
 
-### [ProvidedParameter.IsParamArray](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedparameter-0.html#IsParamArray)
-
-ProvidedParameter.IsParamArray 
-IsParamArray 
- Indicates if the parameter is marked as ParamArray
-
 ### [ProvidedParameter.IsReflectedDefinition](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedparameter-0.html#IsReflectedDefinition)
 
 ProvidedParameter.IsReflectedDefinition 
 IsReflectedDefinition 
  Indicates if the parameter is marked as ReflectedDefinition
+
+### [ProvidedParameter.IsParamArray](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedparameter-0.html#IsParamArray)
+
+ProvidedParameter.IsParamArray 
+IsParamArray 
+ Indicates if the parameter is marked as ParamArray
 
 ### [ProvidedProperty](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedproperty-0.html)
 
@@ -18660,14 +18667,14 @@ ProvidedTypeDefinition.SetBaseTypeDelayed
 SetBaseTypeDelayed 
 ProvidedTypeDefinition.SetEnumUnderlyingType 
 SetEnumUnderlyingType 
-ProvidedTypeDefinition.IsErased 
-IsErased 
 ProvidedTypeDefinition.HideObjectMethods 
 HideObjectMethods 
-ProvidedTypeDefinition.SuppressRelocation 
-SuppressRelocation 
+ProvidedTypeDefinition.IsErased 
+IsErased 
 ProvidedTypeDefinition.NonNullable 
 NonNullable 
+ProvidedTypeDefinition.SuppressRelocation 
+SuppressRelocation 
 ProvidedTypeDefinition.EraseType 
 EraseType 
 ProvidedTypeDefinition.Logger 
@@ -18812,29 +18819,29 @@ ProvidedTypeDefinition.SetEnumUnderlyingType
 SetEnumUnderlyingType 
  Set underlying type for generated enums
 
-### [ProvidedTypeDefinition.IsErased](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-0.html#IsErased)
-
-ProvidedTypeDefinition.IsErased 
-IsErased 
- Get a flag indicating if the ProvidedTypeDefinition is erased
-
 ### [ProvidedTypeDefinition.HideObjectMethods](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-0.html#HideObjectMethods)
 
 ProvidedTypeDefinition.HideObjectMethods 
 HideObjectMethods 
  Suppress Object entries in intellisense menus in instances of this provided type
 
-### [ProvidedTypeDefinition.SuppressRelocation](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-0.html#SuppressRelocation)
+### [ProvidedTypeDefinition.IsErased](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-0.html#IsErased)
 
-ProvidedTypeDefinition.SuppressRelocation 
-SuppressRelocation 
- Get or set a flag indicating if the ProvidedTypeDefinition has type-relocation suppressed
+ProvidedTypeDefinition.IsErased 
+IsErased 
+ Get a flag indicating if the ProvidedTypeDefinition is erased
 
 ### [ProvidedTypeDefinition.NonNullable](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-0.html#NonNullable)
 
 ProvidedTypeDefinition.NonNullable 
 NonNullable 
  Disallows the use of the null literal.
+
+### [ProvidedTypeDefinition.SuppressRelocation](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-0.html#SuppressRelocation)
+
+ProvidedTypeDefinition.SuppressRelocation 
+SuppressRelocation 
+ Get or set a flag indicating if the ProvidedTypeDefinition has type-relocation suppressed
 
 ### [ProvidedTypeDefinition.EraseType](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-0.html#EraseType)
 
@@ -18993,12 +19000,12 @@ TypeProviderForNamespaces.RegisterRuntimeAssemblyLocationAsProbingFolder
 RegisterRuntimeAssemblyLocationAsProbingFolder 
 TypeProviderForNamespaces.ResolveAssembly 
 ResolveAssembly 
+TypeProviderForNamespaces.TargetContext 
+TargetContext 
 TypeProviderForNamespaces.Namespaces 
 Namespaces 
 TypeProviderForNamespaces.Disposing 
-Disposing 
-TypeProviderForNamespaces.TargetContext 
-TargetContext
+Disposing
 
 ### [TypeProviderForNamespaces.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-0.html#``.ctor``)
 
@@ -19054,6 +19061,14 @@ TypeProviderForNamespaces.ResolveAssembly
 ResolveAssembly 
  AssemblyResolve handler. Default implementation searches <assemblyname>.dll file in registered folders
 
+### [TypeProviderForNamespaces.TargetContext](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-0.html#TargetContext)
+
+TypeProviderForNamespaces.TargetContext 
+TargetContext 
+ The context for which code is eventually to be generated. You should not normally
+ need to use this property directly, as translation from the compiler-hosted context to 
+ the design-time context will normally be performed automatically.
+
 ### [TypeProviderForNamespaces.Namespaces](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-0.html#Namespaces)
 
 TypeProviderForNamespaces.Namespaces 
@@ -19064,14 +19079,6 @@ Namespaces
 
 TypeProviderForNamespaces.Disposing 
 Disposing
-
-### [TypeProviderForNamespaces.TargetContext](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-0.html#TargetContext)
-
-TypeProviderForNamespaces.TargetContext 
-TargetContext 
- The context for which code is eventually to be generated. You should not normally
- need to use this property directly, as translation from the compiler-hosted context to 
- the design-time context will normally be performed automatically.
 
 ### [ProvidedConstructor](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-1.html)
 
@@ -19089,12 +19096,12 @@ ProvidedConstructor.AddXmlDocComputed
 AddXmlDocComputed 
 ProvidedConstructor.AddXmlDocDelayed 
 AddXmlDocDelayed 
-ProvidedConstructor.IsTypeInitializer 
-IsTypeInitializer 
 ProvidedConstructor.BaseConstructorCall 
 BaseConstructorCall 
 ProvidedConstructor.IsImplicitConstructor 
-IsImplicitConstructor
+IsImplicitConstructor 
+ProvidedConstructor.IsTypeInitializer 
+IsTypeInitializer
 
 ### [ProvidedConstructor.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-1.html#``.ctor``)
 
@@ -19132,11 +19139,6 @@ ProvidedConstructor.AddXmlDocDelayed
 AddXmlDocDelayed 
  Add XML documentation information to this provided constructor, where the computation of the documentation is delayed until necessary
 
-### [ProvidedConstructor.IsTypeInitializer](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-1.html#IsTypeInitializer)
-
-ProvidedConstructor.IsTypeInitializer 
-IsTypeInitializer
-
 ### [ProvidedConstructor.BaseConstructorCall](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-1.html#BaseConstructorCall)
 
 ProvidedConstructor.BaseConstructorCall 
@@ -19150,6 +19152,11 @@ IsImplicitConstructor
  Set a flag indicating that the constructor acts like an F# implicit constructor, so the
  parameters of the constructor become fields and can be accessed using Expr.GlobalVar with the
  same name.
+
+### [ProvidedConstructor.IsTypeInitializer](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-1.html#IsTypeInitializer)
+
+ProvidedConstructor.IsTypeInitializer 
+IsTypeInitializer
 
 ### [ProvidedEvent](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedevent-1.html)
 
@@ -19439,10 +19446,10 @@ ProvidedParameter.AddCustomAttribute
 AddCustomAttribute 
 ProvidedParameter.HasDefaultParameterValue 
 HasDefaultParameterValue 
-ProvidedParameter.IsParamArray 
-IsParamArray 
 ProvidedParameter.IsReflectedDefinition 
-IsReflectedDefinition
+IsReflectedDefinition 
+ProvidedParameter.IsParamArray 
+IsParamArray
 
 ### [ProvidedParameter.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedparameter-1.html#``.ctor``)
 
@@ -19462,17 +19469,17 @@ ProvidedParameter.HasDefaultParameterValue
 HasDefaultParameterValue 
  Indicates if the parameter has a default value
 
-### [ProvidedParameter.IsParamArray](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedparameter-1.html#IsParamArray)
-
-ProvidedParameter.IsParamArray 
-IsParamArray 
- Indicates if the parameter is marked as ParamArray
-
 ### [ProvidedParameter.IsReflectedDefinition](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedparameter-1.html#IsReflectedDefinition)
 
 ProvidedParameter.IsReflectedDefinition 
 IsReflectedDefinition 
  Indicates if the parameter is marked as ReflectedDefinition
+
+### [ProvidedParameter.IsParamArray](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedparameter-1.html#IsParamArray)
+
+ProvidedParameter.IsParamArray 
+IsParamArray 
+ Indicates if the parameter is marked as ParamArray
 
 ### [ProvidedProperty](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedproperty-1.html)
 
@@ -19660,14 +19667,14 @@ ProvidedTypeDefinition.SetBaseTypeDelayed
 SetBaseTypeDelayed 
 ProvidedTypeDefinition.SetEnumUnderlyingType 
 SetEnumUnderlyingType 
-ProvidedTypeDefinition.IsErased 
-IsErased 
 ProvidedTypeDefinition.HideObjectMethods 
 HideObjectMethods 
-ProvidedTypeDefinition.SuppressRelocation 
-SuppressRelocation 
+ProvidedTypeDefinition.IsErased 
+IsErased 
 ProvidedTypeDefinition.NonNullable 
 NonNullable 
+ProvidedTypeDefinition.SuppressRelocation 
+SuppressRelocation 
 ProvidedTypeDefinition.EraseType 
 EraseType 
 ProvidedTypeDefinition.Logger 
@@ -19812,29 +19819,29 @@ ProvidedTypeDefinition.SetEnumUnderlyingType
 SetEnumUnderlyingType 
  Set underlying type for generated enums
 
-### [ProvidedTypeDefinition.IsErased](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html#IsErased)
-
-ProvidedTypeDefinition.IsErased 
-IsErased 
- Get a flag indicating if the ProvidedTypeDefinition is erased
-
 ### [ProvidedTypeDefinition.HideObjectMethods](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html#HideObjectMethods)
 
 ProvidedTypeDefinition.HideObjectMethods 
 HideObjectMethods 
  Suppress Object entries in intellisense menus in instances of this provided type
 
-### [ProvidedTypeDefinition.SuppressRelocation](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html#SuppressRelocation)
+### [ProvidedTypeDefinition.IsErased](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html#IsErased)
 
-ProvidedTypeDefinition.SuppressRelocation 
-SuppressRelocation 
- Get or set a flag indicating if the ProvidedTypeDefinition has type-relocation suppressed
+ProvidedTypeDefinition.IsErased 
+IsErased 
+ Get a flag indicating if the ProvidedTypeDefinition is erased
 
 ### [ProvidedTypeDefinition.NonNullable](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html#NonNullable)
 
 ProvidedTypeDefinition.NonNullable 
 NonNullable 
  Disallows the use of the null literal.
+
+### [ProvidedTypeDefinition.SuppressRelocation](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html#SuppressRelocation)
+
+ProvidedTypeDefinition.SuppressRelocation 
+SuppressRelocation 
+ Get or set a flag indicating if the ProvidedTypeDefinition has type-relocation suppressed
 
 ### [ProvidedTypeDefinition.EraseType](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-1.html#EraseType)
 
@@ -19993,12 +20000,12 @@ TypeProviderForNamespaces.RegisterRuntimeAssemblyLocationAsProbingFolder
 RegisterRuntimeAssemblyLocationAsProbingFolder 
 TypeProviderForNamespaces.ResolveAssembly 
 ResolveAssembly 
+TypeProviderForNamespaces.TargetContext 
+TargetContext 
 TypeProviderForNamespaces.Namespaces 
 Namespaces 
 TypeProviderForNamespaces.Disposing 
-Disposing 
-TypeProviderForNamespaces.TargetContext 
-TargetContext
+Disposing
 
 ### [TypeProviderForNamespaces.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-1.html#``.ctor``)
 
@@ -20054,6 +20061,14 @@ TypeProviderForNamespaces.ResolveAssembly
 ResolveAssembly 
  AssemblyResolve handler. Default implementation searches <assemblyname>.dll file in registered folders
 
+### [TypeProviderForNamespaces.TargetContext](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-1.html#TargetContext)
+
+TypeProviderForNamespaces.TargetContext 
+TargetContext 
+ The context for which code is eventually to be generated. You should not normally
+ need to use this property directly, as translation from the compiler-hosted context to 
+ the design-time context will normally be performed automatically.
+
 ### [TypeProviderForNamespaces.Namespaces](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-1.html#Namespaces)
 
 TypeProviderForNamespaces.Namespaces 
@@ -20064,14 +20079,6 @@ Namespaces
 
 TypeProviderForNamespaces.Disposing 
 Disposing
-
-### [TypeProviderForNamespaces.TargetContext](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-1.html#TargetContext)
-
-TypeProviderForNamespaces.TargetContext 
-TargetContext 
- The context for which code is eventually to be generated. You should not normally
- need to use this property directly, as translation from the compiler-hosted context to 
- the design-time context will normally be performed automatically.
 
 ### [ProvidedConstructor](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-2.html)
 
@@ -20089,12 +20096,12 @@ ProvidedConstructor.AddXmlDocComputed
 AddXmlDocComputed 
 ProvidedConstructor.AddXmlDocDelayed 
 AddXmlDocDelayed 
-ProvidedConstructor.IsTypeInitializer 
-IsTypeInitializer 
 ProvidedConstructor.BaseConstructorCall 
 BaseConstructorCall 
 ProvidedConstructor.IsImplicitConstructor 
-IsImplicitConstructor
+IsImplicitConstructor 
+ProvidedConstructor.IsTypeInitializer 
+IsTypeInitializer
 
 ### [ProvidedConstructor.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-2.html#``.ctor``)
 
@@ -20132,11 +20139,6 @@ ProvidedConstructor.AddXmlDocDelayed
 AddXmlDocDelayed 
  Add XML documentation information to this provided constructor, where the computation of the documentation is delayed until necessary
 
-### [ProvidedConstructor.IsTypeInitializer](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-2.html#IsTypeInitializer)
-
-ProvidedConstructor.IsTypeInitializer 
-IsTypeInitializer
-
 ### [ProvidedConstructor.BaseConstructorCall](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-2.html#BaseConstructorCall)
 
 ProvidedConstructor.BaseConstructorCall 
@@ -20150,6 +20152,11 @@ IsImplicitConstructor
  Set a flag indicating that the constructor acts like an F# implicit constructor, so the
  parameters of the constructor become fields and can be accessed using Expr.GlobalVar with the
  same name.
+
+### [ProvidedConstructor.IsTypeInitializer](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-2.html#IsTypeInitializer)
+
+ProvidedConstructor.IsTypeInitializer 
+IsTypeInitializer
 
 ### [ProvidedEvent](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedevent-2.html)
 
@@ -20439,10 +20446,10 @@ ProvidedParameter.AddCustomAttribute
 AddCustomAttribute 
 ProvidedParameter.HasDefaultParameterValue 
 HasDefaultParameterValue 
-ProvidedParameter.IsParamArray 
-IsParamArray 
 ProvidedParameter.IsReflectedDefinition 
-IsReflectedDefinition
+IsReflectedDefinition 
+ProvidedParameter.IsParamArray 
+IsParamArray
 
 ### [ProvidedParameter.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedparameter-2.html#``.ctor``)
 
@@ -20462,17 +20469,17 @@ ProvidedParameter.HasDefaultParameterValue
 HasDefaultParameterValue 
  Indicates if the parameter has a default value
 
-### [ProvidedParameter.IsParamArray](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedparameter-2.html#IsParamArray)
-
-ProvidedParameter.IsParamArray 
-IsParamArray 
- Indicates if the parameter is marked as ParamArray
-
 ### [ProvidedParameter.IsReflectedDefinition](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedparameter-2.html#IsReflectedDefinition)
 
 ProvidedParameter.IsReflectedDefinition 
 IsReflectedDefinition 
  Indicates if the parameter is marked as ReflectedDefinition
+
+### [ProvidedParameter.IsParamArray](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedparameter-2.html#IsParamArray)
+
+ProvidedParameter.IsParamArray 
+IsParamArray 
+ Indicates if the parameter is marked as ParamArray
 
 ### [ProvidedProperty](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedproperty-2.html)
 
@@ -20660,14 +20667,14 @@ ProvidedTypeDefinition.SetBaseTypeDelayed
 SetBaseTypeDelayed 
 ProvidedTypeDefinition.SetEnumUnderlyingType 
 SetEnumUnderlyingType 
-ProvidedTypeDefinition.IsErased 
-IsErased 
 ProvidedTypeDefinition.HideObjectMethods 
 HideObjectMethods 
-ProvidedTypeDefinition.SuppressRelocation 
-SuppressRelocation 
+ProvidedTypeDefinition.IsErased 
+IsErased 
 ProvidedTypeDefinition.NonNullable 
 NonNullable 
+ProvidedTypeDefinition.SuppressRelocation 
+SuppressRelocation 
 ProvidedTypeDefinition.EraseType 
 EraseType 
 ProvidedTypeDefinition.Logger 
@@ -20812,29 +20819,29 @@ ProvidedTypeDefinition.SetEnumUnderlyingType
 SetEnumUnderlyingType 
  Set underlying type for generated enums
 
-### [ProvidedTypeDefinition.IsErased](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-2.html#IsErased)
-
-ProvidedTypeDefinition.IsErased 
-IsErased 
- Get a flag indicating if the ProvidedTypeDefinition is erased
-
 ### [ProvidedTypeDefinition.HideObjectMethods](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-2.html#HideObjectMethods)
 
 ProvidedTypeDefinition.HideObjectMethods 
 HideObjectMethods 
  Suppress Object entries in intellisense menus in instances of this provided type
 
-### [ProvidedTypeDefinition.SuppressRelocation](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-2.html#SuppressRelocation)
+### [ProvidedTypeDefinition.IsErased](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-2.html#IsErased)
 
-ProvidedTypeDefinition.SuppressRelocation 
-SuppressRelocation 
- Get or set a flag indicating if the ProvidedTypeDefinition has type-relocation suppressed
+ProvidedTypeDefinition.IsErased 
+IsErased 
+ Get a flag indicating if the ProvidedTypeDefinition is erased
 
 ### [ProvidedTypeDefinition.NonNullable](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-2.html#NonNullable)
 
 ProvidedTypeDefinition.NonNullable 
 NonNullable 
  Disallows the use of the null literal.
+
+### [ProvidedTypeDefinition.SuppressRelocation](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-2.html#SuppressRelocation)
+
+ProvidedTypeDefinition.SuppressRelocation 
+SuppressRelocation 
+ Get or set a flag indicating if the ProvidedTypeDefinition has type-relocation suppressed
 
 ### [ProvidedTypeDefinition.EraseType](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-2.html#EraseType)
 
@@ -20993,12 +21000,12 @@ TypeProviderForNamespaces.RegisterRuntimeAssemblyLocationAsProbingFolder
 RegisterRuntimeAssemblyLocationAsProbingFolder 
 TypeProviderForNamespaces.ResolveAssembly 
 ResolveAssembly 
+TypeProviderForNamespaces.TargetContext 
+TargetContext 
 TypeProviderForNamespaces.Namespaces 
 Namespaces 
 TypeProviderForNamespaces.Disposing 
-Disposing 
-TypeProviderForNamespaces.TargetContext 
-TargetContext
+Disposing
 
 ### [TypeProviderForNamespaces.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-2.html#``.ctor``)
 
@@ -21054,6 +21061,14 @@ TypeProviderForNamespaces.ResolveAssembly
 ResolveAssembly 
  AssemblyResolve handler. Default implementation searches <assemblyname>.dll file in registered folders
 
+### [TypeProviderForNamespaces.TargetContext](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-2.html#TargetContext)
+
+TypeProviderForNamespaces.TargetContext 
+TargetContext 
+ The context for which code is eventually to be generated. You should not normally
+ need to use this property directly, as translation from the compiler-hosted context to 
+ the design-time context will normally be performed automatically.
+
 ### [TypeProviderForNamespaces.Namespaces](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-2.html#Namespaces)
 
 TypeProviderForNamespaces.Namespaces 
@@ -21064,14 +21079,6 @@ Namespaces
 
 TypeProviderForNamespaces.Disposing 
 Disposing
-
-### [TypeProviderForNamespaces.TargetContext](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-2.html#TargetContext)
-
-TypeProviderForNamespaces.TargetContext 
-TargetContext 
- The context for which code is eventually to be generated. You should not normally
- need to use this property directly, as translation from the compiler-hosted context to 
- the design-time context will normally be performed automatically.
 
 ### [ProvidedConstructor](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-3.html)
 
@@ -21089,12 +21096,12 @@ ProvidedConstructor.AddXmlDocComputed
 AddXmlDocComputed 
 ProvidedConstructor.AddXmlDocDelayed 
 AddXmlDocDelayed 
-ProvidedConstructor.IsTypeInitializer 
-IsTypeInitializer 
 ProvidedConstructor.BaseConstructorCall 
 BaseConstructorCall 
 ProvidedConstructor.IsImplicitConstructor 
-IsImplicitConstructor
+IsImplicitConstructor 
+ProvidedConstructor.IsTypeInitializer 
+IsTypeInitializer
 
 ### [ProvidedConstructor.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-3.html#``.ctor``)
 
@@ -21132,11 +21139,6 @@ ProvidedConstructor.AddXmlDocDelayed
 AddXmlDocDelayed 
  Add XML documentation information to this provided constructor, where the computation of the documentation is delayed until necessary
 
-### [ProvidedConstructor.IsTypeInitializer](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-3.html#IsTypeInitializer)
-
-ProvidedConstructor.IsTypeInitializer 
-IsTypeInitializer
-
 ### [ProvidedConstructor.BaseConstructorCall](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-3.html#BaseConstructorCall)
 
 ProvidedConstructor.BaseConstructorCall 
@@ -21150,6 +21152,11 @@ IsImplicitConstructor
  Set a flag indicating that the constructor acts like an F# implicit constructor, so the
  parameters of the constructor become fields and can be accessed using Expr.GlobalVar with the
  same name.
+
+### [ProvidedConstructor.IsTypeInitializer](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-3.html#IsTypeInitializer)
+
+ProvidedConstructor.IsTypeInitializer 
+IsTypeInitializer
 
 ### [ProvidedEvent](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedevent-3.html)
 
@@ -21439,10 +21446,10 @@ ProvidedParameter.AddCustomAttribute
 AddCustomAttribute 
 ProvidedParameter.HasDefaultParameterValue 
 HasDefaultParameterValue 
-ProvidedParameter.IsParamArray 
-IsParamArray 
 ProvidedParameter.IsReflectedDefinition 
-IsReflectedDefinition
+IsReflectedDefinition 
+ProvidedParameter.IsParamArray 
+IsParamArray
 
 ### [ProvidedParameter.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedparameter-3.html#``.ctor``)
 
@@ -21462,17 +21469,17 @@ ProvidedParameter.HasDefaultParameterValue
 HasDefaultParameterValue 
  Indicates if the parameter has a default value
 
-### [ProvidedParameter.IsParamArray](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedparameter-3.html#IsParamArray)
-
-ProvidedParameter.IsParamArray 
-IsParamArray 
- Indicates if the parameter is marked as ParamArray
-
 ### [ProvidedParameter.IsReflectedDefinition](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedparameter-3.html#IsReflectedDefinition)
 
 ProvidedParameter.IsReflectedDefinition 
 IsReflectedDefinition 
  Indicates if the parameter is marked as ReflectedDefinition
+
+### [ProvidedParameter.IsParamArray](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedparameter-3.html#IsParamArray)
+
+ProvidedParameter.IsParamArray 
+IsParamArray 
+ Indicates if the parameter is marked as ParamArray
 
 ### [ProvidedProperty](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedproperty-3.html)
 
@@ -21660,14 +21667,14 @@ ProvidedTypeDefinition.SetBaseTypeDelayed
 SetBaseTypeDelayed 
 ProvidedTypeDefinition.SetEnumUnderlyingType 
 SetEnumUnderlyingType 
-ProvidedTypeDefinition.IsErased 
-IsErased 
 ProvidedTypeDefinition.HideObjectMethods 
 HideObjectMethods 
-ProvidedTypeDefinition.SuppressRelocation 
-SuppressRelocation 
+ProvidedTypeDefinition.IsErased 
+IsErased 
 ProvidedTypeDefinition.NonNullable 
 NonNullable 
+ProvidedTypeDefinition.SuppressRelocation 
+SuppressRelocation 
 ProvidedTypeDefinition.EraseType 
 EraseType 
 ProvidedTypeDefinition.Logger 
@@ -21812,29 +21819,29 @@ ProvidedTypeDefinition.SetEnumUnderlyingType
 SetEnumUnderlyingType 
  Set underlying type for generated enums
 
-### [ProvidedTypeDefinition.IsErased](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-3.html#IsErased)
-
-ProvidedTypeDefinition.IsErased 
-IsErased 
- Get a flag indicating if the ProvidedTypeDefinition is erased
-
 ### [ProvidedTypeDefinition.HideObjectMethods](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-3.html#HideObjectMethods)
 
 ProvidedTypeDefinition.HideObjectMethods 
 HideObjectMethods 
  Suppress Object entries in intellisense menus in instances of this provided type
 
-### [ProvidedTypeDefinition.SuppressRelocation](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-3.html#SuppressRelocation)
+### [ProvidedTypeDefinition.IsErased](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-3.html#IsErased)
 
-ProvidedTypeDefinition.SuppressRelocation 
-SuppressRelocation 
- Get or set a flag indicating if the ProvidedTypeDefinition has type-relocation suppressed
+ProvidedTypeDefinition.IsErased 
+IsErased 
+ Get a flag indicating if the ProvidedTypeDefinition is erased
 
 ### [ProvidedTypeDefinition.NonNullable](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-3.html#NonNullable)
 
 ProvidedTypeDefinition.NonNullable 
 NonNullable 
  Disallows the use of the null literal.
+
+### [ProvidedTypeDefinition.SuppressRelocation](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-3.html#SuppressRelocation)
+
+ProvidedTypeDefinition.SuppressRelocation 
+SuppressRelocation 
+ Get or set a flag indicating if the ProvidedTypeDefinition has type-relocation suppressed
 
 ### [ProvidedTypeDefinition.EraseType](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-3.html#EraseType)
 
@@ -21993,12 +22000,12 @@ TypeProviderForNamespaces.RegisterRuntimeAssemblyLocationAsProbingFolder
 RegisterRuntimeAssemblyLocationAsProbingFolder 
 TypeProviderForNamespaces.ResolveAssembly 
 ResolveAssembly 
+TypeProviderForNamespaces.TargetContext 
+TargetContext 
 TypeProviderForNamespaces.Namespaces 
 Namespaces 
 TypeProviderForNamespaces.Disposing 
-Disposing 
-TypeProviderForNamespaces.TargetContext 
-TargetContext
+Disposing
 
 ### [TypeProviderForNamespaces.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-3.html#``.ctor``)
 
@@ -22054,6 +22061,14 @@ TypeProviderForNamespaces.ResolveAssembly
 ResolveAssembly 
  AssemblyResolve handler. Default implementation searches <assemblyname>.dll file in registered folders
 
+### [TypeProviderForNamespaces.TargetContext](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-3.html#TargetContext)
+
+TypeProviderForNamespaces.TargetContext 
+TargetContext 
+ The context for which code is eventually to be generated. You should not normally
+ need to use this property directly, as translation from the compiler-hosted context to 
+ the design-time context will normally be performed automatically.
+
 ### [TypeProviderForNamespaces.Namespaces](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-3.html#Namespaces)
 
 TypeProviderForNamespaces.Namespaces 
@@ -22064,14 +22079,6 @@ Namespaces
 
 TypeProviderForNamespaces.Disposing 
 Disposing
-
-### [TypeProviderForNamespaces.TargetContext](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-3.html#TargetContext)
-
-TypeProviderForNamespaces.TargetContext 
-TargetContext 
- The context for which code is eventually to be generated. You should not normally
- need to use this property directly, as translation from the compiler-hosted context to 
- the design-time context will normally be performed automatically.
 
 ### [ProvidedConstructor](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-4.html)
 
@@ -22089,12 +22096,12 @@ ProvidedConstructor.AddXmlDocComputed
 AddXmlDocComputed 
 ProvidedConstructor.AddXmlDocDelayed 
 AddXmlDocDelayed 
-ProvidedConstructor.IsTypeInitializer 
-IsTypeInitializer 
 ProvidedConstructor.BaseConstructorCall 
 BaseConstructorCall 
 ProvidedConstructor.IsImplicitConstructor 
-IsImplicitConstructor
+IsImplicitConstructor 
+ProvidedConstructor.IsTypeInitializer 
+IsTypeInitializer
 
 ### [ProvidedConstructor.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-4.html#``.ctor``)
 
@@ -22132,11 +22139,6 @@ ProvidedConstructor.AddXmlDocDelayed
 AddXmlDocDelayed 
  Add XML documentation information to this provided constructor, where the computation of the documentation is delayed until necessary
 
-### [ProvidedConstructor.IsTypeInitializer](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-4.html#IsTypeInitializer)
-
-ProvidedConstructor.IsTypeInitializer 
-IsTypeInitializer
-
 ### [ProvidedConstructor.BaseConstructorCall](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-4.html#BaseConstructorCall)
 
 ProvidedConstructor.BaseConstructorCall 
@@ -22150,6 +22152,11 @@ IsImplicitConstructor
  Set a flag indicating that the constructor acts like an F# implicit constructor, so the
  parameters of the constructor become fields and can be accessed using Expr.GlobalVar with the
  same name.
+
+### [ProvidedConstructor.IsTypeInitializer](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-4.html#IsTypeInitializer)
+
+ProvidedConstructor.IsTypeInitializer 
+IsTypeInitializer
 
 ### [ProvidedEvent](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedevent-4.html)
 
@@ -22439,10 +22446,10 @@ ProvidedParameter.AddCustomAttribute
 AddCustomAttribute 
 ProvidedParameter.HasDefaultParameterValue 
 HasDefaultParameterValue 
-ProvidedParameter.IsParamArray 
-IsParamArray 
 ProvidedParameter.IsReflectedDefinition 
-IsReflectedDefinition
+IsReflectedDefinition 
+ProvidedParameter.IsParamArray 
+IsParamArray
 
 ### [ProvidedParameter.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedparameter-4.html#``.ctor``)
 
@@ -22462,17 +22469,17 @@ ProvidedParameter.HasDefaultParameterValue
 HasDefaultParameterValue 
  Indicates if the parameter has a default value
 
-### [ProvidedParameter.IsParamArray](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedparameter-4.html#IsParamArray)
-
-ProvidedParameter.IsParamArray 
-IsParamArray 
- Indicates if the parameter is marked as ParamArray
-
 ### [ProvidedParameter.IsReflectedDefinition](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedparameter-4.html#IsReflectedDefinition)
 
 ProvidedParameter.IsReflectedDefinition 
 IsReflectedDefinition 
  Indicates if the parameter is marked as ReflectedDefinition
+
+### [ProvidedParameter.IsParamArray](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedparameter-4.html#IsParamArray)
+
+ProvidedParameter.IsParamArray 
+IsParamArray 
+ Indicates if the parameter is marked as ParamArray
 
 ### [ProvidedProperty](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedproperty-4.html)
 
@@ -22660,14 +22667,14 @@ ProvidedTypeDefinition.SetBaseTypeDelayed
 SetBaseTypeDelayed 
 ProvidedTypeDefinition.SetEnumUnderlyingType 
 SetEnumUnderlyingType 
-ProvidedTypeDefinition.IsErased 
-IsErased 
 ProvidedTypeDefinition.HideObjectMethods 
 HideObjectMethods 
-ProvidedTypeDefinition.SuppressRelocation 
-SuppressRelocation 
+ProvidedTypeDefinition.IsErased 
+IsErased 
 ProvidedTypeDefinition.NonNullable 
 NonNullable 
+ProvidedTypeDefinition.SuppressRelocation 
+SuppressRelocation 
 ProvidedTypeDefinition.EraseType 
 EraseType 
 ProvidedTypeDefinition.Logger 
@@ -22812,29 +22819,29 @@ ProvidedTypeDefinition.SetEnumUnderlyingType
 SetEnumUnderlyingType 
  Set underlying type for generated enums
 
-### [ProvidedTypeDefinition.IsErased](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-4.html#IsErased)
-
-ProvidedTypeDefinition.IsErased 
-IsErased 
- Get a flag indicating if the ProvidedTypeDefinition is erased
-
 ### [ProvidedTypeDefinition.HideObjectMethods](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-4.html#HideObjectMethods)
 
 ProvidedTypeDefinition.HideObjectMethods 
 HideObjectMethods 
  Suppress Object entries in intellisense menus in instances of this provided type
 
-### [ProvidedTypeDefinition.SuppressRelocation](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-4.html#SuppressRelocation)
+### [ProvidedTypeDefinition.IsErased](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-4.html#IsErased)
 
-ProvidedTypeDefinition.SuppressRelocation 
-SuppressRelocation 
- Get or set a flag indicating if the ProvidedTypeDefinition has type-relocation suppressed
+ProvidedTypeDefinition.IsErased 
+IsErased 
+ Get a flag indicating if the ProvidedTypeDefinition is erased
 
 ### [ProvidedTypeDefinition.NonNullable](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-4.html#NonNullable)
 
 ProvidedTypeDefinition.NonNullable 
 NonNullable 
  Disallows the use of the null literal.
+
+### [ProvidedTypeDefinition.SuppressRelocation](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-4.html#SuppressRelocation)
+
+ProvidedTypeDefinition.SuppressRelocation 
+SuppressRelocation 
+ Get or set a flag indicating if the ProvidedTypeDefinition has type-relocation suppressed
 
 ### [ProvidedTypeDefinition.EraseType](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-4.html#EraseType)
 
@@ -22993,12 +23000,12 @@ TypeProviderForNamespaces.RegisterRuntimeAssemblyLocationAsProbingFolder
 RegisterRuntimeAssemblyLocationAsProbingFolder 
 TypeProviderForNamespaces.ResolveAssembly 
 ResolveAssembly 
+TypeProviderForNamespaces.TargetContext 
+TargetContext 
 TypeProviderForNamespaces.Namespaces 
 Namespaces 
 TypeProviderForNamespaces.Disposing 
-Disposing 
-TypeProviderForNamespaces.TargetContext 
-TargetContext
+Disposing
 
 ### [TypeProviderForNamespaces.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-4.html#``.ctor``)
 
@@ -23054,6 +23061,14 @@ TypeProviderForNamespaces.ResolveAssembly
 ResolveAssembly 
  AssemblyResolve handler. Default implementation searches <assemblyname>.dll file in registered folders
 
+### [TypeProviderForNamespaces.TargetContext](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-4.html#TargetContext)
+
+TypeProviderForNamespaces.TargetContext 
+TargetContext 
+ The context for which code is eventually to be generated. You should not normally
+ need to use this property directly, as translation from the compiler-hosted context to 
+ the design-time context will normally be performed automatically.
+
 ### [TypeProviderForNamespaces.Namespaces](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-4.html#Namespaces)
 
 TypeProviderForNamespaces.Namespaces 
@@ -23064,14 +23079,6 @@ Namespaces
 
 TypeProviderForNamespaces.Disposing 
 Disposing
-
-### [TypeProviderForNamespaces.TargetContext](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-4.html#TargetContext)
-
-TypeProviderForNamespaces.TargetContext 
-TargetContext 
- The context for which code is eventually to be generated. You should not normally
- need to use this property directly, as translation from the compiler-hosted context to 
- the design-time context will normally be performed automatically.
 
 ### [ProvidedConstructor](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-5.html)
 
@@ -23089,12 +23096,12 @@ ProvidedConstructor.AddXmlDocComputed
 AddXmlDocComputed 
 ProvidedConstructor.AddXmlDocDelayed 
 AddXmlDocDelayed 
-ProvidedConstructor.IsTypeInitializer 
-IsTypeInitializer 
 ProvidedConstructor.BaseConstructorCall 
 BaseConstructorCall 
 ProvidedConstructor.IsImplicitConstructor 
-IsImplicitConstructor
+IsImplicitConstructor 
+ProvidedConstructor.IsTypeInitializer 
+IsTypeInitializer
 
 ### [ProvidedConstructor.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-5.html#``.ctor``)
 
@@ -23132,11 +23139,6 @@ ProvidedConstructor.AddXmlDocDelayed
 AddXmlDocDelayed 
  Add XML documentation information to this provided constructor, where the computation of the documentation is delayed until necessary
 
-### [ProvidedConstructor.IsTypeInitializer](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-5.html#IsTypeInitializer)
-
-ProvidedConstructor.IsTypeInitializer 
-IsTypeInitializer
-
 ### [ProvidedConstructor.BaseConstructorCall](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-5.html#BaseConstructorCall)
 
 ProvidedConstructor.BaseConstructorCall 
@@ -23150,6 +23152,11 @@ IsImplicitConstructor
  Set a flag indicating that the constructor acts like an F# implicit constructor, so the
  parameters of the constructor become fields and can be accessed using Expr.GlobalVar with the
  same name.
+
+### [ProvidedConstructor.IsTypeInitializer](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-5.html#IsTypeInitializer)
+
+ProvidedConstructor.IsTypeInitializer 
+IsTypeInitializer
 
 ### [ProvidedEvent](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedevent-5.html)
 
@@ -23439,10 +23446,10 @@ ProvidedParameter.AddCustomAttribute
 AddCustomAttribute 
 ProvidedParameter.HasDefaultParameterValue 
 HasDefaultParameterValue 
-ProvidedParameter.IsParamArray 
-IsParamArray 
 ProvidedParameter.IsReflectedDefinition 
-IsReflectedDefinition
+IsReflectedDefinition 
+ProvidedParameter.IsParamArray 
+IsParamArray
 
 ### [ProvidedParameter.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedparameter-5.html#``.ctor``)
 
@@ -23462,17 +23469,17 @@ ProvidedParameter.HasDefaultParameterValue
 HasDefaultParameterValue 
  Indicates if the parameter has a default value
 
-### [ProvidedParameter.IsParamArray](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedparameter-5.html#IsParamArray)
-
-ProvidedParameter.IsParamArray 
-IsParamArray 
- Indicates if the parameter is marked as ParamArray
-
 ### [ProvidedParameter.IsReflectedDefinition](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedparameter-5.html#IsReflectedDefinition)
 
 ProvidedParameter.IsReflectedDefinition 
 IsReflectedDefinition 
  Indicates if the parameter is marked as ReflectedDefinition
+
+### [ProvidedParameter.IsParamArray](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedparameter-5.html#IsParamArray)
+
+ProvidedParameter.IsParamArray 
+IsParamArray 
+ Indicates if the parameter is marked as ParamArray
 
 ### [ProvidedProperty](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedproperty-5.html)
 
@@ -23660,14 +23667,14 @@ ProvidedTypeDefinition.SetBaseTypeDelayed
 SetBaseTypeDelayed 
 ProvidedTypeDefinition.SetEnumUnderlyingType 
 SetEnumUnderlyingType 
-ProvidedTypeDefinition.IsErased 
-IsErased 
 ProvidedTypeDefinition.HideObjectMethods 
 HideObjectMethods 
-ProvidedTypeDefinition.SuppressRelocation 
-SuppressRelocation 
+ProvidedTypeDefinition.IsErased 
+IsErased 
 ProvidedTypeDefinition.NonNullable 
 NonNullable 
+ProvidedTypeDefinition.SuppressRelocation 
+SuppressRelocation 
 ProvidedTypeDefinition.EraseType 
 EraseType 
 ProvidedTypeDefinition.Logger 
@@ -23812,29 +23819,29 @@ ProvidedTypeDefinition.SetEnumUnderlyingType
 SetEnumUnderlyingType 
  Set underlying type for generated enums
 
-### [ProvidedTypeDefinition.IsErased](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-5.html#IsErased)
-
-ProvidedTypeDefinition.IsErased 
-IsErased 
- Get a flag indicating if the ProvidedTypeDefinition is erased
-
 ### [ProvidedTypeDefinition.HideObjectMethods](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-5.html#HideObjectMethods)
 
 ProvidedTypeDefinition.HideObjectMethods 
 HideObjectMethods 
  Suppress Object entries in intellisense menus in instances of this provided type
 
-### [ProvidedTypeDefinition.SuppressRelocation](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-5.html#SuppressRelocation)
+### [ProvidedTypeDefinition.IsErased](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-5.html#IsErased)
 
-ProvidedTypeDefinition.SuppressRelocation 
-SuppressRelocation 
- Get or set a flag indicating if the ProvidedTypeDefinition has type-relocation suppressed
+ProvidedTypeDefinition.IsErased 
+IsErased 
+ Get a flag indicating if the ProvidedTypeDefinition is erased
 
 ### [ProvidedTypeDefinition.NonNullable](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-5.html#NonNullable)
 
 ProvidedTypeDefinition.NonNullable 
 NonNullable 
  Disallows the use of the null literal.
+
+### [ProvidedTypeDefinition.SuppressRelocation](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-5.html#SuppressRelocation)
+
+ProvidedTypeDefinition.SuppressRelocation 
+SuppressRelocation 
+ Get or set a flag indicating if the ProvidedTypeDefinition has type-relocation suppressed
 
 ### [ProvidedTypeDefinition.EraseType](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-5.html#EraseType)
 
@@ -23993,12 +24000,12 @@ TypeProviderForNamespaces.RegisterRuntimeAssemblyLocationAsProbingFolder
 RegisterRuntimeAssemblyLocationAsProbingFolder 
 TypeProviderForNamespaces.ResolveAssembly 
 ResolveAssembly 
+TypeProviderForNamespaces.TargetContext 
+TargetContext 
 TypeProviderForNamespaces.Namespaces 
 Namespaces 
 TypeProviderForNamespaces.Disposing 
-Disposing 
-TypeProviderForNamespaces.TargetContext 
-TargetContext
+Disposing
 
 ### [TypeProviderForNamespaces.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-5.html#``.ctor``)
 
@@ -24054,6 +24061,14 @@ TypeProviderForNamespaces.ResolveAssembly
 ResolveAssembly 
  AssemblyResolve handler. Default implementation searches <assemblyname>.dll file in registered folders
 
+### [TypeProviderForNamespaces.TargetContext](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-5.html#TargetContext)
+
+TypeProviderForNamespaces.TargetContext 
+TargetContext 
+ The context for which code is eventually to be generated. You should not normally
+ need to use this property directly, as translation from the compiler-hosted context to 
+ the design-time context will normally be performed automatically.
+
 ### [TypeProviderForNamespaces.Namespaces](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-5.html#Namespaces)
 
 TypeProviderForNamespaces.Namespaces 
@@ -24064,14 +24079,6 @@ Namespaces
 
 TypeProviderForNamespaces.Disposing 
 Disposing
-
-### [TypeProviderForNamespaces.TargetContext](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-5.html#TargetContext)
-
-TypeProviderForNamespaces.TargetContext 
-TargetContext 
- The context for which code is eventually to be generated. You should not normally
- need to use this property directly, as translation from the compiler-hosted context to 
- the design-time context will normally be performed automatically.
 
 ### [ProvidedConstructor](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-6.html)
 
@@ -24089,12 +24096,12 @@ ProvidedConstructor.AddXmlDocComputed
 AddXmlDocComputed 
 ProvidedConstructor.AddXmlDocDelayed 
 AddXmlDocDelayed 
-ProvidedConstructor.IsTypeInitializer 
-IsTypeInitializer 
 ProvidedConstructor.BaseConstructorCall 
 BaseConstructorCall 
 ProvidedConstructor.IsImplicitConstructor 
-IsImplicitConstructor
+IsImplicitConstructor 
+ProvidedConstructor.IsTypeInitializer 
+IsTypeInitializer
 
 ### [ProvidedConstructor.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-6.html#``.ctor``)
 
@@ -24132,11 +24139,6 @@ ProvidedConstructor.AddXmlDocDelayed
 AddXmlDocDelayed 
  Add XML documentation information to this provided constructor, where the computation of the documentation is delayed until necessary
 
-### [ProvidedConstructor.IsTypeInitializer](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-6.html#IsTypeInitializer)
-
-ProvidedConstructor.IsTypeInitializer 
-IsTypeInitializer
-
 ### [ProvidedConstructor.BaseConstructorCall](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-6.html#BaseConstructorCall)
 
 ProvidedConstructor.BaseConstructorCall 
@@ -24150,6 +24152,11 @@ IsImplicitConstructor
  Set a flag indicating that the constructor acts like an F# implicit constructor, so the
  parameters of the constructor become fields and can be accessed using Expr.GlobalVar with the
  same name.
+
+### [ProvidedConstructor.IsTypeInitializer](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-6.html#IsTypeInitializer)
+
+ProvidedConstructor.IsTypeInitializer 
+IsTypeInitializer
 
 ### [ProvidedEvent](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedevent-6.html)
 
@@ -24439,10 +24446,10 @@ ProvidedParameter.AddCustomAttribute
 AddCustomAttribute 
 ProvidedParameter.HasDefaultParameterValue 
 HasDefaultParameterValue 
-ProvidedParameter.IsParamArray 
-IsParamArray 
 ProvidedParameter.IsReflectedDefinition 
-IsReflectedDefinition
+IsReflectedDefinition 
+ProvidedParameter.IsParamArray 
+IsParamArray
 
 ### [ProvidedParameter.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedparameter-6.html#``.ctor``)
 
@@ -24462,17 +24469,17 @@ ProvidedParameter.HasDefaultParameterValue
 HasDefaultParameterValue 
  Indicates if the parameter has a default value
 
-### [ProvidedParameter.IsParamArray](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedparameter-6.html#IsParamArray)
-
-ProvidedParameter.IsParamArray 
-IsParamArray 
- Indicates if the parameter is marked as ParamArray
-
 ### [ProvidedParameter.IsReflectedDefinition](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedparameter-6.html#IsReflectedDefinition)
 
 ProvidedParameter.IsReflectedDefinition 
 IsReflectedDefinition 
  Indicates if the parameter is marked as ReflectedDefinition
+
+### [ProvidedParameter.IsParamArray](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedparameter-6.html#IsParamArray)
+
+ProvidedParameter.IsParamArray 
+IsParamArray 
+ Indicates if the parameter is marked as ParamArray
 
 ### [ProvidedProperty](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedproperty-6.html)
 
@@ -24660,14 +24667,14 @@ ProvidedTypeDefinition.SetBaseTypeDelayed
 SetBaseTypeDelayed 
 ProvidedTypeDefinition.SetEnumUnderlyingType 
 SetEnumUnderlyingType 
-ProvidedTypeDefinition.IsErased 
-IsErased 
 ProvidedTypeDefinition.HideObjectMethods 
 HideObjectMethods 
-ProvidedTypeDefinition.SuppressRelocation 
-SuppressRelocation 
+ProvidedTypeDefinition.IsErased 
+IsErased 
 ProvidedTypeDefinition.NonNullable 
 NonNullable 
+ProvidedTypeDefinition.SuppressRelocation 
+SuppressRelocation 
 ProvidedTypeDefinition.EraseType 
 EraseType 
 ProvidedTypeDefinition.Logger 
@@ -24812,29 +24819,29 @@ ProvidedTypeDefinition.SetEnumUnderlyingType
 SetEnumUnderlyingType 
  Set underlying type for generated enums
 
-### [ProvidedTypeDefinition.IsErased](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-6.html#IsErased)
-
-ProvidedTypeDefinition.IsErased 
-IsErased 
- Get a flag indicating if the ProvidedTypeDefinition is erased
-
 ### [ProvidedTypeDefinition.HideObjectMethods](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-6.html#HideObjectMethods)
 
 ProvidedTypeDefinition.HideObjectMethods 
 HideObjectMethods 
  Suppress Object entries in intellisense menus in instances of this provided type
 
-### [ProvidedTypeDefinition.SuppressRelocation](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-6.html#SuppressRelocation)
+### [ProvidedTypeDefinition.IsErased](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-6.html#IsErased)
 
-ProvidedTypeDefinition.SuppressRelocation 
-SuppressRelocation 
- Get or set a flag indicating if the ProvidedTypeDefinition has type-relocation suppressed
+ProvidedTypeDefinition.IsErased 
+IsErased 
+ Get a flag indicating if the ProvidedTypeDefinition is erased
 
 ### [ProvidedTypeDefinition.NonNullable](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-6.html#NonNullable)
 
 ProvidedTypeDefinition.NonNullable 
 NonNullable 
  Disallows the use of the null literal.
+
+### [ProvidedTypeDefinition.SuppressRelocation](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-6.html#SuppressRelocation)
+
+ProvidedTypeDefinition.SuppressRelocation 
+SuppressRelocation 
+ Get or set a flag indicating if the ProvidedTypeDefinition has type-relocation suppressed
 
 ### [ProvidedTypeDefinition.EraseType](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-6.html#EraseType)
 
@@ -24993,12 +25000,12 @@ TypeProviderForNamespaces.RegisterRuntimeAssemblyLocationAsProbingFolder
 RegisterRuntimeAssemblyLocationAsProbingFolder 
 TypeProviderForNamespaces.ResolveAssembly 
 ResolveAssembly 
+TypeProviderForNamespaces.TargetContext 
+TargetContext 
 TypeProviderForNamespaces.Namespaces 
 Namespaces 
 TypeProviderForNamespaces.Disposing 
-Disposing 
-TypeProviderForNamespaces.TargetContext 
-TargetContext
+Disposing
 
 ### [TypeProviderForNamespaces.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-6.html#``.ctor``)
 
@@ -25054,6 +25061,14 @@ TypeProviderForNamespaces.ResolveAssembly
 ResolveAssembly 
  AssemblyResolve handler. Default implementation searches <assemblyname>.dll file in registered folders
 
+### [TypeProviderForNamespaces.TargetContext](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-6.html#TargetContext)
+
+TypeProviderForNamespaces.TargetContext 
+TargetContext 
+ The context for which code is eventually to be generated. You should not normally
+ need to use this property directly, as translation from the compiler-hosted context to 
+ the design-time context will normally be performed automatically.
+
 ### [TypeProviderForNamespaces.Namespaces](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-6.html#Namespaces)
 
 TypeProviderForNamespaces.Namespaces 
@@ -25064,14 +25079,6 @@ Namespaces
 
 TypeProviderForNamespaces.Disposing 
 Disposing
-
-### [TypeProviderForNamespaces.TargetContext](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-6.html#TargetContext)
-
-TypeProviderForNamespaces.TargetContext 
-TargetContext 
- The context for which code is eventually to be generated. You should not normally
- need to use this property directly, as translation from the compiler-hosted context to 
- the design-time context will normally be performed automatically.
 
 ### [ProvidedConstructor](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-7.html)
 
@@ -25089,12 +25096,12 @@ ProvidedConstructor.AddXmlDocComputed
 AddXmlDocComputed 
 ProvidedConstructor.AddXmlDocDelayed 
 AddXmlDocDelayed 
-ProvidedConstructor.IsTypeInitializer 
-IsTypeInitializer 
 ProvidedConstructor.BaseConstructorCall 
 BaseConstructorCall 
 ProvidedConstructor.IsImplicitConstructor 
-IsImplicitConstructor
+IsImplicitConstructor 
+ProvidedConstructor.IsTypeInitializer 
+IsTypeInitializer
 
 ### [ProvidedConstructor.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-7.html#``.ctor``)
 
@@ -25132,11 +25139,6 @@ ProvidedConstructor.AddXmlDocDelayed
 AddXmlDocDelayed 
  Add XML documentation information to this provided constructor, where the computation of the documentation is delayed until necessary
 
-### [ProvidedConstructor.IsTypeInitializer](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-7.html#IsTypeInitializer)
-
-ProvidedConstructor.IsTypeInitializer 
-IsTypeInitializer
-
 ### [ProvidedConstructor.BaseConstructorCall](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-7.html#BaseConstructorCall)
 
 ProvidedConstructor.BaseConstructorCall 
@@ -25150,6 +25152,11 @@ IsImplicitConstructor
  Set a flag indicating that the constructor acts like an F# implicit constructor, so the
  parameters of the constructor become fields and can be accessed using Expr.GlobalVar with the
  same name.
+
+### [ProvidedConstructor.IsTypeInitializer](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-7.html#IsTypeInitializer)
+
+ProvidedConstructor.IsTypeInitializer 
+IsTypeInitializer
 
 ### [ProvidedEvent](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedevent-7.html)
 
@@ -25439,10 +25446,10 @@ ProvidedParameter.AddCustomAttribute
 AddCustomAttribute 
 ProvidedParameter.HasDefaultParameterValue 
 HasDefaultParameterValue 
-ProvidedParameter.IsParamArray 
-IsParamArray 
 ProvidedParameter.IsReflectedDefinition 
-IsReflectedDefinition
+IsReflectedDefinition 
+ProvidedParameter.IsParamArray 
+IsParamArray
 
 ### [ProvidedParameter.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedparameter-7.html#``.ctor``)
 
@@ -25462,17 +25469,17 @@ ProvidedParameter.HasDefaultParameterValue
 HasDefaultParameterValue 
  Indicates if the parameter has a default value
 
-### [ProvidedParameter.IsParamArray](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedparameter-7.html#IsParamArray)
-
-ProvidedParameter.IsParamArray 
-IsParamArray 
- Indicates if the parameter is marked as ParamArray
-
 ### [ProvidedParameter.IsReflectedDefinition](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedparameter-7.html#IsReflectedDefinition)
 
 ProvidedParameter.IsReflectedDefinition 
 IsReflectedDefinition 
  Indicates if the parameter is marked as ReflectedDefinition
+
+### [ProvidedParameter.IsParamArray](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedparameter-7.html#IsParamArray)
+
+ProvidedParameter.IsParamArray 
+IsParamArray 
+ Indicates if the parameter is marked as ParamArray
 
 ### [ProvidedProperty](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedproperty-7.html)
 
@@ -25660,14 +25667,14 @@ ProvidedTypeDefinition.SetBaseTypeDelayed
 SetBaseTypeDelayed 
 ProvidedTypeDefinition.SetEnumUnderlyingType 
 SetEnumUnderlyingType 
-ProvidedTypeDefinition.IsErased 
-IsErased 
 ProvidedTypeDefinition.HideObjectMethods 
 HideObjectMethods 
-ProvidedTypeDefinition.SuppressRelocation 
-SuppressRelocation 
+ProvidedTypeDefinition.IsErased 
+IsErased 
 ProvidedTypeDefinition.NonNullable 
 NonNullable 
+ProvidedTypeDefinition.SuppressRelocation 
+SuppressRelocation 
 ProvidedTypeDefinition.EraseType 
 EraseType 
 ProvidedTypeDefinition.Logger 
@@ -25812,29 +25819,29 @@ ProvidedTypeDefinition.SetEnumUnderlyingType
 SetEnumUnderlyingType 
  Set underlying type for generated enums
 
-### [ProvidedTypeDefinition.IsErased](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-7.html#IsErased)
-
-ProvidedTypeDefinition.IsErased 
-IsErased 
- Get a flag indicating if the ProvidedTypeDefinition is erased
-
 ### [ProvidedTypeDefinition.HideObjectMethods](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-7.html#HideObjectMethods)
 
 ProvidedTypeDefinition.HideObjectMethods 
 HideObjectMethods 
  Suppress Object entries in intellisense menus in instances of this provided type
 
-### [ProvidedTypeDefinition.SuppressRelocation](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-7.html#SuppressRelocation)
+### [ProvidedTypeDefinition.IsErased](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-7.html#IsErased)
 
-ProvidedTypeDefinition.SuppressRelocation 
-SuppressRelocation 
- Get or set a flag indicating if the ProvidedTypeDefinition has type-relocation suppressed
+ProvidedTypeDefinition.IsErased 
+IsErased 
+ Get a flag indicating if the ProvidedTypeDefinition is erased
 
 ### [ProvidedTypeDefinition.NonNullable](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-7.html#NonNullable)
 
 ProvidedTypeDefinition.NonNullable 
 NonNullable 
  Disallows the use of the null literal.
+
+### [ProvidedTypeDefinition.SuppressRelocation](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-7.html#SuppressRelocation)
+
+ProvidedTypeDefinition.SuppressRelocation 
+SuppressRelocation 
+ Get or set a flag indicating if the ProvidedTypeDefinition has type-relocation suppressed
 
 ### [ProvidedTypeDefinition.EraseType](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-7.html#EraseType)
 
@@ -25993,12 +26000,12 @@ TypeProviderForNamespaces.RegisterRuntimeAssemblyLocationAsProbingFolder
 RegisterRuntimeAssemblyLocationAsProbingFolder 
 TypeProviderForNamespaces.ResolveAssembly 
 ResolveAssembly 
+TypeProviderForNamespaces.TargetContext 
+TargetContext 
 TypeProviderForNamespaces.Namespaces 
 Namespaces 
 TypeProviderForNamespaces.Disposing 
-Disposing 
-TypeProviderForNamespaces.TargetContext 
-TargetContext
+Disposing
 
 ### [TypeProviderForNamespaces.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-7.html#``.ctor``)
 
@@ -26054,6 +26061,14 @@ TypeProviderForNamespaces.ResolveAssembly
 ResolveAssembly 
  AssemblyResolve handler. Default implementation searches <assemblyname>.dll file in registered folders
 
+### [TypeProviderForNamespaces.TargetContext](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-7.html#TargetContext)
+
+TypeProviderForNamespaces.TargetContext 
+TargetContext 
+ The context for which code is eventually to be generated. You should not normally
+ need to use this property directly, as translation from the compiler-hosted context to 
+ the design-time context will normally be performed automatically.
+
 ### [TypeProviderForNamespaces.Namespaces](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-7.html#Namespaces)
 
 TypeProviderForNamespaces.Namespaces 
@@ -26064,14 +26079,6 @@ Namespaces
 
 TypeProviderForNamespaces.Disposing 
 Disposing
-
-### [TypeProviderForNamespaces.TargetContext](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-7.html#TargetContext)
-
-TypeProviderForNamespaces.TargetContext 
-TargetContext 
- The context for which code is eventually to be generated. You should not normally
- need to use this property directly, as translation from the compiler-hosted context to 
- the design-time context will normally be performed automatically.
 
 ### [ProvidedConstructor](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-8.html)
 
@@ -26089,12 +26096,12 @@ ProvidedConstructor.AddXmlDocComputed
 AddXmlDocComputed 
 ProvidedConstructor.AddXmlDocDelayed 
 AddXmlDocDelayed 
-ProvidedConstructor.IsTypeInitializer 
-IsTypeInitializer 
 ProvidedConstructor.BaseConstructorCall 
 BaseConstructorCall 
 ProvidedConstructor.IsImplicitConstructor 
-IsImplicitConstructor
+IsImplicitConstructor 
+ProvidedConstructor.IsTypeInitializer 
+IsTypeInitializer
 
 ### [ProvidedConstructor.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-8.html#``.ctor``)
 
@@ -26132,11 +26139,6 @@ ProvidedConstructor.AddXmlDocDelayed
 AddXmlDocDelayed 
  Add XML documentation information to this provided constructor, where the computation of the documentation is delayed until necessary
 
-### [ProvidedConstructor.IsTypeInitializer](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-8.html#IsTypeInitializer)
-
-ProvidedConstructor.IsTypeInitializer 
-IsTypeInitializer
-
 ### [ProvidedConstructor.BaseConstructorCall](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-8.html#BaseConstructorCall)
 
 ProvidedConstructor.BaseConstructorCall 
@@ -26150,6 +26152,11 @@ IsImplicitConstructor
  Set a flag indicating that the constructor acts like an F# implicit constructor, so the
  parameters of the constructor become fields and can be accessed using Expr.GlobalVar with the
  same name.
+
+### [ProvidedConstructor.IsTypeInitializer](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedconstructor-8.html#IsTypeInitializer)
+
+ProvidedConstructor.IsTypeInitializer 
+IsTypeInitializer
 
 ### [ProvidedEvent](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedevent-8.html)
 
@@ -26439,10 +26446,10 @@ ProvidedParameter.AddCustomAttribute
 AddCustomAttribute 
 ProvidedParameter.HasDefaultParameterValue 
 HasDefaultParameterValue 
-ProvidedParameter.IsParamArray 
-IsParamArray 
 ProvidedParameter.IsReflectedDefinition 
-IsReflectedDefinition
+IsReflectedDefinition 
+ProvidedParameter.IsParamArray 
+IsParamArray
 
 ### [ProvidedParameter.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedparameter-8.html#``.ctor``)
 
@@ -26462,17 +26469,17 @@ ProvidedParameter.HasDefaultParameterValue
 HasDefaultParameterValue 
  Indicates if the parameter has a default value
 
-### [ProvidedParameter.IsParamArray](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedparameter-8.html#IsParamArray)
-
-ProvidedParameter.IsParamArray 
-IsParamArray 
- Indicates if the parameter is marked as ParamArray
-
 ### [ProvidedParameter.IsReflectedDefinition](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedparameter-8.html#IsReflectedDefinition)
 
 ProvidedParameter.IsReflectedDefinition 
 IsReflectedDefinition 
  Indicates if the parameter is marked as ReflectedDefinition
+
+### [ProvidedParameter.IsParamArray](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedparameter-8.html#IsParamArray)
+
+ProvidedParameter.IsParamArray 
+IsParamArray 
+ Indicates if the parameter is marked as ParamArray
 
 ### [ProvidedProperty](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedproperty-8.html)
 
@@ -26660,14 +26667,14 @@ ProvidedTypeDefinition.SetBaseTypeDelayed
 SetBaseTypeDelayed 
 ProvidedTypeDefinition.SetEnumUnderlyingType 
 SetEnumUnderlyingType 
-ProvidedTypeDefinition.IsErased 
-IsErased 
 ProvidedTypeDefinition.HideObjectMethods 
 HideObjectMethods 
-ProvidedTypeDefinition.SuppressRelocation 
-SuppressRelocation 
+ProvidedTypeDefinition.IsErased 
+IsErased 
 ProvidedTypeDefinition.NonNullable 
 NonNullable 
+ProvidedTypeDefinition.SuppressRelocation 
+SuppressRelocation 
 ProvidedTypeDefinition.EraseType 
 EraseType 
 ProvidedTypeDefinition.Logger 
@@ -26812,29 +26819,29 @@ ProvidedTypeDefinition.SetEnumUnderlyingType
 SetEnumUnderlyingType 
  Set underlying type for generated enums
 
-### [ProvidedTypeDefinition.IsErased](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-8.html#IsErased)
-
-ProvidedTypeDefinition.IsErased 
-IsErased 
- Get a flag indicating if the ProvidedTypeDefinition is erased
-
 ### [ProvidedTypeDefinition.HideObjectMethods](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-8.html#HideObjectMethods)
 
 ProvidedTypeDefinition.HideObjectMethods 
 HideObjectMethods 
  Suppress Object entries in intellisense menus in instances of this provided type
 
-### [ProvidedTypeDefinition.SuppressRelocation](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-8.html#SuppressRelocation)
+### [ProvidedTypeDefinition.IsErased](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-8.html#IsErased)
 
-ProvidedTypeDefinition.SuppressRelocation 
-SuppressRelocation 
- Get or set a flag indicating if the ProvidedTypeDefinition has type-relocation suppressed
+ProvidedTypeDefinition.IsErased 
+IsErased 
+ Get a flag indicating if the ProvidedTypeDefinition is erased
 
 ### [ProvidedTypeDefinition.NonNullable](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-8.html#NonNullable)
 
 ProvidedTypeDefinition.NonNullable 
 NonNullable 
  Disallows the use of the null literal.
+
+### [ProvidedTypeDefinition.SuppressRelocation](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-8.html#SuppressRelocation)
+
+ProvidedTypeDefinition.SuppressRelocation 
+SuppressRelocation 
+ Get or set a flag indicating if the ProvidedTypeDefinition has type-relocation suppressed
 
 ### [ProvidedTypeDefinition.EraseType](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition-8.html#EraseType)
 
@@ -26993,12 +27000,12 @@ TypeProviderForNamespaces.RegisterRuntimeAssemblyLocationAsProbingFolder
 RegisterRuntimeAssemblyLocationAsProbingFolder 
 TypeProviderForNamespaces.ResolveAssembly 
 ResolveAssembly 
+TypeProviderForNamespaces.TargetContext 
+TargetContext 
 TypeProviderForNamespaces.Namespaces 
 Namespaces 
 TypeProviderForNamespaces.Disposing 
-Disposing 
-TypeProviderForNamespaces.TargetContext 
-TargetContext
+Disposing
 
 ### [TypeProviderForNamespaces.``.ctor``](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-8.html#``.ctor``)
 
@@ -27054,6 +27061,14 @@ TypeProviderForNamespaces.ResolveAssembly
 ResolveAssembly 
  AssemblyResolve handler. Default implementation searches <assemblyname>.dll file in registered folders
 
+### [TypeProviderForNamespaces.TargetContext](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-8.html#TargetContext)
+
+TypeProviderForNamespaces.TargetContext 
+TargetContext 
+ The context for which code is eventually to be generated. You should not normally
+ need to use this property directly, as translation from the compiler-hosted context to 
+ the design-time context will normally be performed automatically.
+
 ### [TypeProviderForNamespaces.Namespaces](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-8.html#Namespaces)
 
 TypeProviderForNamespaces.Namespaces 
@@ -27064,14 +27079,6 @@ Namespaces
 
 TypeProviderForNamespaces.Disposing 
 Disposing
-
-### [TypeProviderForNamespaces.TargetContext](https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-typeproviderfornamespaces-8.html#TargetContext)
-
-TypeProviderForNamespaces.TargetContext 
-TargetContext 
- The context for which code is eventually to be generated. You should not normally
- need to use this property directly, as translation from the compiler-hosted context to 
- the design-time context will normally be performed automatically.
 
 ### [ExpressionOptimizer](https://fsprojects.github.io/SQLProvider/reference/global-expressionoptimizer.html)
 
