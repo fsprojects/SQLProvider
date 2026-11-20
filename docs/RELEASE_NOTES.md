@@ -7,7 +7,9 @@
 - OfflineTools.mergeCacheFiles merges descriptions and individuals files too
 - Fix: after a failed SaveContextSchema, design-time commands no longer stop working until the IDE restarts
 - Fix: saving individuals no longer fails on a column value such as a DateTimeOffset or an array; such values are saved as text
-- Fix: PostgreSQL tables with capital letters in their name show their descriptions in tooltips; reading them failed before
+- Fix: PostgreSQL tables with capital letters or an apostrophe in their name show their descriptions in tooltips; reading them failed before
+- Fix: MS SQL Server descriptions of a table come from its own schema; with tables of the same name in two schemas, either could show the other's
+- Fix: Oracle descriptions of tables owned by another schema (Owner) are read; only the current user's tables had them before
 
 ### 1.5.33 - 19.11.2026
 - Fix: a saved schema (ContextSchemaPath) loads on both .NET and .NET Framework, whichever saved it. Visual Studio, whose editor and compiler run on .NET Framework, failed on a schema saved by dotnet with "Value cannot be null. Parameter name: key"

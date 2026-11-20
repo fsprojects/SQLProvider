@@ -582,6 +582,7 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
     interface IColumnDescriptionsProvider with
         member __.GetColumnDescriptions(con,tableName) =
             let tn = tableName.Substring(tableName.LastIndexOf('.')+1)
+            let sn = if tableName.Contains "." then tableName.Substring(0, tableName.LastIndexOf('.')) else ""
             let baseq =
                 """select sc.name, sep.value
                 from sys.tables st
@@ -589,9 +590,11 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
                 inner join sys.extended_properties sep on st.object_id = sep.major_id
                                                         and sc.column_id = sep.minor_id
                                                         and sep.name = 'MS_Description'
-                where st.name = @TableName"""
+                inner join sys.schemas ss on st.schema_id = ss.schema_id
+                where st.name = @TableName and (@SchemaName = '' or ss.name = @SchemaName)"""
             use com = (this:>ISqlProvider).CreateCommand(con,baseq)
             com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@TableName", 0), tn)) |> ignore
+            com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@SchemaName", 2), sn)) |> ignore
             if con.State <> ConnectionState.Open then con.Open()
             use reader = com.ExecuteReader()
             Sql.readDescriptions reader
@@ -602,16 +605,19 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
         member __.StoredProcedures = true
         member __.GetLockObject() = myLock
         member __.GetTableDescription(con,tableName) = 
-            let tn = tableName.Substring(tableName.LastIndexOf('.')+1) 
+            let tn = tableName.Substring(tableName.LastIndexOf('.')+1)
+            let sn = if tableName.Contains "." then tableName.Substring(0, tableName.LastIndexOf('.')) else ""
             let baseq =
                 """select sep.value
                 from sys.tables st
                 left join sys.extended_properties sep on st.object_id = sep.major_id
                                                         and (sep.minor_id is null or sep.minor_id =0)
                                                         and sep.name = 'MS_Description'
-                where st.name = @TableName"""
+                inner join sys.schemas ss on st.schema_id = ss.schema_id
+                where st.name = @TableName and (@SchemaName = '' or ss.name = @SchemaName)"""
             use com = (this:>ISqlProvider).CreateCommand(con,baseq)
             com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@TableName", 0), tn)) |> ignore
+            com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@SchemaName", 2), sn)) |> ignore
 
             if con.State <> ConnectionState.Open then con.Open()
             use reader = com.ExecuteReader()
@@ -622,7 +628,8 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
             else ""
 
         member __.GetColumnDescription(con,tableName,columnName) =
-            let tn = tableName.Substring(tableName.LastIndexOf('.')+1) 
+            let tn = tableName.Substring(tableName.LastIndexOf('.')+1)
+            let sn = if tableName.Contains "." then tableName.Substring(0, tableName.LastIndexOf('.')) else ""
             let baseq =
                 """select sep.value
                 from sys.tables st
@@ -630,10 +637,12 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
                 left join sys.extended_properties sep on st.object_id = sep.major_id
                                                         and sc.column_id = sep.minor_id
                                                         and sep.name = 'MS_Description'
-                where st.name = @TableName
+                inner join sys.schemas ss on st.schema_id = ss.schema_id
+                where st.name = @TableName and (@SchemaName = '' or ss.name = @SchemaName)
                 and sc.name = @ColumnName"""
             use com = (this:>ISqlProvider).CreateCommand(con,baseq)
             com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@TableName", 0), tn)) |> ignore
+            com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@SchemaName", 2), sn)) |> ignore
             com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@ColumnName", 1), columnName)) |> ignore
             if con.State <> ConnectionState.Open then con.Open()
             use reader = com.ExecuteReader()

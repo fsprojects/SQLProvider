@@ -323,6 +323,13 @@ module PostgreSQL =
         new Npgsql.NpgsqlCommand(commandText, connection :?> Npgsql.NpgsqlConnection) :> IDbCommand
 #endif
 
+    /// Runs a query with the values as parameters instead of in the SQL text, so that any name works in it.
+    let executeSqlWith commandText (parameters: (string * obj) list) (connection:IDbConnection) =
+        use com = createCommand commandText connection
+        parameters |> List.iteri (fun i (name, value) ->
+            createCommandParameter (QueryParameter.Create(name, i)) value |> com.Parameters.Add |> ignore)
+        com.ExecuteReader()
+
     let readParameter (parameter:IDbDataParameter) =
 #if REFLECTIONLOAD
         match parameter.DbType, (dbTypeGetter.Value.Invoke(parameter, [||]) :?> int) with
@@ -828,15 +835,15 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                 let sn = tableName.Substring(0,tableName.LastIndexOf('.'))
                 let tn = tableName.Substring(tableName.LastIndexOf('.')+1)
                 use reader =
-                    Sql.executeSql PostgreSQL.createCommand (
-                        sprintf """SELECT c.column_name, d.description
-                                    FROM pg_description d
-                                    LEFT JOIN information_schema.columns c
-                                    ON c.ordinal_position = d.objsubid
-                                    WHERE objoid = format('%%I.%%I', '%s', '%s')::regclass
-                                    AND c.table_schema = '%s'
-                                    AND c.table_name = '%s';
-                                """ sn tn sn tn) con
+                    PostgreSQL.executeSqlWith
+                        """SELECT c.column_name, d.description
+                            FROM pg_description d
+                            LEFT JOIN information_schema.columns c
+                            ON c.ordinal_position = d.objsubid
+                            WHERE objoid = format('%I.%I', @schema, @table)::regclass
+                            AND c.table_schema = @schema
+                            AND c.table_name = @table;"""
+                        [ "@schema", box sn; "@table", box tn ] con
                 Sql.readDescriptions reader)
 
     interface ISqlProvider with
@@ -846,15 +853,16 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
         member __.GetLockObject() = myLock
         member __.GetTableDescription(con,tableName) = 
             Sql.connect con (fun _ ->
-                // The names are quoted (%I), so that a table with capital letters in its name is found
+                // The names are quoted (%I), so that a table with capital letters in its name is found. They are
+                // parameters, so that a name with an apostrophe in it works too.
                 let sn = tableName.Substring(0,tableName.LastIndexOf('.'))
                 let tn = tableName.Substring(tableName.LastIndexOf('.')+1)
                 use reader =
-                    Sql.executeSql PostgreSQL.createCommand (
-                        sprintf """SELECT description
-                                    FROM   pg_description
-                                    WHERE  objoid = format('%%I.%%I', '%s', '%s')::regclass AND objsubid=0;
-                                """ sn tn) con
+                    PostgreSQL.executeSqlWith
+                        """SELECT description
+                            FROM   pg_description
+                            WHERE  objoid = format('%I.%I', @schema, @table)::regclass AND objsubid=0;"""
+                        [ "@schema", box sn; "@table", box tn ] con
                 if reader.Read() then
                     let comment = Sql.dbUnbox<string> reader.["description"]
                     if isNull comment then "" else comment
@@ -864,17 +872,17 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
             Sql.connect con (fun _ ->
                 let sn = tableName.Substring(0,tableName.LastIndexOf('.')) 
                 let tn = tableName.Substring(tableName.LastIndexOf('.')+1) 
-                use reader = 
-                    Sql.executeSql PostgreSQL.createCommand (
-                        sprintf """SELECT description
-                                    FROM pg_description d 
-                                    LEFT JOIN information_schema.columns c 
-                                    ON c.ordinal_position = d.objsubid
-                                    WHERE objoid = format('%%I.%%I', '%s', '%s')::regclass
-                                    AND c.table_schema = '%s'
-                                    AND c.table_name = '%s'
-                                    AND c.column_name = '%s';
-                                """ sn tn sn tn columnName) con
+                use reader =
+                    PostgreSQL.executeSqlWith
+                        """SELECT description
+                            FROM pg_description d
+                            LEFT JOIN information_schema.columns c
+                            ON c.ordinal_position = d.objsubid
+                            WHERE objoid = format('%I.%I', @schema, @table)::regclass
+                            AND c.table_schema = @schema
+                            AND c.table_name = @table
+                            AND c.column_name = @column;"""
+                        [ "@schema", box sn; "@table", box tn; "@column", box columnName ] con
                 if reader.Read() then
                     let comment = Sql.dbUnbox<string> reader.["description"]
                     if isNull comment then "" else comment

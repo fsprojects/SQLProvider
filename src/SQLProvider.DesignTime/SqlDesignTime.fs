@@ -517,13 +517,17 @@ module DesignTimeUtils =
             designTime.AddXmlDocDelayed(fun () -> "Developer's design time commands to TypeProvider.")
 
 
-            /// Runs a design-time command, unless one is already running (None then). The flag is reset even if the command fails.
+            /// Runs a design-time command, unless one is already running (None then): another thread holds the lock,
+            /// or the command itself asks for a command on this thread (the lock is re-entrant, so the flag tells).
+            /// The lock and the flag are released even if the command fails.
             let runCommand (command: unit -> string) =
-                if saveInProcess then None else
-                lock mySaveLock (fun() ->
+                if not (System.Threading.Monitor.TryEnter mySaveLock) then None else
+                try
+                    if saveInProcess then None else
                     saveInProcess <- true
                     try Some (command())
-                    finally saveInProcess <- false)
+                    finally saveInProcess <- false
+                finally System.Threading.Monitor.Exit mySaveLock
 
             let commandResult result =
                 match result with
