@@ -579,6 +579,23 @@ type internal MSSqlServerDynamicProvider(resolutionPath, contextSchemaPath, refe
         MSSqlServerDynamic.resolutionPath <- resolutionPath
         MSSqlServerDynamic.referencedAssemblies <- referencedAssemblies
 
+    interface IColumnDescriptionsProvider with
+        member __.GetColumnDescriptions(con,tableName) =
+            let tn = tableName.Substring(tableName.LastIndexOf('.')+1)
+            let baseq =
+                """select sc.name, sep.value
+                from sys.tables st
+                inner join sys.columns sc on st.object_id = sc.object_id
+                inner join sys.extended_properties sep on st.object_id = sep.major_id
+                                                        and sc.column_id = sep.minor_id
+                                                        and sep.name = 'MS_Description'
+                where st.name = @TableName"""
+            use com = (this:>ISqlProvider).CreateCommand(con,baseq)
+            com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@TableName", 0), tn)) |> ignore
+            if con.State <> ConnectionState.Open then con.Open()
+            use reader = com.ExecuteReader()
+            Sql.readDescriptions reader
+
     interface ISqlProvider with
         member __.CloseConnectionAfterQuery = true
         member __.DesignConnection = true

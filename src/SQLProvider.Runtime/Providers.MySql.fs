@@ -594,6 +594,20 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
 #if REFLECTIONLOAD
         MySql.referencedAssemblies <- referencedAssemblies
 #endif
+    interface IColumnDescriptionsProvider with
+        member __.GetColumnDescriptions(con,tableName) =
+            let sn = tableName.Substring(0,tableName.LastIndexOf('.'))
+            let tn = tableName.Substring(tableName.LastIndexOf('.')+1)
+            let baseQuery = @"SELECT COLUMN_NAME, COLUMN_COMMENT
+                                FROM INFORMATION_SCHEMA.COLUMNS
+                                WHERE TABLE_SCHEMA = @schema AND TABLE_NAME = @table"
+            use com = (this:>ISqlProvider).CreateCommand(con,baseQuery)
+            com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@schema", 0), sn)) |> ignore
+            com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@table", 1), (MySql.ripQuotes tn))) |> ignore
+            if con.State <> ConnectionState.Open then con.Open()
+            use reader = com.ExecuteReader()
+            Sql.readDescriptions reader
+
     interface ISqlProvider with
         member __.CloseConnectionAfterQuery = true
         member __.DesignConnection = true

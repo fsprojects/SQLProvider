@@ -721,6 +721,20 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
 #endif
         Oracle.resolutionPath <- resolutionPath
 
+    interface IColumnDescriptionsProvider with
+        member __.GetColumnDescriptions(con,tableName) =
+            let tn = tableName.Substring(tableName.LastIndexOf('.')+1)
+            Sql.connect con (fun con ->
+                let query =
+                    sprintf """SELECT COLUMN_NAME, COMMENTS
+                                FROM user_col_comments
+                                WHERE TABLE_NAME = '%s'
+                                AND COMMENTS <> '-'
+                            """ tn
+                use com = Oracle.createCommand query con
+                use reader = com.ExecuteReader()
+                Sql.readDescriptions reader)
+
     interface ISqlProvider with
         member __.CloseConnectionAfterQuery = true
         member __.DesignConnection = true

@@ -822,6 +822,23 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
               owner.Split(';', ',', ' ', '\n', '\r')
               |> Array.filter (not << String.IsNullOrWhiteSpace)              
 
+    interface IColumnDescriptionsProvider with
+        member __.GetColumnDescriptions(con,tableName) =
+            Sql.connect con (fun _ ->
+                let sn = tableName.Substring(0,tableName.LastIndexOf('.'))
+                let tn = tableName.Substring(tableName.LastIndexOf('.')+1)
+                use reader =
+                    Sql.executeSql PostgreSQL.createCommand (
+                        sprintf """SELECT c.column_name, d.description
+                                    FROM pg_description d
+                                    LEFT JOIN information_schema.columns c
+                                    ON c.ordinal_position = d.objsubid
+                                    WHERE objoid = format('%%I.%%I', '%s', '%s')::regclass
+                                    AND c.table_schema = '%s'
+                                    AND c.table_name = '%s';
+                                """ sn tn sn tn) con
+                Sql.readDescriptions reader)
+
     interface ISqlProvider with
         member __.CloseConnectionAfterQuery = true
         member __.DesignConnection = true
@@ -829,12 +846,15 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
         member __.GetLockObject() = myLock
         member __.GetTableDescription(con,tableName) = 
             Sql.connect con (fun _ ->
-                use reader = 
+                // The names are quoted (%I), so that a table with capital letters in its name is found
+                let sn = tableName.Substring(0,tableName.LastIndexOf('.'))
+                let tn = tableName.Substring(tableName.LastIndexOf('.')+1)
+                use reader =
                     Sql.executeSql PostgreSQL.createCommand (
                         sprintf """SELECT description
                                     FROM   pg_description
-                                    WHERE  objoid = '%s'::regclass AND objsubid=0;
-                                """ tableName) con
+                                    WHERE  objoid = format('%%I.%%I', '%s', '%s')::regclass AND objsubid=0;
+                                """ sn tn) con
                 if reader.Read() then
                     let comment = Sql.dbUnbox<string> reader.["description"]
                     if isNull comment then "" else comment
@@ -850,11 +870,11 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                                     FROM pg_description d 
                                     LEFT JOIN information_schema.columns c 
                                     ON c.ordinal_position = d.objsubid
-                                    WHERE objoid = '%s'::regclass
+                                    WHERE objoid = format('%%I.%%I', '%s', '%s')::regclass
                                     AND c.table_schema = '%s'
                                     AND c.table_name = '%s'
                                     AND c.column_name = '%s';
-                                """ tableName sn tn columnName) con
+                                """ sn tn sn tn columnName) con
                 if reader.Read() then
                     let comment = Sql.dbUnbox<string> reader.["description"]
                     if isNull comment then "" else comment

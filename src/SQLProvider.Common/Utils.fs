@@ -849,6 +849,18 @@ module Sql =
     let inline dbUnboxWithDefault<'a> def (v:obj) : 'a = 
         if Convert.IsDBNull(v) then def else unbox v
 
+    /// Reads rows of a name and its description to a dictionary. Rows without a description are left out,
+    /// and of rows with the same name the first one counts.
+    let readDescriptions (reader:IDataReader) =
+        let descriptions = System.Collections.Generic.Dictionary<string,string>()
+        while reader.Read() do
+            if not (reader.IsDBNull 0) && not (reader.IsDBNull 1) then
+                let name = reader.GetValue(0).ToString()
+                let description = reader.GetValue(1).ToString()
+                if description <> "" && not (descriptions.ContainsKey name) then
+                    descriptions.[name] <- description
+        descriptions :> System.Collections.Generic.IDictionary<string,string>
+
     /// Note: SQLProvider reuses the connection through multiple instances, so you can't dispose it here.
     /// Instead it's created with ISQLProvider's CreateConnection method, and that is having always "use" to ensure it is disposed properly on "finally".
     let connect (con:IDbConnection) f =

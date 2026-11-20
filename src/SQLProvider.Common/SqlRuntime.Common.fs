@@ -932,7 +932,13 @@ and SchemaCache =
       SprocsParams  : ConcurrentDictionary<string,QueryParameter list> //sproc name and params
       Packages      : ResizeArray<CompileTimeSprocDefinition>
       Individuals   : ConcurrentDictionary<string, (obj * IDictionary<string,obj>) array> //table name and entities
-      IsOffline     : bool }
+      IsOffline     : bool
+      /// Table descriptions (comments) for tooltips, by table name. Saved in their own file (SaveDescriptions), not in the schema file.
+      [<field: NonSerialized>]
+      TableDescriptions : ConcurrentDictionary<string,string>
+      /// Column descriptions (comments) for tooltips, by table name and column name. Saved like TableDescriptions.
+      [<field: NonSerialized>]
+      ColumnDescriptions : ConcurrentDictionary<string,ConcurrentDictionary<string,string>> }
     with
         static member Empty = { 
             PrimaryKeys = ConcurrentDictionary<string,string list>()
@@ -943,22 +949,124 @@ and SchemaCache =
             SprocsParams = ConcurrentDictionary<string,QueryParameter list>()
             Packages = ResizeArray()
             Individuals = ConcurrentDictionary<string, _>()
-            IsOffline = false }
+            IsOffline = false
+            TableDescriptions = ConcurrentDictionary<string,string>()
+            ColumnDescriptions = ConcurrentDictionary<string,ConcurrentDictionary<string,string>>() }
         static member Load(filePath) =
             use ms = new MemoryStream(Encoding.UTF8.GetBytes(File.ReadAllText(filePath)))
             let ser = System.Runtime.Serialization.Json.DataContractJsonSerializer(typeof<SchemaCache>)
-            { (ser.ReadObject(ms) :?> SchemaCache) with IsOffline = true }
+            // Schema files saved before 1.5.34 may carry individuals in the schema file itself: they're kept.
+            let loaded = ser.ReadObject(ms) :?> SchemaCache
+            { loaded with
+                IsOffline = true
+                Individuals = if isNull loaded.Individuals then ConcurrentDictionary<string, _>() else loaded.Individuals
+                TableDescriptions = if isNull loaded.TableDescriptions then ConcurrentDictionary<string,string>() else loaded.TableDescriptions
+                ColumnDescriptions = if isNull loaded.ColumnDescriptions then ConcurrentDictionary<string,ConcurrentDictionary<string,string>>() else loaded.ColumnDescriptions }
         static member LoadOrEmpty(filePath) =
-            if String.IsNullOrEmpty(filePath) || (not(File.Exists filePath)) then 
+            if String.IsNullOrEmpty(filePath) || (not(File.Exists filePath)) then
                 SchemaCache.Empty
             else
                 SchemaCache.Load(filePath)
-        member this.Save(filePath) =
+        static member private BesideFilePath(filePath:string, kind:string) =
+            let ext = Path.GetExtension filePath
+            Path.Combine(Path.GetDirectoryName filePath, Path.GetFileNameWithoutExtension filePath + "." + kind + ext)
+        /// Individuals are saved beside the schema file: schema.json -> schema.individuals.json
+        static member IndividualsFilePath(filePath:string) = SchemaCache.BesideFilePath(filePath, "individuals")
+        /// Descriptions are saved beside the schema file: schema.json -> schema.descriptions.json
+        static member DescriptionsFilePath(filePath:string) = SchemaCache.BesideFilePath(filePath, "descriptions")
+        static member private WriteJson(filePath, value:obj) =
             use ms = new MemoryStream()
-            let ser = System.Runtime.Serialization.Json.DataContractJsonSerializer(this.GetType())
-            ser.WriteObject(ms, { this with IsOffline = true });  
-            let json = ms.ToArray();  
+            let ser = System.Runtime.Serialization.Json.DataContractJsonSerializer(value.GetType())
+            ser.WriteObject(ms, value)
+            let json = ms.ToArray()
             File.WriteAllText(filePath, Encoding.UTF8.GetString(json, 0, json.Length))
+        static member private ReadJson<'T>(filePath) =
+            use ms = new MemoryStream(Encoding.UTF8.GetBytes(File.ReadAllText filePath))
+            System.Runtime.Serialization.Json.DataContractJsonSerializer(typeof<'T>).ReadObject(ms) :?> 'T
+        /// Saves the schema, and the descriptions to their own file. Individuals are not in the schema file:
+        /// SaveIndividuals saves them to their own file. Individuals read from saved files (offline mode) are saved to
+        /// the individuals file, so a re-save doesn't lose them.
+        member this.Save(filePath) =
+            // The empty Individuals is kept so that older SQLProvider versions can read the file.
+            SchemaCache.WriteJson(filePath, { this with IsOffline = true; Individuals = ConcurrentDictionary<string, _>() })
+            this.SaveDescriptions filePath |> ignore
+            if this.IsOffline && this.HasIndividuals then
+                // An individuals file already there is newer than individuals of an old schema file
+                this.LoadIndividuals filePath
+                this.SaveIndividuals filePath |> ignore
+        member this.HasDescriptions =
+            this.TableDescriptions.Count > 0 || this.ColumnDescriptions.Count > 0
+        /// Saves the descriptions to the descriptions file beside the schema file and returns its path; None when there
+        /// are none. Descriptions already in the file are kept unless read again, so a save of the parts used so far
+        /// doesn't drop the others.
+        member this.SaveDescriptions(filePath) =
+            this.LoadDescriptions filePath
+            if not this.HasDescriptions then None else
+            let descriptionsFile = SchemaCache.DescriptionsFilePath filePath
+            SchemaCache.WriteJson(descriptionsFile, { SchemaDescriptions.TableComments = this.TableDescriptions; ColumnComments = this.ColumnDescriptions })
+            Some descriptionsFile
+        /// Reads the descriptions file beside the schema file, if there is one. Descriptions already read are kept.
+        member this.LoadDescriptions(filePath) =
+            if not(String.IsNullOrEmpty filePath) then
+                let descriptionsFile = SchemaCache.DescriptionsFilePath filePath
+                if File.Exists descriptionsFile then
+                    let loaded = SchemaCache.ReadJson<SchemaDescriptions> descriptionsFile
+                    if not (isNull loaded.TableComments) then
+                        for KeyValue(table, description) in loaded.TableComments do
+                            this.TableDescriptions.TryAdd(table, description) |> ignore
+                    if not (isNull loaded.ColumnComments) then
+                        for KeyValue(table, columns) in loaded.ColumnComments do
+                            let known = this.ColumnDescriptions.GetOrAdd(table, fun _ -> ConcurrentDictionary<string,string>())
+                            for KeyValue(column, description) in columns do
+                                known.TryAdd(column, description) |> ignore
+        member this.HasIndividuals =
+            this.Individuals |> Seq.exists (fun kv -> not (Array.isEmpty kv.Value))
+        /// A column value as the individuals file can hold it. The serializer writes only some types when the value
+        /// is an obj: one DateTimeOffset or string array would fail the whole file. Offline the values of other
+        /// columns than the primary key are only shown as text, so the others are saved as their text.
+        static member private IndividualsFileValue(value:obj) : obj =
+            match value with
+            | null -> null
+            | :? string | :? bool | :? char | :? decimal | :? DateTime | :? Guid | :? TimeSpan | :? (byte[]) -> value
+            | _ when value.GetType().IsPrimitive -> value
+            | :? Array as items -> box [| for item in items -> SchemaCache.IndividualsFileValue item |]
+            | _ -> box (value.ToString())
+        /// Saves the individuals to the individuals file beside the schema file and returns its path.
+        /// Tables without individuals are left out.
+        member this.SaveIndividuals(filePath) =
+            let individualsFile = SchemaCache.IndividualsFilePath filePath
+            let toSave = ConcurrentDictionary<string, (obj * IDictionary<string,obj>) array>()
+            for KeyValue(table, entities) in this.Individuals do
+                if not (Array.isEmpty entities) then
+                    toSave.[table] <-
+                        entities |> Array.map (fun (pk, columns) ->
+                            SchemaCache.IndividualsFileValue pk,
+                            dict [ for KeyValue(column, value) in columns -> column, SchemaCache.IndividualsFileValue value ])
+            SchemaCache.WriteJson(individualsFile, toSave)
+            individualsFile
+        /// Reads the individuals file beside the schema file, if there is one. Its individuals replace the same tables' older ones.
+        member this.LoadIndividuals(filePath) =
+            if not(String.IsNullOrEmpty filePath) then
+                let individualsFile = SchemaCache.IndividualsFilePath filePath
+                if File.Exists individualsFile then
+                    let loaded = SchemaCache.ReadJson<ConcurrentDictionary<string, (obj * IDictionary<string,obj>) array>> individualsFile
+                    if not (isNull loaded) then
+                        for KeyValue(table, entities) in loaded do
+                            this.Individuals.[table] <- entities
+
+/// Table and column descriptions as saved in the descriptions file beside the schema file
+and SchemaDescriptions =
+    { /// Table name to description
+      TableComments  : ConcurrentDictionary<string,string>
+      /// Table name to column name to description
+      ColumnComments : ConcurrentDictionary<string,ConcurrentDictionary<string,string>> }
+
+/// A provider that can read the descriptions of all the columns of a table in one query implements this too.
+/// Saving the descriptions of a whole database is then one query per table, not one per column.
+type IColumnDescriptionsProvider =
+    /// Column name to description, for the columns of the table that have a description.
+    /// The descriptions are the same as ISqlProvider.GetColumnDescription gives.
+    abstract GetColumnDescriptions : IDbConnection * string -> IDictionary<string,string>
 
 /// GroupResultItems is an item to create key-igrouping-structure.
 /// From the select group-by projection, aggregate operations like Enumerable.Count() 
@@ -1243,8 +1351,15 @@ module public OfflineTools =
         else
         if File.Exists targetfile then
             File.Delete targetfile
+        for besideFile in [ SchemaCache.IndividualsFilePath targetfile; SchemaCache.DescriptionsFilePath targetfile ] do
+            if File.Exists besideFile then
+                File.Delete besideFile
         let s1 = SchemaCache.Load sourcefile1
         let s2 = SchemaCache.Load sourcefile2
+        s1.LoadIndividuals sourcefile1
+        s2.LoadIndividuals sourcefile2
+        s1.LoadDescriptions sourcefile1
+        s2.LoadDescriptions sourcefile2
         let merged = 
             {   PrimaryKeys = ConcurrentDictionary( 
                                 Seq.concat [|s1.PrimaryKeys ; s2.PrimaryKeys |] |> Seq.distinctBy(fun d -> d.Key));
@@ -1267,7 +1382,14 @@ module public OfflineTools =
                 Packages = ResizeArray(Seq.concat [| s1.Packages ; s2.Packages |] |> Seq.distinctBy(fun s -> s.ToString()));
                 Individuals = ConcurrentDictionary( 
                                 Seq.concat [|s1.Individuals ; s2.Individuals |] |> Seq.distinctBy(fun d -> d.Key));
-                IsOffline = s1.IsOffline || s2.IsOffline}
+                IsOffline = s1.IsOffline || s2.IsOffline
+                TableDescriptions = ConcurrentDictionary(
+                                        Seq.concat [|s1.TableDescriptions ; s2.TableDescriptions |] |> Seq.distinctBy(fun d -> d.Key))
+                ColumnDescriptions = ConcurrentDictionary(
+                                        Seq.concat [|s1.ColumnDescriptions ; s2.ColumnDescriptions |]
+                                        |> Seq.groupBy(fun d -> d.Key)
+                                        |> Seq.map(fun (table, descs) ->
+                                            KeyValuePair(table, ConcurrentDictionary(descs |> Seq.collect(fun d -> d.Value) |> Seq.distinctBy(fun c -> c.Key))))) }
         merged.Save targetfile
         "Merge saved " + targetfile + " at " + DateTime.Now.ToString("hh:mm:ss")
 

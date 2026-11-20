@@ -139,19 +139,47 @@ module DesignTimeUtils =
 
         let transactionOptions = TransactionOptions.Default
 
-        let createIndividualsType (con:IDbConnection option) (prov:ISqlProvider) (table:Table) (designTimeDc:Lazy<_>) dbVendor individualsAmount tableTypeDef =
-            let t = ProvidedTypeDefinition($"{table.Schema}.{table.Name}.Individuals", Some typeof<obj>, isErased=true)
-            let individualsTypes = ResizeArray<_>()
-            individualsTypes.Add t
+        /// A table's description (comment). Online it's read from the database and kept in the schema cache, so a
+        /// save keeps it; offline it comes from the descriptions file, read on first use. None when it wasn't saved.
+        let tableDescription (con:IDbConnection option) (prov:ISqlProvider) (offlineDescriptions:Lazy<unit>) (tableName:string) =
+            let descriptions = prov.GetSchemaCache().TableDescriptions
+            match con with
+            | Some con ->
+                let description = match prov.GetTableDescription(con, tableName) with null -> "" | d -> d
+                descriptions.[tableName] <- description
+                Some description
+            | None ->
+                offlineDescriptions.Force()
+                match descriptions.TryGetValue tableName with
+                | true, description -> Some description
+                | false, _ -> None
 
-            t.AddXmlDocDelayed(fun _ -> $"<summary>A sample of %s{table.Name} individuals from the SQL object as supplied in the static parameters</summary>")
-            t.AddMember(ProvidedConstructor([ProvidedParameter("dataContext", typeof<ISqlDataContext>)], empty))
-            t.AddMembersDelayed( fun _ ->
+        /// A column's description (comment), kept in the schema cache like tableDescription.
+        let columnDescription (con:IDbConnection option) (prov:ISqlProvider) (offlineDescriptions:Lazy<unit>) (tableName:string) (columnName:string) =
+            let descriptions = prov.GetSchemaCache().ColumnDescriptions
+            match con with
+            | Some con ->
+                let description = match prov.GetColumnDescription(con, tableName, columnName) with null -> "" | d -> d
+                descriptions.GetOrAdd(tableName, fun _ -> System.Collections.Concurrent.ConcurrentDictionary<string,string>()).[columnName] <- description
+                Some description
+            | None ->
+                offlineDescriptions.Force()
+                match descriptions.TryGetValue tableName with
+                | true, columns ->
+                    match columns.TryGetValue columnName with
+                    | true, description -> Some description
+                    | false, _ -> None
+                | false, _ -> None
+
+        /// The primary key and individuals of a table with a single primary key. Read from the database once and kept
+        /// in the schema cache; offline they come from the individuals file.
+        let getIndividuals (con:IDbConnection option) (prov:ISqlProvider) (table:Table) (designTimeDc:Lazy<_>) (offlineIndividuals:Lazy<unit>) dbVendor individualsAmount =
                 let columns =
                     match con with
                     | Some con -> prov.GetColumns(con,table)
                     | None -> prov.GetSchemaCache().Columns.TryGetValue(table.FullName) |> function | true,cols -> cols | false, _ -> Map.empty
                 match prov.GetPrimaryKey table with
+                | None -> None
                 | Some pkName ->
 
                     let rec (|FixedType|_|) (o:obj) =
@@ -169,6 +197,7 @@ module DesignTimeUtils =
                         | _, _ -> None
 
                     let dcDone = designTimeDc.Force()
+                    if con.IsNone then offlineIndividuals.Force()
                     let entities =
                         prov.GetSchemaCache().Individuals.GetOrAdd(($"{table.FullName}_{pkName}"), fun k ->
                             match con with
@@ -186,6 +215,18 @@ module DesignTimeUtils =
                                 mapped
                             | None -> [||]
                         )
+                    Some (pkName, entities)
+
+        let createIndividualsType (con:IDbConnection option) (prov:ISqlProvider) (table:Table) (designTimeDc:Lazy<_>) (offlineIndividuals:Lazy<unit>) dbVendor individualsAmount tableTypeDef =
+            let t = ProvidedTypeDefinition($"{table.Schema}.{table.Name}.Individuals", Some typeof<obj>, isErased=true)
+            let individualsTypes = ResizeArray<_>()
+            individualsTypes.Add t
+
+            t.AddXmlDocDelayed(fun _ -> $"<summary>A sample of %s{table.Name} individuals from the SQL object as supplied in the static parameters</summary>")
+            t.AddMember(ProvidedConstructor([ProvidedParameter("dataContext", typeof<ISqlDataContext>)], empty))
+            t.AddMembersDelayed( fun _ ->
+                match getIndividuals con prov table designTimeDc offlineIndividuals dbVendor individualsAmount with
+                | Some (pkName, entities) ->
                     if Array.isEmpty entities then [] else
                     // for each column in the entity except the primary key, create a new type that will read ``As Column 1`` etc
                     // inside that type the individuals will be listed again but with the text for the relevant column as the name
@@ -227,13 +268,16 @@ module DesignTimeUtils =
                             // this next bit is just side effect to populate the "As Column" types for the supported columns
                             for colName, colValue in columnValues |> Seq.map(fun kvp -> kvp.Key, kvp.Value) do
                                 if colName <> pkName then
-                                    let colDefinition, _ = propertyMap.[colName]
-                                    colDefinition.AddMemberDelayed(fun() ->
-                                        ProvidedProperty( sprintf "%s, %s" (prettyPrint pkValue) (prettyPrint colValue)
-                                                        , tableTypeDef
-                                                        , getterCode = getterCode
-                                                        )
-                                    )
+                                    // An individuals file saved before the schema changed may have columns the schema doesn't
+                                    match propertyMap.TryFind colName with
+                                    | Some (colDefinition, _) ->
+                                        colDefinition.AddMemberDelayed(fun() ->
+                                            ProvidedProperty( sprintf "%s, %s" (prettyPrint pkValue) (prettyPrint colValue)
+                                                            , tableTypeDef
+                                                            , getterCode = getterCode
+                                                            )
+                                        )
+                                    | None -> ()
                             // return the primary key property
                             Some <| ProvidedProperty(prettyPrint pkValue
                                                     , tableTypeDef
@@ -252,7 +296,7 @@ module DesignTimeUtils =
                 | None -> [])
             individualsTypes :> seq<_>
 
-        let createColumnProperty (con:IDbConnection option) (prov:ISqlProvider) useOptionTypes key (c:Column) =
+        let createColumnProperty (con:IDbConnection option) (prov:ISqlProvider) (offlineDescriptions:Lazy<unit>) useOptionTypes key (c:Column) =
             let nullable = if c.IsNullable then useOptionTypes else NullableColumnType.NO_OPTION
             let ty = Utilities.getType c.TypeMapping.ClrType
 
@@ -296,15 +340,13 @@ module DesignTimeUtils =
 
             let nfo = c.TypeInfo
             let typeInfo = match nfo with ValueNone -> "" | ValueSome x -> x.ToString()
-            match con with
-            | Some con ->
-                prop.AddXmlDocDelayed(fun () ->
-                    let details = prov.GetColumnDescription(con, key, name).Replace("<","&lt;").Replace(">","&gt;")
+            prop.AddXmlDocDelayed(fun () ->
+                match columnDescription con prov offlineDescriptions key name with
+                | Some description ->
+                    let details = description.Replace("<","&lt;").Replace(">","&gt;")
                     let separator = if (String.IsNullOrWhiteSpace typeInfo) || (String.IsNullOrWhiteSpace details) then "" else "/"
-                    sprintf "<summary>%s %s %s</summary>" (String.concat ": " [|name; details|]) separator typeInfo)
-            | None ->
-                prop.AddXmlDocDelayed(fun () -> $"<summary>Offline mode. %s{typeInfo}</summary>")
-                ()
+                    sprintf "<summary>%s %s %s</summary>" (String.concat ": " [|name; details|]) separator typeInfo
+                | None -> $"<summary>Offline mode. %s{typeInfo}</summary>")
             prop
 
         let generateSprocMethod (container:ProvidedTypeDefinition) (con:IDbConnection option) (prov:ISqlProvider) (sproc:CompileTimeSprocDefinition) =
@@ -469,66 +511,89 @@ module DesignTimeUtils =
                 |> Seq.map snd
             | sproc::rest -> generateTypeTree con prov (walkSproc con prov [] None createdTypes sproc) rest
 
-        let createDesignTimeCommands (prov:ISqlProvider) contextSchemaPath recreate (invalidate: _ -> Unit)=
+        let createDesignTimeCommands (prov:ISqlProvider) contextSchemaPath recreate (invalidate: _ -> Unit) (onlineCommands: (string * string * (unit -> string)) list) =
             let designTimeCommandsContainer = ProvidedTypeDefinition("DesignTimeCommands", Some typeof<obj>, isErased=true)
             let designTime = ProvidedProperty("Design Time Commands", designTimeCommandsContainer, getterCode = empty)
             designTime.AddXmlDocDelayed(fun () -> "Developer's design time commands to TypeProvider.")
 
 
+            /// Runs a design-time command, unless one is already running (None then). The flag is reset even if the command fails.
+            let runCommand (command: unit -> string) =
+                if saveInProcess then None else
+                lock mySaveLock (fun() ->
+                    saveInProcess <- true
+                    try Some (command())
+                    finally saveInProcess <- false)
+
+            let commandResult result =
+                match result with
+                | Some message -> [ ProvidedProperty(message, typeof<unit>, getterCode = empty) :> MemberInfo ]
+                | None -> []
+
             let saveResponse = ProvidedTypeDefinition("SaveContextResponse", Some typeof<obj>, isErased=true)
             saveResponse.AddMember(ProvidedConstructor([], empty))
             saveResponse.AddMembersDelayed(fun () ->
-                if not saveInProcess then
-                    let result =
-                        if not(String.IsNullOrEmpty contextSchemaPath) then
-                            try
-                                lock mySaveLock (fun() ->
-                                    saveInProcess <- true
-                                    prov.GetSchemaCache().Save contextSchemaPath
-                                    saveInProcess <- false
-                                    "Saved " + contextSchemaPath + " at " + DateTime.Now.ToString("hh:mm:ss")
-                                )
-                            with
-                            | e -> "Save failed: " + e.Message
-                        else "ContextSchemaPath is not defined"
-                    [ ProvidedProperty(result,typeof<unit>, getterCode = empty) :> MemberInfo ]
-                else []
+                if String.IsNullOrEmpty contextSchemaPath then commandResult (Some "ContextSchemaPath is not defined") else
+                runCommand (fun () ->
+                    try
+                        prov.GetSchemaCache().Save contextSchemaPath
+                        "Saved " + contextSchemaPath + " at " + DateTime.Now.ToString("hh:mm:ss")
+                    with
+                    | e -> "Save failed: " + e.Message)
+                |> commandResult
             )
 
             let m = ProvidedProperty("SaveContextSchema", (saveResponse :> Type), getterCode = empty)
             let mOld = ProvidedMethod("SaveContextSchema", [], (saveResponse :> Type), invokeCode = empty)
             m.AddXmlDocComputed(fun () ->
                 if String.IsNullOrEmpty contextSchemaPath then "ContextSchemaPath static parameter has to be defined to use this function."
-                else "Schema location: " + contextSchemaPath + ". Write dot after SaveContextSchema to save the schema at design time."
+                else "Schema location: " + contextSchemaPath + ". Write dot after SaveContextSchema to save the schema used so far at design time, " +
+                     "and the descriptions read so far to " + SchemaCache.DescriptionsFilePath contextSchemaPath + ". " +
+                     "Online, SaveContextSchemaFull saves the whole database schema and SaveContextSchemaIndividuals the individuals."
                 )
             let expirationMessage = "Expired, moved under: .``Design Time Commands``"
             mOld.AddXmlDocComputed(fun () -> expirationMessage)
             mOld.AddObsoleteAttribute expirationMessage
+
+            /// Adds a command: a property whose type gets its member when you type a dot after it. Computing the member
+            /// runs the command, and the member's name tells how it went.
+            let addCommand name (tooltip: string) (command: unit -> string) =
+                let response = ProvidedTypeDefinition(name + "Response", Some typeof<obj>, isErased=true)
+                response.AddMember(ProvidedConstructor([], empty))
+                response.AddMembersDelayed(fun () ->
+                    runCommand (fun () ->
+                        try command()
+                        with e -> name + " failed: " + e.Message)
+                    |> commandResult)
+                let property = ProvidedProperty(name, (response :> Type), getterCode = empty)
+                property.AddXmlDocComputed(fun () -> tooltip)
+                designTimeCommandsContainer.AddMember response
+                designTimeCommandsContainer.AddMember property
+
+            for name, tooltip, command in onlineCommands do
+                addCommand name tooltip command
 
             // ClearDatabaseSchemaCache only in online-mode
             if String.IsNullOrEmpty contextSchemaPath then
                 let invalidateActionResponse = ProvidedTypeDefinition("InvalidateResponse", Some typeof<obj>, isErased=true)
                 invalidateActionResponse.AddMember(ProvidedConstructor([], empty))
                 invalidateActionResponse.AddMembersDelayed(fun () ->
-                    if not saveInProcess then
-                        let result =
-                            lock mySaveLock (fun() ->
-                                saveInProcess <- true
-                                let schemacache = prov.GetSchemaCache()
-                                schemacache.PrimaryKeys.Clear()
-                                schemacache.Tables.Clear()
-                                schemacache.Columns.Clear()
-                                schemacache.Relationships.Clear()
-                                schemacache.Sprocs.Clear()
-                                schemacache.SprocsParams.Clear()
-                                schemacache.Packages.Clear()
-                                schemacache.Individuals.Clear()
-                                invalidate()
-                                let pf = recreate()
-                                saveInProcess <- false
-                                "Database schema cache cleared.")
-                        [ProvidedProperty(result,typeof<unit>, getterCode = empty) :> MemberInfo]
-                    else []
+                    runCommand (fun () ->
+                        let schemacache = prov.GetSchemaCache()
+                        schemacache.PrimaryKeys.Clear()
+                        schemacache.Tables.Clear()
+                        schemacache.Columns.Clear()
+                        schemacache.Relationships.Clear()
+                        schemacache.Sprocs.Clear()
+                        schemacache.SprocsParams.Clear()
+                        schemacache.Packages.Clear()
+                        schemacache.Individuals.Clear()
+                        schemacache.TableDescriptions.Clear()
+                        schemacache.ColumnDescriptions.Clear()
+                        invalidate()
+                        recreate()
+                        "Database schema cache cleared.")
+                    |> commandResult
                 )
                 let m2 = ProvidedProperty("ClearDatabaseSchemaCache", (invalidateActionResponse :> Type), getterCode = empty)
                 m2.AddXmlDocComputed(fun () ->
@@ -624,6 +689,20 @@ module DesignTimeUtils =
                     | None -> prov.GetSchemaCache().Sprocs |> Seq.toList
 
             let getTableData name = tableColumns.Force().[name].Force()
+            // Offline, individuals are in their own file, read when an Individuals type is first expanded
+            let offlineIndividuals =
+                lazy
+                    if con.IsNone then
+                        // Individuals are optional: an unreadable individuals file just leaves them out
+                        try prov.GetSchemaCache().LoadIndividuals contextSchemaPath
+                        with _ -> ()
+            // Offline, descriptions are in their own file, read for the first tooltip: builds never need them
+            let offlineDescriptions =
+                lazy
+                    if con.IsNone then
+                        // Descriptions are optional: an unreadable descriptions file just leaves them out
+                        try prov.GetSchemaCache().LoadDescriptions contextSchemaPath
+                        with _ -> ()
             let designTimeDc = lazy SqlDataContext(rootTypeName, conString, dbVendor, resolutionPath, config.ReferencedAssemblies, config.RuntimeAssembly, owner, caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, transactionOptions, None, SelectOperations.DotNetSide, ssdtPath, true)
             // first create all the types so we are able to recursively reference them in each other's definitions
             let baseTypes =
@@ -676,7 +755,7 @@ module DesignTimeUtils =
                                 let ct = ProvidedTypeDefinition(name, Some typeof<obj>,isErased=true)
                                 ct.AddInterfaceImplementationsDelayed( fun () -> [ProvidedTypeBuilder.MakeGenericType(typedefof<System.Linq.IQueryable<_>>,[et :> Type]); typeof<ISqlDataContext>])
                                 let tableTypeDef,_,_,_ = baseTypes.Force().[table.FullName]
-                                let it = createIndividualsType con prov table designTimeDc dbVendor individualsAmount tableTypeDef
+                                let it = createIndividualsType con prov table designTimeDc offlineIndividuals dbVendor individualsAmount tableTypeDef
                                 yield name,(ct,it)
                             | false, _ -> ()]
 
@@ -685,7 +764,7 @@ module DesignTimeUtils =
                 t.AddMembersDelayed(fun () ->
                     let (columns,(children,parents)) = getTableData key
                     let attProps =
-                        let createCols = createColumnProperty con prov useOptionTypes key
+                        let createCols = createColumnProperty con prov offlineDescriptions useOptionTypes key
                         List.map createCols (columns |> Seq.map (fun kvp -> kvp.Value) |> Seq.toList)
                     let relProps =
                         let getRelationshipName = Utilities.uniqueName()
@@ -744,6 +823,113 @@ module DesignTimeUtils =
             let schemaTypes = System.Collections.Concurrent.ConcurrentDictionary<string, ProvidedTypeDefinition>()
             let getOrAddSchema (name:string) =
                 schemaTypes.GetOrAdd(name, fun nme -> ProvidedTypeDefinition(nme + "Schema", Some typeof<obj>, isErased=true))
+
+            // Design-time commands that read the whole database at once, instead of what IntelliSense opened so far,
+            // and save it beside ContextSchemaPath. Only online: offline there's no database to read.
+            let onlineCommands =
+                match con with
+                | Some connection when not (String.IsNullOrEmpty contextSchemaPath) ->
+                    let schemaCache () = prov.GetSchemaCache()
+                    let savedAt file = "Saved " + file + " at " + DateTime.Now.ToString("hh:mm:ss") + ":"
+                    let failures (failed: ResizeArray<string>) =
+                        if failed.Count = 0 then "" else $" {failed.Count} failed, the first: {failed.[0]}."
+                    /// Runs read for every table; a table that fails doesn't stop the others.
+                    let forTables (failed: ResizeArray<string>) (read: Table -> bool) =
+                        let mutable count = 0
+                        for table in tables.Force() do
+                            try if read table then count <- count + 1
+                            with e -> failed.Add(table.FullName + ": " + e.Message)
+                        count
+
+                    // A stored procedure's parameters and return columns are read when IntelliSense opens its type, and
+                    // saved under the name of that type: overloads get different names. So open the types the same way.
+                    let declared = BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance ||| BindingFlags.Static ||| BindingFlags.DeclaredOnly
+                    let rec openTypes (failed: ResizeArray<string>) (t: Type) =
+                        // Listing the nested types adds the stored procedures' types, which may show only in the next listing
+                        let rec nestedTypes (known: Type[]) =
+                            let listed = t.GetNestedTypes declared
+                            if listed.Length = known.Length then listed else nestedTypes listed
+                        let nested =
+                            try nestedTypes [||]
+                            with e ->
+                                let name = if isNull t.DeclaringType then t.Name else t.DeclaringType.Name + "." + t.Name
+                                failed.Add(name + ": " + e.Message)
+                                [||]
+                        for n in nested do
+                            openTypes failed n
+
+                    let readFullSchema (failed: ResizeArray<string>) =
+                        // Columns, primary keys and relationships go to the schema cache as they're read
+                        let tableCount = forTables failed (fun table -> getTableData table.FullName |> ignore; true)
+                        for container in containers do
+                            openTypes failed (container :> Type)
+                        $" {tableCount} tables and {schemaCache().SprocsParams.Count} stored procedures."
+
+                    let readDescriptions (failed: ResizeArray<string>) =
+                        let tableCount =
+                            forTables failed (fun table ->
+                                let columns, _ = getTableData table.FullName
+                                tableDescription con prov offlineDescriptions table.FullName |> ignore
+                                match prov with
+                                | :? IColumnDescriptionsProvider as allColumns ->
+                                    // One query for the table, instead of one for each column
+                                    let described = allColumns.GetColumnDescriptions(connection, table.FullName)
+                                    let known = schemaCache().ColumnDescriptions.GetOrAdd(table.FullName, fun _ -> System.Collections.Concurrent.ConcurrentDictionary<string,string>())
+                                    for KeyValue(_, column) in columns do
+                                        known.[column.Name] <-
+                                            match described.TryGetValue column.Name with
+                                            | true, description when not (isNull description) -> description
+                                            | _ -> ""
+                                | _ ->
+                                    for KeyValue(_, column) in columns do
+                                        columnDescription con prov offlineDescriptions table.FullName column.Name |> ignore
+                                true)
+                        $" descriptions of {tableCount} tables."
+
+                    let readIndividuals (failed: ResizeArray<string>) =
+                        let tableCount =
+                            forTables failed (fun table ->
+                                match getIndividuals con prov table designTimeDc offlineIndividuals dbVendor individualsAmount with
+                                | Some (_, entities) -> not (Array.isEmpty entities)
+                                | None -> false)
+                        $" individuals of {tableCount} tables."
+
+                    /// The whole schema and all the descriptions: metadata only, no rows.
+                    let saveFull () =
+                        let failed = ResizeArray()
+                        let schema = readFullSchema failed
+                        let descriptions = readDescriptions failed
+                        let cache = schemaCache()
+                        cache.Save contextSchemaPath
+                        let files =
+                            [ yield contextSchemaPath
+                              if cache.HasDescriptions then yield SchemaCache.DescriptionsFilePath contextSchemaPath ]
+                        savedAt (String.concat ", " files) + schema + descriptions + failures failed
+
+                    /// Rows of data: a step of its own, apart from the schema, because of GDPR/PII.
+                    let saveIndividuals () =
+                        let failed = ResizeArray()
+                        let read = readIndividuals failed
+                        if schemaCache().HasIndividuals then savedAt (schemaCache().SaveIndividuals contextSchemaPath) + read + failures failed
+                        else "No individuals to save: no table with a single primary key has rows." + failures failed
+
+                    // SSDT reads a .dacpac: it has no rows
+                    let hasIndividuals = dbVendor <> DatabaseProviderTypes.MSSQLSERVER_SSDT
+
+                    let individualsFile = SchemaCache.IndividualsFilePath contextSchemaPath
+                    let descriptionsFile = SchemaCache.DescriptionsFilePath contextSchemaPath
+                    [ yield "SaveContextSchemaFull",
+                            "Saves every table, column, relationship and stored procedure of the database to " + contextSchemaPath +
+                            ", not only the ones used so far, and the descriptions (comments) of every table and column to " +
+                            descriptionsFile + ". No rows of data. Write dot after SaveContextSchemaFull to save. May take a while.",
+                            saveFull
+                      if hasIndividuals then
+                          yield "SaveContextSchemaIndividuals",
+                                "Saves IndividualsAmount individuals (rows) of every table with a single primary key to " + individualsFile +
+                                ". Write dot after SaveContextSchemaIndividuals to save. May take a while. " +
+                                "Individuals are rows of your data: mind GDPR/PII before committing the file.",
+                                saveIndividuals ]
+                | _ -> []
 
             let addServiceTypeMembers (isReadonly:bool) =
                 [
@@ -1002,15 +1188,13 @@ module DesignTimeUtils =
                           let a0 = args.[0]
                           <@@ ((%%a0 : obj) :?> ISqlDataContext).CreateEntities key @@> )
                       let tname = ct.Name
-                      match con with
-                      | Some con ->
-                          prop.AddXmlDocDelayed (fun () ->
-                              let details = prov.GetTableDescription(con, tname).Replace("<","&lt;").Replace(">","&gt;")
+                      prop.AddXmlDocDelayed (fun () ->
+                          match tableDescription con prov offlineDescriptions tname with
+                          | Some description ->
+                              let details = description.Replace("<","&lt;").Replace(">","&gt;")
                               let separator = if (String.IsNullOrWhiteSpace desc) || (String.IsNullOrWhiteSpace details) then "" else "/"
-                              $"<summary>%s{details} %s{separator} %s{desc}</summary>")
-                      | None ->
-                          prop.AddXmlDocDelayed (fun () -> "<summary>Offline mode.</summary>")
-                          ()
+                              $"<summary>%s{details} %s{separator} %s{desc}</summary>"
+                          | None -> $"<summary>Offline mode. %s{desc}</summary>")
                       schemaType.AddMember ct
                       if not (schemaType.DeclaredMembers |> Seq.exists(fun m -> m.Name = prop.Name)) then
                           schemaType.AddMember prop
@@ -1047,7 +1231,7 @@ module DesignTimeUtils =
                   if not isReadonly then
                       let recreate = fun () -> createTypes rootType serviceType readServiceType config sqlRuntimeInfo invalidate registerClose (connectionString, conStringName,dbVendor,resolutionPath,individualsAmount,useOptionTypes,owner,caseSensitivity, tableNames, contextSchemaPath, odbcquote, sqliteLibrary, ssdtPath, rootTypeName)
                       let designTimeCommandsContainer, saveResponse, mOld, designTime, invalidateActionResponse =
-                            createDesignTimeCommands prov contextSchemaPath recreate invalidate
+                            createDesignTimeCommands prov contextSchemaPath recreate invalidate onlineCommands
 
                       designTimeCommandsContainer.AddMember saveResponse
                       designTimeCommandsContainer.AddMember templateContainer

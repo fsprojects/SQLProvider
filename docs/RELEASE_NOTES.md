@@ -1,3 +1,14 @@
+### 1.5.34 - (unreleased)
+- Offline mode (ContextSchemaPath) saves three files beside each other: schema.json for the schema, schema.descriptions.json for table and column descriptions (comments), schema.individuals.json for individuals. Builds read only the schema file; the descriptions file is read for the first tooltip and the individuals file when Individuals are first opened
+- Offline tooltips show the saved table and column descriptions, instead of only "Offline mode." SaveContextSchema saves the descriptions of what you hovered over online
+- A saved schema no longer carries individuals, so it stays small and loads fast. A schema file with individuals in it still loads them, and re-saving it moves them to the individuals file. Older versions can read the new schema files
+- New design-time commands next to SaveContextSchema, online only, that read the whole database instead of what was used so far: SaveContextSchemaFull (every table, column, relationship and stored procedure, and every table and column description) and SaveContextSchemaIndividuals (individuals of every table with a single primary key)
+- SaveContextSchemaFull reads the column descriptions of a table in one query instead of one per column (MS SQL Server, PostgreSQL, MySQL, Oracle, Firebird, DuckDB)
+- OfflineTools.mergeCacheFiles merges descriptions and individuals files too
+- Fix: after a failed SaveContextSchema, design-time commands no longer stop working until the IDE restarts
+- Fix: saving individuals no longer fails on a column value such as a DateTimeOffset or an array; such values are saved as text
+- Fix: PostgreSQL tables with capital letters in their name show their descriptions in tooltips; reading them failed before
+
 ### 1.5.33 - 19.11.2026
 - Fix: a saved schema (ContextSchemaPath) loads on both .NET and .NET Framework, whichever saved it. Visual Studio, whose editor and compiler run on .NET Framework, failed on a schema saved by dotnet with "Value cannot be null. Parameter name: key"
 
