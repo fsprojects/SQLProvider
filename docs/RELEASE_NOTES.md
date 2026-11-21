@@ -1,4 +1,4 @@
-### 1.5.34 - (unreleased)
+### 1.5.34 - 21.11.2026
 - Offline mode (ContextSchemaPath) saves three files beside each other: schema.json for the schema, schema.descriptions.json for table and column descriptions (comments), schema.individuals.json for individuals. Builds read only the schema file; the descriptions file is read for the first tooltip and the individuals file when Individuals are first opened
 - Offline tooltips show the saved table and column descriptions, instead of only "Offline mode." SaveContextSchema saves the descriptions of what you hovered over online
 - A saved schema no longer carries individuals, so it stays small and loads fast. SaveContextSchema saves the individuals opened so far to the individuals file instead: a table opened again replaces its saved individuals, and the other tables in the file are kept. A schema file with individuals in it still loads them, and re-saving it moves them to the individuals file. Older versions can read the new schema files
