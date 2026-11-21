@@ -107,11 +107,16 @@ module DuckDb =
                 "System.String","BPCHAR",16,false
                 "System.String","TEXT",16,false
                 "System.String","STRING",16,false
+                "System.TimeSpan","TIME",6,false
                 "System.TimeSpan","INTERVAL",6,false
+                "System.DateTimeOffset","TIMETZ",6,false
+                "System.DateTimeOffset","TIME WITH TIME ZONE",6,false
                 "System.DateTime","DATETIME",6,false
                 "System.DateTime","DATE",6,false
-                "System.DateTime","TIME",6,false
                 "System.DateTime","TIMESTAMP",6,false
+                "System.DateTime","TIMESTAMP_S",6,false
+                "System.DateTime","TIMESTAMP_MS",6,false
+                "System.DateTime","TIMESTAMP_NS",6,false
                 "System.DateTime","TIMESTAMPTZ",6,false
                 "System.DateTime","TIMESTAMP WITH TIME ZONE",6,false
                 "System.DateTime","TIMESTAMPTZ",6,false
@@ -131,13 +136,15 @@ module DuckDb =
     let createCommandParameter sprocCommand (param:QueryParameter) value =
         let mapping = if not (isNull value || sprocCommand) then (findClrType (value.GetType().ToString())) else None
         let value = if isNull value then (box DBNull.Value) else value
+        // DuckDB names a parameter without a prefix: the name of $id is id, and the key of an individual comes as @id
+        let name = param.Name.TrimStart('@')
 
 #if REFLECTIONLOAD
         let parameterType = parameterType.Value
 
-        let p = Activator.CreateInstance(parameterType,[|box param.Name;value|]) :?> IDbDataParameter
+        let p = Activator.CreateInstance(parameterType,[|box name;value|]) :?> IDbDataParameter
 #else
-        let p = DuckDB.NET.Data.DuckDBParameter(param.Name, value) :> IDbDataParameter
+        let p = DuckDB.NET.Data.DuckDBParameter(name, value) :> IDbDataParameter
 #endif
 
         p.Direction <-  param.Direction
@@ -377,6 +384,7 @@ module DuckDb =
 type internal DuckDbProvider(resolutionPath, contextSchemaPath, owner:string, referencedAssemblies) as this =
     let schemaCache = SchemaCache.LoadOrEmpty(contextSchemaPath)
     let myLock = Object()
+    let ownerSchemas = owner.Split(';', ',', ' ', '\n', '\r') |> Array.filter (not << String.IsNullOrWhiteSpace)
 
     let quotedTableName (table: Table) =
         let quotedFullName = table.QuotedFullName("\"", "\"")
@@ -534,10 +542,24 @@ type internal DuckDbProvider(resolutionPath, contextSchemaPath, owner:string, re
 
     do
         DuckDb.resolutionPath <- resolutionPath
-        DuckDb.schemas <- owner.Split(';', ',', ' ', '\n', '\r') |> Array.filter (not << String.IsNullOrWhiteSpace)
+        DuckDb.schemas <- ownerSchemas
 #if REFLECTIONLOAD
         DuckDb.referencedAssemblies <- referencedAssemblies
 #endif
+    interface IColumnDescriptionsProvider with
+        member __.GetColumnDescriptions(con,tableName) =
+            let sn = tableName.Substring(0,tableName.LastIndexOf('.'))
+            let tn = tableName.Substring(tableName.LastIndexOf('.')+1)
+            let baseQuery = @"SELECT COLUMN_NAME, COLUMN_COMMENT
+                                FROM INFORMATION_SCHEMA.COLUMNS
+                                WHERE TABLE_SCHEMA = $schema AND TABLE_NAME = $table"
+            use com = (this:>ISqlProvider).CreateCommand(con,baseQuery)
+            com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("schema", 0), sn)) |> ignore
+            com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("table", 1), (DuckDb.ripQuotes tn))) |> ignore
+            if con.State <> ConnectionState.Open then con.Open()
+            use reader = com.ExecuteReader()
+            Sql.readDescriptions reader
+
     interface ISqlProvider with
         member __.CloseConnectionAfterQuery = true
         member __.DesignConnection = true
@@ -583,7 +605,9 @@ type internal DuckDbProvider(resolutionPath, contextSchemaPath, owner:string, re
         member __.GetSchemaCache() = schemaCache
 
         member __.GetTables(con,cs) =
-            let dbName = if String.IsNullOrEmpty owner then "'main'" else $"'{owner}'"
+            let dbName =
+                if Array.isEmpty ownerSchemas then "'main'"
+                else String.Join(",", ownerSchemas |> Array.map (fun schema -> "'" + schema.Replace("'", "''") + "'"))
             let caseChane =
                match cs with
                 | Common.CaseSensitivityChange.TOUPPER -> "UPPER(TABLE_SCHEMA)"
@@ -596,7 +620,7 @@ type internal DuckDbProvider(resolutionPath, contextSchemaPath, owner:string, re
                     [ while reader.Read() do
                         let table ={ Schema = reader.GetString 0; Name = reader.GetString 1; Type=reader.GetString 2 }
                         yield schemaCache.Tables.GetOrAdd(table |> quotedTableName,table) ] |> List.toArray
-                executeSql DuckDb.createCommand (sprintf "select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES where %s in (%s)" caseChane (String.Join(",", dbName))) con)
+                executeSql DuckDb.createCommand (sprintf "select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES where %s in (%s)" caseChane dbName) con)
 
         member __.GetPrimaryKey(table) =
             match schemaCache.PrimaryKeys.TryGetValue (table |> quotedTableName) with
@@ -642,7 +666,12 @@ type internal DuckDbProvider(resolutionPath, contextSchemaPath, owner:string, re
 #else
                         let isUnsigned = not(reader.IsDBNull 6) && reader.GetString(6).ToUpperInvariant().Contains("UNSIGNED")
 #endif
-                        let udt = if isUnsigned then dt + " unsigned" else dt
+                        // A type with a precision, as DECIMAL(18,3), is mapped by its name alone
+                        let typeName =
+                            match dt.IndexOf '(' with
+                            | i when i > 0 && dt.EndsWith ")" -> dt.Substring(0, i)
+                            | _ -> dt
+                        let udt = if isUnsigned then typeName + " unsigned" else typeName
                         match DuckDb.findDbType udt with
                         | Some(m) ->
                             let col =
@@ -670,43 +699,45 @@ type internal DuckDbProvider(resolutionPath, contextSchemaPath, owner:string, re
 
         member __.GetRelationships(con,table) =
           schemaCache.Relationships.GetOrAdd(table |> quotedTableName, fun name ->
+            // DuckDb's KEY_COLUMN_USAGE doesn't tell the referenced table: it is the table of the unique constraint the foreign key points to
             let baseQuery = @"SELECT
                                  KCU1.CONSTRAINT_NAME AS FK_CONSTRAINT_NAME
                                 ,KCU1.TABLE_NAME AS FK_TABLE_NAME
                                 ,KCU1.TABLE_SCHEMA AS FK_SCHEMA_NAME
                                 ,KCU1.COLUMN_NAME AS FK_COLUMN_NAME
+                                ,KCU2.TABLE_NAME AS REFERENCED_TABLE_NAME
+                                ,KCU2.TABLE_SCHEMA AS REFERENCED_SCHEMA_NAME
+                                ,KCU2.COLUMN_NAME AS REFERENCED_COLUMN_NAME
                             FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS KCU1
-                            WHERE POSITION_IN_UNIQUE_CONSTRAINT is not null"
-
-            // DuckDb doesn't have built-in constraint navigation
-                                //,KCU1.REFERENCED_TABLE_NAME AS REFERENCED_TABLE_NAME
-                                //,KCU1.REFERENCED_TABLE_SCHEMA AS REFERENCED_SCHEMA_NAME
-                                //,KCU1.REFERENCED_COLUMN_NAME AS FK_CONSTRAINT_SCHEMA
+                            JOIN INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS AS RC
+                              ON RC.CONSTRAINT_CATALOG = KCU1.CONSTRAINT_CATALOG
+                                 AND RC.CONSTRAINT_SCHEMA = KCU1.CONSTRAINT_SCHEMA
+                                 AND RC.CONSTRAINT_NAME = KCU1.CONSTRAINT_NAME
+                            JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS KCU2
+                              ON KCU2.CONSTRAINT_CATALOG = RC.UNIQUE_CONSTRAINT_CATALOG
+                                 AND KCU2.CONSTRAINT_SCHEMA = RC.UNIQUE_CONSTRAINT_SCHEMA
+                                 AND KCU2.CONSTRAINT_NAME = RC.UNIQUE_CONSTRAINT_NAME
+                                 AND KCU2.ORDINAL_POSITION = KCU1.POSITION_IN_UNIQUE_CONSTRAINT
+                            WHERE KCU1.POSITION_IN_UNIQUE_CONSTRAINT is not null"
 
             let res = Sql.connect con (fun con ->
-                use com = (this:>ISqlProvider).CreateCommand(con,$"%s{baseQuery} AND KCU1.TABLE_NAME = $table")
-                com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("table", 0), (DuckDb.ripQuotes table.Name))) |> ignore
-                if con.State <> ConnectionState.Open then con.Open()
-                use reader = com.ExecuteReader()
-                let children =
+                let read (tableAlias:string) =
+                    use com = (this:>ISqlProvider).CreateCommand(con,$"%s{baseQuery} AND %s{tableAlias}.TABLE_SCHEMA = $schema AND %s{tableAlias}.TABLE_NAME = $table")
+                    com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("schema", 0), table.Schema)) |> ignore
+                    com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("table", 1), (DuckDb.ripQuotes table.Name))) |> ignore
+                    if con.State <> ConnectionState.Open then con.Open()
+                    use reader = com.ExecuteReader()
                     [ while reader.Read() do
-                        yield { Name = reader.GetString 0; PrimaryTable=Table.CreateQuotedFullName(reader.GetString(2),reader.GetString(1), "\"", "\""); PrimaryKey=reader.GetString 3
-                                ForeignTable=Table.CreateQuotedFullName(reader.GetString(5),reader.GetString(4), "\"", "\""); ForeignKey=reader.GetString 6 } ] |> List.toArray
-                reader.Dispose()
-                //use com = (this:>ISqlProvider).CreateCommand(con,(sprintf "%s AND KCU1.REFERENCED_TABLE_NAME = $table" baseQuery))
-                //com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("table", 0), (DuckDb.ripQuotes table.Name))) |> ignore
-                //if con.State <> ConnectionState.Open then con.Open()
-                //use reader = com.ExecuteReader()
-                let parents = Array.empty
-                    //[ while reader.Read() do
-                    //    yield { Name = reader.GetString(0); PrimaryTable=Table.CreateQuotedFullName(reader.GetString(2),reader.GetString(1), "\"", "\""); PrimaryKey=reader.GetString(3)
-                    //            ForeignTable= Table.CreateQuotedFullName(reader.GetString(5),reader.GetString(4), "\"", "\""); ForeignKey=reader.GetString(6) } ]
+                        yield { Name = reader.GetString 0; PrimaryTable=Table.CreateFullName(reader.GetString(2),reader.GetString(1)); PrimaryKey=reader.GetString 3
+                                ForeignTable=Table.CreateFullName(reader.GetString(5),reader.GetString(4)); ForeignKey=reader.GetString 6 } ] |> List.toArray
+                let children = read "KCU1"
+                let parents = read "KCU2"
                 (children,parents))
             res)
 
         member __.GetSprocs(con) = Sql.connect con DuckDb.getSprocs
         member __.GetIndividualsQueryText(table,amount) = sprintf "SELECT * FROM %s LIMIT %i;" (table |> quotedTableName) amount
-        member __.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM \"%s\" WHERE \"%s\".\"%s\" = $id" (table |> quotedTableName) (table |> quotedTableName) column
+        member __.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM %s WHERE %s.\"%s\" = $id" (table |> quotedTableName) (table |> quotedTableName) column
 
         member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript, con) =
             if sqlQuery.ForUpdate then failwith "DuckDB has no row locks, so Seq.lockForUpdate can't be used with it."

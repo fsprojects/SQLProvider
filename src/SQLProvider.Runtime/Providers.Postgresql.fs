@@ -96,6 +96,9 @@ module PostgreSQL =
 #endif
         with _ -> None
 
+    /// The value of Npgsql's type enumeration for a uuid
+    let uuidProviderDbType = lazy (parseDbType "Uuid")
+
     let tryReadValueProperty instance =
         let typ = instance.GetType()
         let prop = typ.GetProperty "Value"
@@ -112,6 +115,12 @@ module PostgreSQL =
         let normalizedValue =
             if not (isOptionValue value) then (if isNull value || (Type.(=) (value.GetType(), typeof<DBNull>)) then box DBNull.Value else value) else
             match tryReadValueProperty value with Some v -> v | None -> box DBNull.Value
+
+        // Npgsql doesn't write text to a uuid, and the key of an individual with a uuid key is text
+        let normalizedValue =
+            match param.TypeMapping.ProviderType, uuidProviderDbType.Value with
+            | ValueSome dbType, Some uuid when dbType = uuid -> Sql.guidOfText normalizedValue
+            | _ -> normalizedValue
 
         let isAnonymousParam =
             param.Direction <> ParameterDirection.Output &&
@@ -322,6 +331,13 @@ module PostgreSQL =
 #else
         new Npgsql.NpgsqlCommand(commandText, connection :?> Npgsql.NpgsqlConnection) :> IDbCommand
 #endif
+
+    /// Runs a query with the values as parameters instead of in the SQL text, so that any name works in it.
+    let executeSqlWith commandText (parameters: (string * obj) list) (connection:IDbConnection) =
+        use com = createCommand commandText connection
+        parameters |> List.iteri (fun i (name, value) ->
+            createCommandParameter (QueryParameter.Create(name, i)) value |> com.Parameters.Add |> ignore)
+        com.ExecuteReader()
 
     let readParameter (parameter:IDbDataParameter) =
 #if REFLECTIONLOAD
@@ -822,6 +838,22 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
               owner.Split(';', ',', ' ', '\n', '\r')
               |> Array.filter (not << String.IsNullOrWhiteSpace)              
 
+    interface IColumnDescriptionsProvider with
+        member __.GetColumnDescriptions(con,tableName) =
+            Sql.connect con (fun _ ->
+                let sn, tn = Sql.tableSchemaAndName tableName
+                use reader =
+                    PostgreSQL.executeSqlWith
+                        """SELECT c.column_name, d.description
+                            FROM pg_description d
+                            LEFT JOIN information_schema.columns c
+                            ON c.ordinal_position = d.objsubid
+                            WHERE objoid = format('%I.%I', @schema, @table)::regclass
+                            AND c.table_schema = @schema
+                            AND c.table_name = @table;"""
+                        [ "@schema", box sn; "@table", box tn ] con
+                Sql.readDescriptions reader)
+
     interface ISqlProvider with
         member __.CloseConnectionAfterQuery = true
         member __.DesignConnection = true
@@ -829,12 +861,15 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
         member __.GetLockObject() = myLock
         member __.GetTableDescription(con,tableName) = 
             Sql.connect con (fun _ ->
-                use reader = 
-                    Sql.executeSql PostgreSQL.createCommand (
-                        sprintf """SELECT description
-                                    FROM   pg_description
-                                    WHERE  objoid = '%s'::regclass AND objsubid=0;
-                                """ tableName) con
+                // The names are quoted (%I), so that a table with capital letters in its name is found. They are
+                // parameters, so that a name with an apostrophe in it works too.
+                let sn, tn = Sql.tableSchemaAndName tableName
+                use reader =
+                    PostgreSQL.executeSqlWith
+                        """SELECT description
+                            FROM   pg_description
+                            WHERE  objoid = format('%I.%I', @schema, @table)::regclass AND objsubid=0;"""
+                        [ "@schema", box sn; "@table", box tn ] con
                 if reader.Read() then
                     let comment = Sql.dbUnbox<string> reader.["description"]
                     if isNull comment then "" else comment
@@ -842,19 +877,18 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                 "")
         member __.GetColumnDescription(con,tableName,columnName) = 
             Sql.connect con (fun _ ->
-                let sn = tableName.Substring(0,tableName.LastIndexOf('.')) 
-                let tn = tableName.Substring(tableName.LastIndexOf('.')+1) 
-                use reader = 
-                    Sql.executeSql PostgreSQL.createCommand (
-                        sprintf """SELECT description
-                                    FROM pg_description d 
-                                    LEFT JOIN information_schema.columns c 
-                                    ON c.ordinal_position = d.objsubid
-                                    WHERE objoid = '%s'::regclass
-                                    AND c.table_schema = '%s'
-                                    AND c.table_name = '%s'
-                                    AND c.column_name = '%s';
-                                """ tableName sn tn columnName) con
+                let sn, tn = Sql.tableSchemaAndName tableName
+                use reader =
+                    PostgreSQL.executeSqlWith
+                        """SELECT description
+                            FROM pg_description d
+                            LEFT JOIN information_schema.columns c
+                            ON c.ordinal_position = d.objsubid
+                            WHERE objoid = format('%I.%I', @schema, @table)::regclass
+                            AND c.table_schema = @schema
+                            AND c.table_name = @table
+                            AND c.column_name = @column;"""
+                        [ "@schema", box sn; "@table", box tn; "@column", box columnName ] con
                 if reader.Read() then
                     let comment = Sql.dbUnbox<string> reader.["description"]
                     if isNull comment then "" else comment

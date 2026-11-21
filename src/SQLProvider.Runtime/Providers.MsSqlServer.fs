@@ -134,6 +134,8 @@ module MSSqlServer =
         p
 
     let createCommandParameter (param:QueryParameter) (value:obj) =
+        // SqlClient doesn't convert text to a uniqueidentifier, and the key of an individual with such a key is text
+        let value = if param.TypeMapping.DbType = DbType.Guid then Sql.guidOfText value else value
         let p = SqlParameter(param.Name,value, DbType = param.TypeMapping.DbType)
         ValueOption.iter (fun (t:int) -> p.SqlDbType <- Enum.ToObject(typeof<SqlDbType>, t) :?> SqlDbType) param.TypeMapping.ProviderType
         p.Direction <- param.Direction
@@ -500,22 +502,43 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
     // Remembers the version of each instance it connects to
     let mssqlVersionCache = ConcurrentDictionary<string, Lazy<Version>>()
 
+    interface IColumnDescriptionsProvider with
+        member __.GetColumnDescriptions(con,tableName) =
+            let sn, tn = Sql.tableSchemaAndName tableName
+            let baseq =
+                """select sc.name, sep.value
+                from sys.tables st
+                inner join sys.columns sc on st.object_id = sc.object_id
+                inner join sys.extended_properties sep on st.object_id = sep.major_id
+                                                        and sc.column_id = sep.minor_id
+                                                        and sep.name = 'MS_Description'
+                inner join sys.schemas ss on st.schema_id = ss.schema_id
+                where st.name = @TableName and (@SchemaName = '' or ss.name = @SchemaName)"""
+            use com = new SqlCommand(baseq,con:?>SqlConnection)
+            com.Parameters.AddWithValue("@TableName",tn) |> ignore
+            com.Parameters.AddWithValue("@SchemaName",sn) |> ignore
+            if con.State <> ConnectionState.Open then con.Open()
+            use reader = com.ExecuteReader()
+            Sql.readDescriptions reader
+
     interface ISqlProvider with
         member __.CloseConnectionAfterQuery = true
         member __.DesignConnection = true
         member __.StoredProcedures = true
         member __.GetLockObject() = myLock
         member __.GetTableDescription(con,tableName) = 
-            let tn = tableName.Substring(tableName.LastIndexOf('.')+1) 
+            let sn, tn = Sql.tableSchemaAndName tableName
             let baseq =
                 """select sep.value
                 from sys.tables st
                 left join sys.extended_properties sep on st.object_id = sep.major_id
                                                         and (sep.minor_id is null or sep.minor_id =0)
                                                         and sep.name = 'MS_Description'
-                where st.name = @TableName"""
+                inner join sys.schemas ss on st.schema_id = ss.schema_id
+                where st.name = @TableName and (@SchemaName = '' or ss.name = @SchemaName)"""
             use com = new SqlCommand(baseq,con:?>SqlConnection)
             com.Parameters.AddWithValue("@TableName",tn) |> ignore
+            com.Parameters.AddWithValue("@SchemaName",sn) |> ignore
             if con.State <> ConnectionState.Open then con.Open()
             use reader = com.ExecuteReader()
             if reader.Read() then
@@ -525,7 +548,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
             else ""
 
         member __.GetColumnDescription(con,tableName,columnName) =
-            let tn = tableName.Substring(tableName.LastIndexOf('.')+1) 
+            let sn, tn = Sql.tableSchemaAndName tableName
             let baseq =
                 """select sep.value
                 from sys.tables st
@@ -533,10 +556,12 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
                 left join sys.extended_properties sep on st.object_id = sep.major_id
                                                         and sc.column_id = sep.minor_id
                                                         and sep.name = 'MS_Description'
-                where st.name = @TableName
+                inner join sys.schemas ss on st.schema_id = ss.schema_id
+                where st.name = @TableName and (@SchemaName = '' or ss.name = @SchemaName)
                 and sc.name = @ColumnName"""
             use com = new SqlCommand(baseq,con:?>SqlConnection)
             com.Parameters.AddWithValue("@TableName",tn) |> ignore
+            com.Parameters.AddWithValue("@SchemaName",sn) |> ignore
             com.Parameters.AddWithValue("@ColumnName",columnName) |> ignore
             if con.State <> ConnectionState.Open then con.Open()
             use reader = com.ExecuteReader()
