@@ -692,6 +692,18 @@ type internal FirebirdProvider(resolutionPath, contextSchemaPath, owner, referen
 #if REFLECTIONLOAD
         Firebird.referencedAssemblies <- referencedAssemblies
 #endif
+    interface IColumnDescriptionsProvider with
+        member __.GetColumnDescriptions(con,tableName) =
+            let tn = tableName.Substring(tableName.LastIndexOf('.')+1)
+            let baseQuery = @"SELECT trim(RDB$FIELD_NAME), RDB$DESCRIPTION
+                                FROM RDB$RELATION_FIELDS
+                                WHERE RDB$RELATION_NAME = @table"
+            use com = (this:>ISqlProvider).CreateCommand(con,baseQuery)
+            com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("@table", 1), (Firebird.ripQuotes tn))) |> ignore
+            if con.State <> ConnectionState.Open then con.Open()
+            use reader = com.ExecuteReader()
+            Sql.readDescriptions reader
+
     interface ISqlProvider with
         member __.CloseConnectionAfterQuery = true
         member __.DesignConnection = true
