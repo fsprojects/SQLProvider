@@ -957,11 +957,14 @@ and SchemaCache =
             let ser = System.Runtime.Serialization.Json.DataContractJsonSerializer(typeof<SchemaCache>)
             // Schema files saved before 1.5.34 may carry individuals in the schema file itself: they're kept.
             let loaded = ser.ReadObject(ms) :?> SchemaCache
-            { loaded with
-                IsOffline = true
-                Individuals = if isNull loaded.Individuals then ConcurrentDictionary<string, _>() else loaded.Individuals
-                TableDescriptions = if isNull loaded.TableDescriptions then ConcurrentDictionary<string,string>() else loaded.TableDescriptions
-                ColumnDescriptions = if isNull loaded.ColumnDescriptions then ConcurrentDictionary<string,ConcurrentDictionary<string,string>>() else loaded.ColumnDescriptions }
+            let cache =
+                { loaded with
+                    IsOffline = true
+                    Individuals = if isNull loaded.Individuals then ConcurrentDictionary<string, _>() else loaded.Individuals
+                    TableDescriptions = if isNull loaded.TableDescriptions then ConcurrentDictionary<string,string>() else loaded.TableDescriptions
+                    ColumnDescriptions = if isNull loaded.ColumnDescriptions then ConcurrentDictionary<string,ConcurrentDictionary<string,string>>() else loaded.ColumnDescriptions }
+            if not cache.Individuals.IsEmpty then cache.RestorePrimaryKeyTypes()
+            cache
         static member LoadOrEmpty(filePath) =
             if String.IsNullOrEmpty(filePath) || (not(File.Exists filePath)) then
                 SchemaCache.Empty
@@ -1030,7 +1033,59 @@ and SchemaCache =
             | :? string | :? bool | :? char | :? decimal | :? DateTime | :? Guid | :? TimeSpan | :? (byte[]) -> value
             | _ when value.GetType().IsPrimitive -> value
             | :? Array as items -> box [| for item in items -> SchemaCache.IndividualsFileValue item |]
+            // Round-trip text, so that a primary key of this type can be read back (PrimaryKeyValue)
+            | :? DateTimeOffset as d -> box (d.ToString("o", Globalization.CultureInfo.InvariantCulture))
+            | :? IFormattable as f -> box (f.ToString(null, Globalization.CultureInfo.InvariantCulture))
             | _ -> box (value.ToString())
+        /// A DateTime as the serializer writes it: /Date(milliseconds since 1970 UTC, then maybe an offset)/
+        static member private SerializerDate(text:string) =
+            let m = Text.RegularExpressions.Regex.Match(text, @"^/Date\((-?\d+)([+-]\d{4})?\)/$")
+            if not m.Success then None else
+            let utc = DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddMilliseconds(float (Int64.Parse m.Groups.[1].Value))
+            if not m.Groups.[2].Success then Some utc else
+            // The offset is that of the machine that saved the file. With it the date is as the database gave it,
+            // whatever the time zone of the machine that reads the file.
+            let offset = m.Groups.[2].Value
+            let minutes = Int32.Parse(offset.Substring(1, 2)) * 60 + Int32.Parse(offset.Substring(3, 2))
+            let saved = utc.AddMinutes(float (if offset.[0] = '-' then -minutes else minutes))
+            Some (DateTime.SpecifyKind(saved, DateTimeKind.Unspecified))
+        /// A primary key value read from a file, as the design time has it online: in the type of its column. The file
+        /// gives a DateTime or a DateTimeOffset back as text, and a number in a type that fits it. A Guid stays text:
+        /// online it's kept as text too, because a Guid can't be a constant in a provided quotation.
+        /// A value that doesn't convert is kept as it is.
+        static member private PrimaryKeyValue(clrType:Type, value:obj) : obj =
+            if isNull value || isNull clrType || value.GetType() = clrType || clrType = typeof<Guid> then value else
+            let invariant = Globalization.CultureInfo.InvariantCulture
+            try
+                match value with
+                | :? string as text ->
+                    if clrType = typeof<DateTimeOffset> then box (DateTimeOffset.Parse(text, invariant))
+                    elif clrType = typeof<DateTime> then
+                        match SchemaCache.SerializerDate text with
+                        | Some date -> box date
+                        | None -> box (DateTime.Parse(text, invariant, Globalization.DateTimeStyles.RoundtripKind))
+                    elif clrType = typeof<TimeSpan> then box (TimeSpan.Parse(text, invariant))
+                    else Convert.ChangeType(text, clrType, invariant)
+                | :? IConvertible -> Convert.ChangeType(value, clrType, invariant)
+                | _ -> value
+            with _ -> value
+        /// Gives the primary keys of individuals read from a file the type of their column, as the schema has it.
+        member private this.RestorePrimaryKeyTypes() =
+            for KeyValue(table, keys) in this.PrimaryKeys do
+                match keys with
+                | [ pk ] ->
+                    let key = table + "_" + pk
+                    match this.Individuals.TryGetValue key, this.Columns.TryGetValue table with
+                    | (true, entities), (true, columns) when not (isNull entities) ->
+                        match columns.TryFind pk with
+                        | Some column ->
+                            let clrType = try Utilities.getType column.TypeMapping.ClrType with _ -> null
+                            if not (isNull clrType) then
+                                this.Individuals.[key] <-
+                                    entities |> Array.map (fun (pkValue, values) -> SchemaCache.PrimaryKeyValue(clrType, pkValue), values)
+                        | None -> ()
+                    | _ -> ()
+                | _ -> ()
         /// Saves the individuals to the individuals file beside the schema file and returns its path.
         /// Tables without individuals are left out.
         member this.SaveIndividuals(filePath) =
@@ -1053,6 +1108,7 @@ and SchemaCache =
                     if not (isNull loaded) then
                         for KeyValue(table, entities) in loaded do
                             this.Individuals.[table] <- entities
+                        this.RestorePrimaryKeyTypes()
 
 /// Table and column descriptions as saved in the descriptions file beside the schema file
 and SchemaDescriptions =

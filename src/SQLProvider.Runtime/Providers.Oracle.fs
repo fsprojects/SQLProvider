@@ -224,12 +224,12 @@ module internal Oracle =
     /// A value for inside '...' in SQL text: an apostrophe in it doubled.
     let sqlText (value: string) = value.Replace("'", "''")
 
-    /// The owner and name of a table, from OWNER.TABLE, for the comments queries. The owner is "" without one: the
-    /// queries then read the current user's.
+    /// The owner and name of a table, from OWNER.TABLE, for inside '...' in the comments queries: without the quotes
+    /// of a name with a space in it, apostrophes doubled. The owner is "" without one: the queries then read the
+    /// current user's.
     let descriptionOwnerAndTable (tableName: string) =
-        let dot = tableName.LastIndexOf '.'
-        let owner = if dot < 0 then "" else tableName.Substring(0, dot)
-        sqlText owner, sqlText (tableName.Substring(dot + 1))
+        let owner, name = Sql.tableSchemaAndName tableName
+        sqlText owner, sqlText name
 
     let readParameter (parameter:IDbDataParameter) =
 #if REFLECTIONLOAD

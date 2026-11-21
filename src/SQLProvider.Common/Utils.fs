@@ -861,6 +861,20 @@ module Sql =
                     descriptions.[name] <- description
         descriptions :> System.Collections.Generic.IDictionary<string,string>
 
+    /// The schema ("" without one) and the name of a table from its FullName, schema.name. A name with a space in
+    /// it is in quotes in FullName (quoteWhiteSpace): those quotes are left out, so the name is as the database has it.
+    let tableSchemaAndName (fullName:string) =
+        let unquote (name:string) =
+            if name.Length > 1 && name.StartsWith "\"" && name.EndsWith "\"" && name.Contains " " then name.Substring(1, name.Length - 2)
+            else name
+        if fullName.Length > 1 && fullName.StartsWith "\"" && fullName.EndsWith "\"" then "", unquote fullName else
+        // A quoted name may have a dot in it: it starts after the schema's ."
+        let dot =
+            match (if fullName.EndsWith "\"" then fullName.IndexOf ".\"" else -1) with
+            | -1 -> fullName.LastIndexOf '.'
+            | quoted -> quoted
+        (if dot < 0 then "" else fullName.Substring(0, dot)), unquote (fullName.Substring(dot + 1))
+
     /// Note: SQLProvider reuses the connection through multiple instances, so you can't dispose it here.
     /// Instead it's created with ISQLProvider's CreateConnection method, and that is having always "use" to ensure it is disposed properly on "finally".
     let connect (con:IDbConnection) f =

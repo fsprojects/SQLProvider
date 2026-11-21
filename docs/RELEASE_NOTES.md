@@ -7,6 +7,9 @@
 - OfflineTools.mergeCacheFiles merges descriptions and individuals files too
 - Fix: after a failed SaveContextSchema, design-time commands no longer stop working until the IDE restarts
 - Fix: saving individuals no longer fails on a column value such as a DateTimeOffset or an array; such values are saved as text
+- Fix: offline individuals with a smallint, bigint or decimal primary key have the key in its own type, as they do online; it came back from the saved file in whatever number type fitted the value
+- Fix: PostgreSQL individuals of a table with a uuid primary key can be got; getting one failed, as the key was sent as text
+- Fix: tables with a space in their name show their descriptions in tooltips (MS SQL Server, PostgreSQL, Oracle)
 - Fix: PostgreSQL tables with capital letters or an apostrophe in their name show their descriptions in tooltips; reading them failed before
 - Fix: MS SQL Server descriptions of a table come from its own schema; with tables of the same name in two schemas, either could show the other's
 - Fix: Oracle descriptions of tables owned by another schema (Owner) are read; only the current user's tables had them before

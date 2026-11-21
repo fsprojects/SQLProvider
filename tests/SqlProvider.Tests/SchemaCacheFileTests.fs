@@ -8,6 +8,7 @@ open System.Text
 open System.Collections.Generic
 open System.Collections.Concurrent
 open FSharp.Data.Sql.Common
+open FSharp.Data.Sql.Schema
 open NUnit.Framework
 
 let private tempSchemaPath () =
@@ -86,7 +87,8 @@ let ``column values the file can't hold as such are saved as text`` () =
     loaded.LoadIndividuals path
     let columns = snd loaded.Individuals.["main.Customers_Id"].[0]
     Assert.AreEqual("Customer 1", columns.["Name"])
-    Assert.AreEqual(changed.ToString(), columns.["Changed"])
+    // Round-trip text, the same on every machine
+    Assert.AreEqual("2026-11-20T12:00:00.0000000+02:00", columns.["Changed"])
     CollectionAssert.AreEqual([| "a"; "b" |], columns.["Tags"] :?> obj[])
     Assert.AreEqual("10.0.0.1", columns.["Address"])
     Assert.AreEqual("", columns.["Missing"])
@@ -222,3 +224,81 @@ let ``merging schema files merges their descriptions files`` () =
     Assert.AreEqual("Full name", merged.ColumnDescriptions.["main.Customers"].["Name"])
     Assert.AreEqual("Phone number", merged.ColumnDescriptions.["main.Customers"].["Phone"])
 
+
+// A primary key comes back from the individuals file as the design time has it online: in its column's type, but a
+// Guid as text, because a Guid can't be a constant in a provided quotation.
+
+let private keyed (table:string) (pkType:Type) (keys:obj list) =
+    let cache = SchemaCache.Empty
+    let column =
+        { Name = "Id"; TypeMapping = TypeMapping.Create(clrType = pkType.AssemblyQualifiedName); IsPrimaryKey = true
+          IsNullable = false; IsAutonumber = false; HasDefault = false; IsComputed = false; TypeInfo = ValueNone }
+    cache.Tables.[table] <- { Schema = "main"; Name = table.Substring 5; Type = "TABLE" }
+    cache.PrimaryKeys.[table] <- [ "Id" ]
+    cache.Columns.[table] <- Map.ofList [ "Id", column ]
+    cache.Individuals.[table + "_Id"] <- [| for key in keys -> key, dict [ "Id", key; "Name", box (string key) ] |]
+    cache
+
+[<Test; SqlCheck.NoSql>]
+let ``primary keys of individuals are read back as they are online`` () =
+    // Online a Guid key is kept as text, so it's given here as the design time gives it
+    let guid = Guid.NewGuid().ToString()
+    let offset = DateTimeOffset(2024, 5, 6, 7, 8, 9, 123, TimeSpan.FromHours 3.)
+    let cases : (string * Type * obj) list =
+        [ "main.Guids", typeof<Guid>, box guid
+          "main.Offsets", typeof<DateTimeOffset>, box offset
+          "main.UtcDates", typeof<DateTime>, box (DateTime(2024, 5, 6, 7, 8, 9, DateTimeKind.Utc))
+          "main.Dates", typeof<DateTime>, box (DateTime(2024, 5, 6, 7, 8, 9))
+          "main.Shorts", typeof<int16>, box 12s
+          "main.Longs", typeof<int64>, box 1234567890123L
+          "main.SmallLongs", typeof<int64>, box 7L
+          "main.Decimals", typeof<decimal>, box 42M ]
+    for table, columnType, key in cases do
+        let path = tempSchemaPath ()
+        let cache = keyed table columnType [ key ]
+        cache.Save path
+        cache.SaveIndividuals path |> ignore
+        let loaded = SchemaCache.Load path
+        loaded.LoadIndividuals path
+        let pk, _ = loaded.Individuals.[table + "_Id"].[0]
+        Assert.AreEqual(key.GetType(), pk.GetType(), table)
+        Assert.AreEqual(key, pk, table)
+
+[<Test; SqlCheck.NoSql>]
+let ``a date key saved in another time zone is read back as it was saved`` () =
+    let date = DateTime(2024, 5, 6, 7, 8, 9)
+    for offset, hours in [ "+0500", 5.; "-0930", -9.5 ] do
+        let path = tempSchemaPath ()
+        let cache = keyed "main.Dates" typeof<DateTime> [ box date ]
+        cache.Save path
+        let file = cache.SaveIndividuals path
+        // The same moment as a machine in that time zone saves it
+        File.WriteAllText(file, RegularExpressions.Regex.Replace(File.ReadAllText file, @"[+-]\d{4}\)", offset + ")"))
+        let loaded = SchemaCache.Load path
+        loaded.LoadIndividuals path
+        let pk, _ = loaded.Individuals.["main.Dates_Id"].[0]
+        Assert.AreEqual(date.ToUniversalTime().AddHours hours, unbox<DateTime> pk, offset)
+
+[<Test; SqlCheck.NoSql>]
+let ``primary keys of individuals in an old schema file are read back as they are online`` () =
+    let path = tempSchemaPath ()
+    let guid = Guid.NewGuid().ToString()
+    saveOldFormat (keyed "main.Guids" typeof<Guid> [ box guid ]) path
+    let pk, _ = (SchemaCache.Load path).Individuals.["main.Guids_Id"].[0]
+    Assert.AreEqual(box guid, pk)
+    let path = tempSchemaPath ()
+    saveOldFormat (keyed "main.Longs" typeof<int64> [ box 7L ]) path
+    let pk, _ = (SchemaCache.Load path).Individuals.["main.Longs_Id"].[0]
+    Assert.AreEqual(box 7L, pk)
+
+// A table's FullName has a name with a space in quotes: the metadata queries need it as the database has it.
+
+[<Test; SqlCheck.NoSql>]
+let ``a table's schema and name come from its full name without the quotes`` () =
+    let full schema name = Table.CreateFullName(schema, name)
+    Assert.AreEqual(("dbo", "Customers"), Sql.tableSchemaAndName (full "dbo" "Customers"))
+    Assert.AreEqual(("dbo", "Order Details"), Sql.tableSchemaAndName (full "dbo" "Order Details"))
+    Assert.AreEqual(("dbo", "v1.2 Orders"), Sql.tableSchemaAndName (full "dbo" "v1.2 Orders"))
+    Assert.AreEqual(("", "Order Details"), Sql.tableSchemaAndName (full "" "Order Details"))
+    Assert.AreEqual(("", "Customers"), Sql.tableSchemaAndName (full "" "Customers"))
+    Assert.AreEqual(("public", "customer'archive"), Sql.tableSchemaAndName (full "public" "customer'archive"))

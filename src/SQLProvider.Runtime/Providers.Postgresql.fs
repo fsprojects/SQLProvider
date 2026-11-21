@@ -96,6 +96,9 @@ module PostgreSQL =
 #endif
         with _ -> None
 
+    /// The value of Npgsql's type enumeration for a uuid
+    let uuidProviderDbType = lazy (parseDbType "Uuid")
+
     let tryReadValueProperty instance =
         let typ = instance.GetType()
         let prop = typ.GetProperty "Value"
@@ -112,6 +115,16 @@ module PostgreSQL =
         let normalizedValue =
             if not (isOptionValue value) then (if isNull value || (Type.(=) (value.GetType(), typeof<DBNull>)) then box DBNull.Value else value) else
             match tryReadValueProperty value with Some v -> v | None -> box DBNull.Value
+
+        // Npgsql doesn't write text to a uuid. The key of an individual with a uuid key is text: a Guid can't be
+        // a constant in a provided quotation.
+        let normalizedValue =
+            match normalizedValue, param.TypeMapping.ProviderType, uuidProviderDbType.Value with
+            | (:? string as text), ValueSome dbType, Some uuid when dbType = uuid ->
+                match Guid.TryParse text with
+                | true, guid -> box guid
+                | false, _ -> normalizedValue
+            | _ -> normalizedValue
 
         let isAnonymousParam =
             param.Direction <> ParameterDirection.Output &&
@@ -832,8 +845,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
     interface IColumnDescriptionsProvider with
         member __.GetColumnDescriptions(con,tableName) =
             Sql.connect con (fun _ ->
-                let sn = tableName.Substring(0,tableName.LastIndexOf('.'))
-                let tn = tableName.Substring(tableName.LastIndexOf('.')+1)
+                let sn, tn = Sql.tableSchemaAndName tableName
                 use reader =
                     PostgreSQL.executeSqlWith
                         """SELECT c.column_name, d.description
@@ -855,8 +867,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
             Sql.connect con (fun _ ->
                 // The names are quoted (%I), so that a table with capital letters in its name is found. They are
                 // parameters, so that a name with an apostrophe in it works too.
-                let sn = tableName.Substring(0,tableName.LastIndexOf('.'))
-                let tn = tableName.Substring(tableName.LastIndexOf('.')+1)
+                let sn, tn = Sql.tableSchemaAndName tableName
                 use reader =
                     PostgreSQL.executeSqlWith
                         """SELECT description
@@ -870,8 +881,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                 "")
         member __.GetColumnDescription(con,tableName,columnName) = 
             Sql.connect con (fun _ ->
-                let sn = tableName.Substring(0,tableName.LastIndexOf('.')) 
-                let tn = tableName.Substring(tableName.LastIndexOf('.')+1) 
+                let sn, tn = Sql.tableSchemaAndName tableName
                 use reader =
                     PostgreSQL.executeSqlWith
                         """SELECT description

@@ -502,8 +502,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
 
     interface IColumnDescriptionsProvider with
         member __.GetColumnDescriptions(con,tableName) =
-            let tn = tableName.Substring(tableName.LastIndexOf('.')+1)
-            let sn = if tableName.Contains "." then tableName.Substring(0, tableName.LastIndexOf('.')) else ""
+            let sn, tn = Sql.tableSchemaAndName tableName
             let baseq =
                 """select sc.name, sep.value
                 from sys.tables st
@@ -526,8 +525,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
         member __.StoredProcedures = true
         member __.GetLockObject() = myLock
         member __.GetTableDescription(con,tableName) = 
-            let tn = tableName.Substring(tableName.LastIndexOf('.')+1)
-            let sn = if tableName.Contains "." then tableName.Substring(0, tableName.LastIndexOf('.')) else ""
+            let sn, tn = Sql.tableSchemaAndName tableName
             let baseq =
                 """select sep.value
                 from sys.tables st
@@ -548,8 +546,7 @@ type internal MSSqlServerProvider(contextSchemaPath, tableNames:string) =
             else ""
 
         member __.GetColumnDescription(con,tableName,columnName) =
-            let tn = tableName.Substring(tableName.LastIndexOf('.')+1)
-            let sn = if tableName.Contains "." then tableName.Substring(0, tableName.LastIndexOf('.')) else ""
+            let sn, tn = Sql.tableSchemaAndName tableName
             let baseq =
                 """select sep.value
                 from sys.tables st
