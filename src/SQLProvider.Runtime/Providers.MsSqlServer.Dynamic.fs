@@ -210,6 +210,8 @@ module MSSqlServerDynamic =
         let udtTypeSetter =
             parameterType.GetProperty("UdtTypeName").GetSetMethod()
 
+        // SqlClient doesn't convert text to a uniqueidentifier, and the key of an individual with such a key is text
+        let value = if param.TypeMapping.DbType = DbType.Guid then Sql.guidOfText value else value
         let p = Activator.CreateInstance(parameterType,[|box param.Name;value|]) :?> IDbDataParameter
         p.DbType <- param.TypeMapping.DbType
         ValueOption.iter (fun (t:int) ->

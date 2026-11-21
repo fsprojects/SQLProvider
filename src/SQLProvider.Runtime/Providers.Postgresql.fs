@@ -116,14 +116,10 @@ module PostgreSQL =
             if not (isOptionValue value) then (if isNull value || (Type.(=) (value.GetType(), typeof<DBNull>)) then box DBNull.Value else value) else
             match tryReadValueProperty value with Some v -> v | None -> box DBNull.Value
 
-        // Npgsql doesn't write text to a uuid. The key of an individual with a uuid key is text: a Guid can't be
-        // a constant in a provided quotation.
+        // Npgsql doesn't write text to a uuid, and the key of an individual with a uuid key is text
         let normalizedValue =
-            match normalizedValue, param.TypeMapping.ProviderType, uuidProviderDbType.Value with
-            | (:? string as text), ValueSome dbType, Some uuid when dbType = uuid ->
-                match Guid.TryParse text with
-                | true, guid -> box guid
-                | false, _ -> normalizedValue
+            match param.TypeMapping.ProviderType, uuidProviderDbType.Value with
+            | ValueSome dbType, Some uuid when dbType = uuid -> Sql.guidOfText normalizedValue
             | _ -> normalizedValue
 
         let isAnonymousParam =

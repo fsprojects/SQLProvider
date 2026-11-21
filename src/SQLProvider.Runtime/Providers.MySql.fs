@@ -771,7 +771,7 @@ type internal MySqlProvider(resolutionPath, contextSchemaPath, owner:string, ref
 
         member __.GetSprocs(con) = Sql.connect con MySql.getSprocs
         member __.GetIndividualsQueryText(table,amount) = sprintf "SELECT * FROM %s LIMIT %i;" (table |> quotedTableName) amount
-        member __.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM `%s` WHERE `%s`.`%s` = @id" (table |> quotedTableName) (table |> quotedTableName) column
+        member __.GetIndividualQueryText(table,column) = sprintf "SELECT * FROM %s WHERE %s.`%s` = @id" (table |> quotedTableName) (table |> quotedTableName) column
 
         member this.GenerateQueryText(sqlQuery,baseAlias,baseTable,projectionColumns,isDeleteScript, con) =
             let parameters = ResizeArray<_>()

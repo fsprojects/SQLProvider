@@ -355,6 +355,10 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup, activeColu
                            Type.(<>)(typeof<'T>, typeof<obj>) &&
                            (data :? IConvertible)
                     -> unbox <| Convert.ChangeType(data, typeof<'T>)
+               | data when Type.(<>)(typeof<'T>, data.GetType()) && Type.(<>)(typeof<'T>, typeof<obj>) ->
+                    match Utilities.tryConvertDateOrTime data typeof<'T> with
+                    | ValueSome converted -> unbox converted
+                    | ValueNone -> unbox data
                | data -> unbox data
 
         member __.GetColumnOption<'T>(key) : Option<'T> =
@@ -364,7 +368,10 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup, activeColu
                match dataitem with
                | null -> None
                | :? DBNull -> None
-               | data when Type.(<>)(data.GetType(), typeof<'T>) && Type.(<>)(typeof<'T>, typeof<obj>) -> Some(unbox<'T> <| Convert.ChangeType(data, typeof<'T>))
+               | data when Type.(<>)(data.GetType(), typeof<'T>) && Type.(<>)(typeof<'T>, typeof<obj>) ->
+                    match Utilities.tryConvertDateOrTime data typeof<'T> with
+                    | ValueSome converted -> Some(unbox<'T> converted)
+                    | ValueNone -> Some(unbox<'T> <| Convert.ChangeType(data, typeof<'T>))
                | data -> Some(unbox data)
 
         member __.GetColumnValueOption<'T>(key) : ValueOption<'T> =
@@ -374,7 +381,10 @@ type SqlEntity(dc: ISqlDataContext, tableName, columns: ColumnLookup, activeColu
                match dataitem with
                | null -> ValueNone
                | :? DBNull -> ValueNone
-               | data when Type.(<>)(data.GetType(), typeof<'T>) && Type.(<>)(typeof<'T>, typeof<obj>) -> ValueSome(unbox<'T> <| Convert.ChangeType(data, typeof<'T>))
+               | data when Type.(<>)(data.GetType(), typeof<'T>) && Type.(<>)(typeof<'T>, typeof<obj>) ->
+                    match Utilities.tryConvertDateOrTime data typeof<'T> with
+                    | ValueSome converted -> ValueSome(unbox<'T> converted)
+                    | ValueNone -> ValueSome(unbox<'T> <| Convert.ChangeType(data, typeof<'T>))
                | data -> ValueSome(unbox data)
 
         member this.GetPkColumnOption<'T>(keys: string list) : 'T list =
@@ -1069,21 +1079,37 @@ and SchemaCache =
                 | :? IConvertible -> Convert.ChangeType(value, clrType, invariant)
                 | _ -> value
             with _ -> value
+        /// The first of the keys that has an entry.
+        static member private TryFindKeyed(entries: ConcurrentDictionary<string,'T>, keys: string list) =
+            keys |> List.tryPick (fun key ->
+                match entries.TryGetValue key with
+                | true, entry -> Some entry
+                | false, _ -> None)
+        /// The entry of a table in Columns, PrimaryKeys or Relationships. Not every provider keys these by the table's
+        /// FullName: MySQL and DuckDB key them, and Tables, by a quoted name, Firebird by the name alone, and Oracle
+        /// its primary keys by the name alone.
+        member this.TryFindByTable(entries: ConcurrentDictionary<string,'T>, table: Table) =
+            match entries.TryGetValue table.FullName with
+            | true, entry -> Some entry
+            | false, _ ->
+                let tableKeys =
+                    [ for KeyValue(key, known) in this.Tables do
+                        if known.Schema = table.Schema && known.Name = table.Name then yield key ]
+                SchemaCache.TryFindKeyed(entries, tableKeys @ [ table.Name ])
         /// Gives the primary keys of individuals read from a file the type of their column, as the schema has it.
         member private this.RestorePrimaryKeyTypes() =
-            for KeyValue(table, keys) in this.PrimaryKeys do
-                match keys with
-                | [ pk ] ->
-                    let key = table + "_" + pk
-                    match this.Individuals.TryGetValue key, this.Columns.TryGetValue table with
-                    | (true, entities), (true, columns) when not (isNull entities) ->
-                        match columns.TryFind pk with
-                        | Some column ->
-                            let clrType = try Utilities.getType column.TypeMapping.ClrType with _ -> null
-                            if not (isNull clrType) then
-                                this.Individuals.[key] <-
-                                    entities |> Array.map (fun (pkValue, values) -> SchemaCache.PrimaryKeyValue(clrType, pkValue), values)
-                        | None -> ()
+            for KeyValue(tableKey, table) in this.Tables do
+                // Individuals are keyed by the table's FullName and its primary key; the others as TryFindByTable tells
+                let keys = [ table.FullName; tableKey; table.Name ]
+                match SchemaCache.TryFindKeyed(this.PrimaryKeys, keys), SchemaCache.TryFindKeyed(this.Columns, keys) with
+                | Some [ pk ], Some columns ->
+                    let key = table.FullName + "_" + pk
+                    match this.Individuals.TryGetValue key, columns.TryFind pk with
+                    | (true, entities), Some column when not (isNull entities) ->
+                        let clrType = try Utilities.getType column.TypeMapping.ClrType with _ -> null
+                        if not (isNull clrType) then
+                            this.Individuals.[key] <-
+                                entities |> Array.map (fun (pkValue, values) -> SchemaCache.PrimaryKeyValue(clrType, pkValue), values)
                     | _ -> ()
                 | _ -> ()
         /// Saves the individuals to the individuals file beside the schema file and returns its path.

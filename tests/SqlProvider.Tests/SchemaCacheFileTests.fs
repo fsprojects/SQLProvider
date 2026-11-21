@@ -291,6 +291,50 @@ let ``primary keys of individuals in an old schema file are read back as they ar
     let pk, _ = (SchemaCache.Load path).Individuals.["main.Longs_Id"].[0]
     Assert.AreEqual(box 7L, pk)
 
+// Not every provider keys its schema cache by the table's FullName: MySQL and DuckDB key it by a quoted name,
+// Firebird by the name alone, and Oracle its primary keys by the name alone.
+
+let private rekeyed (entries: ConcurrentDictionary<string,'T>) (key: string) =
+    let entry = entries.["main.Longs"]
+    entries.Clear()
+    entries.[key] <- entry
+
+let private providerKeys () =
+    // The provider, then its key of the table in Tables, in PrimaryKeys and in Columns
+    [ "PostgreSQL", "main.Longs", "main.Longs", "main.Longs"
+      "MySQL", "`main`.`Longs`", "`main`.`Longs`", "`main`.`Longs`"
+      "DuckDB", "\"main\".\"Longs\"", "\"main\".\"Longs\"", "\"main\".\"Longs\""
+      "Firebird", "Longs", "Longs", "Longs"
+      "Oracle", "main.Longs", "Longs", "main.Longs" ]
+
+let private keyedAs (tableKey, primaryKeyKey, columnKey) =
+    let cache = keyed "main.Longs" typeof<int64> [ box 7L ]
+    rekeyed cache.Tables tableKey
+    rekeyed cache.PrimaryKeys primaryKeyKey
+    rekeyed cache.Columns columnKey
+    cache
+
+[<Test; SqlCheck.NoSql>]
+let ``a table's columns and primary key are found however the provider keys them`` () =
+    let table = { Schema = "main"; Name = "Longs"; Type = "TABLE" }
+    for provider, tableKey, primaryKeyKey, columnKey in providerKeys () do
+        let cache = keyedAs (tableKey, primaryKeyKey, columnKey)
+        Assert.AreEqual(Some [ "Id" ], cache.TryFindByTable(cache.PrimaryKeys, table), provider)
+        Assert.IsTrue((cache.TryFindByTable(cache.Columns, table) |> Option.exists (fun columns -> columns.ContainsKey "Id")), provider)
+        Assert.AreEqual(None, cache.TryFindByTable(cache.Columns, { table with Name = "Others" }), provider)
+
+[<Test; SqlCheck.NoSql>]
+let ``primary keys of individuals are read back as they are online however the provider keys the schema`` () =
+    for provider, tableKey, primaryKeyKey, columnKey in providerKeys () do
+        let path = tempSchemaPath ()
+        let cache = keyedAs (tableKey, primaryKeyKey, columnKey)
+        cache.Save path
+        cache.SaveIndividuals path |> ignore
+        let loaded = SchemaCache.Load path
+        loaded.LoadIndividuals path
+        let pk, _ = loaded.Individuals.["main.Longs_Id"].[0]
+        Assert.AreEqual(box 7L, pk, provider)
+
 // A table's FullName has a name with a space in quotes: the metadata queries need it as the database has it.
 
 [<Test; SqlCheck.NoSql>]

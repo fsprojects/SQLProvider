@@ -177,7 +177,7 @@ module DesignTimeUtils =
                 let columns =
                     match con with
                     | Some con -> prov.GetColumns(con,table)
-                    | None -> prov.GetSchemaCache().Columns.TryGetValue(table.FullName) |> function | true,cols -> cols | false, _ -> Map.empty
+                    | None -> prov.GetSchemaCache().TryFindByTable(prov.GetSchemaCache().Columns, table) |> Option.defaultValue Map.empty
                 match prov.GetPrimaryKey table with
                 | None -> None
                 | Some pkName ->
@@ -236,7 +236,7 @@ module DesignTimeUtils =
                     let propertyMap =
                         match con with
                         | Some con -> prov.GetColumns(con,table)
-                        | None -> prov.GetSchemaCache().Columns.TryGetValue(table.FullName) |> function | true,cols -> cols | false, _ -> Map.empty
+                        | None -> prov.GetSchemaCache().TryFindByTable(prov.GetSchemaCache().Columns, table) |> Option.defaultValue Map.empty
                         |> Seq.choose(fun col ->
                         if col.Key = pkName then None else
                         let name = table.Schema + "." + table.Name + "." + col.Key + "Individuals"
@@ -676,14 +676,10 @@ module DesignTimeUtils =
                                         let rel = prov.GetRelationships(con,t)
                                         (cols,rel)
                                     | None ->
-                                        let cols =
-                                            match prov.GetSchemaCache().Columns.TryGetValue t.FullName with
-                                            | true,cols -> cols
-                                            | false,_ -> Map.empty
-                                        let rel =
-                                            match prov.GetSchemaCache().Relationships.TryGetValue t.FullName with
-                                            | true,rel -> rel
-                                            | false,_ -> ([||],[||])
+                                        // Not every provider keys its schema cache by the table's FullName
+                                        let cache = prov.GetSchemaCache()
+                                        let cols = cache.TryFindByTable(cache.Columns, t) |> Option.defaultValue Map.empty
+                                        let rel = cache.TryFindByTable(cache.Relationships, t) |> Option.defaultValue ([||],[||])
                                         (cols,rel))]
 
             let sprocData =

@@ -8,7 +8,15 @@
 - Fix: after a failed SaveContextSchema, design-time commands no longer stop working until the IDE restarts
 - Fix: saving individuals no longer fails on a column value such as a DateTimeOffset or an array; such values are saved as text
 - Fix: offline individuals with a smallint, bigint or decimal primary key have the key in its own type, as they do online; it came back from the saved file in whatever number type fitted the value
-- Fix: PostgreSQL individuals of a table with a uuid primary key can be got; getting one failed, as the key was sent as text
+- Fix: individuals of a table with a uuid (PostgreSQL) or uniqueidentifier (MS SQL Server) primary key can be got; getting one failed, as the key was sent as text
+- Fix: MySQL, DuckDB and Firebird tables have their columns and relationships in offline mode; they had none, as these databases save the schema under other names than the offline mode looked for
+- Fix: MySQL and DuckDB individuals can be got; the query quoted the table name twice, and DuckDB also never got the key
+- Fix: DuckDB tables with a foreign key can be used, and have their relationships; opening one failed with "Index was outside the bounds of the array"
+- Fix: DuckDB columns of a type with a precision, such as DECIMAL(18,3), are no longer left out
+- Fix: DuckDB Owner can list several schemas; no tables were found with more than one
+- Fix: DuckDB DATE columns can be read on .NET 6 and later; the driver gives a DateOnly there, and reading it as the DateTime of the column failed
+- Fix: DuckDB TIME columns can be read, as a TimeSpan; they were typed DateTime, and reading one always failed
+- Fix: DuckDB TIMESTAMP_S, TIMESTAMP_MS, TIMESTAMP_NS and TIMETZ columns are no longer left out
 - Fix: tables with a space in their name show their descriptions in tooltips (MS SQL Server, PostgreSQL, Oracle)
 - Fix: PostgreSQL tables with capital letters or an apostrophe in their name show their descriptions in tooltips; reading them failed before
 - Fix: MS SQL Server descriptions of a table come from its own schema; with tables of the same name in two schemas, either could show the other's

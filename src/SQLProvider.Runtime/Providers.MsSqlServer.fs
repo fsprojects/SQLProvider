@@ -134,6 +134,8 @@ module MSSqlServer =
         p
 
     let createCommandParameter (param:QueryParameter) (value:obj) =
+        // SqlClient doesn't convert text to a uniqueidentifier, and the key of an individual with such a key is text
+        let value = if param.TypeMapping.DbType = DbType.Guid then Sql.guidOfText value else value
         let p = SqlParameter(param.Name,value, DbType = param.TypeMapping.DbType)
         ValueOption.iter (fun (t:int) -> p.SqlDbType <- Enum.ToObject(typeof<SqlDbType>, t) :?> SqlDbType) param.TypeMapping.ProviderType
         p.Direction <- param.Direction
