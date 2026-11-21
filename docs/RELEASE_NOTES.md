@@ -1,7 +1,7 @@
 ### 1.5.34 - (unreleased)
 - Offline mode (ContextSchemaPath) saves three files beside each other: schema.json for the schema, schema.descriptions.json for table and column descriptions (comments), schema.individuals.json for individuals. Builds read only the schema file; the descriptions file is read for the first tooltip and the individuals file when Individuals are first opened
 - Offline tooltips show the saved table and column descriptions, instead of only "Offline mode." SaveContextSchema saves the descriptions of what you hovered over online
-- A saved schema no longer carries individuals, so it stays small and loads fast. A schema file with individuals in it still loads them, and re-saving it moves them to the individuals file. Older versions can read the new schema files
+- A saved schema no longer carries individuals, so it stays small and loads fast. SaveContextSchema saves the individuals opened so far to the individuals file instead: a table opened again replaces its saved individuals, and the other tables in the file are kept. A schema file with individuals in it still loads them, and re-saving it moves them to the individuals file. Older versions can read the new schema files
 - New design-time commands next to SaveContextSchema, online only, that read the whole database instead of what was used so far: SaveContextSchemaFull (every table, column, relationship and stored procedure, and every table and column description) and SaveContextSchemaIndividuals (individuals of every table with a single primary key)
 - SaveContextSchemaFull reads the column descriptions of a table in one query instead of one per column (MS SQL Server, PostgreSQL, MySQL, Oracle, Firebird, DuckDB)
 - OfflineTools.mergeCacheFiles merges descriptions and individuals files too
@@ -11,7 +11,7 @@
 - Fix: individuals of a table with a uuid (PostgreSQL) or uniqueidentifier (MS SQL Server) primary key can be got; getting one failed, as the key was sent as text
 - Fix: MySQL, DuckDB and Firebird tables have their columns and relationships in offline mode; they had none, as these databases save the schema under other names than the offline mode looked for
 - Fix: MySQL and DuckDB individuals can be got; the query quoted the table name twice, and DuckDB also never got the key
-- Fix: DuckDB tables with a foreign key can be used, and have their relationships; opening one failed with "Index was outside the bounds of the array"
+- Fix: DuckDB tables with a foreign key can be used, and have their relationships, the same way round as SQL Server and PostgreSQL have them; opening one failed with "Index was outside the bounds of the array"
 - Fix: DuckDB columns of a type with a precision, such as DECIMAL(18,3), are no longer left out
 - Fix: DuckDB Owner can list several schemas; no tables were found with more than one
 - Fix: DuckDB DATE columns can be read on .NET 6 and later; the driver gives a DateOnly there, and reading it as the DateTime of the column failed

@@ -194,6 +194,10 @@ no longer exist.
 already in the descriptions file. Offline, a table or column whose description wasn't saved shows "Offline mode." in
 its tooltip.
 
+Likewise, `SaveContextSchema` saves the individuals of the tables whose `Individuals` you opened to the individuals
+file. A table is in the file once: saving it again replaces its individuals, and the other tables already in the file
+are kept.
+
 Schema files saved by older versions with individuals in them still work: re-saving such a file moves its individuals
 to the individuals file.
 

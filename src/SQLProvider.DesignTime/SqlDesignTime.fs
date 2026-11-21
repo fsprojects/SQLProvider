@@ -552,7 +552,8 @@ module DesignTimeUtils =
             m.AddXmlDocComputed(fun () ->
                 if String.IsNullOrEmpty contextSchemaPath then "ContextSchemaPath static parameter has to be defined to use this function."
                 else "Schema location: " + contextSchemaPath + ". Write dot after SaveContextSchema to save the schema used so far at design time, " +
-                     "and the descriptions read so far to " + SchemaCache.DescriptionsFilePath contextSchemaPath + ". " +
+                     "the descriptions read so far to " + SchemaCache.DescriptionsFilePath contextSchemaPath + " " +
+                     "and the individuals opened so far to " + SchemaCache.IndividualsFilePath contextSchemaPath + ". " +
                      "Online, SaveContextSchemaFull saves the whole database schema and SaveContextSchemaIndividuals the individuals."
                 )
             let expirationMessage = "Expired, moved under: .``Design Time Commands``"
@@ -903,7 +904,8 @@ module DesignTimeUtils =
                         cache.Save contextSchemaPath
                         let files =
                             [ yield contextSchemaPath
-                              if cache.HasDescriptions then yield SchemaCache.DescriptionsFilePath contextSchemaPath ]
+                              if cache.HasDescriptions then yield SchemaCache.DescriptionsFilePath contextSchemaPath
+                              if cache.HasIndividuals then yield SchemaCache.IndividualsFilePath contextSchemaPath ]
                         savedAt (String.concat ", " files) + schema + descriptions + failures failed
 
                     /// Rows of data: a step of its own, apart from the schema, because of GDPR/PII.
@@ -921,7 +923,8 @@ module DesignTimeUtils =
                     [ yield "SaveContextSchemaFull",
                             "Saves every table, column, relationship and stored procedure of the database to " + contextSchemaPath +
                             ", not only the ones used so far, and the descriptions (comments) of every table and column to " +
-                            descriptionsFile + ". No rows of data. Write dot after SaveContextSchemaFull to save. May take a while.",
+                            descriptionsFile + ". Reads no rows of data; individuals already opened are saved as SaveContextSchema saves them. " +
+                            "Write dot after SaveContextSchemaFull to save. May take a while.",
                             saveFull
                       if hasIndividuals then
                           yield "SaveContextSchemaIndividuals",

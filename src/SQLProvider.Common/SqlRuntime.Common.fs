@@ -996,16 +996,16 @@ and SchemaCache =
         static member private ReadJson<'T>(filePath) =
             use ms = new MemoryStream(Encoding.UTF8.GetBytes(File.ReadAllText filePath))
             System.Runtime.Serialization.Json.DataContractJsonSerializer(typeof<'T>).ReadObject(ms) :?> 'T
-        /// Saves the schema, and the descriptions to their own file. Individuals are not in the schema file:
-        /// SaveIndividuals saves them to their own file. Individuals read from saved files (offline mode) are saved to
-        /// the individuals file, so a re-save doesn't lose them.
+        /// Saves the schema, and the descriptions and the individuals read so far to their own files. Individuals are
+        /// not in the schema file, and each table is in the individuals file once: see SaveIndividuals.
         member this.Save(filePath) =
             // The empty Individuals is kept so that older SQLProvider versions can read the file.
             SchemaCache.WriteJson(filePath, { this with IsOffline = true; Individuals = ConcurrentDictionary<string, _>() })
             this.SaveDescriptions filePath |> ignore
-            if this.IsOffline && this.HasIndividuals then
-                // An individuals file already there is newer than individuals of an old schema file
-                this.LoadIndividuals filePath
+            if this.HasIndividuals then
+                if this.IsOffline then
+                    // An individuals file already there is newer than individuals of an old schema file
+                    this.LoadIndividuals filePath
                 this.SaveIndividuals filePath |> ignore
         member this.HasDescriptions =
             this.TableDescriptions.Count > 0 || this.ColumnDescriptions.Count > 0
@@ -1112,17 +1112,27 @@ and SchemaCache =
                                 entities |> Array.map (fun (pkValue, values) -> SchemaCache.PrimaryKeyValue(clrType, pkValue), values)
                     | _ -> ()
                 | _ -> ()
-        /// Saves the individuals to the individuals file beside the schema file and returns its path.
+        /// Saves the individuals to the individuals file beside the schema file and returns its path. A table read now
+        /// replaces its individuals in the file, and the file's other tables are kept, so a table is there once.
         /// Tables without individuals are left out.
         member this.SaveIndividuals(filePath) =
             let individualsFile = SchemaCache.IndividualsFilePath filePath
             let toSave = ConcurrentDictionary<string, (obj * IDictionary<string,obj>) array>()
-            for KeyValue(table, entities) in this.Individuals do
-                if not (Array.isEmpty entities) then
+            let add table (entities: (obj * IDictionary<string,obj>) array) =
+                if not (isNull entities || Array.isEmpty entities) then
                     toSave.[table] <-
                         entities |> Array.map (fun (pk, columns) ->
                             SchemaCache.IndividualsFileValue pk,
-                            dict [ for KeyValue(column, value) in columns -> column, SchemaCache.IndividualsFileValue value ])
+                            dict [ if not (isNull columns) then
+                                     for KeyValue(column, value) in columns -> column, SchemaCache.IndividualsFileValue value ])
+            if File.Exists individualsFile then
+                // An unreadable file is just replaced
+                let saved = try SchemaCache.ReadJson<ConcurrentDictionary<string, (obj * IDictionary<string,obj>) array>> individualsFile with _ -> null
+                if not (isNull saved) then
+                    for KeyValue(table, entities) in saved do
+                        if not (this.Individuals.ContainsKey table) then add table entities
+            for KeyValue(table, entities) in this.Individuals do
+                add table entities
             SchemaCache.WriteJson(individualsFile, toSave)
             individualsFile
         /// Reads the individuals file beside the schema file, if there is one. Its individuals replace the same tables' older ones.

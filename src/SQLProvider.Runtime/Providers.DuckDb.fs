@@ -727,11 +727,14 @@ type internal DuckDbProvider(resolutionPath, contextSchemaPath, owner:string, re
                     com.Parameters.Add((this:>ISqlProvider).CreateCommandParameter(QueryParameter.Create("table", 1), (DuckDb.ripQuotes table.Name))) |> ignore
                     if con.State <> ConnectionState.Open then con.Open()
                     use reader = com.ExecuteReader()
+                    // As SQL Server and PostgreSQL have it: the primary side is the referenced table, the foreign side
+                    // the table with the foreign key
                     [ while reader.Read() do
-                        yield { Name = reader.GetString 0; PrimaryTable=Table.CreateFullName(reader.GetString(2),reader.GetString(1)); PrimaryKey=reader.GetString 3
-                                ForeignTable=Table.CreateFullName(reader.GetString(5),reader.GetString(4)); ForeignKey=reader.GetString 6 } ] |> List.toArray
-                let children = read "KCU1"
-                let parents = read "KCU2"
+                        yield { Name = reader.GetString 0; PrimaryTable=Table.CreateFullName(reader.GetString(5),reader.GetString(4)); PrimaryKey=reader.GetString 6
+                                ForeignTable=Table.CreateFullName(reader.GetString(2),reader.GetString(1)); ForeignKey=reader.GetString 3 } ] |> List.toArray
+                // Children are the rows of other tables that refer to this table, parents the rows this table refers to
+                let children = read "KCU2"
+                let parents = read "KCU1"
                 (children,parents))
             res)
 

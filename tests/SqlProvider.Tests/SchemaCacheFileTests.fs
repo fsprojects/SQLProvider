@@ -40,15 +40,71 @@ let ``the individuals file is beside the schema file`` () =
     Assert.AreEqual("schema.individuals", SchemaCache.IndividualsFilePath "schema")
 
 [<Test; SqlCheck.NoSql>]
-let ``saving the schema leaves out the individuals of an online cache`` () =
+let ``saving the schema saves the individuals read so far to their own file`` () =
     let path = tempSchemaPath ()
     let cache = withCustomers SchemaCache.Empty
     cache.Save path
-    Assert.IsFalse(File.Exists(SchemaCache.IndividualsFilePath path))
     let loaded = SchemaCache.Load path
     Assert.IsTrue(loaded.Tables.ContainsKey "main.Customers")
     Assert.AreEqual(0, loaded.Individuals.Count)
     StringAssert.DoesNotContain("Customer 1", File.ReadAllText path)
+    loaded.LoadIndividuals path
+    CollectionAssert.AreEqual(names (customers ()), names loaded.Individuals.["main.Customers_Id"])
+
+[<Test; SqlCheck.NoSql>]
+let ``without individuals saving the schema makes no individuals file`` () =
+    let path = tempSchemaPath ()
+    let cache = SchemaCache.Empty
+    cache.Tables.["main.Customers"] <- { Schema = "main"; Name = "Customers"; Type = "TABLE" }
+    cache.Individuals.["main.Customers_Id"] <- [||]
+    cache.Save path
+    Assert.IsFalse(File.Exists(SchemaCache.IndividualsFilePath path))
+
+[<Test; SqlCheck.NoSql>]
+let ``saving again doesn't double the individuals`` () =
+    let path = tempSchemaPath ()
+    let cache = withCustomers SchemaCache.Empty
+    cache.Save path
+    cache.Save path
+    cache.SaveIndividuals path |> ignore
+    let loaded = SchemaCache.Load path
+    loaded.LoadIndividuals path
+    loaded.Save path
+    let reloaded = SchemaCache.Load path
+    reloaded.LoadIndividuals path
+    Assert.AreEqual(1, reloaded.Individuals.Count)
+    CollectionAssert.AreEqual(names (customers ()), names reloaded.Individuals.["main.Customers_Id"])
+
+[<Test; SqlCheck.NoSql>]
+let ``saving individuals replaces the tables read now and keeps the others in the file`` () =
+    let path = tempSchemaPath ()
+    let everything = withCustomers SchemaCache.Empty
+    everything.Individuals.["main.Orders_Id"] <- [| box 1, (dict [ "Id", box 1; "Name", box "Order 1" ]) |]
+    everything.SaveIndividuals path |> ignore
+    // A later session opened only Customers, and its rows have changed since
+    let later = SchemaCache.Empty
+    later.Tables.["main.Customers"] <- { Schema = "main"; Name = "Customers"; Type = "TABLE" }
+    later.Individuals.["main.Customers_Id"] <- [| box 9, (dict [ "Id", box 9; "Name", box "Newer" ]) |]
+    later.Save path
+    let loaded = SchemaCache.Empty
+    loaded.LoadIndividuals path
+    CollectionAssert.AreEqual([| "Newer" |], names loaded.Individuals.["main.Customers_Id"])
+    CollectionAssert.AreEqual([| "Order 1" |], names loaded.Individuals.["main.Orders_Id"])
+    // The cache itself still has only what it read
+    Assert.IsFalse(later.Individuals.ContainsKey "main.Orders_Id")
+
+[<Test; SqlCheck.NoSql>]
+let ``a table read now without rows is left out of the file`` () =
+    let path = tempSchemaPath ()
+    (withCustomers SchemaCache.Empty).SaveIndividuals path |> ignore
+    let later = SchemaCache.Empty
+    later.Individuals.["main.Customers_Id"] <- [||]
+    later.Individuals.["main.Orders_Id"] <- [| box 1, (dict [ "Id", box 1; "Name", box "Order 1" ]) |]
+    later.SaveIndividuals path |> ignore
+    let loaded = SchemaCache.Empty
+    loaded.LoadIndividuals path
+    Assert.IsFalse(loaded.Individuals.ContainsKey "main.Customers_Id")
+    Assert.IsTrue(loaded.Individuals.ContainsKey "main.Orders_Id")
 
 [<Test; SqlCheck.NoSql>]
 let ``saved individuals are read from their own file`` () =
