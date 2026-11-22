@@ -520,8 +520,8 @@ your network connection to SQL-database is typically the bottleneck, not your pr
 That's why SQLProvider short-circuits and optimises your queries as much as possible.</p>
 <p>There is a performance-test project in this repo. Here is a sample run:</p>
 <ul>
-<li>BenchmarkDotNet v0.13.12</li>
-<li>.NET 8</li>
+<li>BenchmarkDotNet v0.15.2</li>
+<li>.NET 8 (SDK 8.0.428)</li>
 <li>Laptop, Intel i9 13th Gen on Windows 11</li>
 <li>Microsoft SQL Server on local computer</li>
 </ul>
@@ -545,27 +545,27 @@ That's why SQLProvider short-circuits and optimises your queries as much as poss
 <tr class="odd">
 <td><p><strong>FirstNamesToList</strong></p></td>
 <td><p><strong>25</strong></p></td>
-<td align="right"><p><strong>1.098 ms</strong></p></td>
-<td align="right"><p><strong>0.0218 ms</strong></p></td>
-<td align="right"><p><strong>0.0312 ms</strong></p></td>
+<td align="right"><p><strong>954.0 μs</strong></p></td>
+<td align="right"><p><strong>17.88 μs</strong></p></td>
+<td align="right"><p><strong>18.36 μs</strong></p></td>
 <td align="right"><p><strong>1.00</strong></p></td>
-<td align="right"><p><strong>0.00</strong></p></td>
+<td align="right"><p><strong>0.03</strong></p></td>
 <td align="right"><p><strong>27.3438</strong></p></td>
-<td align="right"><p><strong>11.7188</strong></p></td>
-<td align="right"><p><strong>357.65 KB</strong></p></td>
+<td align="right"><p><strong>5.8594</strong></p></td>
+<td align="right"><p><strong>339.07 KB</strong></p></td>
 <td align="right"><p><strong>1.00</strong></p></td>
 </tr>
 <tr class="even">
 <td><p>FirstNamesToListAsync</p></td>
 <td><p>25</p></td>
-<td align="right"><p>1.123 ms</p></td>
-<td align="right"><p>0.0223 ms</p></td>
-<td align="right"><p>0.0435 ms</p></td>
-<td align="right"><p>1.03</p></td>
-<td align="right"><p>0.05</p></td>
+<td align="right"><p>961.9 μs</p></td>
+<td align="right"><p>13.34 μs</p></td>
+<td align="right"><p>16.38 μs</p></td>
+<td align="right"><p>1.01</p></td>
+<td align="right"><p>0.02</p></td>
 <td align="right"><p>27.3438</p></td>
-<td align="right"><p>11.7188</p></td>
-<td align="right"><p>358.94 KB</p></td>
+<td align="right"><p>5.8594</p></td>
+<td align="right"><p>340.27 KB</p></td>
 <td align="right"><p>1.00</p></td>
 </tr>
 <tr class="odd">
@@ -584,27 +584,27 @@ That's why SQLProvider short-circuits and optimises your queries as much as poss
 <tr class="even">
 <td><p><strong>FirstNamesToList</strong></p></td>
 <td><p><strong>2500</strong></p></td>
-<td align="right"><p><strong>2.678 ms</strong></p></td>
-<td align="right"><p><strong>0.0531 ms</strong></p></td>
-<td align="right"><p><strong>0.1073 ms</strong></p></td>
+<td align="right"><p><strong>1,018.0 μs</strong></p></td>
+<td align="right"><p><strong>17.06 μs</strong></p></td>
+<td align="right"><p><strong>23.35 μs</strong></p></td>
 <td align="right"><p><strong>1.00</strong></p></td>
-<td align="right"><p><strong>0.00</strong></p></td>
-<td align="right"><p><strong>226.5625</strong></p></td>
-<td align="right"><p><strong>164.0625</strong></p></td>
-<td align="right"><p><strong>2812.34 KB</strong></p></td>
+<td align="right"><p><strong>0.03</strong></p></td>
+<td align="right"><p><strong>31.2500</strong></p></td>
+<td align="right"><p><strong>7.8125</strong></p></td>
+<td align="right"><p><strong>401.21 KB</strong></p></td>
 <td align="right"><p><strong>1.00</strong></p></td>
 </tr>
 <tr class="odd">
 <td><p>FirstNamesToListAsync</p></td>
 <td><p>2500</p></td>
-<td align="right"><p>2.697 ms</p></td>
-<td align="right"><p>0.0608 ms</p></td>
-<td align="right"><p>0.1685 ms</p></td>
-<td align="right"><p>1.01</p></td>
-<td align="right"><p>0.06</p></td>
-<td align="right"><p>226.5625</p></td>
-<td align="right"><p>171.8750</p></td>
-<td align="right"><p>2813.27 KB</p></td>
+<td align="right"><p>1,059.8 μs</p></td>
+<td align="right"><p>20.75 μs</p></td>
+<td align="right"><p>25.49 μs</p></td>
+<td align="right"><p>1.04</p></td>
+<td align="right"><p>0.03</p></td>
+<td align="right"><p>31.2500</p></td>
+<td align="right"><p>7.8125</p></td>
+<td align="right"><p>402.26 KB</p></td>
 <td align="right"><p>1.00</p></td>
 </tr>
 </tbody>
