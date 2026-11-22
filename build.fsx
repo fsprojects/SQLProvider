@@ -428,15 +428,21 @@ Target.create "PackNuGet" (fun _ ->
 // --------------------------------------------------------------------------------------
 // Generate the documentation
 
+// The docs are generated from one framework of every project, so that all of them reference the same FSharp.Core:
+// the default framework of the design-time projects is net8.0, which is built against an older FSharp.Core than the
+// rest (see src/Directory.Build.targets), and the API docs can't read assemblies of both together. Release is the
+// configuration the Build target has built.
+let fsdocsProperties = "--properties Configuration=Release TargetFramework=netstandard2.0"
+
 Target.create "GenerateHelp" (fun _ ->
     Shell.cleanDir ".fsdocs"
-    let result = Fake.DotNet.DotNet.exec id "fsdocs" "build --output docs/output --input docs/content --clean"
+    let result = Fake.DotNet.DotNet.exec id "fsdocs" ("build --output docs/output --input docs/content --clean " + fsdocsProperties)
     if not result.OK then failwith "generating reference documentation failed"
 )
 
 Target.create "WatchLocalDocs" (fun _ ->
     Shell.cleanDir ".fsdocs"
-    Fake.DotNet.DotNet.exec id "fsdocs" "watch --output docs/output --input docs/content --clean --parameters fsdocs-package-project-url http://localhost:8901/" |> ignore
+    Fake.DotNet.DotNet.exec id "fsdocs" ("watch --output docs/output --input docs/content --clean --parameters fsdocs-package-project-url http://localhost:8901/ " + fsdocsProperties) |> ignore
 
 )
 

@@ -3,7 +3,7 @@
 (*** hide ***)
 #I "../../../bin/lib/netstandard2.0"
 (*** hide ***)
-#r "../../../packages/scripts/MySqlConnector/lib/net45/MySqlConnector.dll"
+#r "../../../packages/tests/MySqlConnector/lib/netstandard2.0/MySqlConnector.dll"
 (*** hide ***)
 #r "FSharp.Data.SqlProvider.Common.dll"
 #r "FSharp.Data.SqlProvider.dll"
@@ -11,18 +11,19 @@ open FSharp.Data.Sql
 
 (*** hide ***)
 [<Literal>]
-let connectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"/../../../tests/SqlProvider.Tests/scripts/northwindEF.db;Version=3"
+let hiddenConnectionString = "Data Source=" + __SOURCE_DIRECTORY__ + @"\..\northwindEF.db;Version=3;Read Only=false;FailIfMissing=True;"
 
 (*** hide ***)
 [<Literal>]
-let resolutionPath = __SOURCE_DIRECTORY__ + @"/../../../tests/SqlProvider.Tests/libs"
+let hiddenResolutionPath = __SOURCE_DIRECTORY__ + @"/../../files/sqlite"
 
 (*** hide ***)
 type sqlType =
     SqlDataProvider<
         Common.DatabaseProviderTypes.SQLITE,
-        connectionString,
-        ResolutionPath = resolutionPath
+        hiddenConnectionString,
+        SQLiteLibrary = Common.SQLiteLibrary.SystemDataSQLite,
+        ResolutionPath = hiddenResolutionPath
     >
 
 (**
@@ -46,7 +47,7 @@ more.
 
 [<Literal>]
 let sqliteConnectionString =
-    "Data Source=" + __SOURCE_DIRECTORY__ + @"\northwindEF.db;Version=3"
+    "Data Source=" + __SOURCE_DIRECTORY__ + @"\..\northwindEF.db;Version=3"
 
 (**
 ### ConnectionStringName
@@ -90,7 +91,7 @@ relevant assemblies are located. Please review at the database vendor-specific p
 
 [<Literal>]
 let resolutionPath =
-    __SOURCE_DIRECTORY__ + @"..\..\..\files\sqlite"
+    __SOURCE_DIRECTORY__ + @"\..\..\files\sqlite"
 
 (**
 
@@ -261,6 +262,7 @@ It is recommended to use named static parameters in your type provider definitio
 type sql = SqlDataProvider<
             ConnectionString = sqliteConnectionString,
             DatabaseVendor = dbVendor,
+            SQLiteLibrary = Common.SQLiteLibrary.SystemDataSQLite,
             ResolutionPath = resolutionPath,
             UseOptionTypes = useOptionTypes
           >

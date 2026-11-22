@@ -1,17 +1,18 @@
 (*** hide ***)
-// Dynamic:
-//#I @"../../../bin/lib/netstandard2.0"
-//#r "FSharp.Data.SqlProvider.dll"
-//#r "FSharp.Data.SqlProvider.Common.dll"
+// Dynamic. The docs are generated in one process, where the other pages load the SQLite drivers of their
+// resolution paths: the SQLite-only package below needs its own driver versions and can't load beside them.
+#I @"../../../bin/lib/netstandard2.0"
+#r "FSharp.Data.SqlProvider.Common.dll"
+#r "FSharp.Data.SqlProvider.dll"
+open System
+open FSharp.Data.Sql
 
 (*** hide ***)
 // SQLite only:
-#I @"../../../bin/sqlite/lib/netstandard2.0"
-#r "FSharp.Data.SqlProvider.Common.dll"
-#r "FSharp.Data.SqlProvider.SQLite.dll"
-open System
-open FSharp.Data.Sql
-open FSharp.Data.Sql.SQLite
+//#I @"../../../bin/sqlite/lib/netstandard2.0"
+//#r "FSharp.Data.SqlProvider.Common.dll"
+//#r "FSharp.Data.SqlProvider.SQLite.dll"
+//open FSharp.Data.Sql.SQLite
 
 (**
 
