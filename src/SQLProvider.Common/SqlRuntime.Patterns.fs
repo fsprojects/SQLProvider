@@ -20,7 +20,7 @@ let private unwrapInvocation (read: unit -> obj) =
 /// Nullable. A numeric, enum or user-defined conversion computes a new value, so it isn't one.
 let private convertsAsIs (u:UnaryExpression) (value:obj) =
     isNull u.Method
-    && (if isNull value then not u.Type.IsValueType || not (isNull (Nullable.GetUnderlyingType u.Type))
+    && (if isNull value then not (u.Type.IsValueType && isNull (Nullable.GetUnderlyingType u.Type))
         else u.Type.IsInstanceOfType value)
 
 /// Value types whose methods don't change the value. Reflection calls a method on a boxed copy, which compiled code
@@ -430,7 +430,11 @@ let (|SqlNegativeCondOp|_|) (e:Expression) =
 let (|MethodCallOrFSharpWrap|_|) (e:Expression) = 
     match e.NodeType, e with 
     | ExpressionType.Call, (:? MethodCallExpression as e) ->
+#if NETSTANDARD21
+        if isNull e.Object && e.Method.Name.Contains('$') && e.Arguments.Count = 2 && e.Method.DeclaringType.FullName = "Microsoft.FSharp.Core.Operators" then
+#else
         if isNull e.Object && e.Method.Name.Contains("$") && e.Arguments.Count = 2 && e.Method.DeclaringType.FullName = "Microsoft.FSharp.Core.Operators" then
+#endif
             match e.Arguments.[0].NodeType, e.Arguments.[0] with
             | ExpressionType.Call, (:? MethodCallExpression as ec) when ec.Method.Name = "ToFSharpFunc" && ec.Arguments.Count = 1 ->
                 match ec.Arguments.[0] with

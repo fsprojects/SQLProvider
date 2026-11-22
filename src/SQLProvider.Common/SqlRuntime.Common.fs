@@ -966,7 +966,7 @@ and SchemaCache =
             use ms = new MemoryStream(Encoding.UTF8.GetBytes(File.ReadAllText(filePath)))
             let ser = System.Runtime.Serialization.Json.DataContractJsonSerializer(typeof<SchemaCache>)
             // Schema files saved before 1.5.34 may carry individuals in the schema file itself: they're kept.
-            let loaded = ser.ReadObject(ms) :?> SchemaCache
+            let loaded = ser.ReadObject ms :?> SchemaCache
             let cache =
                 { loaded with
                     IsOffline = true
@@ -995,7 +995,7 @@ and SchemaCache =
             File.WriteAllText(filePath, Encoding.UTF8.GetString(json, 0, json.Length))
         static member private ReadJson<'T>(filePath) =
             use ms = new MemoryStream(Encoding.UTF8.GetBytes(File.ReadAllText filePath))
-            System.Runtime.Serialization.Json.DataContractJsonSerializer(typeof<'T>).ReadObject(ms) :?> 'T
+            System.Runtime.Serialization.Json.DataContractJsonSerializer(typeof<'T>).ReadObject ms :?> 'T
         /// Saves the schema, and the descriptions and the individuals read so far to their own files. Individuals are
         /// not in the schema file, and each table is in the individuals file once: see SaveIndividuals.
         member this.Save(filePath) =
@@ -1056,7 +1056,11 @@ and SchemaCache =
             // The offset is that of the machine that saved the file. With it the date is as the database gave it,
             // whatever the time zone of the machine that reads the file.
             let offset = m.Groups.[2].Value
+#if NETSTANDARD21
+            let minutes = Int32.Parse(offset.AsSpan(1, 2)) * 60 + Int32.Parse(offset.AsSpan(3, 2))
+#else
             let minutes = Int32.Parse(offset.Substring(1, 2)) * 60 + Int32.Parse(offset.Substring(3, 2))
+#endif
             let saved = utc.AddMinutes(float (if offset.[0] = '-' then -minutes else minutes))
             Some (DateTime.SpecifyKind(saved, DateTimeKind.Unspecified))
         /// A primary key value read from a file, as the design time has it online: in the type of its column. The file
@@ -1103,7 +1107,7 @@ and SchemaCache =
                 let keys = [ table.FullName; tableKey; table.Name ]
                 match SchemaCache.TryFindKeyed(this.PrimaryKeys, keys), SchemaCache.TryFindKeyed(this.Columns, keys) with
                 | Some [ pk ], Some columns ->
-                    let key = table.FullName + "_" + pk
+                    let key = $"{table.FullName}_{pk}"
                     match this.Individuals.TryGetValue key, columns.TryFind pk with
                     | (true, entities), Some column when not (isNull entities) ->
                         let clrType = try Utilities.getType column.TypeMapping.ClrType with _ -> null
@@ -1350,12 +1354,12 @@ module CommonTasks =
                 |> List.choose (fun (_, key) ->
                     match key with
                     | KeyColumn name -> Some(name.ToUpperInvariant())
-                    | _ -> None)
+                    | CanonicalOperation _ | GroupColumn _ -> None)
                 |> Set.ofList
             let alias =
                 Seq.initInfinite (fun extra -> sprintf "sqlp_key%i%s" index (String.replicate extra "_"))
                 |> Seq.find (fun name -> not (taken.Contains(name.ToUpperInvariant())))
-            sprintf "%s as %s" notation alias
+            $"%s{notation} as %s{alias}"
         | _ -> plain
 
     /// The select list of a grouped query: the key columns (`keys`, in the order of the groupings' Keys) of each

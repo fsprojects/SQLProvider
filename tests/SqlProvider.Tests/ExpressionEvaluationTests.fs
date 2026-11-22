@@ -184,7 +184,7 @@ let private whereGreaterThan (limit: Expression) =
 let ``a call with a quoted argument passes the expression``() =
     match readByReflection (whereGreaterThan (constant 1)) with
     | ValueSome (:? IQueryable<int> as filtered) -> Assert.AreEqual([ 2; 3 ], filtered |> Seq.toList)
-    | other -> Assert.Fail(sprintf "a quoted argument is read without evaluating, got %A" other)
+    | other -> Assert.Fail($"a quoted argument is read without evaluating, got %A{other}")
 
 [<Test; SqlCheck.NoSql>]
 let ``a quote that uses an outer lambda's parameter is not evaluated``() =
@@ -233,7 +233,7 @@ let ``a method of null throws as compiled code does``() =
 
 [<Test; SqlCheck.NoSql>]
 let ``a method's exception is raised as it is``() =
-    let call = Expression.Call(typeof<Statics>.GetMethod("Fail"))
+    let call = Expression.Call(typeof<Statics>.GetMethod "Fail")
     Assert.Throws<InvalidOperationException>(fun () -> evaluate call |> ignore) |> ignore
 
 let private addConstant (value: int) =

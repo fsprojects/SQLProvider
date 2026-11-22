@@ -1,6 +1,7 @@
 namespace FSharp.Data.Sql
 
 open System
+open System.Collections.Concurrent
 open System.Data
 open System.IO
 open System.Reflection
@@ -160,7 +161,7 @@ module DesignTimeUtils =
             match con with
             | Some con ->
                 let description = match prov.GetColumnDescription(con, tableName, columnName) with null -> "" | d -> d
-                descriptions.GetOrAdd(tableName, fun _ -> System.Collections.Concurrent.ConcurrentDictionary<string,string>()).[columnName] <- description
+                descriptions.GetOrAdd(tableName, fun _ -> ConcurrentDictionary<string,string>()).[columnName] <- description
                 Some description
             | None ->
                 offlineDescriptions.Force()
@@ -821,7 +822,7 @@ module DesignTimeUtils =
             // Schema container types are per-build on purpose: sharing them across rebuilds would
             // mutate types that another (VS) thread may concurrently enumerate, and would
             // accumulate duplicate members on every rebuild.
-            let schemaTypes = System.Collections.Concurrent.ConcurrentDictionary<string, ProvidedTypeDefinition>()
+            let schemaTypes = ConcurrentDictionary<string, ProvidedTypeDefinition>()
             let getOrAddSchema (name:string) =
                 schemaTypes.GetOrAdd(name, fun nme -> ProvidedTypeDefinition(nme + "Schema", Some typeof<obj>, isErased=true))
 
@@ -839,7 +840,7 @@ module DesignTimeUtils =
                         let mutable count = 0
                         for table in tables.Force() do
                             try if read table then count <- count + 1
-                            with e -> failed.Add(table.FullName + ": " + e.Message)
+                            with e -> failed.Add $"{table.FullName}: {e.Message}"
                         count
 
                     // A stored procedure's parameters and return columns are read when IntelliSense opens its type, and
@@ -853,8 +854,8 @@ module DesignTimeUtils =
                         let nested =
                             try nestedTypes [||]
                             with e ->
-                                let name = if isNull t.DeclaringType then t.Name else t.DeclaringType.Name + "." + t.Name
-                                failed.Add(name + ": " + e.Message)
+                                let name = if isNull t.DeclaringType then t.Name else $"{t.DeclaringType.Name}.{t.Name}"
+                                failed.Add $"{name}: {e.Message}"
                                 [||]
                         for n in nested do
                             openTypes failed n
@@ -875,7 +876,7 @@ module DesignTimeUtils =
                                 | :? IColumnDescriptionsProvider as allColumns ->
                                     // One query for the table, instead of one for each column
                                     let described = allColumns.GetColumnDescriptions(connection, table.FullName)
-                                    let known = schemaCache().ColumnDescriptions.GetOrAdd(table.FullName, fun _ -> System.Collections.Concurrent.ConcurrentDictionary<string,string>())
+                                    let known = schemaCache().ColumnDescriptions.GetOrAdd(table.FullName, fun _ -> ConcurrentDictionary<string,string>())
                                     for KeyValue(_, column) in columns do
                                         known.[column.Name] <-
                                             match described.TryGetValue column.Name with
@@ -1501,7 +1502,7 @@ type DesignCacheEntry =
       mutable LastAccess : int64 }
 
 module DesignTimeCache =
-    let cache = System.Collections.Concurrent.ConcurrentDictionary<DesignCacheKey,DesignCacheEntry>()
+    let cache = ConcurrentDictionary<DesignCacheKey,DesignCacheEntry>()
 
 /// The idea of this is trying to avoid case where compile-time has loaded non-runtime assembly. (Happens in .NET 8.0, not in .NET Framework.)
 /// So let's load compile-time (and design-time) manually the required runtime assembly.

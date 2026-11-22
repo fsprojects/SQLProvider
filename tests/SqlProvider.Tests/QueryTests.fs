@@ -2071,7 +2071,7 @@ let ``simple select with bool outside query``() =
         query {
             for cust in dc.Main.Customers do
             // Simple booleans outside queries are supported:
-            where (((myCond1 && myCond1=true) && cust.City="Helsinki" || myCond1) || cust.City="London")
+            where (((myCond1) && cust.City="Helsinki" || myCond1) || cust.City="London")
             // Boolean in select fetches just either country or address, not both:
             select (if not myCond3 then cust.Country else cust.Address)
         } |> Seq.toArray
@@ -3372,7 +3372,7 @@ let ``groupBy with value-option columns in the key keeps their types``() =
             select (cust.Country, cust.CustomerId, cust.Region, cust.Fax, order.ShippedDate, order.OrderId)
         } |> Seq.toArray
         |> Array.filter (fun (country, _, _, _, _, _) -> country = ValueSome "Germany" || country = ValueSome "Venezuela")
-        |> Array.groupBy (fun (_, id, region, fax, shipped, _) -> (id, region, fax, shipped))
+        |> Array.groupBy (fun (_, pid, region, fax, shipped, _) -> (pid, region, fax, shipped))
         |> Array.map (fun (key, rows) -> key, rows |> Array.map (fun (_, _, _, _, _, oid) -> oid) |> Array.min)
         |> Array.sort
     Assert.IsTrue(expected |> Array.exists (fun ((_, region, _, _), _) -> region.IsNone))
@@ -3398,7 +3398,7 @@ let ``groupBy with option columns in the key keeps their types``() =
             select (cust.Country, cust.CustomerId, cust.Region, order.ShippedDate)
         } |> Seq.toArray
         |> Array.filter (fun (country, _, _, _) -> country = Some "Germany" || country = Some "Venezuela")
-        |> Array.countBy (fun (_, id, region, shipped) -> (id, region, shipped))
+        |> Array.countBy (fun (_, pid, region, shipped) -> (pid, region, shipped))
         |> Array.sort
     Assert.IsTrue(expected |> Array.exists (fun ((_, _, shipped), _) -> shipped.IsNone))
     Assert.AreEqual(expected, actual)
@@ -3421,7 +3421,7 @@ let ``groupBy with a computed IsSome in the key``() =
             select (cust.Country, cust.CustomerId, order.ShipCountry, order.ShippedDate)
         } |> Seq.toArray
         |> Array.filter (fun (country, _, _, _) -> country = ValueSome "Germany" || country = ValueSome "Venezuela")
-        |> Array.countBy (fun (_, id, shipCountry, shipped) -> (id, shipCountry, shipped.IsSome))
+        |> Array.countBy (fun (_, pid, shipCountry, shipped) -> (pid, shipCountry, shipped.IsSome))
         |> Array.sort
     Assert.IsTrue(expected |> Array.exists (fun ((_, _, shipped), _) -> not shipped))
     Assert.AreEqual(expected, actual)

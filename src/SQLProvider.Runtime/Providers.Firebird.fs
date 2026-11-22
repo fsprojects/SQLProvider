@@ -425,9 +425,9 @@ module Firebird =
 
     /// Whether each procedure is executable: it has no SUSPEND, so it gives its output parameters once and can't be
     /// selected from. By connection and procedure name.
-    let private executables = System.Collections.Concurrent.ConcurrentDictionary<string, bool>()
+    let private executables = ConcurrentDictionary<string, bool>()
 
-    let private procedureKey (com: IDbCommand) = com.Connection.ConnectionString + "\n" + com.CommandText
+    let private procedureKey (com: IDbCommand) = $"{com.Connection.ConnectionString}\n{com.CommandText}"
 
     /// Asks whether the procedure a command names is executable (RDB$PROCEDURE_TYPE 2; 1 is selectable).
     let private executableLookup (com: IDbCommand) =

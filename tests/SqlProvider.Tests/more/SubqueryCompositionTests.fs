@@ -376,7 +376,7 @@ let ``parameters of a subquery nested in another subquery are bound``() =
     let chosen =
         query {
             for order in dc.Main.Orders do
-            where ((allCases || order.CustomerId.Value = onlyCase) && (not openOnly || not (bigOrders.Contains order.OrderId)))
+            where ((allCases || order.CustomerId.Value = onlyCase) && (not (openOnly && bigOrders.Contains order.OrderId)))
             select order.OrderId
         }
     let runQuery () =
@@ -389,7 +389,7 @@ let ``parameters of a subquery nested in another subquery are bound``() =
     let bigIds = query { for d in dc.Main.OrderDetails do select (d.OrderId, d.Quantity) } |> Seq.filter (fun (_, q) -> q > minQty) |> Seq.map fst |> Set.ofSeq
     let expected =
         query { for o in dc.Main.Orders do select (o.OrderId, o.CustomerId) }
-        |> Seq.filter (fun (id, c) -> c = ValueSome onlyCase && not (bigIds.Contains id))
+        |> Seq.filter (fun (pid, c) -> c = ValueSome onlyCase && not (bigIds.Contains pid))
         |> Seq.map fst |> Seq.toArray |> Array.sort
 
     Assert.IsNotEmpty expected
@@ -428,7 +428,7 @@ let ``parameters of three nested subquery levels are bound``() =
     let bigIds = query { for d in dc.Main.OrderDetails do select (d.OrderId, d.Quantity) } |> Seq.filter (fun (_, q) -> q > minQty) |> Seq.map fst |> Set.ofSeq
     let expected =
         query { for o in dc.Main.Orders do select (o.OrderId, o.ShipCountry, o.CustomerId) }
-        |> Seq.filter (fun (id, c, _) -> c = ValueSome country && bigIds.Contains id)
+        |> Seq.filter (fun (pid, c, _) -> c = ValueSome country && bigIds.Contains pid)
         |> Seq.map (fun (_, _, cust) -> cust.Value) |> Seq.distinct |> Seq.toArray |> Array.sort
 
     Assert.IsNotEmpty expected
@@ -521,7 +521,7 @@ let ``a union of grouped sub-queries gives one column to IN on both sides``() =
 
     let latestBy key =
         query { for o in dc.Main.Orders do select (o.CustomerId, o.EmployeeId, o.OrderId) }
-        |> Seq.groupBy key |> Seq.map (fun (_, rows) -> rows |> Seq.map (fun (_, _, id) -> id) |> Seq.max)
+        |> Seq.groupBy key |> Seq.map (fun (_, rows) -> rows |> Seq.map (fun (_, _, pid) -> pid) |> Seq.max)
 
     let expected =
         Seq.append (latestBy (fun (customer, _, _) -> box customer)) (latestBy (fun (_, employee, _) -> box employee))
@@ -694,7 +694,7 @@ let ``an IN sub-query with arithmetic the database computes still runs``() =
         } |> Seq.toArray |> Array.sort
 
     let ids = query { for o in dc.Main.Orders do select o.OrderId } |> Seq.toArray
-    let next = ids |> Array.map (fun id -> id + 1L) |> Set.ofArray
+    let next = ids |> Array.map (fun pid -> pid + 1L) |> Set.ofArray
     let expected = ids |> Array.filter next.Contains |> Array.sort
 
     Assert.IsNotEmpty expected

@@ -17,7 +17,7 @@ let private tempSchemaPath () =
     Path.Combine(dir, "schema.json")
 
 let private customers () : (obj * IDictionary<string,obj>) array =
-    [| for i in 1 .. 3 -> box i, (dict [ "Id", box i; "Name", box (sprintf "Customer %d" i) ]) |]
+    [| for i in 1 .. 3 -> box i, (dict [ "Id", box i; "Name", box $"Customer %d{i}" ]) |]
 
 let private withCustomers (cache:SchemaCache) =
     cache.Tables.["main.Customers"] <- { Schema = "main"; Name = "Customers"; Type = "TABLE" }
@@ -363,7 +363,7 @@ let private providerKeys () =
       "Firebird", "Longs", "Longs", "Longs"
       "Oracle", "main.Longs", "Longs", "main.Longs" ]
 
-let private keyedAs (tableKey, primaryKeyKey, columnKey) =
+let private keyedAs tableKey primaryKeyKey columnKey =
     let cache = keyed "main.Longs" typeof<int64> [ box 7L ]
     rekeyed cache.Tables tableKey
     rekeyed cache.PrimaryKeys primaryKeyKey
@@ -374,7 +374,7 @@ let private keyedAs (tableKey, primaryKeyKey, columnKey) =
 let ``a table's columns and primary key are found however the provider keys them`` () =
     let table = { Schema = "main"; Name = "Longs"; Type = "TABLE" }
     for provider, tableKey, primaryKeyKey, columnKey in providerKeys () do
-        let cache = keyedAs (tableKey, primaryKeyKey, columnKey)
+        let cache = keyedAs tableKey primaryKeyKey columnKey
         Assert.AreEqual(Some [ "Id" ], cache.TryFindByTable(cache.PrimaryKeys, table), provider)
         Assert.IsTrue((cache.TryFindByTable(cache.Columns, table) |> Option.exists (fun columns -> columns.ContainsKey "Id")), provider)
         Assert.AreEqual(None, cache.TryFindByTable(cache.Columns, { table with Name = "Others" }), provider)
@@ -383,7 +383,7 @@ let ``a table's columns and primary key are found however the provider keys them
 let ``primary keys of individuals are read back as they are online however the provider keys the schema`` () =
     for provider, tableKey, primaryKeyKey, columnKey in providerKeys () do
         let path = tempSchemaPath ()
-        let cache = keyedAs (tableKey, primaryKeyKey, columnKey)
+        let cache = keyedAs tableKey primaryKeyKey columnKey
         cache.Save path
         cache.SaveIndividuals path |> ignore
         let loaded = SchemaCache.Load path

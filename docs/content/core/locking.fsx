@@ -173,7 +173,7 @@ let saveFreight (orderId: int64) (freightSeen: decimal) (newFreight: decimal) =
         use scope =
             new TransactionScope(
                 TransactionScopeOption.Required,
-                TransactionOptions(IsolationLevel = System.Transactions.IsolationLevel.ReadCommitted),
+                TransactionOptions(IsolationLevel = IsolationLevel.ReadCommitted),
                 TransactionScopeAsyncFlowOption.Enabled)
 
         let ctx = sql.GetDataContext()
