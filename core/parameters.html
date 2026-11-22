@@ -273,9 +273,9 @@ achieved by adding the <code>[&lt;Literal&gt;]</code> attribute if you are not p
 <p>This is the connection string commonly used to connect to a database server
 instance. Please review the documentation on your desired database type to learn
 more.</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">[&lt;</span><span data-fsdocs-tip="fs4" data-fsdocs-tip-unique="15" class="rt">Literal</span><span class="pn">&gt;]</span>
-<span class="k">let</span> <span data-fsdocs-tip="fs12" data-fsdocs-tip-unique="16" class="prop">sqliteConnectionString</span> <span class="o">=</span>
-    <span class="s">&quot;Data Source=&quot;</span> <span class="o">+</span> <span class="k">__SOURCE_DIRECTORY__</span> <span class="o">+</span> <span class="s">@&quot;\northwindEF.db;Version=3&quot;</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">[&lt;</span><span data-fsdocs-tip="fs4" data-fsdocs-tip-unique="18" class="rt">Literal</span><span class="pn">&gt;]</span>
+<span class="k">let</span> <span data-fsdocs-tip="fs14" data-fsdocs-tip-unique="19" class="prop">sqliteConnectionString</span> <span class="o">=</span>
+    <span class="s">&quot;Data Source=&quot;</span> <span class="o">+</span> <span class="k">__SOURCE_DIRECTORY__</span> <span class="o">+</span> <span class="s">@&quot;\..\northwindEF.db;Version=3&quot;</span>
 </code></pre>
 <h3><a name="ConnectionStringName" class="anchor" href="#ConnectionStringName">ConnectionStringName</a></h3>
 <p>Instead of storing the connection string in the source code / <code>fsx</code> script, you
@@ -288,22 +288,22 @@ can store values in the <code>App.config</code> file:</p>
 </code></pre></td></tr></table>
 <p>Another usually easier option is to give a runtime connection string as a parameter for the <code>.GetDataContext(...)</code> method.</p>
 <p>In your source file:</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">[&lt;</span><span data-fsdocs-tip="fs4" data-fsdocs-tip-unique="17" class="rt">Literal</span><span class="pn">&gt;]</span>
-<span class="k">let</span> <span data-fsdocs-tip="fs13" data-fsdocs-tip-unique="18" class="prop">connexStringName</span> <span class="o">=</span> <span class="s">&quot;MyConnectionString&quot;</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">[&lt;</span><span data-fsdocs-tip="fs4" data-fsdocs-tip-unique="20" class="rt">Literal</span><span class="pn">&gt;]</span>
+<span class="k">let</span> <span data-fsdocs-tip="fs15" data-fsdocs-tip-unique="21" class="prop">connexStringName</span> <span class="o">=</span> <span class="s">&quot;MyConnectionString&quot;</span>
 </code></pre>
 <h3><a name="DatabaseVendor" class="anchor" href="#DatabaseVendor">DatabaseVendor</a></h3>
 <p>Select enumeration from <code>Common.DatabaseProviderTypes</code> to specify which database
 type the provider will be connecting to.</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">[&lt;</span><span data-fsdocs-tip="fs4" data-fsdocs-tip-unique="19" class="rt">Literal</span><span class="pn">&gt;]</span>
-<span class="k">let</span> <span data-fsdocs-tip="fs14" data-fsdocs-tip-unique="20" class="prop">dbVendor</span> <span class="o">=</span> <span data-fsdocs-tip="fs9" data-fsdocs-tip-unique="21" class="id">Common</span><span class="pn">.</span><span data-fsdocs-tip="fs10" data-fsdocs-tip-unique="22" class="en">DatabaseProviderTypes</span><span class="pn">.</span><span data-fsdocs-tip="fs11" data-fsdocs-tip-unique="23" class="id">SQLITE</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">[&lt;</span><span data-fsdocs-tip="fs4" data-fsdocs-tip-unique="22" class="rt">Literal</span><span class="pn">&gt;]</span>
+<span class="k">let</span> <span data-fsdocs-tip="fs16" data-fsdocs-tip-unique="23" class="prop">dbVendor</span> <span class="o">=</span> <span data-fsdocs-tip="fs9" data-fsdocs-tip-unique="24" class="id">Common</span><span class="pn">.</span><span data-fsdocs-tip="fs10" data-fsdocs-tip-unique="25" class="en">DatabaseProviderTypes</span><span class="pn">.</span><span data-fsdocs-tip="fs11" data-fsdocs-tip-unique="26" class="id">SQLITE</span>
 </code></pre>
 <h3><a name="ResolutionPath" class="anchor" href="#ResolutionPath">ResolutionPath</a></h3>
 <p>A third-party driver is required when using database vendors other than SQL Server, Access and ODBC.
 This parameter should point to an absolute or relative directory where the
 relevant assemblies are located. Please review at the database vendor-specific page for more details.</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">[&lt;</span><span data-fsdocs-tip="fs4" data-fsdocs-tip-unique="24" class="rt">Literal</span><span class="pn">&gt;]</span>
-<span class="k">let</span> <span data-fsdocs-tip="fs15" data-fsdocs-tip-unique="25" class="prop">resolutionPath</span> <span class="o">=</span>
-    <span class="k">__SOURCE_DIRECTORY__</span> <span class="o">+</span> <span class="s">@&quot;..\..\..\files\sqlite&quot;</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">[&lt;</span><span data-fsdocs-tip="fs4" data-fsdocs-tip-unique="27" class="rt">Literal</span><span class="pn">&gt;]</span>
+<span class="k">let</span> <span data-fsdocs-tip="fs17" data-fsdocs-tip-unique="28" class="prop">resolutionPath</span> <span class="o">=</span>
+    <span class="k">__SOURCE_DIRECTORY__</span> <span class="o">+</span> <span class="s">@&quot;\..\..\files\sqlite&quot;</span>
 </code></pre>
 <p>The resolution path(s) (as can be semicolon separated if any) should point to the
 database driver files and their reference assemblies) that work on design-time.
@@ -319,22 +319,22 @@ that your driver's assembly must be loaded by your application for SQLProvider t
 it. To do so, use the types of your driver before calling the <code>.GetDataContext(...)</code>
 method, such as in this example, using MySqlConnector. The specific type you refer
 to does not matter.</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span data-fsdocs-tip="fs16" data-fsdocs-tip-unique="26" class="id">typeof</span><span class="pn">&lt;</span><span class="id">MySqlConnector</span><span class="pn">.</span><span class="id">Logging</span><span class="pn">.</span><span class="id">MySqlConnectorLogLevel</span><span class="pn">&gt;</span><span class="pn">.</span><span class="id">Assembly</span> <span class="o">|&gt;</span> <span data-fsdocs-tip="fs17" data-fsdocs-tip-unique="27" class="fn">ignore</span>
-<span class="k">let</span> <span data-fsdocs-tip="fs18" data-fsdocs-tip-unique="28" class="id">ctx</span> <span class="o">=</span> <span data-fsdocs-tip="fs7" data-fsdocs-tip-unique="29" class="id">sqlType</span><span class="pn">.</span><span class="id">GetDataContext</span><span class="pn">(</span><span class="pn">)</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span data-fsdocs-tip="fs18" data-fsdocs-tip-unique="29" class="k">typeof</span><span class="pn">&lt;</span><span data-fsdocs-tip="fs19" data-fsdocs-tip-unique="30" class="id">MySqlConnector</span><span class="pn">.</span><span data-fsdocs-tip="fs20" data-fsdocs-tip-unique="31" class="id">Logging</span><span class="pn">.</span><span data-fsdocs-tip="fs21" data-fsdocs-tip-unique="32" class="id">MySqlConnectorLogLevel</span><span class="pn">&gt;</span><span class="pn">.</span><span class="id">Assembly</span> <span class="o">|&gt;</span> <span data-fsdocs-tip="fs22" data-fsdocs-tip-unique="33" class="fn">ignore</span>
+<span class="k">let</span> <span data-fsdocs-tip="fs23" data-fsdocs-tip-unique="34" class="id">ctx</span> <span class="o">=</span> <span data-fsdocs-tip="fs7" data-fsdocs-tip-unique="35" class="rt">sqlType</span><span class="pn">.</span><span data-fsdocs-tip="fs24" data-fsdocs-tip-unique="36" class="id">GetDataContext</span><span class="pn">(</span><span class="pn">)</span>
 </code></pre>
 <h3><a name="IndividualsAmount" class="anchor" href="#IndividualsAmount">IndividualsAmount</a></h3>
 <p>Number of instances to retrieve using the <a href="individuals.html">individuals</a> feature.
 Default is 1000.</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">[&lt;</span><span data-fsdocs-tip="fs4" data-fsdocs-tip-unique="30" class="rt">Literal</span><span class="pn">&gt;]</span>
-<span class="k">let</span> <span data-fsdocs-tip="fs19" data-fsdocs-tip-unique="31" class="prop">indivAmt</span> <span class="o">=</span> <span class="n">500</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">[&lt;</span><span data-fsdocs-tip="fs4" data-fsdocs-tip-unique="37" class="rt">Literal</span><span class="pn">&gt;]</span>
+<span class="k">let</span> <span data-fsdocs-tip="fs25" data-fsdocs-tip-unique="38" class="prop">indivAmt</span> <span class="o">=</span> <span class="n">500</span>
 </code></pre>
 <h3><a name="UseOptionTypes" class="anchor" href="#UseOptionTypes">UseOptionTypes</a></h3>
 <p>If set to FSharp.Data.Sql.Common.NullableColumnType.OPTION, all nullable fields will be represented by F# option types.  If NO_OPTION, nullable
 fields will be represented by the default value of the column type - this is important because
 the provider will return 0 instead of null, which might cause problems in some scenarios.</p>
 <p>The third option is VALUE_OPTION, where nullable fields are represented by ValueOption struct.</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">[&lt;</span><span data-fsdocs-tip="fs4" data-fsdocs-tip-unique="32" class="rt">Literal</span><span class="pn">&gt;]</span>
-<span class="k">let</span> <span data-fsdocs-tip="fs20" data-fsdocs-tip-unique="33" class="prop">useOptionTypes</span> <span class="o">=</span> <span data-fsdocs-tip="fs1" data-fsdocs-tip-unique="34" class="id">FSharp</span><span class="pn">.</span><span data-fsdocs-tip="fs2" data-fsdocs-tip-unique="35" class="id">Data</span><span class="pn">.</span><span data-fsdocs-tip="fs3" data-fsdocs-tip-unique="36" class="id">Sql</span><span class="pn">.</span><span data-fsdocs-tip="fs9" data-fsdocs-tip-unique="37" class="id">Common</span><span class="pn">.</span><span data-fsdocs-tip="fs21" data-fsdocs-tip-unique="38" class="en">NullableColumnType</span><span class="pn">.</span><span data-fsdocs-tip="fs22" data-fsdocs-tip-unique="39" class="id">OPTION</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">[&lt;</span><span data-fsdocs-tip="fs4" data-fsdocs-tip-unique="39" class="rt">Literal</span><span class="pn">&gt;]</span>
+<span class="k">let</span> <span data-fsdocs-tip="fs26" data-fsdocs-tip-unique="40" class="prop">useOptionTypes</span> <span class="o">=</span> <span data-fsdocs-tip="fs1" data-fsdocs-tip-unique="41" class="id">FSharp</span><span class="pn">.</span><span data-fsdocs-tip="fs2" data-fsdocs-tip-unique="42" class="id">Data</span><span class="pn">.</span><span data-fsdocs-tip="fs3" data-fsdocs-tip-unique="43" class="id">Sql</span><span class="pn">.</span><span data-fsdocs-tip="fs9" data-fsdocs-tip-unique="44" class="id">Common</span><span class="pn">.</span><span data-fsdocs-tip="fs27" data-fsdocs-tip-unique="45" class="en">NullableColumnType</span><span class="pn">.</span><span data-fsdocs-tip="fs28" data-fsdocs-tip-unique="46" class="id">OPTION</span>
 </code></pre>
 <h3><a name="ContextSchemaPath" class="anchor" href="#ContextSchemaPath">ContextSchemaPath</a></h3>
 <p>Defining <code>ContextSchemaPath</code> and placing a file with schema information according to the definition
@@ -350,9 +350,61 @@ type a dot (.), you should see a tooltip with information about when the schema 
 is saved, the outcome of the method execution is stored in memory so the file will not be overwritten.
 In case the database schema changes and the schema file must be updated, remove the outdated file, reload
 the solution and retype or uncomment a call to <code>SaveContextSchema</code> to regenerate the schema file.</p>
-<p>There is a tool method FSharp.Data.Sql.Common.OfflineTools.mergeCacheFiles to merge multiple files together.</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">[&lt;</span><span data-fsdocs-tip="fs4" data-fsdocs-tip-unique="40" class="rt">Literal</span><span class="pn">&gt;]</span>
-<span class="k">let</span> <span data-fsdocs-tip="fs23" data-fsdocs-tip-unique="41" class="prop">contextSchemaPath</span> <span class="o">=</span>
+<p>The offline mode uses up to three files beside each other:</p>
+<table>
+<thead>
+<tr class="header">
+<th><p>File</p></th>
+<th><p>Contents</p></th>
+<th><p>Read</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><p><code>schema.json</code> (<code>ContextSchemaPath</code>)</p></td>
+<td><p>Tables, columns, relationships, stored procedures</p></td>
+<td><p>Every build</p></td>
+</tr>
+<tr class="even">
+<td><p><code>schema.descriptions.json</code></p></td>
+<td><p>Table and column descriptions (comments), shown in tooltips</p></td>
+<td><p>For the first tooltip</p></td>
+</tr>
+<tr class="odd">
+<td><p><code>schema.individuals.json</code></p></td>
+<td><p>Sample rows of the <a href="individuals.html">Individuals</a> feature</p></td>
+<td><p>When <code>Individuals</code> is first opened</p></td>
+</tr>
+</tbody>
+</table>
+
+<p>Builds read only the schema file, so descriptions and individuals don't slow them down.</p>
+<p>To save the whole database instead of the parts used so far, use these commands while online (before the schema file
+exists). Each reads the whole database and may take a while on a large one:</p>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="c">// Every table, column, relationship and stored procedure, to schema.json, and every table</span>
+<span class="c">// and column description, to schema.descriptions.json. No rows of data.</span>
+<span class="id">ctx</span><span class="pn">.</span><span class="id">``Design Time Commands``</span><span class="pn">.</span><span class="id">SaveContextSchemaFull</span>
+<span class="c">// IndividualsAmount individuals of every table with a single primary key, to schema.individuals.json</span>
+<span class="id">ctx</span><span class="pn">.</span><span class="id">``Design Time Commands``</span><span class="pn">.</span><span class="id">SaveContextSchemaIndividuals</span>
+</code></pre>
+<p>These two commands exist only while online. Remove the line after saving: once the schema file exists, the
+solution is offline and a line that still calls one of them doesn't compile.</p>
+<p>Individuals are rows of your data, so mind GDPR/PII before committing the individuals file to version control.</p>
+<p>When the database schema changes, remove all three files, not only the schema file, before saving again. The
+descriptions and individuals files are otherwise kept as they are, and may then describe tables and columns that
+no longer exist.</p>
+<p><code>SaveContextSchema</code> also saves the descriptions of the tables and columns you hovered over, and keeps the descriptions
+already in the descriptions file. Offline, a table or column whose description wasn't saved shows "Offline mode." in
+its tooltip.</p>
+<p>Likewise, <code>SaveContextSchema</code> saves the individuals of the tables whose <code>Individuals</code> you opened to the individuals
+file. A table is in the file once: saving it again replaces its individuals, and the other tables already in the file
+are kept.</p>
+<p>Schema files saved by older versions with individuals in them still work: re-saving such a file moves its individuals
+to the individuals file.</p>
+<p>There is a tool method FSharp.Data.Sql.Common.OfflineTools.mergeCacheFiles to merge multiple files together.
+It merges their descriptions and individuals files as well.</p>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">[&lt;</span><span data-fsdocs-tip="fs4" data-fsdocs-tip-unique="47" class="rt">Literal</span><span class="pn">&gt;]</span>
+<span class="k">let</span> <span data-fsdocs-tip="fs29" data-fsdocs-tip-unique="48" class="prop">contextSchemaPath</span> <span class="o">=</span>
     <span class="k">__SOURCE_DIRECTORY__</span> <span class="o">+</span> <span class="s">@&quot;.\sqlite.schema&quot;</span>
 </code></pre>
 <h2><a name="Platform-Considerations" class="anchor" href="#Platform-Considerations">Platform Considerations</a></h2>
@@ -376,11 +428,12 @@ which SQLite library to load.</p>
 <p>There are no extra parameters.</p>
 <p>###Example
 It is recommended to use named static parameters in your type provider definition so</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">type</span> <span data-fsdocs-tip="fs24" data-fsdocs-tip-unique="42" class="rt">sql</span> <span class="o">=</span> <span data-fsdocs-tip="fs8" data-fsdocs-tip-unique="43" class="rt">SqlDataProvider</span><span class="pn">&lt;</span>
-            <span class="fn">ConnectionString</span> <span class="o">=</span> <span data-fsdocs-tip="fs12" data-fsdocs-tip-unique="44" class="prop">sqliteConnectionString</span><span class="pn">,</span>
-            <span class="fn">DatabaseVendor</span> <span class="o">=</span> <span data-fsdocs-tip="fs14" data-fsdocs-tip-unique="45" class="prop">dbVendor</span><span class="pn">,</span>
-            <span class="fn">ResolutionPath</span> <span class="o">=</span> <span data-fsdocs-tip="fs15" data-fsdocs-tip-unique="46" class="prop">resolutionPath</span><span class="pn">,</span>
-            <span class="fn">UseOptionTypes</span> <span class="o">=</span> <span data-fsdocs-tip="fs20" data-fsdocs-tip-unique="47" class="prop">useOptionTypes</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">type</span> <span data-fsdocs-tip="fs30" data-fsdocs-tip-unique="49" class="rt">sql</span> <span class="o">=</span> <span data-fsdocs-tip="fs8" data-fsdocs-tip-unique="50" class="rt">SqlDataProvider</span><span class="pn">&lt;</span>
+            <span class="fn">ConnectionString</span> <span class="o">=</span> <span data-fsdocs-tip="fs14" data-fsdocs-tip-unique="51" class="prop">sqliteConnectionString</span><span class="pn">,</span>
+            <span class="fn">DatabaseVendor</span> <span class="o">=</span> <span data-fsdocs-tip="fs16" data-fsdocs-tip-unique="52" class="prop">dbVendor</span><span class="pn">,</span>
+            <span class="fn">SQLiteLibrary</span> <span class="o">=</span> <span data-fsdocs-tip="fs9" data-fsdocs-tip-unique="53" class="id">Common</span><span class="pn">.</span><span data-fsdocs-tip="fs12" data-fsdocs-tip-unique="54" class="en">SQLiteLibrary</span><span class="pn">.</span><span data-fsdocs-tip="fs13" data-fsdocs-tip-unique="55" class="id">SystemDataSQLite</span><span class="pn">,</span>
+            <span class="fn">ResolutionPath</span> <span class="o">=</span> <span data-fsdocs-tip="fs17" data-fsdocs-tip-unique="56" class="prop">resolutionPath</span><span class="pn">,</span>
+            <span class="fn">UseOptionTypes</span> <span class="o">=</span> <span data-fsdocs-tip="fs26" data-fsdocs-tip-unique="57" class="prop">useOptionTypes</span>
           <span class="pn">&gt;</span>
 </code></pre>
 <h1><a name="SQL-Provider-Data-Context-Parameters" class="anchor" href="#SQL-Provider-Data-Context-Parameters">SQL Provider Data Context Parameters</a></h1>
@@ -400,10 +453,10 @@ It is recommended to use named static parameters in your type provider definitio
   inherit Attribute
   new: unit -&gt; LiteralAttribute<br /><br />--------------------<br />new: unit -&gt; LiteralAttribute</div>
 <div popover class="fsdocs-tip" id="fs5">
-val connectionString: string = &quot;Data Source=C:\git\SQLProvider\docs\content\core/../../../tests/SqlProvider.Tests/scripts/northwindEF.db;Version=3&quot;</div>
+val hiddenConnectionString: string = &quot;Data Source=C:\git\SQLProvider\docs\content\core\..\northwindEF.db;Version=3;Read Only=false;FailIfMissing=True;&quot;</div>
 <div popover class="fsdocs-tip" id="fs6">
-val resolutionPath: string = &quot;C:\git\SQLProvider\docs\content\core/../../../tests/SqlProvider.Tests/libs&quot;</div>
-<div popover class="fsdocs-tip" id="fs7">type sqlType = obj</div>
+val hiddenResolutionPath: string = &quot;C:\git\SQLProvider\docs\content\core/../../files/sqlite&quot;</div>
+<div popover class="fsdocs-tip" id="fs7">type sqlType = SqlDataProvider&lt;...&gt;</div>
 <div popover class="fsdocs-tip" id="fs8">type SqlDataProvider<br /><em>&lt;summary&gt;Typed representation of a database&lt;/summary&gt;
                     &lt;param name=&#39;ConnectionString&#39;&gt;The connection string for the SQL database&lt;/param&gt;
                     &lt;param name=&#39;ConnectionStringName&#39;&gt;The connection string name to select from a configuration file&lt;/param&gt;
@@ -441,33 +494,56 @@ type DatabaseProviderTypes =
  SQLite database using System.Data.SQLite or Microsoft.Data.Sqlite
 &lt;/summary&gt;</em></div>
 <div popover class="fsdocs-tip" id="fs12">
-val sqliteConnectionString: string = &quot;Data Source=C:\git\SQLProvider\docs\content\core\northwindEF.db;Version=3&quot;</div>
-<div popover class="fsdocs-tip" id="fs13">
-val connexStringName: string = &quot;MyConnectionString&quot;</div>
+type SQLiteLibrary =
+  | SystemDataSQLite = 0
+  | MonoDataSQLite = 1
+  | AutoSelect = 2
+  | MicrosoftDataSqlite = 3<br /><em>&lt;summary&gt;
+ Specifies which SQLite library to use for connections.
+ Different libraries may have different capabilities and platform support.
+&lt;/summary&gt;</em></div>
+<div popover class="fsdocs-tip" id="fs13">Common.SQLiteLibrary.SystemDataSQLite: Common.SQLiteLibrary = 0<br /><em>&lt;summary&gt;
+ .NET Framework default
+&lt;/summary&gt;</em></div>
 <div popover class="fsdocs-tip" id="fs14">
-val dbVendor: Common.DatabaseProviderTypes = 1</div>
+val sqliteConnectionString: string = &quot;Data Source=C:\git\SQLProvider\docs\content\core\..\northwindEF.db;Version=3&quot;</div>
 <div popover class="fsdocs-tip" id="fs15">
-val resolutionPath: string = &quot;C:\git\SQLProvider\docs\content\core..\..\..\files\sqlite&quot;</div>
-<div popover class="fsdocs-tip" id="fs16">val typeof&lt;&#39;T&gt; : System.Type</div>
-<div popover class="fsdocs-tip" id="fs17">val ignore: value: &#39;T -&gt; unit</div>
-<div popover class="fsdocs-tip" id="fs18">val ctx: obj</div>
-<div popover class="fsdocs-tip" id="fs19">
-val indivAmt: int = 500</div>
-<div popover class="fsdocs-tip" id="fs20">
-val useOptionTypes: Common.NullableColumnType = 1</div>
+val connexStringName: string = &quot;MyConnectionString&quot;</div>
+<div popover class="fsdocs-tip" id="fs16">
+val dbVendor: Common.DatabaseProviderTypes = 1</div>
+<div popover class="fsdocs-tip" id="fs17">
+val resolutionPath: string = &quot;C:\git\SQLProvider\docs\content\core\..\..\files\sqlite&quot;</div>
+<div popover class="fsdocs-tip" id="fs18">val typeof&lt;&#39;T&gt; : System.Type</div>
+<div popover class="fsdocs-tip" id="fs19">namespace MySqlConnector</div>
+<div popover class="fsdocs-tip" id="fs20">namespace MySqlConnector.Logging</div>
 <div popover class="fsdocs-tip" id="fs21">
+type MySqlConnectorLogLevel =
+  | Trace = 1
+  | Debug = 2
+  | Info = 3
+  | Warn = 4
+  | Error = 5
+  | Fatal = 6</div>
+<div popover class="fsdocs-tip" id="fs22">val ignore: value: &#39;T -&gt; unit</div>
+<div popover class="fsdocs-tip" id="fs23">val ctx: SqlDataProvider&lt;...&gt;.dataContext</div>
+<div popover class="fsdocs-tip" id="fs24">SqlDataProvider&lt;...&gt;.GetDataContext() : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(selectOperations: SelectOperations) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;selectOperations&#39;&gt;Execute select-clause operations in SQL database rather than .NET-side.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(commandTimeout: int) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;commandTimeout&#39;&gt;SQL command timeout. Maximum time for single SQL-command in seconds.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(transactionOptions: Transactions.TransactionOptions) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;transactionOptions&#39;&gt;TransactionOptions for the transaction created on SubmitChanges.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string, selectOperations: SelectOperations) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;&lt;param name=&#39;selectOperations&#39;&gt;Execute select-clause operations in SQL database rather than .NET-side.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(transactionOptions: Transactions.TransactionOptions, commandTimeout: int) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;transactionOptions&#39;&gt;TransactionOptions for the transaction created on SubmitChanges.&lt;/param&gt;&lt;param name=&#39;commandTimeout&#39;&gt;SQL command timeout. Maximum time for single SQL-command in seconds.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string, commandTimeout: int) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;&lt;param name=&#39;commandTimeout&#39;&gt;SQL command timeout. Maximum time for single SQL-command in seconds.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string, transactionOptions: Transactions.TransactionOptions) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;&lt;param name=&#39;transactionOptions&#39;&gt;TransactionOptions for the transaction created on SubmitChanges.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string, resolutionPath: string) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;&lt;param name=&#39;resolutionPath&#39;&gt;The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types.  Types used in design-time: If no better clue, prefer .NET Standard 2.0 versions. Semicolon to separate multiple.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em></div>
+<div popover class="fsdocs-tip" id="fs25">
+val indivAmt: int = 500</div>
+<div popover class="fsdocs-tip" id="fs26">
+val useOptionTypes: Common.NullableColumnType = 1</div>
+<div popover class="fsdocs-tip" id="fs27">
 type NullableColumnType =
   | NO_OPTION = 0
   | OPTION = 1
   | VALUE_OPTION = 2<br /><em>&lt;summary&gt;
  Specifies how to represent nullable database columns in the generated types.
 &lt;/summary&gt;</em></div>
-<div popover class="fsdocs-tip" id="fs22">Common.NullableColumnType.OPTION: Common.NullableColumnType = 1<br /><em>&lt;summary&gt;
+<div popover class="fsdocs-tip" id="fs28">Common.NullableColumnType.OPTION: Common.NullableColumnType = 1<br /><em>&lt;summary&gt;
  Option types are Option&amp;lt;_&amp;gt;. (Old true.)
 &lt;/summary&gt;</em></div>
-<div popover class="fsdocs-tip" id="fs23">
+<div popover class="fsdocs-tip" id="fs29">
 val contextSchemaPath: string = &quot;C:\git\SQLProvider\docs\content\core.\sqlite.schema&quot;</div>
-<div popover class="fsdocs-tip" id="fs24">type sql = obj</div>
+<div popover class="fsdocs-tip" id="fs30">type sql = SqlDataProvider&lt;...&gt;</div>
 
     </div>
 </main>

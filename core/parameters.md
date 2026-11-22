@@ -16,7 +16,7 @@ more.
 ```fsharp
 [<Literal>]
 let sqliteConnectionString =
-    "Data Source=" + __SOURCE_DIRECTORY__ + @"\northwindEF.db;Version=3"
+    "Data Source=" + __SOURCE_DIRECTORY__ + @"\..\northwindEF.db;Version=3"
 ```
 
 ### ConnectionStringName
@@ -58,7 +58,7 @@ relevant assemblies are located. Please review at the database vendor-specific p
 ```fsharp
 [<Literal>]
 let resolutionPath =
-    __SOURCE_DIRECTORY__ + @"..\..\..\files\sqlite"
+    __SOURCE_DIRECTORY__ + @"\..\..\files\sqlite"
 ```
 
 The resolution path(s) (as can be semicolon separated if any) should point to the
@@ -127,7 +127,50 @@ is saved, the outcome of the method execution is stored in memory so the file wi
 In case the database schema changes and the schema file must be updated, remove the outdated file, reload
 the solution and retype or uncomment a call to `SaveContextSchema` to regenerate the schema file.
 
+The offline mode uses up to three files beside each other:
+
+File | Contents | Read
+--- | --- | ---
+`schema.json` (`ContextSchemaPath`) | Tables, columns, relationships, stored procedures | Every build
+`schema.descriptions.json` | Table and column descriptions (comments), shown in tooltips | For the first tooltip
+`schema.individuals.json` | Sample rows of the [Individuals](individuals.html) feature | When `Individuals` is first opened
+
+Builds read only the schema file, so descriptions and individuals don't slow them down.
+
+To save the whole database instead of the parts used so far, use these commands while online (before the schema file
+exists). Each reads the whole database and may take a while on a large one:
+
+```fsharp
+// Every table, column, relationship and stored procedure, to schema.json, and every table
+// and column description, to schema.descriptions.json. No rows of data.
+ctx.``Design Time Commands``.SaveContextSchemaFull
+// IndividualsAmount individuals of every table with a single primary key, to schema.individuals.json
+ctx.``Design Time Commands``.SaveContextSchemaIndividuals
+
+```
+
+These two commands exist only while online. Remove the line after saving: once the schema file exists, the
+solution is offline and a line that still calls one of them doesn't compile.
+
+Individuals are rows of your data, so mind GDPR/PII before committing the individuals file to version control.
+
+When the database schema changes, remove all three files, not only the schema file, before saving again. The
+descriptions and individuals files are otherwise kept as they are, and may then describe tables and columns that
+no longer exist.
+
+`SaveContextSchema` also saves the descriptions of the tables and columns you hovered over, and keeps the descriptions
+already in the descriptions file. Offline, a table or column whose description wasn't saved shows "Offline mode." in
+its tooltip.
+
+Likewise, `SaveContextSchema` saves the individuals of the tables whose `Individuals` you opened to the individuals
+file. A table is in the file once: saving it again replaces its individuals, and the other tables already in the file
+are kept.
+
+Schema files saved by older versions with individuals in them still work: re-saving such a file moves its individuals
+to the individuals file.
+
 There is a tool method FSharp.Data.Sql.Common.OfflineTools.mergeCacheFiles to merge multiple files together.
+It merges their descriptions and individuals files as well.
 
 ```fsharp
 [<Literal>]
@@ -179,6 +222,7 @@ It is recommended to use named static parameters in your type provider definitio
 type sql = SqlDataProvider<
             ConnectionString = sqliteConnectionString,
             DatabaseVendor = dbVendor,
+            SQLiteLibrary = Common.SQLiteLibrary.SystemDataSQLite,
             ResolutionPath = resolutionPath,
             UseOptionTypes = useOptionTypes
           >

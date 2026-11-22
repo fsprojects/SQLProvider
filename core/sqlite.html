@@ -273,8 +273,8 @@
 <h2><a name="Parameters" class="anchor" href="#Parameters">Parameters</a></h2>
 <h3><a name="ConnectionString" class="anchor" href="#ConnectionString">ConnectionString</a></h3>
 <p>A basic connection string used to connect to the SQLite database.</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">[&lt;</span><span data-fsdocs-tip="fs6" data-fsdocs-tip-unique="9" class="rt">Literal</span><span class="pn">&gt;]</span>
-<span class="k">let</span> <span data-fsdocs-tip="fs7" data-fsdocs-tip-unique="10" class="prop">connectionString</span> <span class="o">=</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">[&lt;</span><span data-fsdocs-tip="fs5" data-fsdocs-tip-unique="5" class="rt">Literal</span><span class="pn">&gt;]</span>
+<span class="k">let</span> <span data-fsdocs-tip="fs6" data-fsdocs-tip-unique="6" class="prop">connectionString</span> <span class="o">=</span>
     <span class="s">&quot;Data Source=&quot;</span> <span class="o">+</span>
     <span class="k">__SOURCE_DIRECTORY__</span> <span class="o">+</span> <span class="s">@&quot;/../../../tests/SqlProvider.Tests/scripts/northwindEF.db;&quot;</span> <span class="o">+</span>
     <span class="s">&quot;Version=3;foreign keys=true&quot;</span>
@@ -304,8 +304,8 @@ the ResolutionPath parameter at all, but you still need to copy the interop libr
 <h3><a name="Current-build-of-SQLProvider-with-the-dynamic-provider" class="anchor" href="#Current-build-of-SQLProvider-with-the-dynamic-provider">Current build of SQLProvider with the dynamic provider</a></h3>
 <p>If you are building the current system on other platforms like Linux, a tested version of SQLite.Interop.dll can be downloaded from runtimes folder of this NuGet package:
 <a href="https://www.nuget.org/packages/System.Data.SQLite.Core/1.0.113">System.Data.SQLite.Core, 1.0.113</a></p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">[&lt;</span><span data-fsdocs-tip="fs6" data-fsdocs-tip-unique="11" class="rt">Literal</span><span class="pn">&gt;]</span>
-<span class="k">let</span> <span data-fsdocs-tip="fs8" data-fsdocs-tip-unique="12" class="prop">resolutionPath</span> <span class="o">=</span> <span class="k">__SOURCE_DIRECTORY__</span> <span class="o">+</span> <span class="s">@&quot;/../../../tests/SqlProvider.Tests/libs&quot;</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">[&lt;</span><span data-fsdocs-tip="fs5" data-fsdocs-tip-unique="7" class="rt">Literal</span><span class="pn">&gt;]</span>
+<span class="k">let</span> <span data-fsdocs-tip="fs7" data-fsdocs-tip-unique="8" class="prop">resolutionPath</span> <span class="o">=</span> <span class="k">__SOURCE_DIRECTORY__</span> <span class="o">+</span> <span class="s">@&quot;/../../../tests/SqlProvider.Tests/libs&quot;</span>
 </code></pre>
 <h3><a name="SQLiteLibrary" class="anchor" href="#SQLiteLibrary">SQLiteLibrary</a></h3>
 <p>Specifies what SQLite library to use. This is an <code>SQLiteLibrary</code> enumeration, defined in the <code>FSharp.Data.Sql.Common</code>
@@ -317,25 +317,25 @@ namespace, which has the following members:</p>
 <li>*<em><code>MicrosoftDataSqlite</code>*</em> - Always uses <a href="https://github.com/aspnet/Microsoft.Data.Sqlite">Microsoft.Data.Sqlite</a>. This is experimental until it supports GetSchema().</li>
 </ul>
 <h2><a name="Example" class="anchor" href="#Example">Example</a></h2>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">type</span> <span data-fsdocs-tip="fs9" data-fsdocs-tip-unique="13" class="rt">sql</span> <span class="o">=</span> <span data-fsdocs-tip="fs10" data-fsdocs-tip-unique="14" class="rt">SqlDataProvider</span><span class="pn">&lt;</span>
-                <span data-fsdocs-tip="fs11" data-fsdocs-tip-unique="15" class="id">Common</span><span class="pn">.</span><span data-fsdocs-tip="fs12" data-fsdocs-tip-unique="16" class="en">DatabaseProviderTypes</span><span class="pn">.</span><span data-fsdocs-tip="fs13" data-fsdocs-tip-unique="17" class="id">SQLITE</span><span class="pn">,</span>
-                <span class="fn">SQLiteLibrary</span> <span class="o">=</span> <span data-fsdocs-tip="fs11" data-fsdocs-tip-unique="18" class="id">Common</span><span class="pn">.</span><span data-fsdocs-tip="fs14" data-fsdocs-tip-unique="19" class="en">SQLiteLibrary</span><span class="pn">.</span><span data-fsdocs-tip="fs15" data-fsdocs-tip-unique="20" class="id">SystemDataSQLite</span><span class="pn">,</span>
-                <span class="fn">ConnectionString</span> <span class="o">=</span> <span data-fsdocs-tip="fs7" data-fsdocs-tip-unique="21" class="prop">connectionString</span><span class="pn">,</span>
-                <span class="fn">ResolutionPath</span> <span class="o">=</span> <span data-fsdocs-tip="fs8" data-fsdocs-tip-unique="22" class="prop">resolutionPath</span><span class="pn">,</span>
-                <span class="fn">CaseSensitivityChange</span> <span class="o">=</span> <span data-fsdocs-tip="fs11" data-fsdocs-tip-unique="23" class="id">Common</span><span class="pn">.</span><span data-fsdocs-tip="fs16" data-fsdocs-tip-unique="24" class="en">CaseSensitivityChange</span><span class="pn">.</span><span data-fsdocs-tip="fs17" data-fsdocs-tip-unique="25" class="id">ORIGINAL</span><span class="pn">&gt;</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">type</span> <span data-fsdocs-tip="fs8" data-fsdocs-tip-unique="9" class="rt">sql</span> <span class="o">=</span> <span data-fsdocs-tip="fs9" data-fsdocs-tip-unique="10" class="rt">SqlDataProvider</span><span class="pn">&lt;</span>
+                <span data-fsdocs-tip="fs10" data-fsdocs-tip-unique="11" class="id">Common</span><span class="pn">.</span><span data-fsdocs-tip="fs11" data-fsdocs-tip-unique="12" class="en">DatabaseProviderTypes</span><span class="pn">.</span><span data-fsdocs-tip="fs12" data-fsdocs-tip-unique="13" class="id">SQLITE</span><span class="pn">,</span>
+                <span class="fn">SQLiteLibrary</span> <span class="o">=</span> <span data-fsdocs-tip="fs10" data-fsdocs-tip-unique="14" class="id">Common</span><span class="pn">.</span><span data-fsdocs-tip="fs13" data-fsdocs-tip-unique="15" class="en">SQLiteLibrary</span><span class="pn">.</span><span data-fsdocs-tip="fs14" data-fsdocs-tip-unique="16" class="id">SystemDataSQLite</span><span class="pn">,</span>
+                <span class="fn">ConnectionString</span> <span class="o">=</span> <span data-fsdocs-tip="fs6" data-fsdocs-tip-unique="17" class="prop">connectionString</span><span class="pn">,</span>
+                <span class="fn">ResolutionPath</span> <span class="o">=</span> <span data-fsdocs-tip="fs7" data-fsdocs-tip-unique="18" class="prop">resolutionPath</span><span class="pn">,</span>
+                <span class="fn">CaseSensitivityChange</span> <span class="o">=</span> <span data-fsdocs-tip="fs10" data-fsdocs-tip-unique="19" class="id">Common</span><span class="pn">.</span><span data-fsdocs-tip="fs15" data-fsdocs-tip-unique="20" class="en">CaseSensitivityChange</span><span class="pn">.</span><span data-fsdocs-tip="fs16" data-fsdocs-tip-unique="21" class="id">ORIGINAL</span><span class="pn">&gt;</span>
 
-<span class="k">let</span> <span data-fsdocs-tip="fs18" data-fsdocs-tip-unique="26" class="id">ctx</span> <span class="o">=</span> <span data-fsdocs-tip="fs9" data-fsdocs-tip-unique="27" class="id">sql</span><span class="pn">.</span><span class="id">GetDataContext</span><span class="pn">(</span><span class="pn">)</span>
+<span class="k">let</span> <span data-fsdocs-tip="fs17" data-fsdocs-tip-unique="22" class="id">ctx</span> <span class="o">=</span> <span data-fsdocs-tip="fs8" data-fsdocs-tip-unique="23" class="rt">sql</span><span class="pn">.</span><span data-fsdocs-tip="fs18" data-fsdocs-tip-unique="24" class="id">GetDataContext</span><span class="pn">(</span><span class="pn">)</span>
 
-<span class="k">let</span> <span data-fsdocs-tip="fs19" data-fsdocs-tip-unique="28" class="id">customers</span> <span class="o">=</span>
-    <span data-fsdocs-tip="fs18" data-fsdocs-tip-unique="29" class="id">ctx</span><span class="pn">.</span><span class="id">Main</span><span class="pn">.</span><span class="id">Customers</span>
-    <span class="o">|&gt;</span> <span data-fsdocs-tip="fs20" data-fsdocs-tip-unique="30" class="m">Seq</span><span class="pn">.</span><span data-fsdocs-tip="fs21" data-fsdocs-tip-unique="31" class="id">map</span><span class="pn">(</span><span class="k">fun</span> <span data-fsdocs-tip="fs22" data-fsdocs-tip-unique="32" class="fn">c</span> <span class="k">-&gt;</span> <span data-fsdocs-tip="fs22" data-fsdocs-tip-unique="33" class="fn">c</span><span class="pn">.</span><span class="id">ContactName</span><span class="pn">)</span>
-    <span class="o">|&gt;</span> <span data-fsdocs-tip="fs20" data-fsdocs-tip-unique="34" class="m">Seq</span><span class="pn">.</span><span data-fsdocs-tip="fs23" data-fsdocs-tip-unique="35" class="id">toList</span>
+<span class="k">let</span> <span data-fsdocs-tip="fs19" data-fsdocs-tip-unique="25" class="id">customers</span> <span class="o">=</span>
+    <span data-fsdocs-tip="fs17" data-fsdocs-tip-unique="26" class="id">ctx</span><span class="pn">.</span><span data-fsdocs-tip="fs20" data-fsdocs-tip-unique="27" class="prop">Main</span><span class="pn">.</span><span data-fsdocs-tip="fs21" data-fsdocs-tip-unique="28" class="id">Customers</span>
+    <span class="o">|&gt;</span> <span data-fsdocs-tip="fs22" data-fsdocs-tip-unique="29" class="m">Seq</span><span class="pn">.</span><span data-fsdocs-tip="fs23" data-fsdocs-tip-unique="30" class="id">map</span><span class="pn">(</span><span class="k">fun</span> <span data-fsdocs-tip="fs24" data-fsdocs-tip-unique="31" class="fn">c</span> <span class="k">-&gt;</span> <span data-fsdocs-tip="fs24" data-fsdocs-tip-unique="32" class="fn">c</span><span class="pn">.</span><span data-fsdocs-tip="fs25" data-fsdocs-tip-unique="33" class="id">ContactName</span><span class="pn">)</span>
+    <span class="o">|&gt;</span> <span data-fsdocs-tip="fs22" data-fsdocs-tip-unique="34" class="m">Seq</span><span class="pn">.</span><span data-fsdocs-tip="fs26" data-fsdocs-tip-unique="35" class="id">toList</span>
 </code></pre>
 <h1><a name="CRUD" class="anchor" href="#CRUD">CRUD</a></h1>
 <p>When you do insert operation, after .SubmitUpdates call you can get inserted rowid like this:</p>
-<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span data-fsdocs-tip="fs24" data-fsdocs-tip-unique="36" class="id">myCustomer</span> <span class="o">=</span> <span class="id">ctx</span><span class="pn">.</span><span class="id">Main</span><span class="pn">.</span><span class="id">Customers</span><span class="pn">.</span><span class="id">``Create(CompanyName)``</span><span class="pn">(</span><span class="s">&quot;MyCompany&quot;</span><span class="pn">)</span>
+<pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span data-fsdocs-tip="fs27" data-fsdocs-tip-unique="36" class="id">myCustomer</span> <span class="o">=</span> <span class="id">ctx</span><span class="pn">.</span><span class="id">Main</span><span class="pn">.</span><span class="id">Customers</span><span class="pn">.</span><span class="id">``Create(CompanyName)``</span><span class="pn">(</span><span class="s">&quot;MyCompany&quot;</span><span class="pn">)</span>
 <span class="id">ctx</span><span class="pn">.</span><span class="id">SubmitUpdates</span><span class="pn">(</span><span class="pn">)</span>
-<span class="k">let</span> <span data-fsdocs-tip="fs25" data-fsdocs-tip-unique="37" class="id">rowid</span> <span class="o">=</span> <span data-fsdocs-tip="fs24" data-fsdocs-tip-unique="38" class="id">myCustomer</span><span class="pn">.</span><span class="id">GetColumn</span><span class="pn">(</span><span class="s">&quot;rowid&quot;</span><span class="pn">)</span> <span class="pn">:</span> <span data-fsdocs-tip="fs26" data-fsdocs-tip-unique="39" class="vt">int</span>
+<span class="k">let</span> <span data-fsdocs-tip="fs28" data-fsdocs-tip-unique="37" class="id">rowid</span> <span class="o">=</span> <span data-fsdocs-tip="fs27" data-fsdocs-tip-unique="38" class="id">myCustomer</span><span class="pn">.</span><span class="id">GetColumn</span><span class="pn">(</span><span class="s">&quot;rowid&quot;</span><span class="pn">)</span> <span class="pn">:</span> <span data-fsdocs-tip="fs29" data-fsdocs-tip-unique="39" class="vt">int</span>
 <span class="c">// ...or just use myCustomer.CustomerId</span>
 </code></pre>
 <p>Also note: SQLite is not very strong on types.
@@ -346,16 +346,15 @@ Decimal is on intention of SQL-drivers handled as text to be non-lossy.</p>
 <div popover class="fsdocs-tip" id="fs2">Multiple items<br />namespace FSharp<br /><br />--------------------<br />namespace Microsoft.FSharp</div>
 <div popover class="fsdocs-tip" id="fs3">Multiple items<br />namespace FSharp.Data<br /><br />--------------------<br />namespace Microsoft.FSharp.Data</div>
 <div popover class="fsdocs-tip" id="fs4">namespace FSharp.Data.Sql</div>
-<div popover class="fsdocs-tip" id="fs5">namespace FSharp.Data.Sql.SQLite</div>
-<div popover class="fsdocs-tip" id="fs6">Multiple items<br />type LiteralAttribute =
+<div popover class="fsdocs-tip" id="fs5">Multiple items<br />type LiteralAttribute =
   inherit Attribute
   new: unit -&gt; LiteralAttribute<br /><br />--------------------<br />new: unit -&gt; LiteralAttribute</div>
-<div popover class="fsdocs-tip" id="fs7">
+<div popover class="fsdocs-tip" id="fs6">
 val connectionString: string = &quot;Data Source=C:\git\SQLProvider\docs\content\core/../../../tests/SqlProvider.Tests/scripts/northwindEF.db;Version=3;foreign keys=true&quot;</div>
-<div popover class="fsdocs-tip" id="fs8">
+<div popover class="fsdocs-tip" id="fs7">
 val resolutionPath: string = &quot;C:\git\SQLProvider\docs\content\core/../../../tests/SqlProvider.Tests/libs&quot;</div>
-<div popover class="fsdocs-tip" id="fs9">type sql = obj</div>
-<div popover class="fsdocs-tip" id="fs10">type SqlDataProvider<br /><em>&lt;summary&gt;Typed representation of a database&lt;/summary&gt;
+<div popover class="fsdocs-tip" id="fs8">type sql = SqlDataProvider&lt;...&gt;</div>
+<div popover class="fsdocs-tip" id="fs9">type SqlDataProvider<br /><em>&lt;summary&gt;Typed representation of a database&lt;/summary&gt;
                     &lt;param name=&#39;ConnectionString&#39;&gt;The connection string for the SQL database&lt;/param&gt;
                     &lt;param name=&#39;ConnectionStringName&#39;&gt;The connection string name to select from a configuration file&lt;/param&gt;
                     &lt;param name=&#39;DatabaseVendor&#39;&gt; The target database vendor&lt;/param&gt;
@@ -370,8 +369,8 @@ val resolutionPath: string = &quot;C:\git\SQLProvider\docs\content\core/../../..
                     &lt;param name=&#39;SQLiteLibrary&#39;&gt;Use System.Data.SQLite or Mono.Data.SQLite or select automatically (SQLite only)&lt;/param&gt;
                     &lt;param name=&#39;SsdtPath&#39;&gt;A path to an SSDT .dacpac file.&#39;&lt;/param&gt;
                     </em></div>
-<div popover class="fsdocs-tip" id="fs11">namespace FSharp.Data.Sql.Common</div>
-<div popover class="fsdocs-tip" id="fs12">
+<div popover class="fsdocs-tip" id="fs10">namespace FSharp.Data.Sql.Common</div>
+<div popover class="fsdocs-tip" id="fs11">
 type DatabaseProviderTypes =
   | MSSQLSERVER = 0
   | SQLITE = 1
@@ -388,10 +387,10 @@ type DatabaseProviderTypes =
  Specifies the database provider type for the SQL type provider.
  Each provider has its own specific implementation for SQL generation and data type mapping.
 &lt;/summary&gt;</em></div>
-<div popover class="fsdocs-tip" id="fs13">Common.DatabaseProviderTypes.SQLITE: Common.DatabaseProviderTypes = 1<br /><em>&lt;summary&gt;
+<div popover class="fsdocs-tip" id="fs12">Common.DatabaseProviderTypes.SQLITE: Common.DatabaseProviderTypes = 1<br /><em>&lt;summary&gt;
  SQLite database using System.Data.SQLite or Microsoft.Data.Sqlite
 &lt;/summary&gt;</em></div>
-<div popover class="fsdocs-tip" id="fs14">
+<div popover class="fsdocs-tip" id="fs13">
 type SQLiteLibrary =
   | SystemDataSQLite = 0
   | MonoDataSQLite = 1
@@ -400,32 +399,36 @@ type SQLiteLibrary =
  Specifies which SQLite library to use for connections.
  Different libraries may have different capabilities and platform support.
 &lt;/summary&gt;</em></div>
-<div popover class="fsdocs-tip" id="fs15">Common.SQLiteLibrary.SystemDataSQLite: Common.SQLiteLibrary = 0<br /><em>&lt;summary&gt;
+<div popover class="fsdocs-tip" id="fs14">Common.SQLiteLibrary.SystemDataSQLite: Common.SQLiteLibrary = 0<br /><em>&lt;summary&gt;
  .NET Framework default
 &lt;/summary&gt;</em></div>
-<div popover class="fsdocs-tip" id="fs16">
+<div popover class="fsdocs-tip" id="fs15">
 type CaseSensitivityChange =
   | ORIGINAL = 0
   | TOUPPER = 1
   | TOLOWER = 2<br /><em>&lt;summary&gt;
  Specifies how to handle case sensitivity when generating table and column names.
 &lt;/summary&gt;</em></div>
-<div popover class="fsdocs-tip" id="fs17">Common.CaseSensitivityChange.ORIGINAL: Common.CaseSensitivityChange = 0<br /><em>&lt;summary&gt;
+<div popover class="fsdocs-tip" id="fs16">Common.CaseSensitivityChange.ORIGINAL: Common.CaseSensitivityChange = 0<br /><em>&lt;summary&gt;
  Keep original casing from the database
 &lt;/summary&gt;</em></div>
-<div popover class="fsdocs-tip" id="fs18">val ctx: obj</div>
-<div popover class="fsdocs-tip" id="fs19">val customers: obj list</div>
-<div popover class="fsdocs-tip" id="fs20">Multiple items<br />module Seq
+<div popover class="fsdocs-tip" id="fs17">val ctx: SqlDataProvider&lt;...&gt;.dataContext</div>
+<div popover class="fsdocs-tip" id="fs18">SqlDataProvider&lt;...&gt;.GetDataContext() : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(selectOperations: SelectOperations) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;selectOperations&#39;&gt;Execute select-clause operations in SQL database rather than .NET-side.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(commandTimeout: int) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;commandTimeout&#39;&gt;SQL command timeout. Maximum time for single SQL-command in seconds.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(transactionOptions: Transactions.TransactionOptions) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;transactionOptions&#39;&gt;TransactionOptions for the transaction created on SubmitChanges.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string, selectOperations: SelectOperations) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;&lt;param name=&#39;selectOperations&#39;&gt;Execute select-clause operations in SQL database rather than .NET-side.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(transactionOptions: Transactions.TransactionOptions, commandTimeout: int) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;transactionOptions&#39;&gt;TransactionOptions for the transaction created on SubmitChanges.&lt;/param&gt;&lt;param name=&#39;commandTimeout&#39;&gt;SQL command timeout. Maximum time for single SQL-command in seconds.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string, commandTimeout: int) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;&lt;param name=&#39;commandTimeout&#39;&gt;SQL command timeout. Maximum time for single SQL-command in seconds.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string, transactionOptions: Transactions.TransactionOptions) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;&lt;param name=&#39;transactionOptions&#39;&gt;TransactionOptions for the transaction created on SubmitChanges.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />SqlDataProvider&lt;...&gt;.GetDataContext(connectionString: string, resolutionPath: string) : SqlDataProvider&lt;...&gt;.dataContext<br /><em>&lt;summary&gt;Returns an instance of the SQL Provider using the static parameters&lt;/summary&gt;&lt;param name=&#39;connectionString&#39;&gt;The database runtime connection string&lt;/param&gt;&lt;param name=&#39;resolutionPath&#39;&gt;The location to look for dynamically loaded assemblies containing database vendor specific connections and custom types.  Types used in design-time: If no better clue, prefer .NET Standard 2.0 versions. Semicolon to separate multiple.&lt;/param&gt;</em><br />&#160;&#160;&#160;<em>(+0 other overloads)</em></div>
+<div popover class="fsdocs-tip" id="fs19">val customers: string list</div>
+<div popover class="fsdocs-tip" id="fs20">property SqlDataProvider&lt;...&gt;.dataContext.Main: SqlDataProvider&lt;...&gt;.dataContext.mainSchema with get</div>
+<div popover class="fsdocs-tip" id="fs21">property SqlDataProvider&lt;...&gt;.dataContext.mainSchema.Customers: SqlDataProvider&lt;...&gt;.dataContext.mainSchema.main.Customers with get<br /><em>&lt;summary&gt;  The table Customers belonging to schema main&lt;/summary&gt;</em></div>
+<div popover class="fsdocs-tip" id="fs22">Multiple items<br />module Seq
 
 from FSharp.Data.Sql<br /><br />--------------------<br />module Seq
 
 from Microsoft.FSharp.Collections</div>
-<div popover class="fsdocs-tip" id="fs21">val map: mapping: (&#39;T -&gt; &#39;U) -&gt; source: &#39;T seq -&gt; &#39;U seq</div>
-<div popover class="fsdocs-tip" id="fs22">val c: obj</div>
-<div popover class="fsdocs-tip" id="fs23">val toList: source: &#39;T seq -&gt; &#39;T list</div>
-<div popover class="fsdocs-tip" id="fs24">val myCustomer: obj</div>
-<div popover class="fsdocs-tip" id="fs25">val rowid: int</div>
-<div popover class="fsdocs-tip" id="fs26">Multiple items<br />val int: value: &#39;T -&gt; int (requires member op_Explicit)<br /><br />--------------------<br />type int = int32<br /><br />--------------------<br />type int&lt;&#39;Measure&gt; =
+<div popover class="fsdocs-tip" id="fs23">val map: mapping: (&#39;T -&gt; &#39;U) -&gt; source: &#39;T seq -&gt; &#39;U seq</div>
+<div popover class="fsdocs-tip" id="fs24">val c: SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity</div>
+<div popover class="fsdocs-tip" id="fs25">property SqlDataProvider&lt;...&gt;.dataContext.main.CustomersEntity.ContactName: string with get, set<br /><em>&lt;summary&gt;ContactName:   nvarchar(30)&lt;/summary&gt;</em></div>
+<div popover class="fsdocs-tip" id="fs26">val toList: source: &#39;T seq -&gt; &#39;T list</div>
+<div popover class="fsdocs-tip" id="fs27">val myCustomer: obj</div>
+<div popover class="fsdocs-tip" id="fs28">val rowid: int</div>
+<div popover class="fsdocs-tip" id="fs29">Multiple items<br />val int: value: &#39;T -&gt; int (requires member op_Explicit)<br /><br />--------------------<br />type int = int32<br /><br />--------------------<br />type int&lt;&#39;Measure&gt; =
   int</div>
 
     </div>

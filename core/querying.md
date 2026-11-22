@@ -98,7 +98,9 @@ query can serve "all" and "one":
 
 ```fsharp
 // query parameters:
+[<Literal>]
 let allCountries = false // or true
+[<Literal>]
 let onlyCountry = "Finland" // or ""
 
 query { for c in ctx.Main.Customers do

@@ -1,0 +1,2696 @@
+<!DOCTYPE html>
+<html lang="en" data-root="https://fsprojects.github.io/SQLProvider/">
+<head>
+    <meta charset="UTF-8">
+    <meta content="IE=edge" http-equiv="X-UA-Compatible">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="pezipink,colinbull,thorium" name="author">
+    <!-- Opengraph properties (https://ogp.me/) -->
+    <meta property="og:site_name" content="SQLProvider">
+    <meta property="og:title" content="PostgreSQL (SQLProvider)" />
+    <meta property="og:url" content="https://fsprojects.github.io/SQLProvider/{{fsdocs-source-basename}}.html">
+    <meta property="og:type" content="website" />
+    <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="https://fsprojects.github.io/SQLProvider/">
+    <meta name="twitter:title" content="PostgreSQL (SQLProvider)">
+    
+    <title>PostgreSQL (SQLProvider) | SQLProvider</title>
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link href="https://fsprojects.github.io/SQLProvider/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="https://fsprojects.github.io/SQLProvider/content/fsdocs-theme-set-dark.js"></script>
+    <link href="https://fsprojects.github.io/SQLProvider/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="https://fsprojects.github.io/SQLProvider/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <link href="https://fsprojects.github.io/SQLProvider/content/fsdocs-custom.css" rel="stylesheet" type="text/css"/>
+    
+    
+</head>
+<body class="api-docs">
+<header>
+    <div class="start">
+        <div id="menu-toggle">
+            <iconify-icon class="icon closed" height="22" icon="eva:menu-fill" width="22"></iconify-icon>
+            <iconify-icon class="icon open" height="22" icon="mi:close" width="22"></iconify-icon>
+            <input type="checkbox" name="mobile-menu" />
+            <ul class="menu">
+                <li class="nav-header">Links</li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt">License</a>
+                </li>
+                <li class="nav-item"><a class="nav-link"
+                                        href="https://github.com/fsprojects/SQLProvider/blob/master/docs/RELEASE_NOTES.md">Release
+                    Notes</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/fsprojects/SQLProvider/">Source
+                    Repository</a></li>
+                <li class="nav-header">
+  Documentation
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/async.html">
+    Asynchronous Database Operation
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/composable.html">
+    Composable Queries
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/constraints-relationships.html">
+    Constraints &amp;amp; Relationships
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/contributing.html">
+    How to contribute
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/crud.html">
+    CRUD sample
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/general.html">
+    SQL Provider Basics
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/individuals.html">
+    Individuals
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/locking.html">
+    Locking rows for update
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/mappers.html">
+    mappers
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/msaccess.html">
+    SQL Provider for MSAccess
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/mssql.html">
+    MSSQL Provider
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/mssqlssdt.html">
+    MSSQL SSDT Provider
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/mysql.html">
+    MySQL Provider
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/netstandard.html">
+    .NET Standard / .NET Core support
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/odbc.html">
+    ODBC
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/oracle.html">
+    SQL Provider for Oracle
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/outline.html">
+    outline
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/parameters.html">
+    SQL Provider Static Parameters
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/postgresql.html">
+    PostgreSQL Provider
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/programmability.html">
+    Programmability
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/querying.html">
+    Querying
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/sqlite.html">
+    SQLite Provider
+
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/techdetails.html">
+    techdetails
+  </a>
+</li>             
+<li class="nav-item ">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/core/unittest.html">
+    SQLProvider allows you to unit-test your SQL-logic
+
+  </a>
+</li>
+                <li class="nav-header">
+  API Reference
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/reference/index.html">
+    All Namespaces
+  </a>
+</li>
+            </ul>
+        </div>
+        <a href="https://fsprojects.github.io/SQLProvider/">
+            <!-- <img alt="Header menu logo" src="https://fsprojects.github.io/SQLProvider/img/logo.png"> -->
+            <H1 style="font-size: 24px;">SQLProvider</H1>
+        </a>
+    </div>
+    <div class="end">
+        <a href="https://github.com/fsprojects/SQLProvider/" target="_blank">
+            <iconify-icon icon="uil:github" width="26" height="26"></iconify-icon>
+        </a>
+        <iconify-icon id="search-btn" icon="carbon:search" class="search" width="24" height="24"></iconify-icon>
+        <fsdocs-theme-toggle></fsdocs-theme-toggle>
+    </div>
+</header>
+<aside id="fsdocs-main-menu">
+    <ul class="menu">
+        <li class="nav-header">Documentation</li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider/core/general.html" class="nav-link">General</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider/core/parameters.html" class="nav-link">Static Parameters</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider/core/querying.html" class="nav-link">Querying</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider/core/constraints-relationships.html" class="nav-link">Constraints & Relationships</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider/core/crud.html" class="nav-link">CRUD</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider/core/programmability.html" class="nav-link">Programmability</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider/core/individuals.html" class="nav-link">Individuals</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider/core/composable.html" class="nav-link">Composable Query</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider/core/mssql.html" class="nav-link">SQL Server</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider/core/oracle.html" class="nav-link">Oracle</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider/core/sqlite.html" class="nav-link">SQLite</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider/core/postgresql.html" class="nav-link">PostgreSQL</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider/core/mysql.html" class="nav-link">MySQL</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider/core/odbc.html" class="nav-link">ODBC</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider/core/unittest.html" class="nav-link">Unit-testing</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider/core/locking.html" class="nav-link">Locking rows</a></li>
+        <li class="nav-item"><a href="https://fsprojects.github.io/SQLProvider/reference/index.html" class="nav-link">Internal API Docs</a></li>
+
+        <li class="nav-item">
+            <a class="nav-link" href="https://github.com/fsprojects/SQLProvider/blob/master/LICENSE.txt">License</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link"
+               href="https://github.com/fsprojects/SQLProvider/blob/master/docs/RELEASE_NOTES.md">
+                Release
+                Notes
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="https://github.com/fsprojects/SQLProvider/">
+                Source
+                Repository
+            </a>
+        </li>
+
+        <li class="nav-header">
+  API Reference
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://fsprojects.github.io/SQLProvider/reference/index.html">
+    All Namespaces
+  </a>
+</li>
+    </ul>
+</aside>
+<main>
+    <div id="content">
+        <div>
+  <h2>
+    PostgreSQL Module
+  </h2>
+  <dl class="fsdocs-metadata">
+    <dt>
+      Namespace: 
+      <a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-providers.html">
+        FSharp.Data.Sql.Providers
+      </a>
+    </dt>
+    <dt>
+      Assembly: FSharp.Data.SqlProvider.dll
+    </dt>
+  </dl>
+  <div class="fsdocs-xmldoc">
+    <div>
+      <div class="fsdocs-summary-contents">
+        <p class="fsdocs-summary">
+          
+        </p>
+      </div>
+    </div>
+  </div>
+  <div>
+    <h3>
+      Functions and values
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Function or value
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+            <fsdocs-details-toggle></fsdocs-details-toggle>
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="871" data-fsdocs-tip-unique="871">
+                <p>
+                  <a id="ANONYMOUS_PARAMETER_NAME">
+                    <a href="#ANONYMOUS_PARAMETER_NAME">
+                      <code><span>ANONYMOUS_PARAMETER_NAME&#32;<span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="871">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>ANONYMOUS_PARAMETER_NAME&#32;<span></span></span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>string</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L20-20" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>string</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="872" data-fsdocs-tip-unique="872">
+                <p>
+                  <a id="arrayProviderDbType">
+                    <a href="#arrayProviderDbType">
+                      <code><span>arrayProviderDbType&#32;<span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="872">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>arrayProviderDbType&#32;<span></span></span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span>Lazy&lt;int&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L155-155" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span>Lazy&lt;int&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="873" data-fsdocs-tip-unique="873">
+                <p>
+                  <a id="assembly">
+                    <a href="#assembly">
+                      <code><span>assembly&#32;<span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="873">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>assembly&#32;<span></span></span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span>Lazy&lt;<a href="https://learn.microsoft.com/dotnet/api/system.reflection.assembly">Assembly</a>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L28-28" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span>Lazy&lt;<a href="https://learn.microsoft.com/dotnet/api/system.reflection.assembly">Assembly</a>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="874" data-fsdocs-tip-unique="874">
+                <p>
+                  <a id="assemblyNames">
+                    <a href="#assemblyNames">
+                      <code><span>assemblyNames&#32;<span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="874">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>assemblyNames&#32;<span></span></span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span>string&#32;list</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L24-24" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span>string&#32;list</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="875" data-fsdocs-tip-unique="875">
+                <p>
+                  <a id="commandType">
+                    <a href="#commandType">
+                      <code><span>commandType&#32;<span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="875">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>commandType&#32;<span></span></span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span>Lazy&lt;<a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L68-68" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span>Lazy&lt;<a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="876" data-fsdocs-tip-unique="876">
+                <p>
+                  <a id="connectionType">
+                    <a href="#connectionType">
+                      <code><span>connectionType&#32;<span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="876">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>connectionType&#32;<span></span></span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span>Lazy&lt;<a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L67-67" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span>Lazy&lt;<a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="877" data-fsdocs-tip-unique="877">
+                <p>
+                  <a id="createCommand">
+                    <a href="#createCommand">
+                      <code><span>createCommand&#32;<span>commandText&#32;connection</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="877">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>createCommand&#32;<span>commandText&#32;connection</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        commandText
+                      </b>
+                      :
+                      <code>'a</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        connection
+                      </b>
+                      :
+                      <code><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://learn.microsoft.com/dotnet/api/system.data.idbcommand">IDbCommand</a></code>
+                  </span>
+                  <br/>
+                  Type parameters: 
+                  &#39;a
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L324-324" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    commandText
+                  </span>
+                  :
+                  <code>'a</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    connection
+                  </span>
+                  :
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.data.idbcommand">IDbCommand</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="878" data-fsdocs-tip-unique="878">
+                <p>
+                  <a id="createCommandParameter">
+                    <a href="#createCommandParameter">
+                      <code><span>createCommandParameter&#32;<span>param&#32;value</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="878">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>createCommandParameter&#32;<span>param&#32;value</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        param
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-queryparameter.html">QueryParameter</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        value
+                      </b>
+                      :
+                      <code>objnull</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://learn.microsoft.com/dotnet/api/system.data.idbdataparameter">IDbDataParameter</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L114-114" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    param
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-queryparameter.html">QueryParameter</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    value
+                  </span>
+                  :
+                  <code>objnull</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.data.idbdataparameter">IDbDataParameter</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="879" data-fsdocs-tip-unique="879">
+                <p>
+                  <a id="createConnection">
+                    <a href="#createConnection">
+                      <code><span>createConnection&#32;<span>connectionString</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="879">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>createConnection&#32;<span>connectionString</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        connectionString
+                      </b>
+                      :
+                      <code>'a</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a></code>
+                  </span>
+                  <br/>
+                  Type parameters: 
+                  &#39;a
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L288-288" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    connectionString
+                  </span>
+                  :
+                  <code>'a</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="880" data-fsdocs-tip-unique="880">
+                <p>
+                  <a id="createTypeMappings">
+                    <a href="#createTypeMappings">
+                      <code><span>createTypeMappings&#32;<span>()</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="880">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>createTypeMappings&#32;<span>()</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        ()
+                      </b>
+                      :
+                      <code>unit</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L184-184" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    ()
+                  </span>
+                  :
+                  <code>unit</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="881" data-fsdocs-tip-unique="881">
+                <p>
+                  <a id="dbType">
+                    <a href="#dbType">
+                      <code><span>dbType&#32;<span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="881">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>dbType&#32;<span></span></span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span>Lazy&lt;<a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L70-70" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span>Lazy&lt;<a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="882" data-fsdocs-tip-unique="882">
+                <p>
+                  <a id="dbTypeGetter">
+                    <a href="#dbTypeGetter">
+                      <code><span>dbTypeGetter&#32;<span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="882">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>dbTypeGetter&#32;<span></span></span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span>Lazy&lt;<a href="https://learn.microsoft.com/dotnet/api/system.reflection.methodinfo">MethodInfo</a>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L71-71" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span>Lazy&lt;<a href="https://learn.microsoft.com/dotnet/api/system.reflection.methodinfo">MethodInfo</a>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="883" data-fsdocs-tip-unique="883">
+                <p>
+                  <a id="dbTypeSetter">
+                    <a href="#dbTypeSetter">
+                      <code><span>dbTypeSetter&#32;<span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="883">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>dbTypeSetter&#32;<span></span></span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span>Lazy&lt;<a href="https://learn.microsoft.com/dotnet/api/system.reflection.methodinfo">MethodInfo</a>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L72-72" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span>Lazy&lt;<a href="https://learn.microsoft.com/dotnet/api/system.reflection.methodinfo">MethodInfo</a>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="884" data-fsdocs-tip-unique="884">
+                <p>
+                  <a id="executeSprocCommand">
+                    <a href="#executeSprocCommand">
+                      <code><span>executeSprocCommand&#32;<span>com&#32;inputParams&#32;retCols&#32;values</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="884">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>executeSprocCommand&#32;<span>com&#32;inputParams&#32;retCols&#32;values</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        com
+                      </b>
+                      :
+                      <code><a href="https://learn.microsoft.com/dotnet/api/system.data.idbcommand">IDbCommand</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        inputParams
+                      </b>
+                      :
+                      <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-queryparameter.html">QueryParameter</a>[]</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        retCols
+                      </b>
+                      :
+                      <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-queryparameter.html">QueryParameter</a>[]</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        values
+                      </b>
+                      :
+                      <code><span>obj[]</span></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-returnvaluetype.html">ReturnValueType</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L468-468" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    com
+                  </span>
+                  :
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.data.idbcommand">IDbCommand</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    inputParams
+                  </span>
+                  :
+                  <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-queryparameter.html">QueryParameter</a>[]</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    retCols
+                  </span>
+                  :
+                  <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-queryparameter.html">QueryParameter</a>[]</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    values
+                  </span>
+                  :
+                  <code><span>obj[]</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-returnvaluetype.html">ReturnValueType</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="885" data-fsdocs-tip-unique="885">
+                <p>
+                  <a id="executeSprocCommandAsync">
+                    <a href="#executeSprocCommandAsync">
+                      <code><span>executeSprocCommandAsync&#32;<span>com&#32;inputParams&#32;retCols&#32;values</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="885">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>executeSprocCommandAsync&#32;<span>com&#32;inputParams&#32;retCols&#32;values</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        com
+                      </b>
+                      :
+                      <code><a href="https://learn.microsoft.com/dotnet/api/system.data.common.dbcommand">DbCommand</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        inputParams
+                      </b>
+                      :
+                      <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-queryparameter.html">QueryParameter</a>[]</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        retCols
+                      </b>
+                      :
+                      <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-queryparameter.html">QueryParameter</a>[]</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        values
+                      </b>
+                      :
+                      <code><span>obj[]</span></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-returnvaluetype.html">ReturnValueType</a>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L520-520" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    com
+                  </span>
+                  :
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.data.common.dbcommand">DbCommand</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    inputParams
+                  </span>
+                  :
+                  <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-queryparameter.html">QueryParameter</a>[]</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    retCols
+                  </span>
+                  :
+                  <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-queryparameter.html">QueryParameter</a>[]</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    values
+                  </span>
+                  :
+                  <code><span>obj[]</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;<a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-returnvaluetype.html">ReturnValueType</a>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="886" data-fsdocs-tip-unique="886">
+                <p>
+                  <a id="executeSprocCommandCommon">
+                    <a href="#executeSprocCommandCommon">
+                      <code><span>executeSprocCommandCommon&#32;<span>inputParams&#32;retCols&#32;values</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="886">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>executeSprocCommandCommon&#32;<span>inputParams&#32;retCols&#32;values</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        inputParams
+                      </b>
+                      :
+                      <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-queryparameter.html">QueryParameter</a>[]</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        retCols
+                      </b>
+                      :
+                      <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-queryparameter.html">QueryParameter</a>[]</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        values
+                      </b>
+                      :
+                      <code><span>obj[]</span></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><span><span>(<span>int&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.data.idbdataparameter">IDbDataParameter</a></span>)</span>&#32;array</span>&#32;*&#32;<span><span>(<span>int&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.data.idbdataparameter">IDbDataParameter</a></span>)</span>&#32;array</span></span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L357-357" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    inputParams
+                  </span>
+                  :
+                  <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-queryparameter.html">QueryParameter</a>[]</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    retCols
+                  </span>
+                  :
+                  <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-queryparameter.html">QueryParameter</a>[]</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    values
+                  </span>
+                  :
+                  <code><span>obj[]</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><span><span>(<span>int&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.data.idbdataparameter">IDbDataParameter</a></span>)</span>&#32;array</span>&#32;*&#32;<span><span>(<span>int&#32;*&#32;<a href="https://learn.microsoft.com/dotnet/api/system.data.idbdataparameter">IDbDataParameter</a></span>)</span>&#32;array</span></span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="887" data-fsdocs-tip-unique="887">
+                <p>
+                  <a id="executeSqlWith">
+                    <a href="#executeSqlWith">
+                      <code><span>executeSqlWith&#32;<span>commandText&#32;parameters&#32;connection</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="887">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>executeSqlWith&#32;<span>commandText&#32;parameters&#32;connection</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        commandText
+                      </b>
+                      :
+                      <code>'a</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        parameters
+                      </b>
+                      :
+                      <code><span><span>(<span>string&#32;*&#32;obj</span>)</span>&#32;list</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        connection
+                      </b>
+                      :
+                      <code><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://learn.microsoft.com/dotnet/api/system.data.idatareader">IDataReader</a></code>
+                  </span>
+                  <br/>
+                  Type parameters: 
+                  &#39;a
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Runs a query with the values as parameters instead of in the SQL text, so that any name works in it.
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L336-336" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Providers.PostgreSQL.executeSqlWith``1\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Providers.PostgreSQL.executeSqlWith``1```')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
+                  </div>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    commandText
+                  </span>
+                  :
+                  <code>'a</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    parameters
+                  </span>
+                  :
+                  <code><span><span>(<span>string&#32;*&#32;obj</span>)</span>&#32;list</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    connection
+                  </span>
+                  :
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.data.idatareader">IDataReader</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="888" data-fsdocs-tip-unique="888">
+                <p>
+                  <a id="fieldNotationAlias">
+                    <a href="#fieldNotationAlias">
+                      <code><span>fieldNotationAlias&#32;<span><span>(<span>al,&#32;col</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="888">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>fieldNotationAlias&#32;<span><span>(<span>al,&#32;col</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        al
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-alias.html">alias</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        col
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlcolumntype.html">SqlColumnType</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>string</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L149-149" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    al
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-alias.html">alias</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    col
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-columnschema-sqlcolumntype.html">SqlColumnType</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>string</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="889" data-fsdocs-tip-unique="889">
+                <p>
+                  <a id="findDbType">
+                    <a href="#findDbType">
+                      <code><span>findDbType&#32;<span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="889">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>findDbType&#32;<span></span></span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span>string&#32;->&#32;<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-typemapping.html">TypeMapping</a>&#32;option</span></span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L88-88" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span>string&#32;->&#32;<span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-typemapping.html">TypeMapping</a>&#32;option</span></span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="890" data-fsdocs-tip-unique="890">
+                <p>
+                  <a id="findType">
+                    <a href="#findType">
+                      <code><span>findType&#32;<span>name</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="890">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>findType&#32;<span>name</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        name
+                      </b>
+                      :
+                      <code>string</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a>&#32;option</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L47-47" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    name
+                  </span>
+                  :
+                  <code>string</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a>&#32;option</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="891" data-fsdocs-tip-unique="891">
+                <p>
+                  <a id="getDbType">
+                    <a href="#getDbType">
+                      <code><span>getDbType&#32;<span>providerType</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="891">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>getDbType&#32;<span>providerType</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        providerType
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://learn.microsoft.com/dotnet/api/system.data.dbtype">DbType</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L77-77" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    providerType
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.data.dbtype">DbType</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="892" data-fsdocs-tip-unique="892">
+                <p>
+                  <a id="getSprocs">
+                    <a href="#getSprocs">
+                      <code><span>getSprocs&#32;<span>con</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="892">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>getSprocs&#32;<span>con</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        con
+                      </b>
+                      :
+                      <code><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-sproc.html">Sproc</a>&#32;list</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L599-599" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    con
+                  </span>
+                  :
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-sproc.html">Sproc</a>&#32;list</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="893" data-fsdocs-tip-unique="893">
+                <p>
+                  <a id="getType">
+                    <a href="#getType">
+                      <code><span>getType&#32;<span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="893">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>getType&#32;<span></span></span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span>string&#32;->&#32;<a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a></span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L65-65" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span>string&#32;->&#32;<a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a></span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="894" data-fsdocs-tip-unique="894">
+                <p>
+                  <a id="isLegacyVersion">
+                    <a href="#isLegacyVersion">
+                      <code><span>isLegacyVersion&#32;<span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="894">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>isLegacyVersion&#32;<span></span></span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span>Lazy&lt;<span>bool&#32;*&#32;bool</span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L42-42" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span>Lazy&lt;<span>bool&#32;*&#32;bool</span>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="895" data-fsdocs-tip-unique="895">
+                <p>
+                  <a id="isOptionValue">
+                    <a href="#isOptionValue">
+                      <code><span>isOptionValue&#32;<span>value</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="895">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>isOptionValue&#32;<span>value</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        value
+                      </b>
+                      :
+                      <code>'a</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>bool</code>
+                  </span>
+                  <br/>
+                  Type parameters: 
+                  &#39;a
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L109-109" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    value
+                  </span>
+                  :
+                  <code>'a</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>bool</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="896" data-fsdocs-tip-unique="896">
+                <p>
+                  <a id="namemap">
+                    <a href="#namemap">
+                      <code><span>namemap&#32;<span>name&#32;dbTypes</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="896">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>namemap&#32;<span>name&#32;dbTypes</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        name
+                      </b>
+                      :
+                      <code>string</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        dbTypes
+                      </b>
+                      :
+                      <code><span>string&#32;list</span></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><span>(<span><a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a>&#32;*&#32;int</span>)</span>&#32;option</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Pairs a CLR type by name with a value of Npgsql's type enumeration
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L164-164" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Providers.PostgreSQL.namemap\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.Providers.PostgreSQL.namemap`')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
+                  </div>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    name
+                  </span>
+                  :
+                  <code>string</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    dbTypes
+                  </span>
+                  :
+                  <code><span>string&#32;list</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><span>(<span><a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a>&#32;*&#32;int</span>)</span>&#32;option</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="897" data-fsdocs-tip-unique="897">
+                <p>
+                  <a id="parameterType">
+                    <a href="#parameterType">
+                      <code><span>parameterType&#32;<span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="897">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>parameterType&#32;<span></span></span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span>Lazy&lt;<a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L69-69" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span>Lazy&lt;<a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="898" data-fsdocs-tip-unique="898">
+                <p>
+                  <a id="parseDbType">
+                    <a href="#parseDbType">
+                      <code><span>parseDbType&#32;<span>dbTypeName</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="898">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>parseDbType&#32;<span>dbTypeName</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        dbTypeName
+                      </b>
+                      :
+                      <code>string</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span>int&#32;option</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L90-90" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    dbTypeName
+                  </span>
+                  :
+                  <code>string</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span>int&#32;option</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="899" data-fsdocs-tip-unique="899">
+                <p>
+                  <a id="readParameter">
+                    <a href="#readParameter">
+                      <code><span>readParameter&#32;<span>parameter</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="899">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>readParameter&#32;<span>parameter</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        parameter
+                      </b>
+                      :
+                      <code><a href="https://learn.microsoft.com/dotnet/api/system.data.idbdataparameter">IDbDataParameter</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>objnull</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L342-342" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    parameter
+                  </span>
+                  :
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.data.idbdataparameter">IDbDataParameter</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>objnull</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="900" data-fsdocs-tip-unique="900">
+                <p>
+                  <a id="referencedAssemblies">
+                    <a href="#referencedAssemblies">
+                      <code><span>referencedAssemblies&#32;<span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="900">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>referencedAssemblies&#32;<span></span></span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span>string[]</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L22-22" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span>string[]</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="901" data-fsdocs-tip-unique="901">
+                <p>
+                  <a id="resolutionPath">
+                    <a href="#resolutionPath">
+                      <code><span>resolutionPath&#32;<span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="901">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>resolutionPath&#32;<span></span></span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>string</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L18-18" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>string</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="902" data-fsdocs-tip-unique="902">
+                <p>
+                  <a id="schemas">
+                    <a href="#schemas">
+                      <code><span>schemas&#32;<span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="902">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>schemas&#32;<span></span></span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span>string[]</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L19-19" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span>string[]</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="903" data-fsdocs-tip-unique="903">
+                <p>
+                  <a id="tryReadValueProperty">
+                    <a href="#tryReadValueProperty">
+                      <code><span>tryReadValueProperty&#32;<span>instance</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="903">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>tryReadValueProperty&#32;<span>instance</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        instance
+                      </b>
+                      :
+                      <code>'a</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span>obj&#32;option</span></code>
+                  </span>
+                  <br/>
+                  Type parameters: 
+                  &#39;a
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L102-102" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    instance
+                  </span>
+                  :
+                  <code>'a</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span>obj&#32;option</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="904" data-fsdocs-tip-unique="904">
+                <p>
+                  <a id="typemap">
+                    <a href="#typemap">
+                      <code><span>typemap&#32;<span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="904">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>typemap&#32;<span></span></span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><span>string&#32;list</span>&#32;->&#32;<span><span>(<span><a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a>&#32;*&#32;int</span>)</span>&#32;option</span></span></code>
+                  </span>
+                  <br/>
+                  Type parameters: 
+                  &#39;t
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Pairs a CLR type by type parameter with a value of Npgsql's type enumeration
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L161-161" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Providers.PostgreSQL.typemap``1\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Providers.PostgreSQL.typemap``1```')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
+                  </div>
+                </div>
+              </summary>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><span>string&#32;list</span>&#32;->&#32;<span><span>(<span><a href="https://learn.microsoft.com/dotnet/api/system.type">Type</a>&#32;*&#32;int</span>)</span>&#32;option</span></span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="905" data-fsdocs-tip-unique="905">
+                <p>
+                  <a id="typemap'">
+                    <a href="#typemap'">
+                      <code><span>typemap'&#32;<span>t</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="905">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>typemap'&#32;<span>t</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        t
+                      </b>
+                      :
+                      <code>'a</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><span>string&#32;list</span>&#32;->&#32;<span><span>(<span>'a&#32;*&#32;int</span>)</span>&#32;option</span></span></code>
+                  </span>
+                  <br/>
+                  Type parameters: 
+                  &#39;a
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       Pairs a CLR type by type object with a value of Npgsql's type enumeration
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L158-158" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.Providers.PostgreSQL.typemap'``1\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.Providers.PostgreSQL.typemap'``1```')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
+                  </div>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    t
+                  </span>
+                  :
+                  <code>'a</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><span>string&#32;list</span>&#32;->&#32;<span><span>(<span>'a&#32;*&#32;int</span>)</span>&#32;option</span></span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="906" data-fsdocs-tip-unique="906">
+                <p>
+                  <a id="uuidProviderDbType">
+                    <a href="#uuidProviderDbType">
+                      <code><span>uuidProviderDbType&#32;<span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="906">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>uuidProviderDbType&#32;<span></span></span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span>Lazy&lt;<span>int&#32;option</span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       The value of Npgsql's type enumeration for a uuid
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider/tree/master/src/SQLProvider.Runtime/Providers.Postgresql.fs#L100-100" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:FSharp.Data.Sql.Providers.PostgreSQL.uuidProviderDbType\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:FSharp.Data.Sql.Providers.PostgreSQL.uuidProviderDbType`')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
+                  </div>
+                </div>
+              </summary>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span>Lazy&lt;<span>int&#32;option</span>&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+</div>
+        
+    </div>
+</main>
+<aside id="fsdocs-page-menu">
+    <p id="on-this-page">On this page</p>
+    <div class="empty"></div>
+</aside>
+<dialog>
+    <input type="search" placeholder="Search docs" />
+    <div class="results">
+        <ul></ul>
+        <p class="empty">Type something to start searching.</p>
+    </div>
+</dialog>
+<script type="module" src="https://fsprojects.github.io/SQLProvider/content/fsdocs-tips.js"></script>
+<script type="module" src="https://fsprojects.github.io/SQLProvider/content/fsdocs-xmldoc-tips.js"></script>
+<script type="module" src="https://fsprojects.github.io/SQLProvider/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="https://fsprojects.github.io/SQLProvider/content/fsdocs-theme.js"></script>
+<script type="module" src="https://fsprojects.github.io/SQLProvider/content/fsdocs-search.js"></script>
+
+</body>
+</html>

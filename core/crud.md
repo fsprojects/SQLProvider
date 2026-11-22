@@ -38,7 +38,7 @@ row.CustomerId <- customer.CustomerId
 row.EmployeeId <- employee.EmployeeId
 row.Freight <- 10M
 row.OrderDate <- now.AddDays(-1.0)
-row.RequiredDate <- now.AddDays(1.0)
+row.RequiredDate <- now.AddDays 1.0
 row.ShipAddress <- "10 Downing St"
 row.ShipCity <- "London"
 row.ShipName <- "Dragons den"
@@ -169,7 +169,7 @@ output of .ColumnValues:
 ```fsharp
 employees
     |> Seq.map (fun x ->
-                ctx.Main.Employees.Create(x.ColumnValues)) // create twins
+                ctx.Main.Employees.Create x.ColumnValues) // create twins
     |>  Seq.toList
 
 /// Retrieve the FSharp.Data.Sql.Common.SqlEntity objects

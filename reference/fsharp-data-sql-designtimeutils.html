@@ -332,7 +332,7 @@
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-member-xmldoc-column">
               <div class="icon-button-row">
-                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L115-115" class="fsdocs-source-link" title="Source on GitHub">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L116-116" class="fsdocs-source-link" title="Source on GitHub">
                   <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                 </a>
               </div>
@@ -353,9 +353,9 @@
             <div>
               <code data-fsdocs-tip="58" data-fsdocs-tip-unique="58">
                 <p>
-                  <a id="createColumnProperty">
-                    <a href="#createColumnProperty">
-                      <code><span>createColumnProperty&#32;<span>con&#32;prov&#32;useOptionTypes&#32;key&#32;c</span></span></code>
+                  <a id="columnDescription">
+                    <a href="#columnDescription">
+                      <code><span>columnDescription&#32;<span>con&#32;prov&#32;offlineDescriptions&#32;tableName&#32;columnName</span></span></code>
                     </a>
                   </a>
                 </p>
@@ -363,7 +363,7 @@
               <div popover="" class="fsdocs-tip" id="58">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>createColumnProperty&#32;<span>con&#32;prov&#32;useOptionTypes&#32;key&#32;c</span></span></code>
+                  <code><span>columnDescription&#32;<span>con&#32;prov&#32;offlineDescriptions&#32;tableName&#32;columnName</span></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -382,6 +382,161 @@
                       </b>
                       :
                       <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html">ISqlProvider</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        offlineDescriptions
+                      </b>
+                      :
+                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.lazy-1">Lazy</a>&lt;unit&gt;</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        tableName
+                      </b>
+                      :
+                      <code>string</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        columnName
+                      </b>
+                      :
+                      <code>string</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span>string&#32;option</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       A column's description (comment), kept in the schema cache like tableDescription.
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L159-159" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.DesignTimeUtils.columnDescription\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.DesignTimeUtils.columnDescription`')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
+                  </div>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    con
+                  </span>
+                  :
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a>&#32;option</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    prov
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html">ISqlProvider</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    offlineDescriptions
+                  </span>
+                  :
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.lazy-1">Lazy</a>&lt;unit&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    tableName
+                  </span>
+                  :
+                  <code>string</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    columnName
+                  </span>
+                  :
+                  <code>string</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span>string&#32;option</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="59" data-fsdocs-tip-unique="59">
+                <p>
+                  <a id="createColumnProperty">
+                    <a href="#createColumnProperty">
+                      <code><span>createColumnProperty&#32;<span>con&#32;prov&#32;offlineDescriptions&#32;useOptionTypes&#32;key&#32;c</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="59">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>createColumnProperty&#32;<span>con&#32;prov&#32;offlineDescriptions&#32;useOptionTypes&#32;key&#32;c</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        con
+                      </b>
+                      :
+                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a>&#32;option</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        prov
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html">ISqlProvider</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        offlineDescriptions
+                      </b>
+                      :
+                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.lazy-1">Lazy</a>&lt;unit&gt;</span></code>
                     </span>
                     <br/>
                     <span>
@@ -422,7 +577,7 @@
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-member-xmldoc-column">
               <div class="icon-button-row">
-                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L255-255" class="fsdocs-source-link" title="Source on GitHub">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L300-300" class="fsdocs-source-link" title="Source on GitHub">
                   <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                 </a>
               </div>
@@ -441,6 +596,14 @@
                   </span>
                   :
                   <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html">ISqlProvider</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    offlineDescriptions
+                  </span>
+                  :
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.lazy-1">Lazy</a>&lt;unit&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -483,7 +646,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="59" data-fsdocs-tip-unique="59">
+              <code data-fsdocs-tip="60" data-fsdocs-tip-unique="60">
                 <p>
                   <a id="createConstructors">
                     <a href="#createConstructors">
@@ -492,7 +655,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="59">
+              <div popover="" class="fsdocs-tip" id="60">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>createConstructors&#32;<span>config&#32;<span>(<span>rootType,&#32;serviceType,&#32;readServiceType,&#32;args</span>)</span></span></span></code>
@@ -552,7 +715,7 @@
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-member-xmldoc-column">
               <div class="icon-button-row">
-                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L1118-1118" class="fsdocs-source-link" title="Source on GitHub">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L1306-1306" class="fsdocs-source-link" title="Source on GitHub">
                   <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                 </a>
               </div>
@@ -604,19 +767,19 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="60" data-fsdocs-tip-unique="60">
+              <code data-fsdocs-tip="61" data-fsdocs-tip-unique="61">
                 <p>
                   <a id="createDesignTimeCommands">
                     <a href="#createDesignTimeCommands">
-                      <code><span>createDesignTimeCommands&#32;<span>prov&#32;contextSchemaPath&#32;recreate&#32;invalidate</span></span></code>
+                      <code><span>createDesignTimeCommands&#32;<span>prov&#32;contextSchemaPath&#32;recreate&#32;invalidate&#32;onlineCommands</span></span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="60">
+              <div popover="" class="fsdocs-tip" id="61">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>createDesignTimeCommands&#32;<span>prov&#32;contextSchemaPath&#32;recreate&#32;invalidate</span></span></code>
+                  <code><span>createDesignTimeCommands&#32;<span>prov&#32;contextSchemaPath&#32;recreate&#32;invalidate&#32;onlineCommands</span></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -642,7 +805,7 @@
                         recreate
                       </b>
                       :
-                      <code><span>unit&#32;->&#32;'a</span></code>
+                      <code><span>unit&#32;->&#32;unit</span></code>
                     </span>
                     <br/>
                     <span>
@@ -653,15 +816,20 @@
                       <code><span>unit&#32;->&#32;<a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-unit">Unit</a></span></code>
                     </span>
                     <br/>
+                    <span>
+                      <b>
+                        onlineCommands
+                      </b>
+                      :
+                      <code><span><span>(<span>string&#32;*&#32;string&#32;*&#32;<span>(<span>unit&#32;->&#32;string</span>)</span></span>)</span>&#32;list</span></code>
+                    </span>
+                    <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
                     <code><span><a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition.html">ProvidedTypeDefinition</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition.html">ProvidedTypeDefinition</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedmethod.html">ProvidedMethod</a>&#32;*&#32;<a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedproperty.html">ProvidedProperty</a>&#32;*&#32;<span><a href="https://fsprojects.github.io/SQLProvider/reference/providerimplementation-providedtypes-providedtypedefinition.html">ProvidedTypeDefinition</a>&#32;option</span></span></code>
                   </span>
-                  <br/>
-                  Type parameters: 
-                  &#39;a
                   <br/>
                 </div>
               </div>
@@ -670,7 +838,7 @@
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-member-xmldoc-column">
               <div class="icon-button-row">
-                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L472-472" class="fsdocs-source-link" title="Source on GitHub">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L515-515" class="fsdocs-source-link" title="Source on GitHub">
                   <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                 </a>
               </div>
@@ -696,7 +864,7 @@
                     recreate
                   </span>
                   :
-                  <code><span>unit&#32;->&#32;'a</span></code>
+                  <code><span>unit&#32;->&#32;unit</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -705,6 +873,14 @@
                   </span>
                   :
                   <code><span>unit&#32;->&#32;<a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-unit">Unit</a></span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    onlineCommands
+                  </span>
+                  :
+                  <code><span><span>(<span>string&#32;*&#32;string&#32;*&#32;<span>(<span>unit&#32;->&#32;string</span>)</span></span>)</span>&#32;list</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -723,19 +899,19 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="61" data-fsdocs-tip-unique="61">
+              <code data-fsdocs-tip="62" data-fsdocs-tip-unique="62">
                 <p>
                   <a id="createIndividualsType">
                     <a href="#createIndividualsType">
-                      <code><span>createIndividualsType&#32;<span>con&#32;prov&#32;table&#32;designTimeDc&#32;dbVendor&#32;individualsAmount&#32;tableTypeDef</span></span></code>
+                      <code><span>createIndividualsType&#32;<span>con&#32;prov&#32;table&#32;designTimeDc&#32;offlineIndividuals&#32;dbVendor&#32;individualsAmount&#32;tableTypeDef</span></span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="61">
+              <div popover="" class="fsdocs-tip" id="62">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>createIndividualsType&#32;<span>con&#32;prov&#32;table&#32;designTimeDc&#32;dbVendor&#32;individualsAmount&#32;tableTypeDef</span></span></code>
+                  <code><span>createIndividualsType&#32;<span>con&#32;prov&#32;table&#32;designTimeDc&#32;offlineIndividuals&#32;dbVendor&#32;individualsAmount&#32;tableTypeDef</span></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -770,6 +946,14 @@
                       </b>
                       :
                       <code><span><a href="https://learn.microsoft.com/dotnet/api/system.lazy-1">Lazy</a>&lt;'a&gt;</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        offlineIndividuals
+                      </b>
+                      :
+                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.lazy-1">Lazy</a>&lt;unit&gt;</span></code>
                     </span>
                     <br/>
                     <span>
@@ -813,7 +997,7 @@
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-member-xmldoc-column">
               <div class="icon-button-row">
-                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L142-142" class="fsdocs-source-link" title="Source on GitHub">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L221-221" class="fsdocs-source-link" title="Source on GitHub">
                   <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                 </a>
               </div>
@@ -848,6 +1032,14 @@
                   </span>
                   :
                   <code><span><a href="https://learn.microsoft.com/dotnet/api/system.lazy-1">Lazy</a>&lt;'a&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    offlineIndividuals
+                  </span>
+                  :
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.lazy-1">Lazy</a>&lt;unit&gt;</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
@@ -890,7 +1082,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="62" data-fsdocs-tip-unique="62">
+              <code data-fsdocs-tip="63" data-fsdocs-tip-unique="63">
                 <p>
                   <a id="createTypes">
                     <a href="#createTypes">
@@ -899,7 +1091,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="62">
+              <div popover="" class="fsdocs-tip" id="63">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>createTypes&#32;<span>rootType&#32;serviceType&#32;readServiceType&#32;config&#32;sqlRuntimeInfo&#32;invalidate&#32;registerClose&#32;args</span></span></code>
@@ -983,7 +1175,7 @@
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-member-xmldoc-column">
               <div class="icon-button-row">
-                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L545-545" class="fsdocs-source-link" title="Source on GitHub">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L616-616" class="fsdocs-source-link" title="Source on GitHub">
                   <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                 </a>
               </div>
@@ -1059,7 +1251,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="63" data-fsdocs-tip-unique="63">
+              <code data-fsdocs-tip="64" data-fsdocs-tip-unique="64">
                 <p>
                   <a id="design1">
                     <a href="#design1">
@@ -1068,7 +1260,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="63">
+              <div popover="" class="fsdocs-tip" id="64">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>design1&#32;<span></span></span></code>
@@ -1086,53 +1278,7 @@
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-member-xmldoc-column">
               <div class="icon-button-row">
-                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L111-111" class="fsdocs-source-link" title="Source on GitHub">
-                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                </a>
-              </div>
-              <dl class="fsdocs-returns">
-                <dt>
-                  <span class="fsdocs-return-name">
-                    Returns: 
-                  </span>
-                  <code>string</code>
-                </dt>
-                <dd class="fsdocs-return-docs"></dd>
-              </dl>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code data-fsdocs-tip="64" data-fsdocs-tip-unique="64">
-                <p>
-                  <a id="design2">
-                    <a href="#design2">
-                      <code><span>design2&#32;<span></span></span></code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div popover="" class="fsdocs-tip" id="64">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code><span>design2&#32;<span></span></span></code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Returns: 
-                    <code>string</code>
-                  </span>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-member-xmldoc-column">
-              <div class="icon-button-row">
-                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L113-113" class="fsdocs-source-link" title="Source on GitHub">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L112-112" class="fsdocs-source-link" title="Source on GitHub">
                   <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                 </a>
               </div>
@@ -1153,6 +1299,52 @@
             <div>
               <code data-fsdocs-tip="65" data-fsdocs-tip-unique="65">
                 <p>
+                  <a id="design2">
+                    <a href="#design2">
+                      <code><span>design2&#32;<span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="65">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>design2&#32;<span></span></span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>string</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L114-114" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>string</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="66" data-fsdocs-tip-unique="66">
+                <p>
                   <a id="empty">
                     <a href="#empty">
                       <code><span>empty&#32;<span>arg1</span></span></code>
@@ -1160,7 +1352,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="65">
+              <div popover="" class="fsdocs-tip" id="66">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>empty&#32;<span>arg1</span></span></code>
@@ -1190,7 +1382,7 @@
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-member-xmldoc-column">
               <div class="icon-button-row">
-                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L121-121" class="fsdocs-source-link" title="Source on GitHub">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L122-122" class="fsdocs-source-link" title="Source on GitHub">
                   <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                 </a>
               </div>
@@ -1219,7 +1411,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="66" data-fsdocs-tip-unique="66">
+              <code data-fsdocs-tip="67" data-fsdocs-tip-unique="67">
                 <p>
                   <a id="generateSprocMethod">
                     <a href="#generateSprocMethod">
@@ -1228,7 +1420,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="66">
+              <div popover="" class="fsdocs-tip" id="67">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>generateSprocMethod&#32;<span>container&#32;con&#32;prov&#32;sproc</span></span></code>
@@ -1282,7 +1474,7 @@
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-member-xmldoc-column">
               <div class="icon-button-row">
-                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L310-310" class="fsdocs-source-link" title="Source on GitHub">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L353-353" class="fsdocs-source-link" title="Source on GitHub">
                   <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                 </a>
               </div>
@@ -1335,7 +1527,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="67" data-fsdocs-tip-unique="67">
+              <code data-fsdocs-tip="68" data-fsdocs-tip-unique="68">
                 <p>
                   <a id="generateTypeTree">
                     <a href="#generateTypeTree">
@@ -1344,7 +1536,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="67">
+              <div popover="" class="fsdocs-tip" id="68">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>generateTypeTree&#32;<span>con&#32;prov&#32;createdTypes&#32;sprocs</span></span></code>
@@ -1398,7 +1590,7 @@
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-member-xmldoc-column">
               <div class="icon-button-row">
-                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L464-464" class="fsdocs-source-link" title="Source on GitHub">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L507-507" class="fsdocs-source-link" title="Source on GitHub">
                   <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                 </a>
               </div>
@@ -1451,7 +1643,190 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="68" data-fsdocs-tip-unique="68">
+              <code data-fsdocs-tip="69" data-fsdocs-tip-unique="69">
+                <p>
+                  <a id="getIndividuals">
+                    <a href="#getIndividuals">
+                      <code><span>getIndividuals&#32;<span>con&#32;prov&#32;table&#32;designTimeDc&#32;offlineIndividuals&#32;dbVendor&#32;individualsAmount</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="69">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>getIndividuals&#32;<span>con&#32;prov&#32;table&#32;designTimeDc&#32;offlineIndividuals&#32;dbVendor&#32;individualsAmount</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        con
+                      </b>
+                      :
+                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a>&#32;option</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        prov
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html">ISqlProvider</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        table
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-table.html">Table</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        designTimeDc
+                      </b>
+                      :
+                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.lazy-1">Lazy</a>&lt;'a&gt;</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        offlineIndividuals
+                      </b>
+                      :
+                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.lazy-1">Lazy</a>&lt;unit&gt;</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        dbVendor
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html">DatabaseProviderTypes</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        individualsAmount
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><span>(<span>string&#32;*&#32;<span><span>(<span>obj&#32;*&#32;<span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.idictionary-2">IDictionary</a>&lt;<span>string,&#32;obj</span>&gt;</span></span>)</span>&#32;array</span></span>)</span>&#32;option</span></code>
+                  </span>
+                  <br/>
+                  Type parameters: 
+                  &#39;a (requires :&gt; FSharp.Data.Sql.Common.ISqlDataContext)
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       The primary key and individuals of a table with a single primary key. Read from the database once and kept
+ in the schema cache; offline they come from the individuals file.
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L177-177" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.DesignTimeUtils.getIndividuals``1\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:FSharp.Data.Sql.DesignTimeUtils.getIndividuals``1```')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
+                  </div>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    con
+                  </span>
+                  :
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a>&#32;option</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    prov
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html">ISqlProvider</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    table
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-schema-table.html">Table</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    designTimeDc
+                  </span>
+                  :
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.lazy-1">Lazy</a>&lt;'a&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    offlineIndividuals
+                  </span>
+                  :
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.lazy-1">Lazy</a>&lt;unit&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    dbVendor
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-databaseprovidertypes.html">DatabaseProviderTypes</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    individualsAmount
+                  </span>
+                  :
+                  <code>int</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><span>(<span>string&#32;*&#32;<span><span>(<span>obj&#32;*&#32;<span><a href="https://learn.microsoft.com/dotnet/api/system.collections.generic.idictionary-2">IDictionary</a>&lt;<span>string,&#32;obj</span>&gt;</span></span>)</span>&#32;array</span></span>)</span>&#32;option</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="70" data-fsdocs-tip-unique="70">
                 <p>
                   <a id="getSprocReturnColumns">
                     <a href="#getSprocReturnColumns">
@@ -1460,7 +1835,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="68">
+              <div popover="" class="fsdocs-tip" id="70">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>getSprocReturnColumns&#32;<span>con&#32;prov&#32;sprocname&#32;sprocDefinition&#32;param</span></span></code>
@@ -1522,7 +1897,7 @@
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-member-xmldoc-column">
               <div class="icon-button-row">
-                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L123-123" class="fsdocs-source-link" title="Source on GitHub">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L124-124" class="fsdocs-source-link" title="Source on GitHub">
                   <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                 </a>
               </div>
@@ -1583,7 +1958,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="69" data-fsdocs-tip-unique="69">
+              <code data-fsdocs-tip="71" data-fsdocs-tip-unique="71">
                 <p>
                   <a id="mySaveLock">
                     <a href="#mySaveLock">
@@ -1592,7 +1967,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="69">
+              <div popover="" class="fsdocs-tip" id="71">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>mySaveLock&#32;<span></span></span></code>
@@ -1601,144 +1976,6 @@
                   <span>
                     Returns: 
                     <code><a href="https://learn.microsoft.com/dotnet/api/system.object">Object</a></code>
-                  </span>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-member-xmldoc-column">
-              <div class="icon-button-row">
-                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L118-118" class="fsdocs-source-link" title="Source on GitHub">
-                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                </a>
-              </div>
-              <dl class="fsdocs-returns">
-                <dt>
-                  <span class="fsdocs-return-name">
-                    Returns: 
-                  </span>
-                  <code><a href="https://learn.microsoft.com/dotnet/api/system.object">Object</a></code>
-                </dt>
-                <dd class="fsdocs-return-docs"></dd>
-              </dl>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code data-fsdocs-tip="70" data-fsdocs-tip-unique="70">
-                <p>
-                  <a id="runtime1">
-                    <a href="#runtime1">
-                      <code><span>runtime1&#32;<span></span></span></code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div popover="" class="fsdocs-tip" id="70">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code><span>runtime1&#32;<span></span></span></code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Returns: 
-                    <code>string</code>
-                  </span>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-member-xmldoc-column">
-              <div class="icon-button-row">
-                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L112-112" class="fsdocs-source-link" title="Source on GitHub">
-                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                </a>
-              </div>
-              <dl class="fsdocs-returns">
-                <dt>
-                  <span class="fsdocs-return-name">
-                    Returns: 
-                  </span>
-                  <code>string</code>
-                </dt>
-                <dd class="fsdocs-return-docs"></dd>
-              </dl>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code data-fsdocs-tip="71" data-fsdocs-tip-unique="71">
-                <p>
-                  <a id="runtime2">
-                    <a href="#runtime2">
-                      <code><span>runtime2&#32;<span></span></span></code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div popover="" class="fsdocs-tip" id="71">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code><span>runtime2&#32;<span></span></span></code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Returns: 
-                    <code>string</code>
-                  </span>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-member-xmldoc-column">
-              <div class="icon-button-row">
-                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L114-114" class="fsdocs-source-link" title="Source on GitHub">
-                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-                </a>
-              </div>
-              <dl class="fsdocs-returns">
-                <dt>
-                  <span class="fsdocs-return-name">
-                    Returns: 
-                  </span>
-                  <code>string</code>
-                </dt>
-                <dd class="fsdocs-return-docs"></dd>
-              </dl>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code data-fsdocs-tip="72" data-fsdocs-tip-unique="72">
-                <p>
-                  <a id="saveInProcess">
-                    <a href="#saveInProcess">
-                      <code><span>saveInProcess&#32;<span></span></span></code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div popover="" class="fsdocs-tip" id="72">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code><span>saveInProcess&#32;<span></span></span></code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Returns: 
-                    <code>bool</code>
                   </span>
                   <br/>
                 </div>
@@ -1757,7 +1994,53 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code>bool</code>
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.object">Object</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="72" data-fsdocs-tip-unique="72">
+                <p>
+                  <a id="runtime1">
+                    <a href="#runtime1">
+                      <code><span>runtime1&#32;<span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="72">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>runtime1&#32;<span></span></span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>string</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L113-113" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>string</code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
@@ -1769,6 +2052,230 @@
             <div>
               <code data-fsdocs-tip="73" data-fsdocs-tip-unique="73">
                 <p>
+                  <a id="runtime2">
+                    <a href="#runtime2">
+                      <code><span>runtime2&#32;<span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="73">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>runtime2&#32;<span></span></span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>string</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L115-115" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>string</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="74" data-fsdocs-tip-unique="74">
+                <p>
+                  <a id="saveInProcess">
+                    <a href="#saveInProcess">
+                      <code><span>saveInProcess&#32;<span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="74">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>saveInProcess&#32;<span></span></span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>bool</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-member-xmldoc-column">
+              <div class="icon-button-row">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L120-120" class="fsdocs-source-link" title="Source on GitHub">
+                  <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                </a>
+              </div>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>bool</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="75" data-fsdocs-tip-unique="75">
+                <p>
+                  <a id="tableDescription">
+                    <a href="#tableDescription">
+                      <code><span>tableDescription&#32;<span>con&#32;prov&#32;offlineDescriptions&#32;tableName</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div popover="" class="fsdocs-tip" id="75">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>tableDescription&#32;<span>con&#32;prov&#32;offlineDescriptions&#32;tableName</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        con
+                      </b>
+                      :
+                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a>&#32;option</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        prov
+                      </b>
+                      :
+                      <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html">ISqlProvider</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        offlineDescriptions
+                      </b>
+                      :
+                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.lazy-1">Lazy</a>&lt;unit&gt;</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        tableName
+                      </b>
+                      :
+                      <code>string</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span>string&#32;option</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-summary-contents">
+                    <p class="fsdocs-summary">
+                       A table's description (comment). Online it's read from the database and kept in the schema cache, so a
+ save keeps it; offline it comes from the descriptions file, read on first use. None when it wasn't saved.
+                    </p>
+                  </div>
+                  <div class="icon-button-row">
+                    <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L145-145" class="fsdocs-source-link" title="Source on GitHub">
+                      <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                    </a>
+                    <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:FSharp.Data.Sql.DesignTimeUtils.tableDescription\'/>')">
+                      <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                    </div>
+                    <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:FSharp.Data.Sql.DesignTimeUtils.tableDescription`')">
+                      <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                    </div>
+                  </div>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    con
+                  </span>
+                  :
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.data.idbconnection">IDbConnection</a>&#32;option</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    prov
+                  </span>
+                  :
+                  <code><a href="https://fsprojects.github.io/SQLProvider/reference/fsharp-data-sql-common-isqlprovider.html">ISqlProvider</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    offlineDescriptions
+                  </span>
+                  :
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.lazy-1">Lazy</a>&lt;unit&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    tableName
+                  </span>
+                  :
+                  <code>string</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span>string&#32;option</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code data-fsdocs-tip="76" data-fsdocs-tip-unique="76">
+                <p>
                   <a id="transactionOptions">
                     <a href="#transactionOptions">
                       <code><span>transactionOptions&#32;<span></span></span></code>
@@ -1776,7 +2283,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="73">
+              <div popover="" class="fsdocs-tip" id="76">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>transactionOptions&#32;<span></span></span></code>
@@ -1794,7 +2301,7 @@
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-member-xmldoc-column">
               <div class="icon-button-row">
-                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L140-140" class="fsdocs-source-link" title="Source on GitHub">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L141-141" class="fsdocs-source-link" title="Source on GitHub">
                   <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                 </a>
               </div>
@@ -1813,7 +2320,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code data-fsdocs-tip="74" data-fsdocs-tip-unique="74">
+              <code data-fsdocs-tip="77" data-fsdocs-tip-unique="77">
                 <p>
                   <a id="walkSproc">
                     <a href="#walkSproc">
@@ -1822,7 +2329,7 @@
                   </a>
                 </p>
               </code>
-              <div popover="" class="fsdocs-tip" id="74">
+              <div popover="" class="fsdocs-tip" id="77">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>walkSproc&#32;<span>con&#32;prov&#32;path&#32;parent&#32;createdTypes&#32;sproc</span></span></code>
@@ -1892,7 +2399,7 @@
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-member-xmldoc-column">
               <div class="icon-button-row">
-                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L413-413" class="fsdocs-source-link" title="Source on GitHub">
+                <a href="https://github.com/fsprojects/SQLProvider.git/tree/master/src/SQLProvider.DesignTime/SqlDesignTime.fs#L456-456" class="fsdocs-source-link" title="Source on GitHub">
                   <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                 </a>
               </div>
