@@ -66,6 +66,15 @@ let rec private isReadable (e:Expression) =
         not finder.Found
     | _ -> false
 
+#if NETSTANDARD2_0
+/// LambdaExpression.Compile(preferInterpretation), or null where the runtime doesn't have it: the netstandard2.0
+/// build also runs on .NET Framework, which has the method only from 4.7.1.
+let private compilePreferringInterpretation : Func<LambdaExpression, bool, Delegate> =
+    match typeof<LambdaExpression>.GetMethod("Compile", [| typeof<bool> |]) with
+    | null -> null
+    | compile -> Delegate.CreateDelegate(typeof<Func<LambdaExpression, bool, Delegate>>, compile) :?> Func<LambdaExpression, bool, Delegate>
+#endif
+
 /// Runs a parameterless expression interpreted, as compiling it would JIT code that runs once.
 let private interpret (e:Expression) : obj =
     let body =
@@ -75,7 +84,12 @@ let private interpret (e:Expression) : obj =
 #if NET461 || NET462
     lambda.Compile().Invoke()
 #else
+#if NETSTANDARD2_0
+    if isNull compilePreferringInterpretation then lambda.Compile().Invoke()
+    else (compilePreferringInterpretation.Invoke(lambda, true) :?> Func<obj>).Invoke()
+#else
     lambda.Compile(preferInterpretation = true).Invoke()
+#endif
 #endif
 
 /// The value of an expression isReadable accepts, each part of it evaluated once. Where reflection doesn't answer as
