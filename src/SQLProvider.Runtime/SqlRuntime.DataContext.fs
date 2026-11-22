@@ -108,7 +108,7 @@ type public SqlDataContext (typeName, connectionString:string, providerType:Data
                  && not (String.Equals(name.Owner, con.Database, StringComparison.OrdinalIgnoreCase)) ->
             let quoted (identifier: string) = "`" + identifier.Replace("`", "``") + "`"
             quoted name.Owner + "." + quoted name.ProcName
-        | DatabaseProviderTypes.ORACLE when not (String.IsNullOrEmpty name.Owner) -> name.Owner + "." + name.DbName
+        | DatabaseProviderTypes.ORACLE when not (String.IsNullOrEmpty name.Owner) -> $"{name.Owner}.{name.DbName}"
         | _ -> name.DbName
 
     /// IoC: A factory that can be used to extend custom SQLProvider implementations from separate Nuget packages

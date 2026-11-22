@@ -44,10 +44,12 @@ let private subscribed =
                  | [ only ] -> only.Enqueue e.Command
                  | _ -> ()))
 
+let private normaliseRegex = Regex @"\s+"
+let private normaliseRegex2 = Regex @"\s*([(),])\s*"
 /// Upper case, single spaces, no spaces around parentheses or commas.
 let normalise (sql: string) =
-    let spaced = Regex.Replace(sql.ToUpperInvariant(), @"\s+", " ")
-    Regex.Replace(spaced, @"\s*([(),])\s*", "$1")
+    let spaced = normaliseRegex.Replace(sql.ToUpperInvariant(), " ")
+    normaliseRegex2.Replace(spaced, "$1")
 
 /// The expectations no command meets.
 let unmet (expectations: string seq) (commands: string list) =

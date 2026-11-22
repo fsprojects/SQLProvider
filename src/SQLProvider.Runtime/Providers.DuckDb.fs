@@ -137,7 +137,7 @@ module DuckDb =
         let mapping = if not (isNull value || sprocCommand) then (findClrType (value.GetType().ToString())) else None
         let value = if isNull value then (box DBNull.Value) else value
         // DuckDB names a parameter without a prefix: the name of $id is id, and the key of an individual comes as @id
-        let name = param.Name.TrimStart('@')
+        let name = param.Name.TrimStart '@'
 
 #if REFLECTIONLOAD
         let parameterType = parameterType.Value
@@ -620,7 +620,7 @@ type internal DuckDbProvider(resolutionPath, contextSchemaPath, owner:string, re
                     [ while reader.Read() do
                         let table ={ Schema = reader.GetString 0; Name = reader.GetString 1; Type=reader.GetString 2 }
                         yield schemaCache.Tables.GetOrAdd(table |> quotedTableName,table) ] |> List.toArray
-                executeSql DuckDb.createCommand (sprintf "select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES where %s in (%s)" caseChane dbName) con)
+                executeSql DuckDb.createCommand $"select TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE from INFORMATION_SCHEMA.TABLES where %s{caseChane} in (%s{dbName})" con)
 
         member __.GetPrimaryKey(table) =
             match schemaCache.PrimaryKeys.TryGetValue (table |> quotedTableName) with

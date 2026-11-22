@@ -1,0 +1,18 @@
+<Project>
+    <!-- The compiler loads a type provider's design-time assemblies into its own process, where FSharp.Core is the
+         compiler's own: an assembly built against a newer FSharp.Core doesn't load there. The .NET 8 and 9 SDK
+         compilers load the net8.0 design-time, so what goes into that folder (a design-time project and Common) is
+         built against FSharp.Core 8 on net8.0. Every other framework, and the runtime projects on net8.0 too, keep
+         the FSharp.Core of paket.dependencies. -->
+    <PropertyGroup>
+        <DesignTimeFSharpCoreVersion>8.0.403</DesignTimeFSharpCoreVersion>
+        <UseDesignTimeFSharpCore Condition="'$(TargetFramework)' == 'net8.0' And ('$(MSBuildProjectName)' == 'SQLProvider.Common' Or $(MSBuildProjectName.EndsWith('.DesignTime')))">true</UseDesignTimeFSharpCore>
+    </PropertyGroup>
+    <!-- Paket adds its PackageReference items in the PaketRestore target, so FSharp.Core is replaced after it -->
+    <Target Name="UseDesignTimeFSharpCore" AfterTargets="PaketRestore" BeforeTargets="CollectPackageReferences" Condition="'$(UseDesignTimeFSharpCore)' == 'true'">
+        <ItemGroup>
+            <PackageReference Remove="FSharp.Core" />
+            <PackageReference Include="FSharp.Core" Version="$(DesignTimeFSharpCoreVersion)" />
+        </ItemGroup>
+    </Target>
+</Project>

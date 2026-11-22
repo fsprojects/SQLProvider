@@ -1186,7 +1186,7 @@ type internal SQLiteProvider(resolutionPath, contextSchemaPath, referencedAssemb
                     task {
                         // close the connection first otherwise it won't get enlisted into the transaction
                         if con.State = ConnectionState.Open then con.Close()
-                        con.Open()
+                        do! con.OpenAsync()
                         use trans = con.BeginTransaction(TransactionUtils.toSystemDataIsolationLevel transactionOptions.IsolationLevel) //System.Data.IsolationLevel. transactionOptions.IsolationLevel)
                         try 
                             do! processFunc (Some trans)

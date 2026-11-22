@@ -402,9 +402,9 @@ module PostgreSQL =
                 null
 
     /// Whether each routine is a procedure (PostgreSQL 11 and newer), by connection and the command text of its call.
-    let private procedures = System.Collections.Concurrent.ConcurrentDictionary<string, bool>()
+    let private procedures = ConcurrentDictionary<string, bool>()
 
-    let private routineKey (com: IDbCommand) = com.Connection.ConnectionString + "\n" + com.CommandText
+    let private routineKey (com: IDbCommand) = $"{com.Connection.ConnectionString}\n{com.CommandText}"
 
     /// Asks whether the routine a command names is a procedure. The command text is the routine's name, or its quoted
     /// schema and name.
@@ -434,8 +434,8 @@ module PostgreSQL =
                 else None)
             |> String.concat ", "
         com.CommandText <-
-            if isProcedure then sprintf "CALL %s(%s)" com.CommandText arguments
-            else sprintf "SELECT * FROM %s(%s)" com.CommandText arguments
+            if isProcedure then $"CALL %s{com.CommandText}(%s{arguments})"
+            else $"SELECT * FROM %s{com.CommandText}(%s{arguments})"
         com.CommandType <- CommandType.Text
 
     /// A command that names a routine as a stored procedure becomes the text of its call, by what the routine is.
@@ -985,7 +985,7 @@ type internal PostgresqlProvider(resolutionPath, contextSchemaPath, owner, refer
                     PostgreSQL.createCommandParameter (QueryParameter.Create("@schema", 0)) table.Schema |> command.Parameters.Add |> ignore
                     PostgreSQL.createCommandParameter (QueryParameter.Create("@table", 1)) table.Name |> command.Parameters.Add |> ignore
                     Sql.connect con (fun _ ->
-                        command.CommandText <- columnsQuery (con :?> System.Data.Common.DbConnection).ServerVersion baseQuery
+                        command.CommandText <- columnsQuery (con :?> DbConnection).ServerVersion baseQuery
                         use reader = command.ExecuteReader()
                         let columns =
                             [ while reader.Read() do

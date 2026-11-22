@@ -271,6 +271,10 @@ module MySql =
         let procName = (Sql.dbUnboxWithDefault<string> (Guid.NewGuid().ToString()) row.["specific_name"])
         { ProcName = procName; Owner = sprocSchema; PackageName = String.Empty; }
 
+    [<return: Struct>]
+    let inline private (|IsDBNull|_|) (input: obj) =
+        if Convert.IsDBNull input then ValueSome input else ValueNone
+
     let getSprocParameters (con:IDbConnection) (name:SprocName) =
         let createSprocParameters (row:DataRow) =
             let dataType = Sql.dbUnbox row.["data_type"]
@@ -278,7 +282,7 @@ module MySql =
             // MySQL 8 gives the length as bigint and the position as bigint unsigned; before it both were int
             let maxLength =
                 match row.["character_maximum_length"] with
-                | length when Convert.IsDBNull length -> ValueNone
+                | IsDBNull _ -> ValueNone
                 | length -> ValueSome(int (min (Convert.ToInt64 length) (int64 Int32.MaxValue)))
 
             findDbType dataType

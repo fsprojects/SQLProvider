@@ -1,3 +1,8 @@
+### 1.5.35 - 22.11.2026
+- A query's row reader is compiled once per shape and reused when the query runs again, with any captured values: a run no longer compiles and JITs a new delegate. Unchanged where the runtime interprets lambdas (IsDynamicCodeSupported false)
+- Values a query reads once (a captured variable's member, a sub-query's source, a method call on captured values) are read by reflection, and other one-off expressions are interpreted where the runtime can (not on .NET Framework), instead of compiled
+- An exception thrown while evaluating a query's captured value is raised as it is, not wrapped in TargetInvocationException
+
 ### 1.5.34 - 21.11.2026
 - Offline mode (ContextSchemaPath) saves three files beside each other: schema.json for the schema, schema.descriptions.json for table and column descriptions (comments), schema.individuals.json for individuals. Builds read only the schema file; the descriptions file is read for the first tooltip and the individuals file when Individuals are first opened
 - Offline tooltips show the saved table and column descriptions, instead of only "Offline mode." SaveContextSchema saves the descriptions of what you hovered over online

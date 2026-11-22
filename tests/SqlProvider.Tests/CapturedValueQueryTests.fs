@@ -106,7 +106,8 @@ let ``a member of a null owner is not supported``() =
 let ``a getter that throws raises its error``() =
     let dc = sql.GetDataContext()
     let throwing = Throwing()
-    Assert.Throws<Reflection.TargetInvocationException>(fun () ->
+    // The getter's own exception, not reflection's TargetInvocationException around it
+    Assert.Throws<InvalidOperationException>(fun () ->
         query { for c in dc.Main.Customers do where (c.CustomerId = throwing.Value); select c.CustomerId } |> Seq.length |> ignore)
     |> ignore
 

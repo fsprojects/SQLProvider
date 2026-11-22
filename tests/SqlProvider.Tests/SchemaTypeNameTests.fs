@@ -7,9 +7,11 @@ open System.Net
 open FSharp.Data.Sql.Common
 open NUnit.Framework
 
-let private savedOnNet10 name assembly token = sprintf "%s, %s, Version=10.0.0.0, Culture=neutral, PublicKeyToken=%s" name assembly token
-let private savedOnNetFramework name assembly token = sprintf "%s, %s, Version=4.0.0.0, Culture=neutral, PublicKeyToken=%s" name assembly token
+let private savedOnNet10 name assembly token = $"%s{name}, %s{assembly}, Version=10.0.0.0, Culture=neutral, PublicKeyToken=%s{token}"
+let private savedOnNetFramework name assembly token = $"%s{name}, %s{assembly}, Version=4.0.0.0, Culture=neutral, PublicKeyToken=%s{token}"
+[<Literal>]
 let private coreLib = "7cec85d7bea7798e"
+[<Literal>]
 let private mscorlib = "b77a5c561934e089"
 
 [<Test; SqlCheck.NoSql>]
@@ -41,15 +43,15 @@ let ``a type in another assembly on the other runtime resolves`` () =
 [<Test; SqlCheck.NoSql>]
 let ``the arguments of a generic type resolve as well`` () =
     let stringOnNet10 = savedOnNet10 "System.String" "System.Private.CoreLib" coreLib
-    let hstore = sprintf "System.Collections.Generic.IDictionary`2[[%s],[%s]]" stringOnNet10 stringOnNet10
+    let hstore = $"System.Collections.Generic.IDictionary`2[[%s{stringOnNet10}],[%s{stringOnNet10}]]"
     Assert.AreEqual(typeof<Collections.Generic.IDictionary<string,string>>, Utilities.getType (savedOnNet10 hstore "System.Private.CoreLib" coreLib))
     let stringOnNetFramework = savedOnNetFramework "System.String" "mscorlib" mscorlib
-    let hstore = sprintf "System.Collections.Generic.IDictionary`2[[%s],[%s]]" stringOnNetFramework stringOnNetFramework
+    let hstore = $"System.Collections.Generic.IDictionary`2[[%s{stringOnNetFramework}],[%s{stringOnNetFramework}]]"
     Assert.AreEqual(typeof<Collections.Generic.IDictionary<string,string>>, Utilities.getType (savedOnNetFramework hstore "mscorlib" mscorlib))
     let nullableInts = sprintf "System.Nullable`1[[%s]][]" (savedOnNet10 "System.Int32" "System.Private.CoreLib" coreLib)
     Assert.AreEqual(typeof<Nullable<int>[]>, Utilities.getType (savedOnNet10 nullableInts "System.Private.CoreLib" coreLib))
     let ipAddress = savedOnNet10 "System.Net.IPAddress" "System.Net.Primitives" "b03f5f7f11d50a3a"
-    Assert.AreEqual(typeof<Lazy<IPAddress>>, Utilities.getType (savedOnNet10 (sprintf "System.Lazy`1[[%s]]" ipAddress) "System.Private.CoreLib" coreLib))
+    Assert.AreEqual(typeof<Lazy<IPAddress>>, Utilities.getType (savedOnNet10 $"System.Lazy`1[[%s{ipAddress}]]" "System.Private.CoreLib" coreLib))
 
 [<Test; SqlCheck.NoSql>]
 let ``a name without an assembly is not searched in the loaded assemblies`` () =

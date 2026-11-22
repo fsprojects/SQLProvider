@@ -885,14 +885,14 @@ module Sql =
     /// Reads rows of a name and its description to a dictionary. Rows without a description are left out,
     /// and of rows with the same name the first one counts.
     let readDescriptions (reader:IDataReader) =
-        let descriptions = System.Collections.Generic.Dictionary<string,string>()
+        let descriptions = Dictionary<string,string>()
         while reader.Read() do
-            if not (reader.IsDBNull 0) && not (reader.IsDBNull 1) then
+            if not (reader.IsDBNull 0 || reader.IsDBNull 1) then
                 let name = reader.GetValue(0).ToString()
                 let description = reader.GetValue(1).ToString()
                 if description <> "" && not (descriptions.ContainsKey name) then
                     descriptions.[name] <- description
-        descriptions :> System.Collections.Generic.IDictionary<string,string>
+        descriptions :> IDictionary<string,string>
 
     /// The Guid of a text that is one; any other value as it is. The key of an individual with a Guid key is text,
     /// because a Guid can't be a constant in a provided quotation, and not every database takes text for a Guid parameter.
@@ -908,7 +908,11 @@ module Sql =
     /// it is in quotes in FullName (quoteWhiteSpace): those quotes are left out, so the name is as the database has it.
     let tableSchemaAndName (fullName:string) =
         let unquote (name:string) =
+#if NETSTANDARD21
+            if name.Length > 1 && name.StartsWith "\"" && name.EndsWith "\"" && name.Contains ' ' then name.Substring(1, name.Length - 2)
+#else
             if name.Length > 1 && name.StartsWith "\"" && name.EndsWith "\"" && name.Contains " " then name.Substring(1, name.Length - 2)
+#endif
             else name
         if fullName.Length > 1 && fullName.StartsWith "\"" && fullName.EndsWith "\"" then "", unquote fullName else
         // A quoted name may have a dot in it: it starts after the schema's ."

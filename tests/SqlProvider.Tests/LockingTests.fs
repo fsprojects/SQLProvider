@@ -45,7 +45,7 @@ let private textWith (connection: Data.IDbConnection) (provider: ISqlProvider) (
     let projection = Collections.Generic.Dictionary<string, ResizeArray<ProjectionParameter>>()
     projection.["m"] <- ResizeArray [ EntityColumn "id" ]
     let sql, _ = provider.GenerateQueryText(query, "m", mark, projection, false, connection)
-    (SqlCheck.normalise sql).Trim().TrimEnd(';')
+    (SqlCheck.normalise sql).Trim().TrimEnd ';'
 
 let private text (provider: ISqlProvider) (query: SqlQuery) = textWith null provider query
 
