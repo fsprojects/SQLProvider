@@ -344,18 +344,17 @@ That's why SQLProvider short-circuits and optimises your queries as much as poss
 
 There is a performance-test project in this repo. Here is a sample run:
 
-- BenchmarkDotNet v0.13.12
-- .NET 8
+- BenchmarkDotNet v0.15.2
+- .NET 8 (SDK 8.0.428)
 - Laptop, Intel i9 13th Gen on Windows 11
 - Microsoft SQL Server on local computer
 
-
-| Method                | rowsReturned | Mean     | Error     | StdDev    | Ratio | RatioSD | Gen0     | Gen1     | Allocated  | Alloc Ratio |
-|---------------------- |------------- |---------:|----------:|----------:|------:|--------:|---------:|---------:|-----------:|------------:|
-| **FirstNamesToList**      | **25**           | **1.098 ms** | **0.0218 ms** | **0.0312 ms** |  **1.00** |    **0.00** |  **27.3438** |  **11.7188** |  **357.65 KB** |        **1.00** |
-| FirstNamesToListAsync | 25           | 1.123 ms | 0.0223 ms | 0.0435 ms |  1.03 |    0.05 |  27.3438 |  11.7188 |  358.94 KB |        1.00 |
-|                       |              |          |           |           |       |         |          |          |            |             |
-| **FirstNamesToList**      | **2500**         | **2.678 ms** | **0.0531 ms** | **0.1073 ms** |  **1.00** |    **0.00** | **226.5625** | **164.0625** | **2812.34 KB** |        **1.00** |
-| FirstNamesToListAsync | 2500         | 2.697 ms | 0.0608 ms | 0.1685 ms |  1.01 |    0.06 | 226.5625 | 171.8750 | 2813.27 KB |        1.00 |
+| Method                | rowsReturned | Mean       | Error    | StdDev   | Ratio | RatioSD | Gen0    | Gen1   | Allocated | Alloc Ratio |
+|---------------------- |------------- |-----------:|---------:|---------:|------:|--------:|--------:|-------:|----------:|------------:|
+| **FirstNamesToList**      | **25**           |   **954.0 μs** | **17.88 μs** | **18.36 μs** |  **1.00** |    **0.03** | **27.3438** | **5.8594** | **339.07 KB** |        **1.00** |
+| FirstNamesToListAsync | 25           |   961.9 μs | 13.34 μs | 16.38 μs |  1.01 |    0.02 | 27.3438 | 5.8594 | 340.27 KB |        1.00 |
+|                       |              |            |          |          |       |         |         |        |           |             |
+| **FirstNamesToList**      | **2500**         | **1,018.0 μs** | **17.06 μs** | **23.35 μs** |  **1.00** |    **0.03** | **31.2500** | **7.8125** | **401.21 KB** |        **1.00** |
+| FirstNamesToListAsync | 2500         | 1,059.8 μs | 20.75 μs | 25.49 μs |  1.04 |    0.03 | 31.2500 | 7.8125 | 402.26 KB |        1.00 |
 
 *)
