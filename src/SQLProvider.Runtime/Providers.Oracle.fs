@@ -221,6 +221,16 @@ module internal Oracle =
         new Oracle.ManagedDataAccess.Client.OracleCommand(commandText, (connection :?> Oracle.ManagedDataAccess.Client.OracleConnection) ) :> IDbCommand
 #endif
 
+    /// A value for inside '...' in SQL text: an apostrophe in it doubled.
+    let sqlText (value: string) = value.Replace("'", "''")
+
+    /// The owner and name of a table, from OWNER.TABLE, for inside '...' in the comments queries: without the quotes
+    /// of a name with a space in it, apostrophes doubled. The owner is "" without one: the queries then read the
+    /// current user's.
+    let descriptionOwnerAndTable (tableName: string) =
+        let owner, name = Sql.tableSchemaAndName tableName
+        sqlText owner, sqlText name
+
     let readParameter (parameter:IDbDataParameter) =
 #if REFLECTIONLOAD
         let parameterType = parameterType.Value
@@ -721,21 +731,36 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
 #endif
         Oracle.resolutionPath <- resolutionPath
 
+    interface IColumnDescriptionsProvider with
+        member __.GetColumnDescriptions(con,tableName) =
+            let sn, tn = Oracle.descriptionOwnerAndTable tableName
+            Sql.connect con (fun con ->
+                let query =
+                    sprintf """SELECT COLUMN_NAME, COMMENTS
+                                FROM all_col_comments
+                                WHERE OWNER = NVL('%s', USER)
+                                AND TABLE_NAME = '%s'
+                                AND COMMENTS <> '-'
+                            """ sn tn
+                use com = Oracle.createCommand query con
+                use reader = com.ExecuteReader()
+                Sql.readDescriptions reader)
+
     interface ISqlProvider with
         member __.CloseConnectionAfterQuery = true
         member __.DesignConnection = true
         member __.StoredProcedures = true
         member __.GetLockObject() = myLock
         member __.GetTableDescription(con,tableName) = 
-            let sn = tableName.Substring(0,tableName.LastIndexOf('.')) 
-            let tn = tableName.Substring(tableName.LastIndexOf('.')+1) 
-            Sql.connect con (fun con -> 
+            let sn, tn = Oracle.descriptionOwnerAndTable tableName
+            Sql.connect con (fun con ->
                 let comment =
-                    sprintf """SELECT COMMENTS 
-                                FROM user_tab_comments 
-                                WHERE TABLE_NAME = '%s'
+                    sprintf """SELECT COMMENTS
+                                FROM all_tab_comments
+                                WHERE OWNER = NVL('%s', USER)
+                                AND TABLE_NAME = '%s'
                                 AND COMMENTS <> '-'
-                            """ tn 
+                            """ sn tn
                     |> Oracle.read con (fun row -> 
                         Sql.dbUnbox row.[0])
                     |> Seq.toList
@@ -745,16 +770,16 @@ type internal OracleProvider(resolutionPath, contextSchemaPath, owner, reference
                     ""
             )
         member __.GetColumnDescription(con,tableName,columnName) = 
-            let sn = tableName.Substring(0,tableName.LastIndexOf('.')) 
-            let tn = tableName.Substring(tableName.LastIndexOf('.')+1) 
-            Sql.connect con (fun con -> 
+            let sn, tn = Oracle.descriptionOwnerAndTable tableName
+            Sql.connect con (fun con ->
                 let comment =
-                    sprintf """SELECT COMMENTS 
-                                FROM user_col_comments 
-                                WHERE TABLE_NAME = '%s'
+                    sprintf """SELECT COMMENTS
+                                FROM all_col_comments
+                                WHERE OWNER = NVL('%s', USER)
+                                AND TABLE_NAME = '%s'
                                 AND COLUMN_NAME = '%s'
                                 AND COMMENTS <> '-'
-                            """ tn columnName
+                            """ sn tn (Oracle.sqlText columnName)
                     |> Oracle.read con (fun row -> 
                         Sql.dbUnbox row.[0])
                     |> Seq.toList

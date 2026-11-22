@@ -1,7 +1,34 @@
-### 1.5.33 - 17.11.2026
+### 1.5.35 - 22.11.2026
 - A query's row reader is compiled once per shape and reused when the query runs again, with any captured values: a run no longer compiles and JITs a new delegate. Unchanged where the runtime interprets lambdas (IsDynamicCodeSupported false)
 - Values a query reads once (a captured variable's member, a sub-query's source, a method call on captured values) are read by reflection, and other one-off expressions are interpreted where the runtime can (not on .NET Framework), instead of compiled
 - An exception thrown while evaluating a query's captured value is raised as it is, not wrapped in TargetInvocationException
+
+### 1.5.34 - 21.11.2026
+- Offline mode (ContextSchemaPath) saves three files beside each other: schema.json for the schema, schema.descriptions.json for table and column descriptions (comments), schema.individuals.json for individuals. Builds read only the schema file; the descriptions file is read for the first tooltip and the individuals file when Individuals are first opened
+- Offline tooltips show the saved table and column descriptions, instead of only "Offline mode." SaveContextSchema saves the descriptions of what you hovered over online
+- A saved schema no longer carries individuals, so it stays small and loads fast. SaveContextSchema saves the individuals opened so far to the individuals file instead: a table opened again replaces its saved individuals, and the other tables in the file are kept. A schema file with individuals in it still loads them, and re-saving it moves them to the individuals file. Older versions can read the new schema files
+- New design-time commands next to SaveContextSchema, online only, that read the whole database instead of what was used so far: SaveContextSchemaFull (every table, column, relationship and stored procedure, and every table and column description) and SaveContextSchemaIndividuals (individuals of every table with a single primary key)
+- SaveContextSchemaFull reads the column descriptions of a table in one query instead of one per column (MS SQL Server, PostgreSQL, MySQL, Oracle, Firebird, DuckDB)
+- OfflineTools.mergeCacheFiles merges descriptions and individuals files too
+- Fix: after a failed SaveContextSchema, design-time commands no longer stop working until the IDE restarts
+- Fix: saving individuals no longer fails on a column value such as a DateTimeOffset or an array; such values are saved as text
+- Fix: offline individuals with a smallint, bigint or decimal primary key have the key in its own type, as they do online; it came back from the saved file in whatever number type fitted the value
+- Fix: individuals of a table with a uuid (PostgreSQL) or uniqueidentifier (MS SQL Server) primary key can be got; getting one failed, as the key was sent as text
+- Fix: MySQL, DuckDB and Firebird tables have their columns and relationships in offline mode; they had none, as these databases save the schema under other names than the offline mode looked for
+- Fix: MySQL and DuckDB individuals can be got; the query quoted the table name twice, and DuckDB also never got the key
+- Fix: DuckDB tables with a foreign key can be used, and have their relationships, the same way round as SQL Server and PostgreSQL have them; opening one failed with "Index was outside the bounds of the array"
+- Fix: DuckDB columns of a type with a precision, such as DECIMAL(18,3), are no longer left out
+- Fix: DuckDB Owner can list several schemas; no tables were found with more than one
+- Fix: DuckDB DATE columns can be read on .NET 6 and later; the driver gives a DateOnly there, and reading it as the DateTime of the column failed
+- Fix: DuckDB TIME columns can be read, as a TimeSpan; they were typed DateTime, and reading one always failed
+- Fix: DuckDB TIMESTAMP_S, TIMESTAMP_MS, TIMESTAMP_NS and TIMETZ columns are no longer left out
+- Fix: tables with a space in their name show their descriptions in tooltips (MS SQL Server, PostgreSQL, Oracle)
+- Fix: PostgreSQL tables with capital letters or an apostrophe in their name show their descriptions in tooltips; reading them failed before
+- Fix: MS SQL Server descriptions of a table come from its own schema; with tables of the same name in two schemas, either could show the other's
+- Fix: Oracle descriptions of tables owned by another schema (Owner) are read; only the current user's tables had them before
+
+### 1.5.33 - 19.11.2026
+- Fix: a saved schema (ContextSchemaPath) loads on both .NET and .NET Framework, whichever saved it. Visual Studio, whose editor and compiler run on .NET Framework, failed on a schema saved by dotnet with "Value cannot be null. Parameter name: key"
 
 ### 1.5.32 - 14.11.2026
 - Fix: PostgreSQL functions are called inside a SELECT. With Npgsql 7 and newer they failed with "procedure ... does not exist", as a stored-procedure command is a CALL there

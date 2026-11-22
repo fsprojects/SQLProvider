@@ -84,13 +84,73 @@ module Utilities =
                 parseAggregates' fieldNotation fieldNotationAlias tail parsed
         parseAggregates' fieldNotat fieldNotationAlias query []
 
-    // https://stackoverflow.com/questions/1825147/type-gettypenamespace-a-b-classname-returns-null
-    let getType typename =
-        Type.GetType typename
+    /// The type of an assembly-qualified or plain type name, or null.
+    /// A saved schema names types as the runtime that saved it had them: "System.String, System.Private.CoreLib,
+    /// Version=10.0.0.0, ..." from .NET, "System.String, mscorlib, Version=4.0.0.0, ..." from .NET Framework, and a type
+    /// such as System.Net.IPAddress lives in System.Net.Primitives on one and System on the other. So a name that doesn't
+    /// load as written is read again part by part, generic arguments included: an assembly is loaded as named, then by
+    /// its simple name (any version), and a type that isn't in its named assembly is looked for in the core library and
+    /// then in the assemblies already loaded, public types only. A part that names no assembly is not looked for there.
+    let getType (typename:string) =
+        match Type.GetType typename with
+        | null when not (String.IsNullOrEmpty typename) ->
+            let coreLibrary = typeof<obj>.Assembly
+            let load (name:Reflection.AssemblyName) = try Reflection.Assembly.Load name with _ -> null
+            // Never null: Type.GetType gives up on a null assembly without asking for the type.
+            let assemblyOf (name:Reflection.AssemblyName) =
+                match load name with
+                | null ->
+                    match load (Reflection.AssemblyName name.Name) with
+                    | null -> coreLibrary
+                    | a -> a
+                | a -> a
+            let typeOf (assembly:Reflection.Assembly) (name:string) (ignoreCase:bool) =
+                let publicTypeIn (a:Reflection.Assembly) =
+                    match (try a.GetType(name, false, ignoreCase) with _ -> null) with
+                    | null -> None
+                    | t -> if t.IsVisible then Some t else None
+                match assembly with
+                | null -> Type.GetType(name, false, ignoreCase)
+                | named ->
+                    seq { yield named
+                          yield coreLibrary
+                          for a in AppDomain.CurrentDomain.GetAssemblies() do
+                              if not a.IsDynamic then yield a }
+                    |> Seq.tryPick publicTypeIn
+                    |> Option.toObj
+            try Type.GetType(typename, Func<_,_> assemblyOf, Func<_,_,_,_> typeOf, false) with _ -> null
+        | t -> t
 
     /// Some/ValueSome case of the given option or voption type holding the value.
     let private makeSomeOf (optionType:Type) (value:obj) =
         Microsoft.FSharp.Reflection.FSharpValue.MakeUnion(Microsoft.FSharp.Reflection.FSharpType.GetUnionCases(optionType).[1], [|value|])
+
+    /// A date or a time that the driver gave in another type than the column is mapped to, as the mapped type.
+    /// DuckDB gives a DATE as DateOnly and a TIME as TimeOnly on .NET 6 and later, and a TIME as its own DuckDBTimeOnly before that.
+    let internal tryConvertDateOrTime (value:obj) (targetType:Type) : obj voption =
+        if isNull value then ValueNone else
+        let int64Property (name:string) =
+            match value.GetType().GetProperty name with
+            | null -> ValueNone
+            | property -> ValueSome (Convert.ToInt64 (property.GetValue(value, null)))
+        if Type.(=) (targetType, typeof<DateTime>) then
+            match value with
+#if NET6_0_OR_GREATER
+            | :? DateOnly as date -> ValueSome (box (date.ToDateTime TimeOnly.MinValue))
+#endif
+            // An assembly built for an older .NET doesn't know DateOnly, but may run with a driver that does
+            | _ when value.GetType().FullName = "System.DateOnly" ->
+                int64Property "DayNumber" |> ValueOption.map (fun days -> box (DateTime(days * TimeSpan.TicksPerDay)))
+            | _ -> ValueNone
+        elif Type.(=) (targetType, typeof<TimeSpan>) then
+            match value with
+#if NET6_0_OR_GREATER
+            | :? TimeOnly as time -> ValueSome (box (time.ToTimeSpan()))
+#endif
+            | _ when value.GetType().Name.EndsWith "TimeOnly" ->
+                int64Property "Ticks" |> ValueOption.map (fun ticks -> box (TimeSpan ticks))
+            | _ -> ValueNone
+        else ValueNone
 
     let rec internal convertTypes (itm:obj) (returnType:Type) =
         if not(isNull itm) && Type.(=) (itm.GetType(), returnType) then itm
@@ -171,12 +231,18 @@ module Utilities =
             elif Type.(=) (returnType, typeof<UInt64>) then Convert.ToUInt64 itm |> box
             elif Type.(=) (returnType, typeof<Int16>) then Convert.ToInt16 itm |> box
             elif Type.(=) (returnType, typeof<UInt16>) then Convert.ToUInt16 itm |> box
-            elif Type.(=) (returnType, typeof<DateTime>) then Convert.ToDateTime itm |> box
+            elif Type.(=) (returnType, typeof<DateTime>) then
+                match tryConvertDateOrTime itm returnType with
+                | ValueSome date -> date
+                | ValueNone -> Convert.ToDateTime itm |> box
             elif Type.(=) (returnType, typeof<Boolean>) then Convert.ToBoolean itm |> box
             elif Type.(=) (returnType, typeof<Byte>) then Convert.ToByte itm |> box
             elif Type.(=) (returnType, typeof<SByte>) then Convert.ToSByte itm |> box
             elif Type.(=) (returnType, typeof<Char>) then Convert.ToChar itm |> box
-            else itm |> box
+            else
+                match tryConvertDateOrTime itm returnType with
+                | ValueSome time -> time
+                | ValueNone -> itm |> box
         elif Type.(=) (returnType, typeof<String>) then s |> box
         elif Type.(=) (returnType, typeof<Int32>) then
             let ok, x = Int32.TryParse s
@@ -815,6 +881,42 @@ module Sql =
     
     let inline dbUnboxWithDefault<'a> def (v:obj) : 'a = 
         if Convert.IsDBNull(v) then def else unbox v
+
+    /// Reads rows of a name and its description to a dictionary. Rows without a description are left out,
+    /// and of rows with the same name the first one counts.
+    let readDescriptions (reader:IDataReader) =
+        let descriptions = System.Collections.Generic.Dictionary<string,string>()
+        while reader.Read() do
+            if not (reader.IsDBNull 0) && not (reader.IsDBNull 1) then
+                let name = reader.GetValue(0).ToString()
+                let description = reader.GetValue(1).ToString()
+                if description <> "" && not (descriptions.ContainsKey name) then
+                    descriptions.[name] <- description
+        descriptions :> System.Collections.Generic.IDictionary<string,string>
+
+    /// The Guid of a text that is one; any other value as it is. The key of an individual with a Guid key is text,
+    /// because a Guid can't be a constant in a provided quotation, and not every database takes text for a Guid parameter.
+    let guidOfText (value:obj) : obj =
+        match value with
+        | :? string as text ->
+            match Guid.TryParse text with
+            | true, guid -> box guid
+            | false, _ -> value
+        | _ -> value
+
+    /// The schema ("" without one) and the name of a table from its FullName, schema.name. A name with a space in
+    /// it is in quotes in FullName (quoteWhiteSpace): those quotes are left out, so the name is as the database has it.
+    let tableSchemaAndName (fullName:string) =
+        let unquote (name:string) =
+            if name.Length > 1 && name.StartsWith "\"" && name.EndsWith "\"" && name.Contains " " then name.Substring(1, name.Length - 2)
+            else name
+        if fullName.Length > 1 && fullName.StartsWith "\"" && fullName.EndsWith "\"" then "", unquote fullName else
+        // A quoted name may have a dot in it: it starts after the schema's ."
+        let dot =
+            match (if fullName.EndsWith "\"" then fullName.IndexOf ".\"" else -1) with
+            | -1 -> fullName.LastIndexOf '.'
+            | quoted -> quoted
+        (if dot < 0 then "" else fullName.Substring(0, dot)), unquote (fullName.Substring(dot + 1))
 
     /// Note: SQLProvider reuses the connection through multiple instances, so you can't dispose it here.
     /// Instead it's created with ISQLProvider's CreateConnection method, and that is having always "use" to ensure it is disposed properly on "finally".
